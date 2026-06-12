@@ -1,0 +1,46 @@
+# Eclipse
+bin
+eclipse
+.classpath
+.metadata
+.project
+.settings
+*.launch
+
+# Idea
+out
+.idea
+*.ipr
+*.iws
+*.iml
+
+# Gradle
+build
+run
+runs
+.gradle
+.gradle-*
+*local.properties
+
+# NodeJs
+node_modules
+npm-debug.log
+.npmrc
+
+# VSCode
+.vscode/launch.json
+.vscode/settings.json
+
+# Ghost Reference Index
+.ghost-reference-index
+
+# Other
+.DS_Store
+generated
+logs
+*.clip
+*.stackdump
+*.log
+*.patch.txt
+*.bak
+*.lock

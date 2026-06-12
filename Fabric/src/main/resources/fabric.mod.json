@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "easy_model_entities",
+  "version": "${version}",
+  "name": "Easy Model Entities",
+  "description": "Turn Blockbench models into simple Minecraft entities without writing Java code.",
+  "authors": [
+    "Markus Bordihn"
+  ],
+  "contact": {
+    "homepage": "https://curseforge.com/minecraft/mc-mods/easy-model-entities",
+    "issues": "https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "de.markusbordihn.easymodelentities.EasyModelEntities"
+    ],
+    "client": [
+      "de.markusbordihn.easymodelentities.EasyModelEntitiesClient"
+    ],
+    "fabric-gametest": [
+      "de.markusbordihn.easymodelentities.gametest.SmokeTest"
+    ]
+  },
+  "mixins": [
+    "easymodelentities.mixins.json"
+  ],
+  "accessWidener": "easymodelentities.accesswidener",
+  "depends": {
+    "fabricloader": ">=0.15",
+    "fabric": "*",
+    "minecraft": "1.20.1",
+    "java": ">=17"
+  }
+}
