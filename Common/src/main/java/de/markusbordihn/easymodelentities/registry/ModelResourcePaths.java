@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
-public final class EasyModelResourcePaths {
+public final class ModelResourcePaths {
 
   public static final String SERVER_PROFILE_DIRECTORY = Constants.MOD_ID + "/profiles";
   public static final String RENDER_PROFILE_DIRECTORY = Constants.MOD_ID + "/render_profiles";
@@ -34,18 +34,18 @@ public final class EasyModelResourcePaths {
   private static final String ASSETS_ROOT = "assets";
   private static final String DATA_ROOT = "data";
 
-  private EasyModelResourcePaths() {}
+  private ModelResourcePaths() {}
 
   public static String serverProfilePath(ResourceLocation profileId) {
     return dataPath(
-        profileId, pathWithExtension(SERVER_PROFILE_DIRECTORY, profileId, ResourceFileExtension.JSON));
+        profileId,
+        pathWithExtension(SERVER_PROFILE_DIRECTORY, profileId, ResourceFileExtension.JSON));
   }
 
   public static String renderProfilePath(ResourceLocation renderProfileId) {
     return assetPath(
         renderProfileId,
-        pathWithExtension(
-            RENDER_PROFILE_DIRECTORY, renderProfileId, ResourceFileExtension.JSON));
+        pathWithExtension(RENDER_PROFILE_DIRECTORY, renderProfileId, ResourceFileExtension.JSON));
   }
 
   public static String modelPath(ResourceLocation modelId) {
@@ -79,7 +79,8 @@ public final class EasyModelResourcePaths {
     return namespacedPath(DATA_ROOT, resourceLocation, path);
   }
 
-  private static String namespacedPath(String root, ResourceLocation resourceLocation, String path) {
+  private static String namespacedPath(
+      String root, ResourceLocation resourceLocation, String path) {
     Objects.requireNonNull(resourceLocation, "resourceLocation");
     return joinPath(root, resourceLocation.getNamespace(), path);
   }

@@ -19,14 +19,14 @@
 
 package de.markusbordihn.easymodelentities.renderprofile;
 
-import de.markusbordihn.easymodelentities.profile.EasyModelBodyType;
+import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
 public record EasyModelRenderProfile(
     ResourceLocation id,
     String assetFingerprint,
-    EasyModelBodyType bodyType,
+    ModelBodyType bodyType,
     ResourceLocation model,
     ResourceLocation texture,
     float scale,

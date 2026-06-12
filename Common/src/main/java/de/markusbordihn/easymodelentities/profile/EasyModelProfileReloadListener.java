@@ -17,27 +17,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.profile;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.packs.PackType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.registry.EasyModelServices;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
 
-public class EasyModelEntities implements ModInitializer {
+public class EasyModelProfileReloadListener
+    extends SimplePreparableReloadListener<EasyModelProfileManager> {
 
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
+  public static final ResourceLocation ID = new ResourceLocation(Constants.MOD_ID, "profiles");
 
   @Override
-  public void onInitialize() {
-    log.info("Initializing {} (Fabric) ...", Constants.MOD_NAME);
+  protected EasyModelProfileManager prepare(
+      ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+    return EasyModelProfileManager.load(resourceManager);
+  }
 
-    Constants.GAME_DIR = FabricLoader.getInstance().getGameDir();
-    Constants.CONFIG_DIR = FabricLoader.getInstance().getConfigDir();
-
-    ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new FabricEasyModelProfileReloadListener());
+  @Override
+  protected void apply(
+      EasyModelProfileManager profileManager,
+      ResourceManager resourceManager,
+      ProfilerFiller profilerFiller) {
+    EasyModelServices.setProfileService(profileManager);
   }
 }

@@ -17,24 +17,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.registry;
+package de.markusbordihn.easymodelentities.profile;
 
-import de.markusbordihn.easymodelentities.Constants;
-import java.util.Set;
+import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
-public final class EasyModelEntityTypeIds {
+public record ModelHostSettings(
+    ResourceLocation entityType, ModelMovementType movementType, ModelBodyType bodyType) {
 
-  public static final ResourceLocation GROUND_ENTITY =
-      new ResourceLocation(Constants.MOD_ID, "ground_entity");
-  public static final ResourceLocation STATIC_ENTITY =
-      new ResourceLocation(Constants.MOD_ID, "static_entity");
-  public static final Set<ResourceLocation> SUPPORTED_HOST_ENTITY_TYPES =
-      Set.of(GROUND_ENTITY, STATIC_ENTITY);
-
-  private EasyModelEntityTypeIds() {}
-
-  public static boolean isSupportedHostEntityType(ResourceLocation entityTypeId) {
-    return SUPPORTED_HOST_ENTITY_TYPES.contains(entityTypeId);
+  public ModelHostSettings {
+    Objects.requireNonNull(entityType, "entityType");
+    Objects.requireNonNull(movementType, "movementType");
+    Objects.requireNonNull(bodyType, "bodyType");
   }
 }

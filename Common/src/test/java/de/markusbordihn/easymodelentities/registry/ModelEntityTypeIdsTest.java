@@ -17,27 +17,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.registry;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.packs.PackType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class EasyModelEntities implements ModInitializer {
+import net.minecraft.resources.ResourceLocation;
+import org.junit.jupiter.api.Test;
 
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
+class ModelEntityTypeIdsTest {
 
-  @Override
-  public void onInitialize() {
-    log.info("Initializing {} (Fabric) ...", Constants.MOD_NAME);
-
-    Constants.GAME_DIR = FabricLoader.getInstance().getGameDir();
-    Constants.CONFIG_DIR = FabricLoader.getInstance().getConfigDir();
-
-    ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new FabricEasyModelProfileReloadListener());
+  @Test
+  void supportedHostEntityTypesAreLimitedToMvpTypes() {
+    assertTrue(
+        ModelEntityTypeIds.isSupportedHostEntityType(ModelEntityTypeIds.GROUND_ENTITY));
+    assertTrue(
+        ModelEntityTypeIds.isSupportedHostEntityType(ModelEntityTypeIds.STATIC_ENTITY));
+    assertFalse(
+        ModelEntityTypeIds.isSupportedHostEntityType(
+            new ResourceLocation("easy_model_entities", "hover_entity")));
   }
 }

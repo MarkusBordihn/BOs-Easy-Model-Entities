@@ -19,7 +19,7 @@
 
 package de.markusbordihn.easymodelentities.runtime;
 
-import de.markusbordihn.easymodelentities.profile.EasyModelBodyType;
+import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
@@ -30,7 +30,7 @@ public record EasyModelRuntimeContract(
     float width,
     float height,
     float eyeHeight,
-    EasyModelBodyType bodyType,
+    ModelBodyType bodyType,
     byte animationState) {
 
   public EasyModelRuntimeContract {

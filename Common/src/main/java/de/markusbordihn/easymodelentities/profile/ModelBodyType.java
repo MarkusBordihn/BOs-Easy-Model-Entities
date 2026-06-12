@@ -17,27 +17,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.profile;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.packs.PackType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.Locale;
 
-public class EasyModelEntities implements ModInitializer {
+public enum ModelBodyType {
+  STATIC,
+  BIPED,
+  QUADRUPED;
 
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
+  public static ModelBodyType bySerializedName(String serializedName) {
+    for (ModelBodyType bodyType : values()) {
+      if (bodyType.getSerializedName().equalsIgnoreCase(serializedName)) {
+        return bodyType;
+      }
+    }
 
-  @Override
-  public void onInitialize() {
-    log.info("Initializing {} (Fabric) ...", Constants.MOD_NAME);
+    return STATIC;
+  }
 
-    Constants.GAME_DIR = FabricLoader.getInstance().getGameDir();
-    Constants.CONFIG_DIR = FabricLoader.getInstance().getConfigDir();
+  public static ModelBodyType byWireId(int wireId) {
+    ModelBodyType[] bodyTypes = values();
+    if (wireId >= 0 && wireId < bodyTypes.length) {
+      return bodyTypes[wireId];
+    }
 
-    ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new FabricEasyModelProfileReloadListener());
+    return STATIC;
+  }
+
+  public String getSerializedName() {
+    return this.name().toLowerCase(Locale.ROOT);
+  }
+
+  public int getWireId() {
+    return this.ordinal();
   }
 }

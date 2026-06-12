@@ -19,28 +19,4 @@
 
 package de.markusbordihn.easymodelentities.profile;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.junit.jupiter.api.Test;
-
-class EasyModelBodyTypeTest {
-
-  @Test
-  void wireIdsAreStable() {
-    assertEquals(0, EasyModelBodyType.STATIC.getWireId());
-    assertEquals(1, EasyModelBodyType.BIPED.getWireId());
-    assertEquals(2, EasyModelBodyType.QUADRUPED.getWireId());
-  }
-
-  @Test
-  void unknownWireIdsFallBackToStatic() {
-    assertEquals(EasyModelBodyType.STATIC, EasyModelBodyType.byWireId(-1));
-    assertEquals(EasyModelBodyType.STATIC, EasyModelBodyType.byWireId(99));
-  }
-
-  @Test
-  void unknownSerializedNamesFallBackToStatic() {
-    assertEquals(EasyModelBodyType.STATIC, EasyModelBodyType.bySerializedName("unknown"));
-    assertEquals(EasyModelBodyType.STATIC, EasyModelBodyType.bySerializedName(""));
-  }
-}
+public record ModelDimensions(float width, float height, float eyeHeight) {}

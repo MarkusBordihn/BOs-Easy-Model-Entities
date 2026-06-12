@@ -26,11 +26,11 @@ public interface EasyModelDiagnosticsService {
 
   EasyModelDiagnosticsService EMPTY = new EasyModelDiagnosticsService() {};
 
-  default List<EasyModelDiagnostic> getDiagnostics(ResourceLocation profileId) {
+  default List<ModelDiagnostic> getDiagnostics(ResourceLocation profileId) {
     return List.of();
   }
 
-  default List<EasyModelDiagnostic> getDiagnostics() {
+  default List<ModelDiagnostic> getDiagnostics() {
     return List.of();
   }
 }

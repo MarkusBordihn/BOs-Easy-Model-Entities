@@ -19,25 +19,15 @@
 
 package de.markusbordihn.easymodelentities;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.packs.PackType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
+import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
+import net.minecraft.resources.ResourceLocation;
 
-public class EasyModelEntities implements ModInitializer {
-
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
+public class FabricEasyModelProfileReloadListener extends EasyModelProfileReloadListener
+    implements IdentifiableResourceReloadListener {
 
   @Override
-  public void onInitialize() {
-    log.info("Initializing {} (Fabric) ...", Constants.MOD_NAME);
-
-    Constants.GAME_DIR = FabricLoader.getInstance().getGameDir();
-    Constants.CONFIG_DIR = FabricLoader.getInstance().getConfigDir();
-
-    ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new FabricEasyModelProfileReloadListener());
+  public ResourceLocation getFabricId() {
+    return ID;
   }
 }

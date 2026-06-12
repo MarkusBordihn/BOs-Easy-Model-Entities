@@ -19,33 +19,77 @@
 
 package de.markusbordihn.easymodelentities.profile;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
 public record EasyModelEntityProfile(
     ResourceLocation id,
-    ResourceLocation hostEntityType,
-    String movementType,
-    EasyModelBodyType bodyType,
-    ResourceLocation renderProfileId,
-    String assetFingerprint,
-    float width,
-    float height,
-    float eyeHeight,
-    Set<ResourceLocation> traits) {
+    String schemaVersion,
+    ModelPackPair packPair,
+    ModelHostSettings host,
+    ModelClientSettings client,
+    ModelDimensions dimensions,
+    ModelMovementSettings movement,
+    ModelBehaviorSettings behavior,
+    ModelAttributes attributes,
+    Set<ResourceLocation> traits,
+    ModelProfileStatus status,
+    List<ModelProfileValidationIssue> validationIssues) {
 
   public EasyModelEntityProfile {
     Objects.requireNonNull(id, "id");
-    Objects.requireNonNull(hostEntityType, "hostEntityType");
-    Objects.requireNonNull(movementType, "movementType");
-    Objects.requireNonNull(bodyType, "bodyType");
-    Objects.requireNonNull(renderProfileId, "renderProfileId");
-    Objects.requireNonNull(assetFingerprint, "assetFingerprint");
+    Objects.requireNonNull(schemaVersion, "schemaVersion");
+    Objects.requireNonNull(packPair, "packPair");
+    Objects.requireNonNull(host, "host");
+    Objects.requireNonNull(client, "client");
+    Objects.requireNonNull(dimensions, "dimensions");
+    Objects.requireNonNull(movement, "movement");
+    Objects.requireNonNull(behavior, "behavior");
+    Objects.requireNonNull(attributes, "attributes");
     traits = Set.copyOf(Objects.requireNonNull(traits, "traits"));
+    Objects.requireNonNull(status, "status");
+    validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
   }
 
   public boolean hasTrait(ResourceLocation traitId) {
     return this.traits.contains(traitId);
+  }
+
+  public boolean isActive() {
+    return this.status == ModelProfileStatus.ACTIVE;
+  }
+
+  public ResourceLocation hostEntityType() {
+    return this.host.entityType();
+  }
+
+  public ModelMovementType movementType() {
+    return this.host.movementType();
+  }
+
+  public ModelBodyType bodyType() {
+    return this.host.bodyType();
+  }
+
+  public ResourceLocation renderProfileId() {
+    return this.client.renderProfile();
+  }
+
+  public String assetFingerprint() {
+    return this.packPair.assetFingerprint();
+  }
+
+  public float width() {
+    return this.dimensions.width();
+  }
+
+  public float height() {
+    return this.dimensions.height();
+  }
+
+  public float eyeHeight() {
+    return this.dimensions.eyeHeight();
   }
 }

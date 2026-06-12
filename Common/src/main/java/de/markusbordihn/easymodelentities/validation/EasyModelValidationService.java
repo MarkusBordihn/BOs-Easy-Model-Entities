@@ -19,7 +19,7 @@
 
 package de.markusbordihn.easymodelentities.validation;
 
-import de.markusbordihn.easymodelentities.diagnostics.EasyModelDiagnostic;
+import de.markusbordihn.easymodelentities.diagnostics.ModelDiagnostic;
 import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import java.util.List;
@@ -28,11 +28,11 @@ public interface EasyModelValidationService {
 
   EasyModelValidationService EMPTY = new EasyModelValidationService() {};
 
-  default List<EasyModelDiagnostic> validateProfile(EasyModelEntityProfile profile) {
+  default List<ModelDiagnostic> validateProfile(EasyModelEntityProfile profile) {
     return List.of();
   }
 
-  default List<EasyModelDiagnostic> validateRenderProfile(EasyModelRenderProfile renderProfile) {
+  default List<ModelDiagnostic> validateRenderProfile(EasyModelRenderProfile renderProfile) {
     return List.of();
   }
 }

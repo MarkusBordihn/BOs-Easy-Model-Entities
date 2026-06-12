@@ -17,27 +17,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.profile;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.packs.PackType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.Locale;
+import java.util.Optional;
 
-public class EasyModelEntities implements ModInitializer {
+public enum ModelBehaviorMode {
+  IDLE_ONLY,
+  AMBIENT,
+  STATIC,
+  EXTERNAL_OWNER;
 
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
+  public static Optional<ModelBehaviorMode> bySerializedName(String serializedName) {
+    if (serializedName == null) {
+      return Optional.empty();
+    }
 
-  @Override
-  public void onInitialize() {
-    log.info("Initializing {} (Fabric) ...", Constants.MOD_NAME);
+    String normalizedName = serializedName.toLowerCase(Locale.ROOT);
+    for (ModelBehaviorMode behaviorMode : values()) {
+      if (behaviorMode.getSerializedName().equals(normalizedName)) {
+        return Optional.of(behaviorMode);
+      }
+    }
 
-    Constants.GAME_DIR = FabricLoader.getInstance().getGameDir();
-    Constants.CONFIG_DIR = FabricLoader.getInstance().getConfigDir();
+    return Optional.empty();
+  }
 
-    ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new FabricEasyModelProfileReloadListener());
+  public String getSerializedName() {
+    return this.name().toLowerCase(Locale.ROOT);
+  }
+
+  public boolean defaultLookAtPlayers() {
+    return this == IDLE_ONLY || this == AMBIENT;
   }
 }

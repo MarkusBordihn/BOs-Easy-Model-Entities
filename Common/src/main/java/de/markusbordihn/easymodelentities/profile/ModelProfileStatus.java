@@ -17,27 +17,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.profile;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.packs.PackType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-public class EasyModelEntities implements ModInitializer {
-
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
-
-  @Override
-  public void onInitialize() {
-    log.info("Initializing {} (Fabric) ...", Constants.MOD_NAME);
-
-    Constants.GAME_DIR = FabricLoader.getInstance().getGameDir();
-    Constants.CONFIG_DIR = FabricLoader.getInstance().getConfigDir();
-
-    ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new FabricEasyModelProfileReloadListener());
-  }
+public enum ModelProfileStatus {
+  ACTIVE,
+  INVALID_JSON,
+  INVALID_SCHEMA_VERSION,
+  INVALID_RESOURCE_LOCATION,
+  INVALID_DIMENSIONS,
+  INVALID_HOST_ENTITY,
+  DISABLED
 }

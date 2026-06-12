@@ -17,27 +17,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.registry;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.packs.PackType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import de.markusbordihn.easymodelentities.Constants;
+import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
 
-public class EasyModelEntities implements ModInitializer {
+public final class ModelEntityTypeIds {
 
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
+  public static final ResourceLocation GROUND_ENTITY =
+      new ResourceLocation(Constants.MOD_ID, "ground_entity");
+  public static final ResourceLocation STATIC_ENTITY =
+      new ResourceLocation(Constants.MOD_ID, "static_entity");
+  public static final Set<ResourceLocation> SUPPORTED_HOST_ENTITY_TYPES =
+      Set.of(GROUND_ENTITY, STATIC_ENTITY);
 
-  @Override
-  public void onInitialize() {
-    log.info("Initializing {} (Fabric) ...", Constants.MOD_NAME);
+  private ModelEntityTypeIds() {}
 
-    Constants.GAME_DIR = FabricLoader.getInstance().getGameDir();
-    Constants.CONFIG_DIR = FabricLoader.getInstance().getConfigDir();
-
-    ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new FabricEasyModelProfileReloadListener());
+  public static boolean isSupportedHostEntityType(ResourceLocation entityTypeId) {
+    return SUPPORTED_HOST_ENTITY_TYPES.contains(entityTypeId);
   }
 }

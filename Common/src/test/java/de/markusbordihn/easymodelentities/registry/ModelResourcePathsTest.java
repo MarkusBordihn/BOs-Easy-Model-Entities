@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
-class EasyModelResourcePathsTest {
+class ModelResourcePathsTest {
 
   private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "lizard");
 
@@ -33,26 +33,26 @@ class EasyModelResourcePathsTest {
   void resourcePathsMatchSplitArchitecture() {
     assertEquals(
         "data/example/easy_model_entities/profiles/lizard.json",
-        EasyModelResourcePaths.serverProfilePath(PROFILE_ID));
+        ModelResourcePaths.serverProfilePath(PROFILE_ID));
     assertEquals(
         "assets/example/easy_model_entities/render_profiles/lizard.json",
-        EasyModelResourcePaths.renderProfilePath(PROFILE_ID));
+        ModelResourcePaths.renderProfilePath(PROFILE_ID));
     assertEquals(
         "assets/example/easy_model_entities/models/lizard.bbmodel",
-        EasyModelResourcePaths.modelPath(EasyModelResourcePaths.defaultModelId(PROFILE_ID)));
+        ModelResourcePaths.modelPath(ModelResourcePaths.defaultModelId(PROFILE_ID)));
     assertEquals(
         "assets/example/textures/entity/lizard.png",
-        EasyModelResourcePaths.texturePath(EasyModelResourcePaths.defaultTextureId(PROFILE_ID)));
+        ModelResourcePaths.texturePath(ModelResourcePaths.defaultTextureId(PROFILE_ID)));
   }
 
   @Test
   void defaultAssetIdsUseProfileNamespace() {
     assertEquals(
         new ResourceLocation("example", "easy_model_entities/models/lizard"),
-        EasyModelResourcePaths.defaultModelId(PROFILE_ID));
+        ModelResourcePaths.defaultModelId(PROFILE_ID));
     assertEquals(
         new ResourceLocation("example", "textures/entity/lizard.png"),
-        EasyModelResourcePaths.defaultTextureId(PROFILE_ID));
+        ModelResourcePaths.defaultTextureId(PROFILE_ID));
   }
 
   @Test
@@ -62,7 +62,7 @@ class EasyModelResourcePathsTest {
 
     assertEquals(
         "assets/example/easy_model_entities/models/lizard.bbmodel",
-        EasyModelResourcePaths.modelPath(modelId));
+        ModelResourcePaths.modelPath(modelId));
   }
 
   @Test
@@ -71,6 +71,6 @@ class EasyModelResourcePathsTest {
 
     assertThrows(
         IllegalArgumentException.class,
-        () -> EasyModelResourcePaths.serverProfilePath(unsafeProfileId));
+        () -> ModelResourcePaths.serverProfilePath(unsafeProfileId));
   }
 }

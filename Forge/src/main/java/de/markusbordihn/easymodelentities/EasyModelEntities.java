@@ -19,7 +19,10 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -38,8 +41,14 @@ public class EasyModelEntities {
     Constants.GAME_DIR = FMLPaths.GAMEDIR.get();
     Constants.CONFIG_DIR = FMLPaths.CONFIGDIR.get();
 
+    MinecraftForge.EVENT_BUS.addListener(this::addReloadListeners);
+
     DistExecutor.unsafeRunWhenOn(
         Dist.CLIENT,
         () -> () -> new EasyModelEntitiesClient(FMLJavaModLoadingContext.get().getModEventBus()));
+  }
+
+  private void addReloadListeners(AddReloadListenerEvent event) {
+    event.addListener(new EasyModelProfileReloadListener());
   }
 }

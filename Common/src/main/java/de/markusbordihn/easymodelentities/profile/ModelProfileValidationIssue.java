@@ -19,43 +19,14 @@
 
 package de.markusbordihn.easymodelentities.profile;
 
-import java.util.Locale;
+import java.util.Objects;
 
-public enum EasyModelBodyType {
-  STATIC,
-  BIPED,
-  QUADRUPED;
+public record ModelProfileValidationIssue(
+    ModelProfileStatus status, String field, String message) {
 
-  private final String serializedName;
-
-  EasyModelBodyType() {
-    this.serializedName = this.name().toLowerCase(Locale.ROOT);
-  }
-
-  public static EasyModelBodyType bySerializedName(String serializedName) {
-    for (EasyModelBodyType bodyType : values()) {
-      if (bodyType.serializedName.equalsIgnoreCase(serializedName)) {
-        return bodyType;
-      }
-    }
-
-    return STATIC;
-  }
-
-  public static EasyModelBodyType byWireId(int wireId) {
-    EasyModelBodyType[] bodyTypes = values();
-    if (wireId >= 0 && wireId < bodyTypes.length) {
-      return bodyTypes[wireId];
-    }
-
-    return STATIC;
-  }
-
-  public String getSerializedName() {
-    return this.serializedName;
-  }
-
-  public int getWireId() {
-    return this.ordinal();
+  public ModelProfileValidationIssue {
+    Objects.requireNonNull(status, "status");
+    Objects.requireNonNull(field, "field");
+    Objects.requireNonNull(message, "message");
   }
 }

@@ -38,7 +38,10 @@ class EasyModelServicesTest {
     ResourceLocation profileId = new ResourceLocation("example", "missing");
 
     assertFalse(EasyModelServices.profileService().hasProfile(profileId));
+    assertFalse(EasyModelServices.profileService().isActive(profileId));
+    assertTrue(EasyModelServices.profileService().getProfileIds().isEmpty());
     assertTrue(EasyModelServices.profileService().getProfiles().isEmpty());
+    assertTrue(EasyModelServices.profileService().getValidationIssues(profileId).isEmpty());
     assertFalse(EasyModelServices.renderProfileService().hasRenderProfile(profileId));
     assertTrue(EasyModelServices.renderProfileService().getRenderProfiles().isEmpty());
     assertTrue(EasyModelServices.entityFactory().createEntity(null, profileId, null).isEmpty());

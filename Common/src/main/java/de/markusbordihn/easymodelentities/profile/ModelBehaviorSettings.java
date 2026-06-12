@@ -17,25 +17,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.diagnostics;
+package de.markusbordihn.easymodelentities.profile;
 
 import java.util.Objects;
-import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
 
-public record EasyModelDiagnostic(
-    Severity severity, String code, String message, Optional<ResourceLocation> profileId) {
+public record ModelBehaviorSettings(
+    ModelBehaviorMode mode, boolean lookAtPlayers, boolean randomStroll) {
 
-  public EasyModelDiagnostic {
-    Objects.requireNonNull(severity, "severity");
-    Objects.requireNonNull(code, "code");
-    Objects.requireNonNull(message, "message");
-    Objects.requireNonNull(profileId, "profileId");
-  }
-
-  public enum Severity {
-    INFO,
-    WARNING,
-    ERROR
+  public ModelBehaviorSettings {
+    Objects.requireNonNull(mode, "mode");
   }
 }

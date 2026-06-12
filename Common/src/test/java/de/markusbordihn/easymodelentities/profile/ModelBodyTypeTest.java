@@ -17,24 +17,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.registry;
+package de.markusbordihn.easymodelentities.profile;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
-class EasyModelEntityTypeIdsTest {
+class ModelBodyTypeTest {
 
   @Test
-  void supportedHostEntityTypesAreLimitedToMvpTypes() {
-    assertTrue(
-        EasyModelEntityTypeIds.isSupportedHostEntityType(EasyModelEntityTypeIds.GROUND_ENTITY));
-    assertTrue(
-        EasyModelEntityTypeIds.isSupportedHostEntityType(EasyModelEntityTypeIds.STATIC_ENTITY));
-    assertFalse(
-        EasyModelEntityTypeIds.isSupportedHostEntityType(
-            new ResourceLocation("easy_model_entities", "hover_entity")));
+  void wireIdsAreStable() {
+    assertEquals(0, ModelBodyType.STATIC.getWireId());
+    assertEquals(1, ModelBodyType.BIPED.getWireId());
+    assertEquals(2, ModelBodyType.QUADRUPED.getWireId());
+  }
+
+  @Test
+  void unknownWireIdsFallBackToStatic() {
+    assertEquals(ModelBodyType.STATIC, ModelBodyType.byWireId(-1));
+    assertEquals(ModelBodyType.STATIC, ModelBodyType.byWireId(99));
+  }
+
+  @Test
+  void unknownSerializedNamesFallBackToStatic() {
+    assertEquals(ModelBodyType.STATIC, ModelBodyType.bySerializedName("unknown"));
+    assertEquals(ModelBodyType.STATIC, ModelBodyType.bySerializedName(""));
   }
 }
