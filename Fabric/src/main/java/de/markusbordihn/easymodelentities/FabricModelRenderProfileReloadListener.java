@@ -20,21 +20,14 @@
 package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
+import net.minecraft.resources.ResourceLocation;
 
-public class EasyModelEntitiesClient {
+public class FabricModelRenderProfileReloadListener extends ModelRenderProfileReloadListener
+    implements IdentifiableResourceReloadListener {
 
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
-
-  public EasyModelEntitiesClient(final IEventBus modEventBus) {
-    log.info("Initializing {} (Forge Client) ...", Constants.MOD_NAME);
-    modEventBus.addListener(this::registerClientReloadListeners);
-  }
-
-  private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
-    event.registerReloadListener(new ModelRenderProfileReloadListener());
+  @Override
+  public ResourceLocation getFabricId() {
+    return ID;
   }
 }

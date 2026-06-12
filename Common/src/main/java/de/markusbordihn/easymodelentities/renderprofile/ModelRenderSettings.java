@@ -17,24 +17,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.renderprofile;
 
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-public class EasyModelEntitiesClient {
-
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
-
-  public EasyModelEntitiesClient(final IEventBus modEventBus) {
-    log.info("Initializing {} (Forge Client) ...", Constants.MOD_NAME);
-    modEventBus.addListener(this::registerClientReloadListeners);
-  }
-
-  private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
-    event.registerReloadListener(new ModelRenderProfileReloadListener());
-  }
-}
+public record ModelRenderSettings(
+    float scale,
+    float shadowRadius,
+    float visibleBoundsWidth,
+    float visibleBoundsHeight,
+    float visibleBoundsOffsetX,
+    float visibleBoundsOffsetY,
+    float visibleBoundsOffsetZ) {}

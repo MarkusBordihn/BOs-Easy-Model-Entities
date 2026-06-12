@@ -20,6 +20,8 @@
 package de.markusbordihn.easymodelentities;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.minecraft.server.packs.PackType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,5 +32,7 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
   @Override
   public void onInitializeClient() {
     log.info("Initializing {} (Fabric Client) ...", Constants.MOD_NAME);
+    ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
+        .registerReloadListener(new FabricModelRenderProfileReloadListener());
   }
 }

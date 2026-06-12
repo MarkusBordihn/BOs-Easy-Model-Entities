@@ -1,0 +1,10 @@
+{
+  "schema_version": "0.1.0",
+  "id": "example:lizard",
+  "body_type": "quadruped",
+  "model": "example:easy_model_entities/models/lizard",
+  "texture": "example:textures/entity/lizard.png",
+  "animation": {
+    "mode": "external"
+  }
+}

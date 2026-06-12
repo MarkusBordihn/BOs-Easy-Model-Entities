@@ -52,8 +52,18 @@ public final class ModelResourcePaths {
     return assetPath(modelId, withExtension(modelId.getPath(), ResourceFileExtension.BBMODEL));
   }
 
+  public static ResourceLocation modelResourceLocation(ResourceLocation modelId) {
+    Objects.requireNonNull(modelId, "modelId");
+    return new ResourceLocation(
+        modelId.getNamespace(), withExtension(modelId.getPath(), ResourceFileExtension.BBMODEL));
+  }
+
   public static String texturePath(ResourceLocation textureId) {
     return assetPath(textureId, textureId.getPath());
+  }
+
+  public static ResourceLocation textureResourceLocation(ResourceLocation textureId) {
+    return Objects.requireNonNull(textureId, "textureId");
   }
 
   public static ResourceLocation defaultModelId(ResourceLocation profileId) {

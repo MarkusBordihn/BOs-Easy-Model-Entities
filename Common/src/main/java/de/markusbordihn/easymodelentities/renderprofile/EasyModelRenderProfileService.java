@@ -39,4 +39,17 @@ public interface EasyModelRenderProfileService {
   default Collection<EasyModelRenderProfile> getRenderProfiles() {
     return List.of();
   }
+
+  default Collection<ResourceLocation> getRenderProfileIds() {
+    return List.of();
+  }
+
+  default Collection<ModelRenderProfileValidationIssue> getValidationIssues(
+      ResourceLocation renderProfileId) {
+    return List.of();
+  }
+
+  default boolean isActive(ResourceLocation renderProfileId) {
+    return getRenderProfile(renderProfileId).map(EasyModelRenderProfile::isActive).orElse(false);
+  }
 }

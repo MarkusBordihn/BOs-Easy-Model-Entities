@@ -21,8 +21,7 @@ package de.markusbordihn.easymodelentities.profile;
 
 import java.util.Objects;
 
-public record ModelProfileValidationIssue(
-    ModelProfileStatus status, String field, String message) {
+public record ModelProfileValidationIssue(ModelProfileStatus status, String field, String message) {
 
   public ModelProfileValidationIssue {
     Objects.requireNonNull(status, "status");

@@ -17,24 +17,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.renderprofile;
 
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.registry.EasyModelServices;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.profiling.ProfilerFiller;
 
-public class EasyModelEntitiesClient {
+public class ModelRenderProfileReloadListener
+    extends SimplePreparableReloadListener<ModelRenderProfileManager> {
 
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
+  public static final ResourceLocation ID =
+      new ResourceLocation(Constants.MOD_ID, "render_profiles");
 
-  public EasyModelEntitiesClient(final IEventBus modEventBus) {
-    log.info("Initializing {} (Forge Client) ...", Constants.MOD_NAME);
-    modEventBus.addListener(this::registerClientReloadListeners);
+  @Override
+  protected ModelRenderProfileManager prepare(
+      ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+    return ModelRenderProfileManager.load(resourceManager);
   }
 
-  private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
-    event.registerReloadListener(new ModelRenderProfileReloadListener());
+  @Override
+  protected void apply(
+      ModelRenderProfileManager renderProfileManager,
+      ResourceManager resourceManager,
+      ProfilerFiller profilerFiller) {
+    EasyModelServices.setRenderProfileService(renderProfileManager);
   }
 }

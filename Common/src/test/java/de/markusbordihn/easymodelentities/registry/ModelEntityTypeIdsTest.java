@@ -29,10 +29,8 @@ class ModelEntityTypeIdsTest {
 
   @Test
   void supportedHostEntityTypesAreLimitedToMvpTypes() {
-    assertTrue(
-        ModelEntityTypeIds.isSupportedHostEntityType(ModelEntityTypeIds.GROUND_ENTITY));
-    assertTrue(
-        ModelEntityTypeIds.isSupportedHostEntityType(ModelEntityTypeIds.STATIC_ENTITY));
+    assertTrue(ModelEntityTypeIds.isSupportedHostEntityType(ModelEntityTypeIds.GROUND_ENTITY));
+    assertTrue(ModelEntityTypeIds.isSupportedHostEntityType(ModelEntityTypeIds.STATIC_ENTITY));
     assertFalse(
         ModelEntityTypeIds.isSupportedHostEntityType(
             new ResourceLocation("easy_model_entities", "hover_entity")));

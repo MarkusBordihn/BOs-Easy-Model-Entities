@@ -70,14 +70,11 @@ public final class EasyModelProfileParser {
   private static final String MOVEMENT_SPEED_FIELD = "movement_speed";
   private static final String FOLLOW_RANGE_FIELD = "follow_range";
   private static final String TRAITS_FIELD = "traits";
-  private static final String PACK_PAIR_PAIR_ID_FIELD =
-      PACK_PAIR_FIELD + "." + PAIR_ID_FIELD;
+  private static final String PACK_PAIR_PAIR_ID_FIELD = PACK_PAIR_FIELD + "." + PAIR_ID_FIELD;
   private static final String PACK_PAIR_ASSET_FINGERPRINT_FIELD =
       PACK_PAIR_FIELD + "." + ASSET_FINGERPRINT_FIELD;
-  private static final String HOST_ENTITY_TYPE_FIELD =
-      HOST_FIELD + "." + ENTITY_TYPE_FIELD;
-  private static final String HOST_MOVEMENT_TYPE_FIELD =
-      HOST_FIELD + "." + MOVEMENT_TYPE_FIELD;
+  private static final String HOST_ENTITY_TYPE_FIELD = HOST_FIELD + "." + ENTITY_TYPE_FIELD;
+  private static final String HOST_MOVEMENT_TYPE_FIELD = HOST_FIELD + "." + MOVEMENT_TYPE_FIELD;
   private static final String HOST_BODY_TYPE_FIELD = HOST_FIELD + "." + BODY_TYPE_FIELD;
   private static final String CLIENT_RENDER_PROFILE_FIELD =
       CLIENT_FIELD + "." + RENDER_PROFILE_FIELD;
@@ -86,10 +83,8 @@ public final class EasyModelProfileParser {
   private static final String DIMENSIONS_EYE_HEIGHT_FIELD =
       DIMENSIONS_FIELD + "." + EYE_HEIGHT_FIELD;
   private static final String MOVEMENT_SPEED_PATH = MOVEMENT_FIELD + "." + SPEED_FIELD;
-  private static final String MOVEMENT_STEP_HEIGHT_FIELD =
-      MOVEMENT_FIELD + "." + STEP_HEIGHT_FIELD;
-  private static final String MOVEMENT_GRAVITY_FIELD =
-      MOVEMENT_FIELD + "." + GRAVITY_FIELD;
+  private static final String MOVEMENT_STEP_HEIGHT_FIELD = MOVEMENT_FIELD + "." + STEP_HEIGHT_FIELD;
+  private static final String MOVEMENT_GRAVITY_FIELD = MOVEMENT_FIELD + "." + GRAVITY_FIELD;
   private static final String BEHAVIOR_MODE_FIELD = BEHAVIOR_FIELD + "." + MODE_FIELD;
   private static final String BEHAVIOR_LOOK_AT_PLAYERS_FIELD =
       BEHAVIOR_FIELD + "." + LOOK_AT_PLAYERS_FIELD;
@@ -145,8 +140,7 @@ public final class EasyModelProfileParser {
           "Unsupported schema_version " + schemaVersion + ".");
     }
 
-    ResourceLocation profileId =
-        parseRequiredResourceLocation(rawProfile.id, ID_FIELD, issues);
+    ResourceLocation profileId = parseRequiredResourceLocation(rawProfile.id, ID_FIELD, issues);
     if (profileId != null && !expectedId.equals(profileId)) {
       addIssue(
           issues,
@@ -174,8 +168,7 @@ public final class EasyModelProfileParser {
     ResourceLocation hostEntityType =
         parseRequiredResourceLocation(
             rawHost == null ? null : rawHost.entityType, HOST_ENTITY_TYPE_FIELD, issues);
-    if (hostEntityType != null
-        && !ModelEntityTypeIds.isSupportedHostEntityType(hostEntityType)) {
+    if (hostEntityType != null && !ModelEntityTypeIds.isSupportedHostEntityType(hostEntityType)) {
       addIssue(
           issues,
           ModelProfileStatus.INVALID_HOST_ENTITY,
@@ -234,16 +227,13 @@ public final class EasyModelProfileParser {
         movementType == null ? ModelMovementType.STATIC : movementType;
     RawMovement rawMovement =
         optionalObject(rawProfile.movement, MOVEMENT_FIELD, RawMovement.class, issues);
-    ModelMovementSettings movement =
-        parseMovement(rawMovement, resolvedMovementType, issues);
+    ModelMovementSettings movement = parseMovement(rawMovement, resolvedMovementType, issues);
     RawBehavior rawBehavior =
         optionalObject(rawProfile.behavior, BEHAVIOR_FIELD, RawBehavior.class, issues);
-    ModelBehaviorSettings behavior =
-        parseBehavior(rawBehavior, resolvedMovementType, issues);
+    ModelBehaviorSettings behavior = parseBehavior(rawBehavior, resolvedMovementType, issues);
     RawAttributes rawAttributes =
         optionalObject(rawProfile.attributes, ATTRIBUTES_FIELD, RawAttributes.class, issues);
-    ModelAttributes attributes =
-        parseAttributes(rawAttributes, movement, issues);
+    ModelAttributes attributes = parseAttributes(rawAttributes, movement, issues);
     Set<ResourceLocation> traits = parseTraits(rawProfile.traits, issues);
     ModelProfileStatus status = statusForIssues(issues);
 
@@ -398,10 +388,7 @@ public final class EasyModelProfileParser {
 
     if (!Float.isFinite(maxHealth) || maxHealth < 0.0f) {
       addIssue(
-          issues,
-          ModelProfileStatus.DISABLED,
-          ATTRIBUTES_MAX_HEALTH_FIELD,
-          "Invalid max health.");
+          issues, ModelProfileStatus.DISABLED, ATTRIBUTES_MAX_HEALTH_FIELD, "Invalid max health.");
     }
     if (!Float.isFinite(movementSpeed) || movementSpeed < 0.0f) {
       addIssue(
@@ -427,30 +414,19 @@ public final class EasyModelProfileParser {
       return Set.of();
     }
     if (!traitsElement.isJsonArray()) {
-      addIssue(
-          issues,
-          ModelProfileStatus.DISABLED,
-          TRAITS_FIELD,
-          "Traits must be an array.");
+      addIssue(issues, ModelProfileStatus.DISABLED, TRAITS_FIELD, "Traits must be an array.");
       return Set.of();
     }
     if (traitsElement.getAsJsonArray().size() > 64) {
       addIssue(
-          issues,
-          ModelProfileStatus.DISABLED,
-          TRAITS_FIELD,
-          "Profiles support at most 64 traits.");
+          issues, ModelProfileStatus.DISABLED, TRAITS_FIELD, "Profiles support at most 64 traits.");
       return Set.of();
     }
 
     Set<ResourceLocation> traits = new LinkedHashSet<>();
     for (JsonElement traitElement : traitsElement.getAsJsonArray()) {
       if (!traitElement.isJsonPrimitive() || !traitElement.getAsJsonPrimitive().isString()) {
-        addIssue(
-            issues,
-            ModelProfileStatus.DISABLED,
-            TRAITS_FIELD,
-            "Trait ids must be strings.");
+        addIssue(issues, ModelProfileStatus.DISABLED, TRAITS_FIELD, "Trait ids must be strings.");
         continue;
       }
       ResourceLocation traitId = ResourceLocation.tryParse(traitElement.getAsString());
@@ -527,9 +503,7 @@ public final class EasyModelProfileParser {
   }
 
   private static String requiredString(
-      JsonElement value,
-      String issueField,
-      List<ModelProfileValidationIssue> issues) {
+      JsonElement value, String issueField, List<ModelProfileValidationIssue> issues) {
     if (value == null || value.isJsonNull()) {
       addIssue(
           issues,
@@ -571,9 +545,7 @@ public final class EasyModelProfileParser {
   }
 
   private static ResourceLocation parseRequiredResourceLocation(
-      JsonElement value,
-      String issueField,
-      List<ModelProfileValidationIssue> issues) {
+      JsonElement value, String issueField, List<ModelProfileValidationIssue> issues) {
     String rawValue = requiredString(value, issueField, issues);
     if (rawValue == null) {
       return null;
@@ -591,9 +563,7 @@ public final class EasyModelProfileParser {
   }
 
   private static Float requiredFloat(
-      JsonElement value,
-      String issueField,
-      List<ModelProfileValidationIssue> issues) {
+      JsonElement value, String issueField, List<ModelProfileValidationIssue> issues) {
     if (value == null || value.isJsonNull()) {
       addIssue(
           issues,
@@ -665,9 +635,7 @@ public final class EasyModelProfileParser {
         EMPTY_VALUE,
         new ModelPackPair(EMPTY_VALUE, EMPTY_VALUE),
         new ModelHostSettings(
-            ModelEntityTypeIds.STATIC_ENTITY,
-            ModelMovementType.STATIC,
-            ModelBodyType.STATIC),
+            ModelEntityTypeIds.STATIC_ENTITY, ModelMovementType.STATIC, ModelBodyType.STATIC),
         new ModelClientSettings(expectedId),
         new ModelDimensions(0.01f, 0.01f, 0.0f),
         new ModelMovementSettings(
@@ -676,9 +644,7 @@ public final class EasyModelProfileParser {
             false),
         new ModelBehaviorSettings(ModelBehaviorMode.STATIC, false, false),
         new ModelAttributes(
-            DEFAULT_MAX_HEALTH,
-            ModelMovementType.STATIC.defaultSpeed(),
-            DEFAULT_FOLLOW_RANGE),
+            DEFAULT_MAX_HEALTH, ModelMovementType.STATIC.defaultSpeed(), DEFAULT_FOLLOW_RANGE),
         Set.of(),
         status,
         issues);
@@ -710,8 +676,7 @@ public final class EasyModelProfileParser {
     return ModelProfileStatus.INVALID_RESOURCE_LOCATION;
   }
 
-  private static ModelProfileStatus statusForIssues(
-      List<ModelProfileValidationIssue> issues) {
+  private static ModelProfileStatus statusForIssues(List<ModelProfileValidationIssue> issues) {
     return issues.stream()
         .map(ModelProfileValidationIssue::status)
         .min(Comparator.comparingInt(Enum::ordinal))

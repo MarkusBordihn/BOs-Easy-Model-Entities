@@ -20,23 +20,77 @@
 package de.markusbordihn.easymodelentities.renderprofile;
 
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.profile.ModelPackPair;
+import java.util.List;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
 public record EasyModelRenderProfile(
     ResourceLocation id,
-    String assetFingerprint,
+    String schemaVersion,
+    ModelPackPair packPair,
     ModelBodyType bodyType,
     ResourceLocation model,
     ResourceLocation texture,
-    float scale,
-    float shadowRadius) {
+    ModelRenderSettings rendering,
+    ModelAnimationSettings animation,
+    ModelRenderProfileStatus status,
+    List<ModelRenderProfileValidationIssue> validationIssues) {
 
   public EasyModelRenderProfile {
     Objects.requireNonNull(id, "id");
-    Objects.requireNonNull(assetFingerprint, "assetFingerprint");
+    Objects.requireNonNull(schemaVersion, "schemaVersion");
+    Objects.requireNonNull(packPair, "packPair");
     Objects.requireNonNull(bodyType, "bodyType");
     Objects.requireNonNull(model, "model");
     Objects.requireNonNull(texture, "texture");
+    Objects.requireNonNull(rendering, "rendering");
+    Objects.requireNonNull(animation, "animation");
+    Objects.requireNonNull(status, "status");
+    validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
+  }
+
+  public boolean isActive() {
+    return this.status == ModelRenderProfileStatus.ACTIVE;
+  }
+
+  public boolean usesFallbackModel() {
+    return this.status != ModelRenderProfileStatus.ACTIVE
+        && this.status != ModelRenderProfileStatus.MISSING_TEXTURE;
+  }
+
+  public boolean usesFallbackTexture() {
+    return this.status == ModelRenderProfileStatus.MISSING_TEXTURE;
+  }
+
+  public String pairId() {
+    return this.packPair.pairId();
+  }
+
+  public String assetFingerprint() {
+    return this.packPair.assetFingerprint();
+  }
+
+  public float scale() {
+    return this.rendering.scale();
+  }
+
+  public float shadowRadius() {
+    return this.rendering.shadowRadius();
+  }
+
+  public EasyModelRenderProfile withValidationIssues(
+      List<ModelRenderProfileValidationIssue> validationIssues) {
+    return new EasyModelRenderProfile(
+        this.id,
+        this.schemaVersion,
+        this.packPair,
+        this.bodyType,
+        this.model,
+        this.texture,
+        this.rendering,
+        this.animation,
+        ModelRenderProfileStatus.statusForIssues(validationIssues),
+        validationIssues);
   }
 }

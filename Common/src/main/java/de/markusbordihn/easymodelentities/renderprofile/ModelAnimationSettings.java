@@ -17,24 +17,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.renderprofile;
 
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.Objects;
 
-public class EasyModelEntitiesClient {
+public record ModelAnimationSettings(
+    ModelAnimationMode mode,
+    String idle,
+    String walk,
+    String run,
+    String hurt,
+    String death,
+    float swingSpeed,
+    float walkSpeedMultiplier) {
 
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
-
-  public EasyModelEntitiesClient(final IEventBus modEventBus) {
-    log.info("Initializing {} (Forge Client) ...", Constants.MOD_NAME);
-    modEventBus.addListener(this::registerClientReloadListeners);
-  }
-
-  private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
-    event.registerReloadListener(new ModelRenderProfileReloadListener());
+  public ModelAnimationSettings {
+    Objects.requireNonNull(mode, "mode");
+    Objects.requireNonNull(idle, "idle");
+    Objects.requireNonNull(walk, "walk");
+    Objects.requireNonNull(run, "run");
+    Objects.requireNonNull(hurt, "hurt");
+    Objects.requireNonNull(death, "death");
   }
 }

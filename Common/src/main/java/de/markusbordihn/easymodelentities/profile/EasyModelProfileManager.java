@@ -116,8 +116,7 @@ public final class EasyModelProfileManager implements EasyModelProfileService {
   }
 
   @Override
-  public Collection<ModelProfileValidationIssue> getValidationIssues(
-      ResourceLocation profileId) {
+  public Collection<ModelProfileValidationIssue> getValidationIssues(ResourceLocation profileId) {
     return getProfile(profileId).map(EasyModelEntityProfile::validationIssues).orElseGet(List::of);
   }
 

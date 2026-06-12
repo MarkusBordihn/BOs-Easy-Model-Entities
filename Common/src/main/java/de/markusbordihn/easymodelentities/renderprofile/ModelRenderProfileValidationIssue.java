@@ -17,24 +17,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.renderprofile;
 
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.Objects;
 
-public class EasyModelEntitiesClient {
+public record ModelRenderProfileValidationIssue(
+    ModelRenderProfileStatus status, String field, String message) {
 
-  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
-
-  public EasyModelEntitiesClient(final IEventBus modEventBus) {
-    log.info("Initializing {} (Forge Client) ...", Constants.MOD_NAME);
-    modEventBus.addListener(this::registerClientReloadListeners);
-  }
-
-  private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
-    event.registerReloadListener(new ModelRenderProfileReloadListener());
+  public ModelRenderProfileValidationIssue {
+    Objects.requireNonNull(status, "status");
+    Objects.requireNonNull(field, "field");
+    Objects.requireNonNull(message, "message");
   }
 }

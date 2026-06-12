@@ -44,8 +44,7 @@ public interface EasyModelProfileService {
     return List.of();
   }
 
-  default Collection<ModelProfileValidationIssue> getValidationIssues(
-      ResourceLocation profileId) {
+  default Collection<ModelProfileValidationIssue> getValidationIssues(ResourceLocation profileId) {
     return getProfile(profileId).map(EasyModelEntityProfile::validationIssues).orElseGet(List::of);
   }
 
