@@ -17,28 +17,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.profile;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
 
-public final class Constants {
+public record EasyModelEntityProfile(
+    ResourceLocation id,
+    ResourceLocation hostEntityType,
+    String movementType,
+    EasyModelBodyType bodyType,
+    ResourceLocation renderProfileId,
+    String assetFingerprint,
+    float width,
+    float height,
+    float eyeHeight,
+    Set<ResourceLocation> traits) {
 
-  public static final String MOD_ID = "easy_model_entities";
-  public static final String MOD_NAME = "Easy Model Entities";
-  public static final String MOD_COMMAND = "easy_model_entities";
-  public static final String SCHEMA_VERSION = "0.1.0";
-  public static final String ISSUE_REPORT =
-      "https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues";
-  public static final String LOG_NAME = "EasyModelEntities";
-  public static final String LOG_REGISTER_PREFIX = "Register " + MOD_NAME;
+  public EasyModelEntityProfile {
+    Objects.requireNonNull(id, "id");
+    Objects.requireNonNull(hostEntityType, "hostEntityType");
+    Objects.requireNonNull(movementType, "movementType");
+    Objects.requireNonNull(bodyType, "bodyType");
+    Objects.requireNonNull(renderProfileId, "renderProfileId");
+    Objects.requireNonNull(assetFingerprint, "assetFingerprint");
+    traits = Set.copyOf(Objects.requireNonNull(traits, "traits"));
+  }
 
-  public static Path GAME_DIR = Paths.get("").toAbsolutePath();
-  public static Path CONFIG_DIR = GAME_DIR.resolve("config");
-
-  private Constants() {}
-
-  public static Path getDataDir() {
-    return GAME_DIR.resolve(MOD_ID);
+  public boolean hasTrait(ResourceLocation traitId) {
+    return this.traits.contains(traitId);
   }
 }

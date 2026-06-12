@@ -17,28 +17,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.profile;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import net.minecraft.resources.ResourceLocation;
 
-public final class Constants {
+public interface EasyModelProfileService {
 
-  public static final String MOD_ID = "easy_model_entities";
-  public static final String MOD_NAME = "Easy Model Entities";
-  public static final String MOD_COMMAND = "easy_model_entities";
-  public static final String SCHEMA_VERSION = "0.1.0";
-  public static final String ISSUE_REPORT =
-      "https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues";
-  public static final String LOG_NAME = "EasyModelEntities";
-  public static final String LOG_REGISTER_PREFIX = "Register " + MOD_NAME;
+  EasyModelProfileService EMPTY = new EasyModelProfileService() {};
 
-  public static Path GAME_DIR = Paths.get("").toAbsolutePath();
-  public static Path CONFIG_DIR = GAME_DIR.resolve("config");
+  default boolean hasProfile(ResourceLocation profileId) {
+    return getProfile(profileId).isPresent();
+  }
 
-  private Constants() {}
+  default Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
+    return Optional.empty();
+  }
 
-  public static Path getDataDir() {
-    return GAME_DIR.resolve(MOD_ID);
+  default Collection<EasyModelEntityProfile> getProfiles() {
+    return List.of();
   }
 }

@@ -1,0 +1,138 @@
+/*
+ * Copyright 2026 Markus Bordihn
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+package de.markusbordihn.easymodelentities.registry;
+
+import de.markusbordihn.easymodelentities.Constants;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.util.Objects;
+import net.minecraft.resources.ResourceLocation;
+
+public final class EasyModelResourcePaths {
+
+  public static final String SERVER_PROFILE_DIRECTORY = Constants.MOD_ID + "/profiles";
+  public static final String RENDER_PROFILE_DIRECTORY = Constants.MOD_ID + "/render_profiles";
+  public static final String MODEL_DIRECTORY = Constants.MOD_ID + "/models";
+  public static final String TEXTURE_ENTITY_DIRECTORY = "textures/entity";
+  private static final String ASSETS_ROOT = "assets";
+  private static final String DATA_ROOT = "data";
+
+  private EasyModelResourcePaths() {}
+
+  public static String serverProfilePath(ResourceLocation profileId) {
+    return dataPath(
+        profileId, pathWithExtension(SERVER_PROFILE_DIRECTORY, profileId, ResourceFileExtension.JSON));
+  }
+
+  public static String renderProfilePath(ResourceLocation renderProfileId) {
+    return assetPath(
+        renderProfileId,
+        pathWithExtension(
+            RENDER_PROFILE_DIRECTORY, renderProfileId, ResourceFileExtension.JSON));
+  }
+
+  public static String modelPath(ResourceLocation modelId) {
+    return assetPath(modelId, withExtension(modelId.getPath(), ResourceFileExtension.BBMODEL));
+  }
+
+  public static String texturePath(ResourceLocation textureId) {
+    return assetPath(textureId, textureId.getPath());
+  }
+
+  public static ResourceLocation defaultModelId(ResourceLocation profileId) {
+    Objects.requireNonNull(profileId, "profileId");
+    return new ResourceLocation(
+        profileId.getNamespace(), joinPath(MODEL_DIRECTORY, profileId.getPath()));
+  }
+
+  public static ResourceLocation defaultTextureId(ResourceLocation profileId) {
+    Objects.requireNonNull(profileId, "profileId");
+    return new ResourceLocation(
+        profileId.getNamespace(),
+        joinPath(
+            TEXTURE_ENTITY_DIRECTORY,
+            withExtension(profileId.getPath(), ResourceFileExtension.PNG)));
+  }
+
+  private static String assetPath(ResourceLocation resourceLocation, String path) {
+    return namespacedPath(ASSETS_ROOT, resourceLocation, path);
+  }
+
+  private static String dataPath(ResourceLocation resourceLocation, String path) {
+    return namespacedPath(DATA_ROOT, resourceLocation, path);
+  }
+
+  private static String namespacedPath(String root, ResourceLocation resourceLocation, String path) {
+    Objects.requireNonNull(resourceLocation, "resourceLocation");
+    return joinPath(root, resourceLocation.getNamespace(), path);
+  }
+
+  private static String pathWithExtension(
+      String directory, ResourceLocation resourceLocation, ResourceFileExtension fileExtension) {
+    Objects.requireNonNull(resourceLocation, "resourceLocation");
+    return joinPath(directory, withExtension(resourceLocation.getPath(), fileExtension));
+  }
+
+  private static String withExtension(String path, ResourceFileExtension fileExtension) {
+    String extension = fileExtension.getExtension();
+    return path.endsWith(extension) ? path : path + extension;
+  }
+
+  private static String joinPath(String... paths) {
+    for (String path : paths) {
+      requireSafeRelativePath(path);
+    }
+
+    return String.join("/", paths);
+  }
+
+  private static String requireSafeRelativePath(String path) {
+    Objects.requireNonNull(path, "path");
+    if (path.isBlank()
+        || path.startsWith("/")
+        || path.contains("\\")
+        || !isSafeFileSystemPath(path)) {
+      throw new IllegalArgumentException("Invalid resource path: " + path);
+    }
+
+    return path;
+  }
+
+  private static boolean isSafeFileSystemPath(String path) {
+    Path fileSystemPath;
+    try {
+      fileSystemPath = Path.of(path);
+    } catch (InvalidPathException exception) {
+      return false;
+    }
+
+    if (fileSystemPath.isAbsolute() || !fileSystemPath.equals(fileSystemPath.normalize())) {
+      return false;
+    }
+
+    for (Path pathSegment : fileSystemPath) {
+      if (pathSegment.toString().isBlank()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+}

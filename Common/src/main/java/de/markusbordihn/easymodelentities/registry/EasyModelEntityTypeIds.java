@@ -17,28 +17,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.registry;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import de.markusbordihn.easymodelentities.Constants;
+import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
 
-public final class Constants {
+public final class EasyModelEntityTypeIds {
 
-  public static final String MOD_ID = "easy_model_entities";
-  public static final String MOD_NAME = "Easy Model Entities";
-  public static final String MOD_COMMAND = "easy_model_entities";
-  public static final String SCHEMA_VERSION = "0.1.0";
-  public static final String ISSUE_REPORT =
-      "https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues";
-  public static final String LOG_NAME = "EasyModelEntities";
-  public static final String LOG_REGISTER_PREFIX = "Register " + MOD_NAME;
+  public static final ResourceLocation GROUND_ENTITY =
+      new ResourceLocation(Constants.MOD_ID, "ground_entity");
+  public static final ResourceLocation STATIC_ENTITY =
+      new ResourceLocation(Constants.MOD_ID, "static_entity");
+  public static final Set<ResourceLocation> SUPPORTED_HOST_ENTITY_TYPES =
+      Set.of(GROUND_ENTITY, STATIC_ENTITY);
 
-  public static Path GAME_DIR = Paths.get("").toAbsolutePath();
-  public static Path CONFIG_DIR = GAME_DIR.resolve("config");
+  private EasyModelEntityTypeIds() {}
 
-  private Constants() {}
-
-  public static Path getDataDir() {
-    return GAME_DIR.resolve(MOD_ID);
+  public static boolean isSupportedHostEntityType(ResourceLocation entityTypeId) {
+    return SUPPORTED_HOST_ENTITY_TYPES.contains(entityTypeId);
   }
 }

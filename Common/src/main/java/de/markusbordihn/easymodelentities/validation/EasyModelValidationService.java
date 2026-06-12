@@ -17,28 +17,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.validation;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import de.markusbordihn.easymodelentities.diagnostics.EasyModelDiagnostic;
+import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
+import java.util.List;
 
-public final class Constants {
+public interface EasyModelValidationService {
 
-  public static final String MOD_ID = "easy_model_entities";
-  public static final String MOD_NAME = "Easy Model Entities";
-  public static final String MOD_COMMAND = "easy_model_entities";
-  public static final String SCHEMA_VERSION = "0.1.0";
-  public static final String ISSUE_REPORT =
-      "https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues";
-  public static final String LOG_NAME = "EasyModelEntities";
-  public static final String LOG_REGISTER_PREFIX = "Register " + MOD_NAME;
+  EasyModelValidationService EMPTY = new EasyModelValidationService() {};
 
-  public static Path GAME_DIR = Paths.get("").toAbsolutePath();
-  public static Path CONFIG_DIR = GAME_DIR.resolve("config");
+  default List<EasyModelDiagnostic> validateProfile(EasyModelEntityProfile profile) {
+    return List.of();
+  }
 
-  private Constants() {}
-
-  public static Path getDataDir() {
-    return GAME_DIR.resolve(MOD_ID);
+  default List<EasyModelDiagnostic> validateRenderProfile(EasyModelRenderProfile renderProfile) {
+    return List.of();
   }
 }

@@ -17,28 +17,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.runtime;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import de.markusbordihn.easymodelentities.profile.EasyModelBodyType;
+import java.util.Objects;
+import net.minecraft.resources.ResourceLocation;
 
-public final class Constants {
+public record EasyModelRuntimeContract(
+    ResourceLocation profileId,
+    ResourceLocation renderProfileId,
+    String assetFingerprint,
+    float width,
+    float height,
+    float eyeHeight,
+    EasyModelBodyType bodyType,
+    byte animationState) {
 
-  public static final String MOD_ID = "easy_model_entities";
-  public static final String MOD_NAME = "Easy Model Entities";
-  public static final String MOD_COMMAND = "easy_model_entities";
-  public static final String SCHEMA_VERSION = "0.1.0";
-  public static final String ISSUE_REPORT =
-      "https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues";
-  public static final String LOG_NAME = "EasyModelEntities";
-  public static final String LOG_REGISTER_PREFIX = "Register " + MOD_NAME;
-
-  public static Path GAME_DIR = Paths.get("").toAbsolutePath();
-  public static Path CONFIG_DIR = GAME_DIR.resolve("config");
-
-  private Constants() {}
-
-  public static Path getDataDir() {
-    return GAME_DIR.resolve(MOD_ID);
+  public EasyModelRuntimeContract {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(renderProfileId, "renderProfileId");
+    Objects.requireNonNull(assetFingerprint, "assetFingerprint");
+    Objects.requireNonNull(bodyType, "bodyType");
   }
 }

@@ -17,28 +17,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.profile;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Locale;
 
-public final class Constants {
+public enum EasyModelBodyType {
+  STATIC,
+  BIPED,
+  QUADRUPED;
 
-  public static final String MOD_ID = "easy_model_entities";
-  public static final String MOD_NAME = "Easy Model Entities";
-  public static final String MOD_COMMAND = "easy_model_entities";
-  public static final String SCHEMA_VERSION = "0.1.0";
-  public static final String ISSUE_REPORT =
-      "https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues";
-  public static final String LOG_NAME = "EasyModelEntities";
-  public static final String LOG_REGISTER_PREFIX = "Register " + MOD_NAME;
+  private final String serializedName;
 
-  public static Path GAME_DIR = Paths.get("").toAbsolutePath();
-  public static Path CONFIG_DIR = GAME_DIR.resolve("config");
+  EasyModelBodyType() {
+    this.serializedName = this.name().toLowerCase(Locale.ROOT);
+  }
 
-  private Constants() {}
+  public static EasyModelBodyType bySerializedName(String serializedName) {
+    for (EasyModelBodyType bodyType : values()) {
+      if (bodyType.serializedName.equalsIgnoreCase(serializedName)) {
+        return bodyType;
+      }
+    }
 
-  public static Path getDataDir() {
-    return GAME_DIR.resolve(MOD_ID);
+    return STATIC;
+  }
+
+  public static EasyModelBodyType byWireId(int wireId) {
+    EasyModelBodyType[] bodyTypes = values();
+    if (wireId >= 0 && wireId < bodyTypes.length) {
+      return bodyTypes[wireId];
+    }
+
+    return STATIC;
+  }
+
+  public String getSerializedName() {
+    return this.serializedName;
+  }
+
+  public int getWireId() {
+    return this.ordinal();
   }
 }

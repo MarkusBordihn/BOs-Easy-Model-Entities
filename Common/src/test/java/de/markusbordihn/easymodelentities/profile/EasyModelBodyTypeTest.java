@@ -17,28 +17,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.profile;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public final class Constants {
+import org.junit.jupiter.api.Test;
 
-  public static final String MOD_ID = "easy_model_entities";
-  public static final String MOD_NAME = "Easy Model Entities";
-  public static final String MOD_COMMAND = "easy_model_entities";
-  public static final String SCHEMA_VERSION = "0.1.0";
-  public static final String ISSUE_REPORT =
-      "https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues";
-  public static final String LOG_NAME = "EasyModelEntities";
-  public static final String LOG_REGISTER_PREFIX = "Register " + MOD_NAME;
+class EasyModelBodyTypeTest {
 
-  public static Path GAME_DIR = Paths.get("").toAbsolutePath();
-  public static Path CONFIG_DIR = GAME_DIR.resolve("config");
+  @Test
+  void wireIdsAreStable() {
+    assertEquals(0, EasyModelBodyType.STATIC.getWireId());
+    assertEquals(1, EasyModelBodyType.BIPED.getWireId());
+    assertEquals(2, EasyModelBodyType.QUADRUPED.getWireId());
+  }
 
-  private Constants() {}
+  @Test
+  void unknownWireIdsFallBackToStatic() {
+    assertEquals(EasyModelBodyType.STATIC, EasyModelBodyType.byWireId(-1));
+    assertEquals(EasyModelBodyType.STATIC, EasyModelBodyType.byWireId(99));
+  }
 
-  public static Path getDataDir() {
-    return GAME_DIR.resolve(MOD_ID);
+  @Test
+  void unknownSerializedNamesFallBackToStatic() {
+    assertEquals(EasyModelBodyType.STATIC, EasyModelBodyType.bySerializedName("unknown"));
+    assertEquals(EasyModelBodyType.STATIC, EasyModelBodyType.bySerializedName(""));
   }
 }
