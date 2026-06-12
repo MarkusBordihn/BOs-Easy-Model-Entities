@@ -18,12 +18,18 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.markusbordihn.easymodelentities.model.decoder.DecodedModel;
+import de.markusbordihn.easymodelentities.model.decoder.DecodedModelCube;
+import de.markusbordihn.easymodelentities.model.decoder.DecodedModelPart;
+import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecodeException;
+import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecoder;
 import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.profile.ModelPackPair;
@@ -38,7 +44,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.imageio.ImageIO;
 import net.minecraft.resources.ResourceLocation;
@@ -77,9 +85,14 @@ class ModelBakeServiceTest {
 
   private static ResourceManager resourceManager(String modelFixture, byte[] textureBytes)
       throws IOException {
+    return resourceManager(fixture(modelFixture), textureBytes);
+  }
+
+  private static ResourceManager resourceManager(byte[] modelBytes, byte[] textureBytes)
+      throws IOException {
     ResourceManager resourceManager = mock(ResourceManager.class);
     when(resourceManager.getResource(ModelResourcePaths.modelResourceLocation(MODEL_ID)))
-        .thenReturn(Optional.of(resource(fixture(modelFixture))));
+        .thenReturn(Optional.of(resource(modelBytes)));
     when(resourceManager.getResource(TEXTURE_ID)).thenReturn(Optional.of(resource(textureBytes)));
     return resourceManager;
   }
@@ -105,6 +118,17 @@ class ModelBakeServiceTest {
   private static Resource resource(byte[] bytes) throws IOException {
     PackResources packResources = mock(PackResources.class);
     return new Resource(packResources, () -> new ByteArrayInputStream(bytes));
+  }
+
+  private static String rotatedElementModel() {
+    return "{\"meta\":{\"format_version\":\"5.0\",\"model_format\":\"modded_entity\"},"
+        + "\"resolution\":{\"width\":64,\"height\":64},"
+        + "\"elements\":[{\"name\":\"tilted\",\"from\":[-1,0,-1],\"to\":[1,2,1],"
+        + "\"origin\":[0,1,0],\"rotation\":[90,0,0],\"uv_offset\":[2,4],"
+        + "\"type\":\"cube\",\"uuid\":\"element_tilted\"}],"
+        + "\"groups\":[{\"uuid\":\"group_root\",\"name\":\"root\","
+        + "\"origin\":[0,0,0],\"rotation\":[0,0,0]}],"
+        + "\"outliner\":[{\"uuid\":\"group_root\",\"children\":[\"element_tilted\"]}]}";
   }
 
   @Test
@@ -197,6 +221,61 @@ class ModelBakeServiceTest {
   }
 
   @Test
+  void resolvesModelResourceThroughDecoderFormats() throws Exception {
+    ResourceLocation customModelResource =
+        ModelResourcePaths.modelResourceLocation(MODEL_ID, "custom");
+    ResourceManager resourceManager = mock(ResourceManager.class);
+    when(resourceManager.getResource(customModelResource))
+        .thenReturn(Optional.of(resource(new byte[] {1})));
+    when(resourceManager.getResource(TEXTURE_ID)).thenReturn(Optional.of(resource(png(64, 64))));
+    ModelBakeService bakeService =
+        new ModelBakeService(new ModelDecoderRegistry(Map.of("custom", new StaticModelDecoder())));
+
+    ModelBakeResult result =
+        bakeService.bake(renderProfile(ModelBodyType.STATIC, "fingerprint"), resourceManager);
+
+    assertTrue(result.successful());
+    assertEquals(MODEL_ID, result.bakedModel().modelId());
+  }
+
+  @Test
+  void decodeFailureIsCached() throws Exception {
+    ModelBakeService bakeService = ModelBakeService.createDefault();
+
+    ModelBakeResult result =
+        bakeService.bake(
+            renderProfile(ModelBodyType.STATIC, "fingerprint"),
+            resourceManager("{}".getBytes(StandardCharsets.UTF_8), png(64, 64)));
+
+    assertFalse(result.successful());
+    assertEquals(ModelRenderProfileStatus.MODEL_DECODE_FAILED, status(result));
+    assertTrue(bakeService.getCached(MODEL_ID, "fingerprint").isPresent());
+  }
+
+  @Test
+  void bakesRotatedElementsAsChildParts() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.STATIC, "fingerprint"),
+                resourceManager(
+                    rotatedElementModel().getBytes(StandardCharsets.UTF_8), png(64, 64)));
+
+    BakedModelPart root = result.bakedModel().rootParts().get(0);
+    BakedModelPart rotatedPart = root.children().get(0);
+    BakedModelCube cube = rotatedPart.cubes().get(0);
+
+    assertTrue(result.successful());
+    assertEquals(0, root.cubes().size());
+    assertEquals("tilted_r1", rotatedPart.name());
+    assertArrayEquals(new float[] {0.0f, -1.0f, 0.0f}, rotatedPart.offset(), 0.01f);
+    assertArrayEquals(new float[] {-1.5708f, 0.0f, 0.0f}, rotatedPart.rotation(), 0.01f);
+    assertArrayEquals(new int[] {2, 4}, cube.uvOffset());
+    assertArrayEquals(new float[] {-1.0f, -1.0f, -1.0f}, cube.position(), 0.01f);
+    assertArrayEquals(new float[] {2.0f, 2.0f, 2.0f}, cube.dimensions(), 0.01f);
+  }
+
+  @Test
   void cacheKeyUsesNoFingerprintSentinel() {
     ModelCacheKey cacheKey = ModelBakeService.createDefault().cacheKey(MODEL_ID, "");
 
@@ -216,5 +295,35 @@ class ModelBakeServiceTest {
 
     assertEquals(0, bakeService.cachedResultCount());
     assertTrue(bakeService.getCached(MODEL_ID, "fingerprint").isEmpty());
+  }
+
+  private static final class StaticModelDecoder implements EasyModelDecoder {
+
+    @Override
+    public boolean supports(ResourceLocation modelId, Resource resource) {
+      return true;
+    }
+
+    @Override
+    public DecodedModel decode(ResourceLocation modelId, Resource resource)
+        throws EasyModelDecodeException {
+      return new DecodedModel(
+          modelId,
+          64,
+          64,
+          List.of(
+              new DecodedModelPart(
+                  "root",
+                  new float[] {0.0f, 24.0f, 0.0f},
+                  new float[] {0.0f, 0.0f, 0.0f},
+                  List.of(
+                      new DecodedModelCube(
+                          new int[] {0, 0},
+                          new float[] {-1.0f, -1.0f, -1.0f},
+                          new float[] {2.0f, 2.0f, 2.0f},
+                          false)),
+                  List.of())),
+          List.of());
+    }
   }
 }

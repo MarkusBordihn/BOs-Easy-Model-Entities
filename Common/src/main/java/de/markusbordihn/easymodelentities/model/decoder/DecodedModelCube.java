@@ -18,12 +18,41 @@
 
 package de.markusbordihn.easymodelentities.model.decoder;
 
+import java.util.Objects;
+
 public record DecodedModelCube(
-    int[] uvOffset, float[] position, float[] dimensions, boolean mirror) {
+    int[] uvOffset,
+    float[] position,
+    float[] dimensions,
+    boolean mirror,
+    String name,
+    float[] rotationOrigin,
+    float[] rotation,
+    float[] rotatedPosition) {
 
   public DecodedModelCube {
+    Objects.requireNonNull(name, "name");
     uvOffset = uvOffset.clone();
     position = position.clone();
     dimensions = dimensions.clone();
+    rotationOrigin = rotationOrigin.clone();
+    rotation = rotation.clone();
+    rotatedPosition = rotatedPosition.clone();
+  }
+
+  public DecodedModelCube(int[] uvOffset, float[] position, float[] dimensions, boolean mirror) {
+    this(
+        uvOffset,
+        position,
+        dimensions,
+        mirror,
+        "cube",
+        new float[] {0.0f, 0.0f, 0.0f},
+        new float[] {0.0f, 0.0f, 0.0f},
+        position);
+  }
+
+  public boolean hasRotation() {
+    return this.rotation[0] != 0.0f || this.rotation[1] != 0.0f || this.rotation[2] != 0.0f;
   }
 }

@@ -52,6 +52,11 @@ public final class ModelDecoderRegistry implements EasyModelDecoderRegistry {
   }
 
   @Override
+  public Optional<EasyModelDecoder> getDecoder(String format) {
+    return Optional.ofNullable(this.decodersByFormat.get(format));
+  }
+
+  @Override
   public Optional<EasyModelDecoder> findDecoder(ResourceLocation modelId, Resource resource) {
     for (EasyModelDecoder decoder : this.decodersByFormat.values()) {
       if (decoder.supports(modelId, resource)) {

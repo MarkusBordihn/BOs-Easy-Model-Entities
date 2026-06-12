@@ -73,7 +73,7 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
       EasyModelRenderProfile renderProfile =
           parseRenderProfile(renderProfileId.get(), entry.getValue());
       EasyModelRenderProfile validatedRenderProfile =
-          validateClientAssets(renderProfile, resourceManager);
+          validateClientAssets(renderProfile, resourceManager, bakeService == null);
       renderProfiles.put(
           renderProfileId.get(),
           bakeService == null
@@ -116,20 +116,29 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
 
   private static EasyModelRenderProfile validateClientAssets(
       EasyModelRenderProfile renderProfile, ResourceManager resourceManager) {
+    return validateClientAssets(renderProfile, resourceManager, true);
+  }
+
+  private static EasyModelRenderProfile validateClientAssets(
+      EasyModelRenderProfile renderProfile,
+      ResourceManager resourceManager,
+      boolean validateModelResource) {
     if (!renderProfile.isActive()) {
       return renderProfile;
     }
 
     List<ModelRenderProfileValidationIssue> issues =
         new ArrayList<>(renderProfile.validationIssues());
-    ResourceLocation modelResourceLocation =
-        ModelResourcePaths.modelResourceLocation(renderProfile.model());
-    if (resourceManager.getResource(modelResourceLocation).isEmpty()) {
-      issues.add(
-          new ModelRenderProfileValidationIssue(
-              ModelRenderProfileStatus.MISSING_MODEL,
-              "model",
-              "Missing model asset " + modelResourceLocation + "."));
+    if (validateModelResource) {
+      ResourceLocation modelResourceLocation =
+          ModelResourcePaths.modelResourceLocation(renderProfile.model());
+      if (resourceManager.getResource(modelResourceLocation).isEmpty()) {
+        issues.add(
+            new ModelRenderProfileValidationIssue(
+                ModelRenderProfileStatus.MISSING_MODEL,
+                "model",
+                "Missing model asset " + modelResourceLocation + "."));
+      }
     }
     ResourceLocation textureResourceLocation =
         ModelResourcePaths.textureResourceLocation(renderProfile.texture());

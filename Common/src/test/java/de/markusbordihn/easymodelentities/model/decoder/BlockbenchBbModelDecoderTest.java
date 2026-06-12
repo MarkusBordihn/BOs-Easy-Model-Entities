@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,7 +116,8 @@ class BlockbenchBbModelDecoderTest {
     EasyModelDecoderRegistry registry = ModelDecoderRegistry.createDefault();
 
     assertTrue(registry.hasDecoder(BlockbenchBbModelDecoder.FORMAT));
-    Optional<EasyModelDecoder> decoder = registry.findDecoder(MODEL_ID, resource("{}".getBytes()));
+    assertTrue(registry.getDecoder(BlockbenchBbModelDecoder.FORMAT).isPresent());
+    Optional<EasyModelDecoder> decoder = registry.findDecoder(MODEL_ID, resource("{}"));
 
     assertTrue(decoder.isPresent());
     assertEquals(BlockbenchBbModelDecoder.class, decoder.get().getClass());
@@ -131,6 +133,22 @@ class BlockbenchBbModelDecoderTest {
     assertEquals(7, model.boneCount());
     assertEquals(6, model.cubeCount());
     assertEquals("root", model.rootParts().get(0).name());
+  }
+
+  @Test
+  void reportsSoftTextureBudgetWarning() throws Exception {
+    DecodedModel model =
+        new BlockbenchBbModelDecoder()
+            .decode(
+                MODEL_ID,
+                resource(generatedModel(1, 0, 1).replace("\"width\":64", "\"width\":129")));
+
+    assertTrue(
+        model.validationIssues().stream()
+            .anyMatch(
+                issue ->
+                    issue.status() == ModelRenderProfileStatus.ACTIVE
+                        && "texture".equals(issue.field())));
   }
 
   @Test

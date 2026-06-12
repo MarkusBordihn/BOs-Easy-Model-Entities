@@ -53,9 +53,13 @@ public final class ModelResourcePaths {
   }
 
   public static ResourceLocation modelResourceLocation(ResourceLocation modelId) {
+    return modelResourceLocation(modelId, ResourceFileExtension.BBMODEL.getExtension());
+  }
+
+  public static ResourceLocation modelResourceLocation(ResourceLocation modelId, String extension) {
     Objects.requireNonNull(modelId, "modelId");
     return new ResourceLocation(
-        modelId.getNamespace(), withExtension(modelId.getPath(), ResourceFileExtension.BBMODEL));
+        modelId.getNamespace(), withExtension(modelId.getPath(), extension));
   }
 
   public static String texturePath(ResourceLocation textureId) {
@@ -102,7 +106,13 @@ public final class ModelResourcePaths {
   }
 
   private static String withExtension(String path, ResourceFileExtension fileExtension) {
-    String extension = fileExtension.getExtension();
+    return withExtension(path, fileExtension.getExtension());
+  }
+
+  private static String withExtension(String path, String extension) {
+    Objects.requireNonNull(extension, "extension");
+    extension = extension.startsWith(".") ? extension : "." + extension;
+    requireSafeRelativePath(extension.substring(1));
     return path.endsWith(extension) ? path : path + extension;
   }
 

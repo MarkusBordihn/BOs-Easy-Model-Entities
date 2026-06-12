@@ -250,13 +250,24 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
     float[] from = element.from();
     float[] to = element.to();
     float[] groupOrigin = group.origin();
+    float[] elementOrigin = element.origin();
     return new DecodedModelCube(
         element.uvOffset(),
         new float[] {
           -(to[0] - groupOrigin[0]), -(to[1] - groupOrigin[1]), from[2] - groupOrigin[2]
         },
         new float[] {to[0] - from[0], to[1] - from[1], to[2] - from[2]},
-        element.mirrorUv());
+        element.mirrorUv(),
+        element.name(),
+        new float[] {
+          -(elementOrigin[0] - groupOrigin[0]),
+          -(elementOrigin[1] - groupOrigin[1]),
+          elementOrigin[2] - groupOrigin[2]
+        },
+        elementRotationRadians(element.rotation()),
+        new float[] {
+          -(to[0] - elementOrigin[0]), -(to[1] - elementOrigin[1]), from[2] - elementOrigin[2]
+        });
   }
 
   private static float[] groupOffset(RawGroup group, RawGroup parentGroup) {
@@ -278,6 +289,17 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
       (float) Math.toRadians(rotation[0]),
       (float) Math.toRadians(rotation[1]),
       (float) Math.toRadians(rotation[2])
+    };
+  }
+
+  private static float[] elementRotationRadians(float[] rotation) {
+    float yRotation = (float) Math.toRadians(rotation[1]);
+    if (Math.abs(yRotation + Math.PI) < 0.01f) {
+      yRotation = (float) Math.PI;
+    }
+
+    return new float[] {
+      -(float) Math.toRadians(rotation[0]), yRotation, (float) Math.toRadians(rotation[2])
     };
   }
 

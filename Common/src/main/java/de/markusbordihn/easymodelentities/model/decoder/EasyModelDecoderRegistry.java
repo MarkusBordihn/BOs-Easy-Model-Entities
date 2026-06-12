@@ -36,6 +36,10 @@ public interface EasyModelDecoderRegistry {
     return Set.of();
   }
 
+  default Optional<EasyModelDecoder> getDecoder(String format) {
+    return Optional.empty();
+  }
+
   default Optional<EasyModelDecoder> findDecoder(ResourceLocation modelId, Resource resource) {
     return Optional.empty();
   }

@@ -35,8 +35,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -186,12 +189,69 @@ public final class ModelBakeService implements EasyModelBakeService {
   }
 
   private static BakedModelPart bakePart(DecodedModelPart decodedPart) {
+    Map<String, List<DecodedModelCube>> rotatedCubeGroups = new LinkedHashMap<>();
+    List<DecodedModelCube> directCubes = new ArrayList<>();
+    for (DecodedModelCube decodedCube : decodedPart.cubes()) {
+      if (decodedCube.hasRotation()) {
+        rotatedCubeGroups
+            .computeIfAbsent(rotationKey(decodedCube), key -> new ArrayList<>())
+            .add(decodedCube);
+      } else {
+        directCubes.add(decodedCube);
+      }
+    }
+
+    List<BakedModelPart> children = new ArrayList<>();
+    Map<String, Integer> rotatedPartIndices = new HashMap<>();
+    rotatedCubeGroups.values().stream()
+        .sorted(
+            (left, right) ->
+                Float.compare(left.get(0).rotationOrigin()[1], right.get(0).rotationOrigin()[1]))
+        .forEach(
+            rotatedCubes -> {
+              BakedModelPart rotatedPart = bakeRotatedPart(rotatedCubes, rotatedPartIndices);
+              children.add(rotatedPart);
+            });
+    children.addAll(decodedPart.children().stream().map(ModelBakeService::bakePart).toList());
+
     return new BakedModelPart(
         decodedPart.name(),
         decodedPart.offset(),
         decodedPart.rotation(),
-        decodedPart.cubes().stream().map(ModelBakeService::bakeCube).toList(),
-        decodedPart.children().stream().map(ModelBakeService::bakePart).toList());
+        directCubes.stream().map(ModelBakeService::bakeCube).toList(),
+        children);
+  }
+
+  private static String rotationKey(DecodedModelCube decodedCube) {
+    float[] rotationOrigin = decodedCube.rotationOrigin();
+    float[] rotation = decodedCube.rotation();
+    return decodedCube.name()
+        + "_"
+        + rotation[0]
+        + "_"
+        + rotation[1]
+        + "_"
+        + rotation[2]
+        + "_"
+        + rotationOrigin[0]
+        + "_"
+        + rotationOrigin[1]
+        + "_"
+        + rotationOrigin[2];
+  }
+
+  private static BakedModelPart bakeRotatedPart(
+      List<DecodedModelCube> rotatedCubes, Map<String, Integer> rotatedPartIndices) {
+    DecodedModelCube firstCube = rotatedCubes.get(0);
+    String baseName = firstCube.name();
+    int childIndex = rotatedPartIndices.getOrDefault(baseName, 0) + 1;
+    rotatedPartIndices.put(baseName, childIndex);
+    return new BakedModelPart(
+        baseName + "_r" + childIndex,
+        firstCube.rotationOrigin(),
+        firstCube.rotation(),
+        rotatedCubes.stream().map(ModelBakeService::bakeRotatedCube).toList(),
+        List.of());
   }
 
   private static BakedModelCube bakeCube(DecodedModelCube decodedCube) {
@@ -202,10 +262,47 @@ public final class ModelBakeService implements EasyModelBakeService {
         decodedCube.mirror());
   }
 
+  private static BakedModelCube bakeRotatedCube(DecodedModelCube decodedCube) {
+    return new BakedModelCube(
+        decodedCube.uvOffset(),
+        decodedCube.rotatedPosition(),
+        decodedCube.dimensions(),
+        decodedCube.mirror());
+  }
+
   private static ModelBakeResult failure(
       ModelCacheKey cacheKey, ModelRenderProfileStatus status, String field, String message) {
     return ModelBakeResult.failure(
         cacheKey, List.of(new ModelRenderProfileValidationIssue(status, field, message)));
+  }
+
+  private ModelResourceLookup findModelResource(
+      ResourceLocation modelId, ResourceManager resourceManager) {
+    boolean foundModelResource = false;
+    for (String format : this.decoderRegistry.getDecoderFormats()) {
+      Optional<EasyModelDecoder> decoder = this.decoderRegistry.getDecoder(format);
+      if (decoder.isEmpty()) {
+        continue;
+      }
+
+      ResourceLocation modelResourceLocation =
+          ModelResourcePaths.modelResourceLocation(modelId, format);
+      Optional<Resource> modelResource = resourceManager.getResource(modelResourceLocation);
+      if (modelResource.isEmpty()) {
+        continue;
+      }
+
+      foundModelResource = true;
+      if (decoder.get().supports(modelId, modelResource.get())) {
+        return new ModelResourceLookup(
+            Optional.of(
+                new ModelResourceCandidate(
+                    modelResourceLocation, decoder.get(), modelResource.get())),
+            true);
+      }
+    }
+
+    return new ModelResourceLookup(Optional.empty(), foundModelResource);
   }
 
   @Override
@@ -242,20 +339,17 @@ public final class ModelBakeService implements EasyModelBakeService {
       EasyModelRenderProfile renderProfile,
       ResourceManager resourceManager,
       ModelCacheKey cacheKey) {
-    ResourceLocation modelResourceLocation =
-        ModelResourcePaths.modelResourceLocation(renderProfile.model());
-    Optional<Resource> modelResource = resourceManager.getResource(modelResourceLocation);
-    if (modelResource.isEmpty()) {
+    ModelResourceLookup modelResourceLookup =
+        findModelResource(renderProfile.model(), resourceManager);
+    if (modelResourceLookup.candidate().isEmpty() && !modelResourceLookup.foundModelResource()) {
       return failure(
           cacheKey,
           ModelRenderProfileStatus.MISSING_MODEL,
           "model",
-          "Missing model asset " + modelResourceLocation + ".");
+          "Missing model asset for " + renderProfile.model() + ".");
     }
 
-    Optional<EasyModelDecoder> decoder =
-        this.decoderRegistry.findDecoder(renderProfile.model(), modelResource.get());
-    if (decoder.isEmpty()) {
+    if (modelResourceLookup.candidate().isEmpty()) {
       return failure(
           cacheKey,
           ModelRenderProfileStatus.MODEL_DECODE_FAILED,
@@ -263,8 +357,10 @@ public final class ModelBakeService implements EasyModelBakeService {
           "No decoder found for model " + renderProfile.model() + ".");
     }
 
+    ModelResourceCandidate modelResource = modelResourceLookup.candidate().get();
     try {
-      DecodedModel decodedModel = decoder.get().decode(renderProfile.model(), modelResource.get());
+      DecodedModel decodedModel =
+          modelResource.decoder().decode(renderProfile.model(), modelResource.resource());
       List<ModelRenderProfileValidationIssue> issues =
           new ArrayList<>(decodedModel.validationIssues());
       issues.addAll(validateTexture(renderProfile, resourceManager));
@@ -280,7 +376,16 @@ public final class ModelBakeService implements EasyModelBakeService {
           cacheKey,
           ModelRenderProfileStatus.MODEL_DECODE_FAILED,
           "model",
-          "Could not decode model " + renderProfile.model() + ": " + exception.getMessage());
+          "Could not decode model "
+              + modelResource.resourceLocation()
+              + ": "
+              + exception.getMessage());
     }
   }
+
+  private record ModelResourceCandidate(
+      ResourceLocation resourceLocation, EasyModelDecoder decoder, Resource resource) {}
+
+  private record ModelResourceLookup(
+      Optional<ModelResourceCandidate> candidate, boolean foundModelResource) {}
 }
