@@ -20,6 +20,8 @@
 package de.markusbordihn.easymodelentities.renderprofile;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
+import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -27,22 +29,29 @@ import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 public class ModelRenderProfileReloadListener
-    extends SimplePreparableReloadListener<ModelRenderProfileManager> {
+    extends SimplePreparableReloadListener<ModelRenderProfileReloadListener.ReloadState> {
 
   public static final ResourceLocation ID =
       new ResourceLocation(Constants.MOD_ID, "render_profiles");
 
   @Override
-  protected ModelRenderProfileManager prepare(
-      ResourceManager resourceManager, ProfilerFiller profilerFiller) {
-    return ModelRenderProfileManager.load(resourceManager);
+  protected ReloadState prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+    ModelDecoderRegistry decoderRegistry = ModelDecoderRegistry.createDefault();
+    ModelBakeService bakeService = new ModelBakeService(decoderRegistry);
+    return new ReloadState(
+        ModelRenderProfileManager.load(resourceManager, bakeService), decoderRegistry, bakeService);
   }
 
   @Override
   protected void apply(
-      ModelRenderProfileManager renderProfileManager,
-      ResourceManager resourceManager,
-      ProfilerFiller profilerFiller) {
-    EasyModelServices.setRenderProfileService(renderProfileManager);
+      ReloadState reloadState, ResourceManager resourceManager, ProfilerFiller profilerFiller) {
+    EasyModelServices.setDecoderRegistry(reloadState.decoderRegistry());
+    EasyModelServices.setBakeService(reloadState.bakeService());
+    EasyModelServices.setRenderProfileService(reloadState.renderProfileManager());
   }
+
+  record ReloadState(
+      ModelRenderProfileManager renderProfileManager,
+      ModelDecoderRegistry decoderRegistry,
+      ModelBakeService bakeService) {}
 }

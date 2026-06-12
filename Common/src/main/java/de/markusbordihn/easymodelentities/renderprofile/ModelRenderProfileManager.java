@@ -19,6 +19,8 @@
 
 package de.markusbordihn.easymodelentities.renderprofile;
 
+import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
+import de.markusbordihn.easymodelentities.model.bake.ModelBakeResult;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -48,6 +50,11 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
   }
 
   public static ModelRenderProfileManager load(ResourceManager resourceManager) {
+    return load(resourceManager, null);
+  }
+
+  public static ModelRenderProfileManager load(
+      ResourceManager resourceManager, EasyModelBakeService bakeService) {
     Objects.requireNonNull(resourceManager, "resourceManager");
     Map<ResourceLocation, EasyModelRenderProfile> renderProfiles = new LinkedHashMap<>();
     Map<ResourceLocation, Resource> resources =
@@ -65,8 +72,13 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
 
       EasyModelRenderProfile renderProfile =
           parseRenderProfile(renderProfileId.get(), entry.getValue());
+      EasyModelRenderProfile validatedRenderProfile =
+          validateClientAssets(renderProfile, resourceManager);
       renderProfiles.put(
-          renderProfileId.get(), validateClientAssets(renderProfile, resourceManager));
+          renderProfileId.get(),
+          bakeService == null
+              ? validatedRenderProfile
+              : validateBakedModel(validatedRenderProfile, resourceManager, bakeService));
     }
 
     return new ModelRenderProfileManager(renderProfiles);
@@ -129,6 +141,25 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
               "Missing texture asset " + textureResourceLocation + "."));
     }
 
+    return renderProfile.withValidationIssues(issues);
+  }
+
+  private static EasyModelRenderProfile validateBakedModel(
+      EasyModelRenderProfile renderProfile,
+      ResourceManager resourceManager,
+      EasyModelBakeService bakeService) {
+    if (!renderProfile.isActive()) {
+      return renderProfile;
+    }
+
+    ModelBakeResult bakeResult = bakeService.bake(renderProfile, resourceManager);
+    if (bakeResult.validationIssues().isEmpty()) {
+      return renderProfile;
+    }
+
+    List<ModelRenderProfileValidationIssue> issues =
+        new ArrayList<>(renderProfile.validationIssues());
+    issues.addAll(bakeResult.validationIssues());
     return renderProfile.withValidationIssues(issues);
   }
 

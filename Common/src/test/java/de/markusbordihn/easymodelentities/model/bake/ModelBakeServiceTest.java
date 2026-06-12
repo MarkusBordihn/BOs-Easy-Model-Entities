@@ -1,0 +1,220 @@
+/*
+ * Copyright 2026 Markus Bordihn
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ * associated documentation files (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or
+ * substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+ * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+package de.markusbordihn.easymodelentities.model.bake;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
+import de.markusbordihn.easymodelentities.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.profile.ModelPackPair;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
+import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationMode;
+import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationSettings;
+import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.renderprofile.ModelRenderSettings;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.Optional;
+import javax.imageio.ImageIO;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import org.junit.jupiter.api.Test;
+
+class ModelBakeServiceTest {
+
+  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "model");
+  private static final ResourceLocation MODEL_ID =
+      new ResourceLocation("example", "easy_model_entities/models/model");
+  private static final ResourceLocation TEXTURE_ID =
+      new ResourceLocation("example", "textures/entity/model.png");
+
+  private static ModelRenderProfileStatus status(ModelBakeResult result) {
+    return ModelRenderProfileStatus.statusForIssues(result.validationIssues());
+  }
+
+  private static EasyModelRenderProfile renderProfile(
+      ModelBodyType bodyType, String assetFingerprint) {
+    return new EasyModelRenderProfile(
+        PROFILE_ID,
+        "1.0",
+        new ModelPackPair("test", assetFingerprint),
+        bodyType,
+        MODEL_ID,
+        TEXTURE_ID,
+        new ModelRenderSettings(1.0f, 0.3f, 1.0f, 1.0f, 0.0f, 0.5f, 0.0f),
+        new ModelAnimationSettings(
+            ModelAnimationMode.AUTOMATIC, "idle", "walk", "run", "hurt", "death", 1.0f, 1.0f),
+        ModelRenderProfileStatus.ACTIVE,
+        List.of());
+  }
+
+  private static ResourceManager resourceManager(String modelFixture, byte[] textureBytes)
+      throws IOException {
+    ResourceManager resourceManager = mock(ResourceManager.class);
+    when(resourceManager.getResource(ModelResourcePaths.modelResourceLocation(MODEL_ID)))
+        .thenReturn(Optional.of(resource(fixture(modelFixture))));
+    when(resourceManager.getResource(TEXTURE_ID)).thenReturn(Optional.of(resource(textureBytes)));
+    return resourceManager;
+  }
+
+  private static byte[] fixture(String fixtureName) throws IOException {
+    try (InputStream inputStream =
+        ModelBakeServiceTest.class.getClassLoader().getResourceAsStream("bbmodel/" + fixtureName)) {
+      if (inputStream == null) {
+        throw new IOException("Missing fixture " + fixtureName);
+      }
+
+      return inputStream.readAllBytes();
+    }
+  }
+
+  private static byte[] png(int width, int height) throws IOException {
+    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    ImageIO.write(image, "png", outputStream);
+    return outputStream.toByteArray();
+  }
+
+  private static Resource resource(byte[] bytes) throws IOException {
+    PackResources packResources = mock(PackResources.class);
+    return new Resource(packResources, () -> new ByteArrayInputStream(bytes));
+  }
+
+  @Test
+  void bakesValidBipedModel() throws Exception {
+    ModelBakeService bakeService = new ModelBakeService(ModelDecoderRegistry.createDefault());
+
+    ModelBakeResult result =
+        bakeService.bake(
+            renderProfile(ModelBodyType.BIPED, "fingerprint"),
+            resourceManager("minimal_biped.bbmodel", png(64, 64)));
+
+    assertTrue(result.successful());
+    assertEquals(ModelRenderProfileStatus.ACTIVE, status(result));
+    assertEquals(7, result.bakedModel().partCount());
+    assertEquals(6, result.bakedModel().cubeCount());
+    assertTrue(bakeService.getCached(MODEL_ID, "fingerprint").isPresent());
+  }
+
+  @Test
+  void bakesValidQuadrupedModel() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.QUADRUPED, "fingerprint"),
+                resourceManager("minimal_quadruped.bbmodel", png(64, 64)));
+
+    assertTrue(result.successful());
+    assertEquals(7, result.bakedModel().partCount());
+  }
+
+  @Test
+  void bakesStaticModelWithExplicitRoot() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.STATIC, "fingerprint"),
+                resourceManager("static_explicit_root.bbmodel", png(64, 64)));
+
+    assertTrue(result.successful());
+    assertEquals("root", result.bakedModel().rootParts().get(0).name());
+  }
+
+  @Test
+  void staticModelWithoutRootCreatesVirtualRoot() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.STATIC, "fingerprint"),
+                resourceManager("static_virtual_root.bbmodel", png(64, 64)));
+
+    assertTrue(result.successful());
+    assertEquals("root", result.bakedModel().rootParts().get(0).name());
+    assertEquals("crystal", result.bakedModel().rootParts().get(0).children().get(0).name());
+  }
+
+  @Test
+  void missingRequiredBipedPartReturnsFallbackResult() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.BIPED, "fingerprint"),
+                resourceManager("missing_biped_part.bbmodel", png(64, 64)));
+
+    assertFalse(result.successful());
+    assertEquals(ModelRenderProfileStatus.CLIENT_BODY_TYPE_MISMATCH, status(result));
+  }
+
+  @Test
+  void missingRequiredQuadrupedPartReturnsFallbackResult() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.QUADRUPED, "fingerprint"),
+                resourceManager("minimal_biped.bbmodel", png(64, 64)));
+
+    assertFalse(result.successful());
+    assertEquals(ModelRenderProfileStatus.CLIENT_BODY_TYPE_MISMATCH, status(result));
+  }
+
+  @Test
+  void oversizedTextureReturnsFallbackResult() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.STATIC, "fingerprint"),
+                resourceManager("static_explicit_root.bbmodel", png(2049, 1)));
+
+    assertFalse(result.successful());
+    assertEquals(ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH, status(result));
+  }
+
+  @Test
+  void cacheKeyUsesNoFingerprintSentinel() {
+    ModelCacheKey cacheKey = ModelBakeService.createDefault().cacheKey(MODEL_ID, "");
+
+    assertEquals(ModelCacheKey.NO_FINGERPRINT, cacheKey.assetFingerprint());
+  }
+
+  @Test
+  void cacheClearsOnReloadSimulation() throws Exception {
+    ModelBakeService bakeService = ModelBakeService.createDefault();
+    bakeService.bake(
+        renderProfile(ModelBodyType.STATIC, "fingerprint"),
+        resourceManager("static_explicit_root.bbmodel", png(64, 64)));
+
+    assertEquals(1, bakeService.cachedResultCount());
+
+    bakeService.clearCache();
+
+    assertEquals(0, bakeService.cachedResultCount());
+    assertTrue(bakeService.getCached(MODEL_ID, "fingerprint").isEmpty());
+  }
+}

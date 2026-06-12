@@ -41,6 +41,7 @@ public enum ModelRenderProfileStatus {
       Collection<ModelRenderProfileValidationIssue> issues) {
     return issues.stream()
         .map(ModelRenderProfileValidationIssue::status)
+        .filter(status -> status != ACTIVE)
         .min(Comparator.comparingInt(Enum::ordinal))
         .orElse(ACTIVE);
   }

@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "modded_entity"
+  },
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "elements": [
+    {"name": "cube", "from": [-4, 0, -4], "to": [4, 8, 4], "origin": [0, 0, 0], "uv_offset": [0, 0], "type": "cube", "uuid": "element_cube"}
+  ],
+  "groups": [
+    {"uuid": "group_root", "name": "root", "origin": [0, 0, 0], "rotation": [0, 0, 0]}
+  ],
+  "outliner": [
+    {"uuid": "group_root", "children": ["element_cube"]}
+  ]
+}

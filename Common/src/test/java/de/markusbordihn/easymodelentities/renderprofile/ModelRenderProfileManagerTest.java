@@ -27,13 +27,19 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
+import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import javax.imageio.ImageIO;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.junit.jupiter.api.Test;
@@ -66,6 +72,33 @@ class ModelRenderProfileManagerTest {
     when(resourceManager.getResource(TEXTURE_RESOURCE))
         .thenReturn(hasTexture ? Optional.of(mock(Resource.class)) : Optional.empty());
     return resourceManager;
+  }
+
+  private static ResourceManager resourceManagerForBake(byte[] modelBytes, byte[] textureBytes)
+      throws IOException {
+    ResourceManager resourceManager = mock(ResourceManager.class);
+    Resource renderProfileResource =
+        resource(
+            RenderProfileTestFixtures.read(RenderProfileTestFixtures.RESOURCE_PACK_RENDER_PROFILE)
+                .getBytes(StandardCharsets.UTF_8));
+    when(resourceManager.listResources(eq(ModelResourcePaths.RENDER_PROFILE_DIRECTORY), any()))
+        .thenReturn(Map.of(RENDER_PROFILE_RESOURCE, renderProfileResource));
+    when(resourceManager.getResource(MODEL_RESOURCE)).thenReturn(Optional.of(resource(modelBytes)));
+    when(resourceManager.getResource(TEXTURE_RESOURCE))
+        .thenReturn(Optional.of(resource(textureBytes)));
+    return resourceManager;
+  }
+
+  private static byte[] png(int width, int height) throws IOException {
+    BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    ImageIO.write(image, "png", outputStream);
+    return outputStream.toByteArray();
+  }
+
+  private static Resource resource(byte[] bytes) throws IOException {
+    PackResources packResources = mock(PackResources.class);
+    return new Resource(packResources, () -> new ByteArrayInputStream(bytes));
   }
 
   @Test
@@ -110,5 +143,19 @@ class ModelRenderProfileManagerTest {
     assertEquals(ModelRenderProfileStatus.MISSING_TEXTURE, renderProfile.status());
     assertTrue(renderProfile.usesFallbackTexture());
     assertFalse(renderProfile.usesFallbackModel());
+  }
+
+  @Test
+  void decodeFailureDoesNotThrowOutOfReloadPipeline() throws IOException {
+    ModelBakeService bakeService = new ModelBakeService(ModelDecoderRegistry.createDefault());
+    ModelRenderProfileManager manager =
+        ModelRenderProfileManager.load(
+            resourceManagerForBake("{}".getBytes(StandardCharsets.UTF_8), png(64, 64)),
+            bakeService);
+
+    EasyModelRenderProfile renderProfile =
+        manager.getRenderProfile(RENDER_PROFILE_ID).orElseThrow();
+    assertEquals(ModelRenderProfileStatus.MODEL_DECODE_FAILED, renderProfile.status());
+    assertTrue(renderProfile.usesFallbackModel());
   }
 }

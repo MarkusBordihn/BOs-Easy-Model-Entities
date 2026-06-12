@@ -19,9 +19,28 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
+import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
+import java.util.Optional;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
+
 public interface EasyModelBakeService {
 
   EasyModelBakeService EMPTY = new EasyModelBakeService() {};
+
+  default ModelBakeResult bake(
+      EasyModelRenderProfile renderProfile, ResourceManager resourceManager) {
+    ModelCacheKey cacheKey = cacheKey(renderProfile.model(), renderProfile.assetFingerprint());
+    return ModelBakeResult.failure(cacheKey, renderProfile.validationIssues());
+  }
+
+  default Optional<ModelBakeResult> getCached(ResourceLocation modelId, String assetFingerprint) {
+    return Optional.empty();
+  }
+
+  default ModelCacheKey cacheKey(ResourceLocation modelId, String assetFingerprint) {
+    return new ModelCacheKey(modelId, assetFingerprint);
+  }
 
   default void clearCache() {}
 }

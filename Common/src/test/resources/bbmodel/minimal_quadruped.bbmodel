@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "modded_entity"
+  },
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "elements": [
+    {"name": "body_cube", "from": [-4, 0, -8], "to": [4, 8, 8], "origin": [0, 0, 0], "uv_offset": [0, 0], "type": "cube", "uuid": "element_body"},
+    {"name": "head_cube", "from": [-3, 0, -4], "to": [3, 6, 2], "origin": [0, 0, 0], "uv_offset": [0, 16], "type": "cube", "uuid": "element_head"},
+    {"name": "front_left_leg_cube", "from": [-1, 0, -1], "to": [1, 6, 1], "origin": [0, 0, 0], "uv_offset": [24, 0], "type": "cube", "uuid": "element_front_left_leg"},
+    {"name": "front_right_leg_cube", "from": [-1, 0, -1], "to": [1, 6, 1], "origin": [0, 0, 0], "uv_offset": [32, 0], "type": "cube", "uuid": "element_front_right_leg"},
+    {"name": "back_left_leg_cube", "from": [-1, 0, -1], "to": [1, 6, 1], "origin": [0, 0, 0], "uv_offset": [40, 0], "type": "cube", "uuid": "element_back_left_leg"},
+    {"name": "back_right_leg_cube", "from": [-1, 0, -1], "to": [1, 6, 1], "origin": [0, 0, 0], "uv_offset": [48, 0], "type": "cube", "uuid": "element_back_right_leg"}
+  ],
+  "groups": [
+    {"uuid": "group_root", "name": "root", "origin": [0, 0, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_body", "name": "body", "origin": [0, 8, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_head", "name": "head", "origin": [0, 10, -8], "rotation": [0, 0, 0]},
+    {"uuid": "group_front_left_leg", "name": "front_left_leg", "origin": [-3, 0, -5], "rotation": [0, 0, 0]},
+    {"uuid": "group_front_right_leg", "name": "front_right_leg", "origin": [3, 0, -5], "rotation": [0, 0, 0]},
+    {"uuid": "group_back_left_leg", "name": "back_left_leg", "origin": [-3, 0, 5], "rotation": [0, 0, 0]},
+    {"uuid": "group_back_right_leg", "name": "back_right_leg", "origin": [3, 0, 5], "rotation": [0, 0, 0]}
+  ],
+  "outliner": [
+    {
+      "uuid": "group_root",
+      "children": [
+        {"uuid": "group_body", "children": ["element_body"]},
+        {"uuid": "group_head", "children": ["element_head"]},
+        {"uuid": "group_front_left_leg", "children": ["element_front_left_leg"]},
+        {"uuid": "group_front_right_leg", "children": ["element_front_right_leg"]},
+        {"uuid": "group_back_left_leg", "children": ["element_back_left_leg"]},
+        {"uuid": "group_back_right_leg", "children": ["element_back_right_leg"]}
+      ]
+    }
+  ]
+}

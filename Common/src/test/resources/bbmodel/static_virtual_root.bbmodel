@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "modded_entity"
+  },
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "elements": [
+    {"name": "crystal_cube", "from": [-2, 0, -2], "to": [2, 6, 2], "origin": [0, 0, 0], "uv_offset": [0, 0], "type": "cube", "uuid": "element_crystal"}
+  ],
+  "groups": [
+    {"uuid": "group_crystal", "name": "crystal", "origin": [0, 0, 0], "rotation": [0, 0, 0]}
+  ],
+  "outliner": [
+    {"uuid": "group_crystal", "children": ["element_crystal"]}
+  ]
+}
