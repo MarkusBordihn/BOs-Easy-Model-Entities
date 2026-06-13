@@ -19,10 +19,14 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
+import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
+import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -38,14 +42,19 @@ public class EasyModelEntities {
   public EasyModelEntities() {
     log.info("Initializing {} (Forge) ...", Constants.MOD_NAME);
 
+    IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
     Constants.GAME_DIR = FMLPaths.GAMEDIR.get();
     Constants.CONFIG_DIR = FMLPaths.CONFIGDIR.get();
 
+    EasyModelEntityDataSerializers.register();
+    ForgeEasyModelEntityTypes.register(modEventBus);
+    EasyModelServices.setEntityFactory(
+        new EasyModelHostEntityFactory(ForgeEasyModelEntityTypes.INSTANCE));
+
     MinecraftForge.EVENT_BUS.addListener(this::addReloadListeners);
 
-    DistExecutor.unsafeRunWhenOn(
-        Dist.CLIENT,
-        () -> () -> new EasyModelEntitiesClient(FMLJavaModLoadingContext.get().getModEventBus()));
+    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new EasyModelEntitiesClient(modEventBus));
   }
 
   private void addReloadListeners(AddReloadListenerEvent event) {

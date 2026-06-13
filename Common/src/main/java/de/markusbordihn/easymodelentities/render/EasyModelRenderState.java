@@ -17,33 +17,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.renderprofile;
+package de.markusbordihn.easymodelentities.render;
 
-import java.util.Collection;
-import java.util.Comparator;
+import de.markusbordihn.easymodelentities.model.bake.BakedModel;
+import de.markusbordihn.easymodelentities.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationSettings;
+import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileValidationIssue;
+import java.util.List;
+import java.util.Objects;
+import net.minecraft.resources.ResourceLocation;
 
-public enum ModelRenderProfileStatus {
-  ACTIVE,
-  INVALID_JSON,
-  INVALID_SCHEMA_VERSION,
-  INVALID_RESOURCE_LOCATION,
-  INVALID_BODY_TYPE,
-  INVALID_ANIMATION_MODE,
-  INVALID_RENDER_SETTINGS,
-  MISSING_RENDER_PROFILE,
-  MISSING_MODEL,
-  MISSING_TEXTURE,
-  MODEL_DECODE_FAILED,
-  CLIENT_ASSET_MISMATCH,
-  CLIENT_BODY_TYPE_MISMATCH,
-  FALLBACK_ACTIVE;
+public record EasyModelRenderState(
+    BakedModel bakedModel,
+    ResourceLocation texture,
+    float scale,
+    float shadowRadius,
+    ModelBodyType bodyType,
+    ModelAnimationSettings animation,
+    boolean fallbackModel,
+    boolean fallbackTexture,
+    List<ModelRenderProfileValidationIssue> validationIssues) {
 
-  public static ModelRenderProfileStatus statusForIssues(
-      Collection<ModelRenderProfileValidationIssue> issues) {
-    return issues.stream()
-        .map(ModelRenderProfileValidationIssue::status)
-        .filter(status -> status != ACTIVE)
-        .min(Comparator.comparingInt(Enum::ordinal))
-        .orElse(ACTIVE);
+  public EasyModelRenderState {
+    Objects.requireNonNull(bakedModel, "bakedModel");
+    Objects.requireNonNull(texture, "texture");
+    Objects.requireNonNull(bodyType, "bodyType");
+    Objects.requireNonNull(animation, "animation");
+    validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
   }
 }

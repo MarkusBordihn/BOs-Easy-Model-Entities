@@ -1,0 +1,21 @@
+{
+  "schema_version": "0.1.0",
+  "id": "easy_model_entities_examples:training_dummy",
+  "pack_pair": {
+    "pair_id": "easy_model_entities_examples:training_dummy",
+    "asset_fingerprint": "demo-training-dummy-v2"
+  },
+  "body_type": "static",
+  "model": "easy_model_entities_examples:easy_model_entities/models/training_dummy",
+  "texture": "minecraft:textures/block/stripped_oak_log.png",
+  "rendering": {
+    "scale": 1.0,
+    "shadow_radius": 0.45,
+    "visible_bounds_width": 0.9,
+    "visible_bounds_height": 2.75,
+    "visible_bounds_offset": [0.0, 1.375, 0.0]
+  },
+  "animation": {
+    "mode": "none"
+  }
+}

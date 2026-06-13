@@ -253,9 +253,7 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
     float[] elementOrigin = element.origin();
     return new DecodedModelCube(
         element.uvOffset(),
-        new float[] {
-          -(to[0] - groupOrigin[0]), -(to[1] - groupOrigin[1]), from[2] - groupOrigin[2]
-        },
+        new float[] {from[0] - groupOrigin[0], -(to[1] - groupOrigin[1]), from[2] - groupOrigin[2]},
         new float[] {to[0] - from[0], to[1] - from[1], to[2] - from[2]},
         element.mirrorUv(),
         element.name(),
@@ -266,7 +264,7 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
         },
         elementRotationRadians(element.rotation()),
         new float[] {
-          -(to[0] - elementOrigin[0]), -(to[1] - elementOrigin[1]), from[2] - elementOrigin[2]
+          from[0] - elementOrigin[0], -(to[1] - elementOrigin[1]), from[2] - elementOrigin[2]
         });
   }
 

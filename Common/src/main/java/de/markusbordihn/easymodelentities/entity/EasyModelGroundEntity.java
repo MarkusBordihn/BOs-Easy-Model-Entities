@@ -17,25 +17,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.profile;
+package de.markusbordihn.easymodelentities.entity;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 
-import org.junit.jupiter.api.Test;
+public class EasyModelGroundEntity extends EasyModelHostEntity {
 
-class ModelBodyTypeTest {
-
-  @Test
-  void serializedNamesAreStable() {
-    assertEquals("static", ModelBodyType.STATIC.getSerializedName());
-    assertEquals("biped", ModelBodyType.BIPED.getSerializedName());
-    assertEquals("quadruped", ModelBodyType.QUADRUPED.getSerializedName());
+  public EasyModelGroundEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
+    super(entityType, level);
   }
 
-  @Test
-  void unknownSerializedNamesFallBackToStatic() {
-    assertEquals(ModelBodyType.STATIC, ModelBodyType.bySerializedName("unknown"));
-    assertEquals(ModelBodyType.STATIC, ModelBodyType.bySerializedName(""));
-    assertEquals(ModelBodyType.STATIC, ModelBodyType.bySerializedName(null));
+  @Override
+  protected void registerGoals() {
+    this.goalSelector.addGoal(
+        7,
+        new RandomStrollGoal(this, 1.0) {
+          @Override
+          public boolean canUse() {
+            return EasyModelGroundEntity.this.shouldRandomStroll() && super.canUse();
+          }
+        });
+    this.goalSelector.addGoal(
+        8,
+        new LookAtPlayerGoal(this, Player.class, 8.0f) {
+          @Override
+          public boolean canUse() {
+            return EasyModelGroundEntity.this.shouldLookAtPlayers() && super.canUse();
+          }
+        });
   }
 }

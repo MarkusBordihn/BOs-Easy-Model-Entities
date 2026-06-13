@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import de.markusbordihn.easymodelentities.diagnostics.ModelDiagnostic;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.profile.ModelPackPair;
+import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.io.StringReader;
 import java.util.List;
@@ -52,7 +53,14 @@ class ModelRenderProfileValidatorTest {
   private static EasyModelRuntimeContract runtimeContract(
       String assetFingerprint, ModelBodyType bodyType) {
     return new EasyModelRuntimeContract(
-        PROFILE_ID, RENDER_PROFILE_ID, assetFingerprint, 0.6f, 0.8f, 0.5f, bodyType, (byte) 0);
+        PROFILE_ID,
+        RENDER_PROFILE_ID,
+        assetFingerprint,
+        0.6f,
+        0.8f,
+        0.5f,
+        bodyType,
+        EasyModelAnimationState.AUTO);
   }
 
   @Test

@@ -1,0 +1,26 @@
+{
+  "schema_version": "0.1.0",
+  "id": "easy_model_entities_examples:training_dummy",
+  "pack_pair": {
+    "pair_id": "easy_model_entities_examples:training_dummy",
+    "asset_fingerprint": "demo-training-dummy-v2"
+  },
+  "host": {
+    "entity_type": "easy_model_entities:static_entity",
+    "movement_type": "static",
+    "body_type": "static"
+  },
+  "client": {
+    "render_profile": "easy_model_entities_examples:training_dummy"
+  },
+  "dimensions": {
+    "width": 0.9,
+    "height": 2.75,
+    "eye_height": 2.35
+  },
+  "behavior": {
+    "mode": "static",
+    "look_at_players": false,
+    "random_stroll": false
+  }
+}

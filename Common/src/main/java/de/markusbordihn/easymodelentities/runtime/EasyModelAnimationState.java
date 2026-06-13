@@ -17,33 +17,34 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.renderprofile;
+package de.markusbordihn.easymodelentities.runtime;
 
-import java.util.Collection;
-import java.util.Comparator;
+import java.util.Locale;
 
-public enum ModelRenderProfileStatus {
-  ACTIVE,
-  INVALID_JSON,
-  INVALID_SCHEMA_VERSION,
-  INVALID_RESOURCE_LOCATION,
-  INVALID_BODY_TYPE,
-  INVALID_ANIMATION_MODE,
-  INVALID_RENDER_SETTINGS,
-  MISSING_RENDER_PROFILE,
-  MISSING_MODEL,
-  MISSING_TEXTURE,
-  MODEL_DECODE_FAILED,
-  CLIENT_ASSET_MISMATCH,
-  CLIENT_BODY_TYPE_MISMATCH,
-  FALLBACK_ACTIVE;
+public enum EasyModelAnimationState {
+  AUTO,
+  IDLE,
+  WALK,
+  RUN,
+  HURT,
+  DEATH;
 
-  public static ModelRenderProfileStatus statusForIssues(
-      Collection<ModelRenderProfileValidationIssue> issues) {
-    return issues.stream()
-        .map(ModelRenderProfileValidationIssue::status)
-        .filter(status -> status != ACTIVE)
-        .min(Comparator.comparingInt(Enum::ordinal))
-        .orElse(ACTIVE);
+  public static EasyModelAnimationState bySerializedName(String serializedName) {
+    if (serializedName == null) {
+      return AUTO;
+    }
+
+    String normalizedName = serializedName.toLowerCase(Locale.ROOT);
+    for (EasyModelAnimationState animationState : values()) {
+      if (animationState.getSerializedName().equals(normalizedName)) {
+        return animationState;
+      }
+    }
+
+    return AUTO;
+  }
+
+  public String getSerializedName() {
+    return this.name().toLowerCase(Locale.ROOT);
   }
 }

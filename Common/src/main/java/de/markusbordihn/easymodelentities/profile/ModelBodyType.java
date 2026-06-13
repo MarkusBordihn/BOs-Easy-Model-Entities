@@ -27,6 +27,10 @@ public enum ModelBodyType {
   QUADRUPED;
 
   public static ModelBodyType bySerializedName(String serializedName) {
+    if (serializedName == null) {
+      return STATIC;
+    }
+
     for (ModelBodyType bodyType : values()) {
       if (bodyType.getSerializedName().equalsIgnoreCase(serializedName)) {
         return bodyType;
@@ -36,20 +40,7 @@ public enum ModelBodyType {
     return STATIC;
   }
 
-  public static ModelBodyType byWireId(int wireId) {
-    ModelBodyType[] bodyTypes = values();
-    if (wireId >= 0 && wireId < bodyTypes.length) {
-      return bodyTypes[wireId];
-    }
-
-    return STATIC;
-  }
-
   public String getSerializedName() {
     return this.name().toLowerCase(Locale.ROOT);
-  }
-
-  public int getWireId() {
-    return this.ordinal();
   }
 }

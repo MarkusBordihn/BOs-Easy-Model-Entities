@@ -19,6 +19,9 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
+import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
+import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.loader.api.FabricLoader;
@@ -36,6 +39,11 @@ public class EasyModelEntities implements ModInitializer {
 
     Constants.GAME_DIR = FabricLoader.getInstance().getGameDir();
     Constants.CONFIG_DIR = FabricLoader.getInstance().getConfigDir();
+
+    EasyModelEntityDataSerializers.register();
+    FabricEasyModelEntityTypes.register();
+    EasyModelServices.setEntityFactory(
+        new EasyModelHostEntityFactory(FabricEasyModelEntityTypes.INSTANCE));
 
     ResourceManagerHelper.get(PackType.SERVER_DATA)
         .registerReloadListener(new FabricEasyModelProfileReloadListener());

@@ -163,7 +163,11 @@ public final class ModelBakeService implements EasyModelBakeService {
   }
 
   private static boolean hasHardFailure(List<ModelRenderProfileValidationIssue> issues) {
-    return issues.stream().anyMatch(issue -> issue.status() != ModelRenderProfileStatus.ACTIVE);
+    return issues.stream()
+        .anyMatch(
+            issue ->
+                issue.status() != ModelRenderProfileStatus.ACTIVE
+                    && issue.status() != ModelRenderProfileStatus.MISSING_TEXTURE);
   }
 
   private static BakedModel bakeDecoded(ModelBodyType bodyType, DecodedModel decodedModel) {

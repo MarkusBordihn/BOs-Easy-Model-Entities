@@ -17,33 +17,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.renderprofile;
+package de.markusbordihn.easymodelentities.entity;
 
-import java.util.Collection;
-import java.util.Comparator;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
-public enum ModelRenderProfileStatus {
-  ACTIVE,
-  INVALID_JSON,
-  INVALID_SCHEMA_VERSION,
-  INVALID_RESOURCE_LOCATION,
-  INVALID_BODY_TYPE,
-  INVALID_ANIMATION_MODE,
-  INVALID_RENDER_SETTINGS,
-  MISSING_RENDER_PROFILE,
-  MISSING_MODEL,
-  MISSING_TEXTURE,
-  MODEL_DECODE_FAILED,
-  CLIENT_ASSET_MISMATCH,
-  CLIENT_BODY_TYPE_MISMATCH,
-  FALLBACK_ACTIVE;
+public class EasyModelStaticEntity extends EasyModelHostEntity {
 
-  public static ModelRenderProfileStatus statusForIssues(
-      Collection<ModelRenderProfileValidationIssue> issues) {
-    return issues.stream()
-        .map(ModelRenderProfileValidationIssue::status)
-        .filter(status -> status != ACTIVE)
-        .min(Comparator.comparingInt(Enum::ordinal))
-        .orElse(ACTIVE);
+  public EasyModelStaticEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
+    super(entityType, level);
+    this.setNoAi(true);
+    this.setNoGravity(true);
+  }
+
+  @Override
+  public void tick() {
+    super.tick();
+    this.getNavigation().stop();
+    this.setDeltaMovement(Vec3.ZERO);
+  }
+
+  @Override
+  protected boolean shouldRandomStroll() {
+    return false;
   }
 }

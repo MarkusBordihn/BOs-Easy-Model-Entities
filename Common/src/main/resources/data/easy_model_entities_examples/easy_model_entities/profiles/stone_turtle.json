@@ -1,0 +1,36 @@
+{
+  "schema_version": "0.1.0",
+  "id": "easy_model_entities_examples:stone_turtle",
+  "pack_pair": {
+    "pair_id": "easy_model_entities_examples:stone_turtle",
+    "asset_fingerprint": "demo-stone-turtle-v4"
+  },
+  "host": {
+    "entity_type": "easy_model_entities:ground_entity",
+    "movement_type": "ground",
+    "body_type": "quadruped"
+  },
+  "client": {
+    "render_profile": "easy_model_entities_examples:stone_turtle"
+  },
+  "dimensions": {
+    "width": 1.2,
+    "height": 0.85,
+    "eye_height": 0.6
+  },
+  "movement": {
+    "speed": 0.06,
+    "step_height": 0.4,
+    "gravity": true
+  },
+  "behavior": {
+    "mode": "ambient",
+    "look_at_players": true,
+    "random_stroll": true
+  },
+  "attributes": {
+    "max_health": 12.0,
+    "movement_speed": 0.06,
+    "follow_range": 12.0
+  }
+}

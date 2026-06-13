@@ -17,33 +17,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.renderprofile;
+package de.markusbordihn.easymodelentities.runtime;
 
-import java.util.Collection;
-import java.util.Comparator;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public enum ModelRenderProfileStatus {
-  ACTIVE,
-  INVALID_JSON,
-  INVALID_SCHEMA_VERSION,
-  INVALID_RESOURCE_LOCATION,
-  INVALID_BODY_TYPE,
-  INVALID_ANIMATION_MODE,
-  INVALID_RENDER_SETTINGS,
-  MISSING_RENDER_PROFILE,
-  MISSING_MODEL,
-  MISSING_TEXTURE,
-  MODEL_DECODE_FAILED,
-  CLIENT_ASSET_MISMATCH,
-  CLIENT_BODY_TYPE_MISMATCH,
-  FALLBACK_ACTIVE;
+import org.junit.jupiter.api.Test;
 
-  public static ModelRenderProfileStatus statusForIssues(
-      Collection<ModelRenderProfileValidationIssue> issues) {
-    return issues.stream()
-        .map(ModelRenderProfileValidationIssue::status)
-        .filter(status -> status != ACTIVE)
-        .min(Comparator.comparingInt(Enum::ordinal))
-        .orElse(ACTIVE);
+class EasyModelAnimationStateTest {
+
+  @Test
+  void serializedNamesAreStable() {
+    assertEquals("auto", EasyModelAnimationState.AUTO.getSerializedName());
+    assertEquals("idle", EasyModelAnimationState.IDLE.getSerializedName());
+    assertEquals("walk", EasyModelAnimationState.WALK.getSerializedName());
+    assertEquals("run", EasyModelAnimationState.RUN.getSerializedName());
+    assertEquals("hurt", EasyModelAnimationState.HURT.getSerializedName());
+    assertEquals("death", EasyModelAnimationState.DEATH.getSerializedName());
+  }
+
+  @Test
+  void unknownSerializedNamesFallBackToAuto() {
+    assertEquals(EasyModelAnimationState.AUTO, EasyModelAnimationState.bySerializedName("unknown"));
+    assertEquals(EasyModelAnimationState.AUTO, EasyModelAnimationState.bySerializedName(""));
+    assertEquals(EasyModelAnimationState.AUTO, EasyModelAnimationState.bySerializedName(null));
   }
 }

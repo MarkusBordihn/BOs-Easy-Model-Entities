@@ -21,11 +21,17 @@ package de.markusbordihn.easymodelentities.model.bake;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 
-final class ModelFallbackFactory {
+public final class ModelFallbackFactory {
 
   private ModelFallbackFactory() {}
 
-  static BakedModel createFallback(ResourceLocation modelId) {
+  public static BakedModel createFallback(ResourceLocation modelId) {
+    return createFallback(modelId, 0.6f, 1.8f);
+  }
+
+  public static BakedModel createFallback(ResourceLocation modelId, float width, float height) {
+    float cubeWidth = Math.max(width, 0.1f) * 16.0f;
+    float cubeHeight = Math.max(height, 0.1f) * 16.0f;
     return new BakedModel(
         modelId,
         16,
@@ -38,8 +44,8 @@ final class ModelFallbackFactory {
                 List.of(
                     new BakedModelCube(
                         new int[] {0, 0},
-                        new float[] {-4.0f, -8.0f, -4.0f},
-                        new float[] {8.0f, 8.0f, 8.0f},
+                        new float[] {-cubeWidth / 2.0f, -cubeHeight, -cubeWidth / 2.0f},
+                        new float[] {cubeWidth, cubeHeight, cubeWidth},
                         false)),
                 List.of())));
   }

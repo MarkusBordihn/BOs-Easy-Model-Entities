@@ -19,6 +19,8 @@
 
 package de.markusbordihn.easymodelentities.runtime;
 
+import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
@@ -31,12 +33,54 @@ public record EasyModelRuntimeContract(
     float height,
     float eyeHeight,
     ModelBodyType bodyType,
-    byte animationState) {
+    EasyModelAnimationState animationState) {
 
   public EasyModelRuntimeContract {
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(renderProfileId, "renderProfileId");
     Objects.requireNonNull(assetFingerprint, "assetFingerprint");
     Objects.requireNonNull(bodyType, "bodyType");
+    Objects.requireNonNull(animationState, "animationState");
+  }
+
+  public static EasyModelRuntimeContract fromProfile(EasyModelEntityProfile profile) {
+    return fromProfile(profile, EasyModelAnimationState.AUTO);
+  }
+
+  public static EasyModelRuntimeContract fromProfile(
+      EasyModelEntityProfile profile, EasyModelAnimationState animationState) {
+    Objects.requireNonNull(profile, "profile");
+    return new EasyModelRuntimeContract(
+        profile.id(),
+        profile.renderProfileId(),
+        profile.assetFingerprint(),
+        profile.width(),
+        profile.height(),
+        profile.eyeHeight(),
+        profile.bodyType(),
+        animationState);
+  }
+
+  public static EasyModelRuntimeContract fallback(ResourceLocation profileId) {
+    return fallback(profileId, EasyModelAnimationState.AUTO);
+  }
+
+  public static EasyModelRuntimeContract fallback(String profileId) {
+    return fallback(ResourceLocation.tryParse(Objects.requireNonNullElse(profileId, "")));
+  }
+
+  public static EasyModelRuntimeContract fallback(
+      ResourceLocation profileId, EasyModelAnimationState animationState) {
+    ResourceLocation fallbackProfileId =
+        profileId == null ? new ResourceLocation(Constants.MOD_ID, "missing") : profileId;
+    return new EasyModelRuntimeContract(
+        fallbackProfileId,
+        fallbackProfileId,
+        "",
+        0.6f,
+        1.8f,
+        1.62f,
+        ModelBodyType.STATIC,
+        animationState);
   }
 }
