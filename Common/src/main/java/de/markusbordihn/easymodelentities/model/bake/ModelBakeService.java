@@ -151,6 +151,24 @@ public final class ModelBakeService implements EasyModelBakeService {
               "front_right_leg",
               "back_left_leg",
               "back_right_leg");
+      case AQUATIC -> List.of("root", "body");
+      case WINGED -> List.of("root", "body", "head", "left_wing", "right_wing");
+      case WINGED_HUMANOID ->
+          List.of("root", "body", "head", "left_arm", "right_arm", "left_wing", "right_wing");
+      case ARTHROPOD ->
+          List.of(
+              "root",
+              "body",
+              "head",
+              "front_left_leg",
+              "front_right_leg",
+              "middle_front_left_leg",
+              "middle_front_right_leg",
+              "middle_back_left_leg",
+              "middle_back_right_leg",
+              "back_left_leg",
+              "back_right_leg");
+      case CUBOID, FLOATING -> List.of("root", "body");
       case STATIC -> List.of();
     };
   }
@@ -261,6 +279,7 @@ public final class ModelBakeService implements EasyModelBakeService {
   private static BakedModelCube bakeCube(DecodedModelCube decodedCube) {
     return new BakedModelCube(
         decodedCube.uvOffset(),
+        decodedCube.faceUvs(),
         decodedCube.position(),
         decodedCube.dimensions(),
         decodedCube.mirror());
@@ -269,6 +288,7 @@ public final class ModelBakeService implements EasyModelBakeService {
   private static BakedModelCube bakeRotatedCube(DecodedModelCube decodedCube) {
     return new BakedModelCube(
         decodedCube.uvOffset(),
+        decodedCube.faceUvs(),
         decodedCube.rotatedPosition(),
         decodedCube.dimensions(),
         decodedCube.mirror());
@@ -314,7 +334,7 @@ public final class ModelBakeService implements EasyModelBakeService {
       EasyModelRenderProfile renderProfile, ResourceManager resourceManager) {
     Objects.requireNonNull(renderProfile, "renderProfile");
     Objects.requireNonNull(resourceManager, "resourceManager");
-    ModelCacheKey cacheKey = cacheKey(renderProfile.model(), renderProfile.assetFingerprint());
+    ModelCacheKey cacheKey = cacheKey(renderProfile.model(), renderProfile.version());
     Optional<ModelBakeResult> cachedResult = this.cache.get(cacheKey);
     if (cachedResult.isPresent()) {
       return cachedResult.get();

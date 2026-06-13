@@ -30,6 +30,12 @@ class ModelBodyTypeTest {
     assertEquals("static", ModelBodyType.STATIC.getSerializedName());
     assertEquals("biped", ModelBodyType.BIPED.getSerializedName());
     assertEquals("quadruped", ModelBodyType.QUADRUPED.getSerializedName());
+    assertEquals("aquatic", ModelBodyType.AQUATIC.getSerializedName());
+    assertEquals("winged", ModelBodyType.WINGED.getSerializedName());
+    assertEquals("winged_humanoid", ModelBodyType.WINGED_HUMANOID.getSerializedName());
+    assertEquals("arthropod", ModelBodyType.ARTHROPOD.getSerializedName());
+    assertEquals("cuboid", ModelBodyType.CUBOID.getSerializedName());
+    assertEquals("floating", ModelBodyType.FLOATING.getSerializedName());
   }
 
   @Test

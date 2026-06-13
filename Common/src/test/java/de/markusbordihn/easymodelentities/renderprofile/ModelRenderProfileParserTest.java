@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import java.io.StringReader;
 import net.minecraft.resources.ResourceLocation;
@@ -33,58 +34,115 @@ class ModelRenderProfileParserTest {
   private static final ResourceLocation RENDER_PROFILE_ID =
       new ResourceLocation("example", "lizard");
 
+  private static EasyModelRenderProfile parse(String json) {
+    return ModelRenderProfileParser.parse(RENDER_PROFILE_ID, new StringReader(json));
+  }
+
+  private static void assertPresetBodyType(String presetType, ModelBodyType bodyType) {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"" + presetType + "\"}");
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(bodyType, renderProfile.bodyType());
+    assertEquals(ModelAnimationMode.AUTOMATIC, renderProfile.animation().mode());
+  }
+
   @Test
-  void parsesValidRenderProfile() {
-    EasyModelRenderProfile renderProfile =
-        RenderProfileTestFixtures.parse(RenderProfileTestFixtures.RESOURCE_PACK_RENDER_PROFILE);
+  void parsesPresetRenderProfileWithDefaults() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"humanoid_wandering\"}");
 
     assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
     assertTrue(renderProfile.isActive());
     assertEquals(RENDER_PROFILE_ID, renderProfile.id());
-    assertEquals("0.1.0", renderProfile.schemaVersion());
-    assertEquals("2cbb2c6e-4f28-4f1d-b9f7-0d8c1f63d24a", renderProfile.pairId());
-    assertEquals("sha256:abc123", renderProfile.assetFingerprint());
-    assertEquals(ModelBodyType.QUADRUPED, renderProfile.bodyType());
+    assertEquals(Constants.SCHEMA_VERSION, renderProfile.schemaVersion());
+    assertEquals("", renderProfile.version());
+    assertEquals(ModelBodyType.BIPED, renderProfile.bodyType());
     assertEquals(
         new ResourceLocation("example", "easy_model_entities/models/lizard"),
         renderProfile.model());
     assertEquals(
         new ResourceLocation("example", "textures/entity/lizard.png"), renderProfile.texture());
+    assertEquals(1.0f, renderProfile.scale());
+    assertEquals(0.3f, renderProfile.shadowRadius());
+    assertEquals(ModelAnimationMode.AUTOMATIC, renderProfile.animation().mode());
+  }
+
+  @Test
+  void parsesStillPresetWithIdleAnimationDefaults() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"humanoid_still\"}");
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(ModelBodyType.BIPED, renderProfile.bodyType());
+    assertEquals(ModelAnimationMode.AUTOMATIC, renderProfile.animation().mode());
+  }
+
+  @Test
+  void parsesStaticPresetWithoutAnimation() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"static\"}");
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(ModelBodyType.STATIC, renderProfile.bodyType());
+    assertEquals(ModelAnimationMode.NONE, renderProfile.animation().mode());
+  }
+
+  @Test
+  void parsesVanillaStylePresetFamilies() {
+    assertPresetBodyType("aquatic_swimming", ModelBodyType.AQUATIC);
+    assertPresetBodyType("winged_wandering", ModelBodyType.WINGED);
+    assertPresetBodyType("winged_humanoid_wandering", ModelBodyType.WINGED_HUMANOID);
+    assertPresetBodyType("arthropod_wandering", ModelBodyType.ARTHROPOD);
+    assertPresetBodyType("cuboid_hopping", ModelBodyType.CUBOID);
+    assertPresetBodyType("floating_still", ModelBodyType.FLOATING);
+    assertPresetBodyType("quadruped_still", ModelBodyType.QUADRUPED);
+  }
+
+  @Test
+  void parsesCustomRenderProfileWithRequiredBodyType() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            """
+            {
+              "preset_type": "custom",
+              "version": "v1",
+              "body_type": "quadruped"
+            }
+            """);
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals("v1", renderProfile.version());
+    assertEquals(ModelBodyType.QUADRUPED, renderProfile.bodyType());
+    assertEquals(ModelAnimationMode.NONE, renderProfile.animation().mode());
+  }
+
+  @Test
+  void explicitFieldsOverridePresetDefaults() {
+    EasyModelRenderProfile renderProfile =
+        RenderProfileTestFixtures.parse(RenderProfileTestFixtures.RESOURCE_PACK_RENDER_PROFILE);
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals("v1", renderProfile.version());
+    assertEquals(ModelBodyType.QUADRUPED, renderProfile.bodyType());
     assertEquals(1.25f, renderProfile.scale());
     assertEquals(0.4f, renderProfile.shadowRadius());
-    assertEquals(ModelAnimationMode.AUTOMATIC, renderProfile.animation().mode());
+    assertEquals(1.2f, renderProfile.rendering().visibleBoundsWidth());
+    assertEquals(1.0f, renderProfile.rendering().visibleBoundsHeight());
+    assertEquals(0.5f, renderProfile.rendering().visibleBoundsOffsetY());
     assertEquals(1.1f, renderProfile.animation().swingSpeed());
     assertEquals(0.9f, renderProfile.animation().walkSpeedMultiplier());
   }
 
   @Test
-  void parsesVisibleBounds() {
-    EasyModelRenderProfile renderProfile =
-        RenderProfileTestFixtures.parse(RenderProfileTestFixtures.RESOURCE_PACK_RENDER_PROFILE);
+  void customRenderProfileRequiresBodyType() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"custom\"}");
 
-    assertEquals(1.2f, renderProfile.rendering().visibleBoundsWidth());
-    assertEquals(1.0f, renderProfile.rendering().visibleBoundsHeight());
-    assertEquals(0.0f, renderProfile.rendering().visibleBoundsOffsetX());
-    assertEquals(0.5f, renderProfile.rendering().visibleBoundsOffsetY());
-    assertEquals(0.0f, renderProfile.rendering().visibleBoundsOffsetZ());
+    assertEquals(ModelRenderProfileStatus.INVALID_BODY_TYPE, renderProfile.status());
+    assertFalse(renderProfile.isActive());
   }
 
   @Test
-  void defaultsOptionalSettings() {
-    EasyModelRenderProfile renderProfile =
-        RenderProfileTestFixtures.parse("renderprofile/minimal_lizard.json");
+  void rejectsMissingPresetType() {
+    EasyModelRenderProfile renderProfile = parse("{}");
 
-    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
-    assertEquals("", renderProfile.pairId());
-    assertEquals("", renderProfile.assetFingerprint());
-    assertEquals(1.0f, renderProfile.scale());
-    assertEquals(0.3f, renderProfile.shadowRadius());
-    assertEquals(1.0f, renderProfile.rendering().visibleBoundsWidth());
-    assertEquals(1.0f, renderProfile.rendering().visibleBoundsHeight());
-    assertEquals(0.5f, renderProfile.rendering().visibleBoundsOffsetY());
-    assertEquals(ModelAnimationMode.AUTOMATIC, renderProfile.animation().mode());
-    assertEquals(1.0f, renderProfile.animation().swingSpeed());
-    assertEquals(1.0f, renderProfile.animation().walkSpeedMultiplier());
+    assertEquals(ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, renderProfile.status());
   }
 
   @Test
@@ -94,22 +152,6 @@ class ModelRenderProfileParserTest {
 
     assertEquals(ModelRenderProfileStatus.INVALID_SCHEMA_VERSION, renderProfile.status());
     assertFalse(renderProfile.isActive());
-  }
-
-  @Test
-  void rejectsInvalidRenderProfileId() {
-    EasyModelRenderProfile renderProfile =
-        RenderProfileTestFixtures.parse("renderprofile/invalid_id.json");
-
-    assertEquals(ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION, renderProfile.status());
-  }
-
-  @Test
-  void rejectsPathIdMismatch() {
-    EasyModelRenderProfile renderProfile =
-        RenderProfileTestFixtures.parse("renderprofile/path_id_mismatch.json");
-
-    assertEquals(ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION, renderProfile.status());
   }
 
   @Test

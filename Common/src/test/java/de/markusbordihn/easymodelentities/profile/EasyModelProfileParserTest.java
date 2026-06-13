@@ -23,10 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.io.StringReader;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
@@ -38,195 +37,243 @@ class EasyModelProfileParserTest {
     return EasyModelProfileParser.parse(PROFILE_ID, new StringReader(json));
   }
 
-  private static String validProfileJson() {
-    return """
-        {
-          "schema_version": "0.1.0",
-          "id": "example:lizard",
-          "pack_pair": {
-            "pair_id": "2cbb2c6e-4f28-4f1d-b9f7-0d8c1f63d24a",
-            "asset_fingerprint": "sha256:abc123"
-          },
-          "host": {
-            "entity_type": "easy_model_entities:ground_entity",
-            "movement_type": "ground",
-            "body_type": "quadruped"
-          },
-          "client": {
-            "render_profile": "example:lizard"
-          },
-          "dimensions": {
-            "width": 0.6,
-            "height": 0.8,
-            "eye_height": 0.5
-          },
-          "movement": {
-            "speed": 0.22,
-            "step_height": 0.6,
-            "gravity": true
-          },
-          "behavior": {
-            "mode": "idle_only",
-            "look_at_players": true,
-            "random_stroll": false
-          },
-          "attributes": {
-            "max_health": 10.0,
-            "movement_speed": 0.22,
-            "follow_range": 16.0
-          },
-          "traits": ["easy_model_entities:living"]
-        }
-        """;
-  }
-
-  @Test
-  void parsesValidGroundQuadrupedProfile() {
-    EasyModelEntityProfile profile = parse(validProfileJson());
+  private static void assertPresetDefaults(
+      String presetType, ResourceLocation entityType, ModelBodyType bodyType) {
+    EasyModelEntityProfile profile = parse("{\"preset_type\":\"" + presetType + "\"}");
 
     assertEquals(ModelProfileStatus.ACTIVE, profile.status());
-    assertTrue(profile.isActive());
-    assertEquals(PROFILE_ID, profile.id());
-    assertEquals(ModelEntityTypeIds.GROUND_ENTITY, profile.hostEntityType());
-    assertEquals(ModelMovementType.GROUND, profile.movementType());
-    assertEquals(ModelBodyType.QUADRUPED, profile.bodyType());
-    assertEquals(new ResourceLocation("example", "lizard"), profile.renderProfileId());
-    assertEquals("sha256:abc123", profile.assetFingerprint());
-    assertEquals(0.6f, profile.width());
-    assertEquals(0.8f, profile.height());
-    assertEquals(0.5f, profile.eyeHeight());
-    assertTrue(profile.hasTrait(new ResourceLocation("easy_model_entities", "living")));
+    assertEquals(entityType, profile.hostEntityType());
+    assertEquals(bodyType, profile.bodyType());
   }
 
   @Test
-  void parsesValidBipedProfile() {
-    EasyModelEntityProfile profile =
-        parse(
-            validProfileJson().replace("\"body_type\": \"quadruped\"", "\"body_type\": \"biped\""));
-
-    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
-    assertEquals(ModelBodyType.BIPED, profile.bodyType());
-  }
-
-  @Test
-  void parsesValidStaticProfileWithDefaults() {
+  void parsesHumanoidWanderingPresetWithDefaults() {
     EasyModelEntityProfile profile =
         parse(
             """
             {
-              "schema_version": "0.1.0",
-              "id": "example:lizard",
-              "host": {
-                "entity_type": "easy_model_entities:static_entity",
-                "movement_type": "static",
-                "body_type": "static"
-              },
-              "client": {
-                "render_profile": "example:lizard"
-              },
-              "dimensions": {
-                "width": 0.6,
-                "height": 0.8,
-                "eye_height": 0.0
-              }
+              "preset_type": "humanoid_wandering",
+              "version": "v1"
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(PROFILE_ID, profile.id());
+    assertEquals(Constants.SCHEMA_VERSION, profile.schemaVersion());
+    assertEquals("v1", profile.version());
+    assertEquals(ModelEntityTypeIds.GROUND_ENTITY, profile.hostEntityType());
+    assertEquals(ModelMovementType.GROUND, profile.movementType());
+    assertEquals(ModelBodyType.BIPED, profile.bodyType());
+    assertEquals(PROFILE_ID, profile.renderProfileId());
+    assertEquals(0.6f, profile.width());
+    assertEquals(1.8f, profile.height());
+    assertEquals(1.62f, profile.eyeHeight());
+    assertEquals(ModelBehaviorMode.AMBIENT, profile.behavior().mode());
+    assertTrue(profile.behavior().randomStroll());
+  }
+
+  @Test
+  void parsesStatuePreset() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "preset_type": "statue"
             }
             """);
 
     assertEquals(ModelProfileStatus.ACTIVE, profile.status());
     assertEquals(ModelEntityTypeIds.STATIC_ENTITY, profile.hostEntityType());
-    assertEquals(0.0f, profile.movement().speed());
-    assertEquals(0.0f, profile.movement().stepHeight());
-    assertFalse(profile.movement().gravity());
+    assertEquals(ModelMovementType.STATIC, profile.movementType());
+    assertEquals(ModelBodyType.STATIC, profile.bodyType());
     assertEquals(ModelBehaviorMode.STATIC, profile.behavior().mode());
-    assertFalse(profile.behavior().lookAtPlayers());
-    assertTrue(profile.traits().isEmpty());
+    assertFalse(profile.movement().gravity());
   }
 
   @Test
-  void parsesExternalOwnerProfile() {
+  void parsesHumanoidStaticPreset() {
     EasyModelEntityProfile profile =
         parse(
-            validProfileJson().replace("\"mode\": \"idle_only\"", "\"mode\": \"external_owner\""));
+            """
+            {
+              "preset_type": "humanoid_still"
+            }
+            """);
 
     assertEquals(ModelProfileStatus.ACTIVE, profile.status());
-    assertEquals(ModelBehaviorMode.EXTERNAL_OWNER, profile.behavior().mode());
-  }
-
-  @Test
-  void rejectsInvalidSchemaVersion() {
-    EasyModelEntityProfile profile =
-        parse(
-            validProfileJson()
-                .replace("\"schema_version\": \"0.1.0\"", "\"schema_version\": \"9.0.0\""));
-
-    assertEquals(ModelProfileStatus.INVALID_SCHEMA_VERSION, profile.status());
-    assertFalse(profile.isActive());
-  }
-
-  @Test
-  void rejectsMissingSchemaVersion() {
-    EasyModelEntityProfile profile =
-        parse(validProfileJson().replace("  \"schema_version\": \"0.1.0\",\n", ""));
-
-    assertEquals(ModelProfileStatus.INVALID_SCHEMA_VERSION, profile.status());
-  }
-
-  @Test
-  void rejectsInvalidProfileId() {
-    EasyModelEntityProfile profile =
-        parse(validProfileJson().replace("\"id\": \"example:lizard\"", "\"id\": \"Invalid Id\""));
-
-    assertEquals(ModelProfileStatus.INVALID_RESOURCE_LOCATION, profile.status());
-  }
-
-  @Test
-  void rejectsPathIdMismatch() {
-    EasyModelEntityProfile profile =
-        parse(
-            validProfileJson().replace("\"id\": \"example:lizard\"", "\"id\": \"example:gecko\""));
-
-    assertEquals(ModelProfileStatus.INVALID_RESOURCE_LOCATION, profile.status());
-  }
-
-  @Test
-  void rejectsUnsupportedHostEntityType() {
-    EasyModelEntityProfile profile =
-        parse(
-            validProfileJson()
-                .replace(
-                    "\"entity_type\": \"easy_model_entities:ground_entity\"",
-                    "\"entity_type\": \"minecraft:pig\""));
-
-    assertEquals(ModelProfileStatus.INVALID_HOST_ENTITY, profile.status());
-  }
-
-  @Test
-  void rejectsMissingMovementType() {
-    EasyModelEntityProfile profile =
-        parse(validProfileJson().replace("\"movement_type\": \"ground\",", ""));
-
-    assertEquals(ModelProfileStatus.INVALID_HOST_ENTITY, profile.status());
+    assertEquals(ModelEntityTypeIds.STATIC_ENTITY, profile.hostEntityType());
     assertEquals(ModelMovementType.STATIC, profile.movementType());
+    assertEquals(ModelBodyType.BIPED, profile.bodyType());
+    assertEquals(0.0f, profile.movement().speed());
+    assertEquals(ModelBehaviorMode.IDLE_ONLY, profile.behavior().mode());
   }
 
   @Test
-  void rejectsUnsupportedBodyTypeWithoutStaticFallback() {
+  void parsesQuadrupedWanderingPreset() {
     EasyModelEntityProfile profile =
         parse(
-            validProfileJson()
-                .replace("\"body_type\": \"quadruped\"", "\"body_type\": \"serpentine\""));
+            """
+            {
+              "preset_type": "quadruped_wandering"
+            }
+            """);
 
-    assertEquals(ModelProfileStatus.INVALID_HOST_ENTITY, profile.status());
+    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(ModelEntityTypeIds.GROUND_ENTITY, profile.hostEntityType());
+    assertEquals(ModelBodyType.QUADRUPED, profile.bodyType());
+    assertEquals(0.9f, profile.width());
+    assertEquals(0.9f, profile.height());
+    assertTrue(profile.behavior().randomStroll());
+  }
+
+  @Test
+  void parsesStaticPresetAsMovableStaticHost() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "preset_type": "static"
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(ModelEntityTypeIds.GROUND_ENTITY, profile.hostEntityType());
+    assertEquals(ModelMovementType.STATIC, profile.movementType());
+    assertEquals(ModelBodyType.STATIC, profile.bodyType());
+    assertEquals(ModelBehaviorMode.STATIC, profile.behavior().mode());
+    assertTrue(profile.movement().gravity());
+  }
+
+  @Test
+  void parsesVanillaStylePresetFamilies() {
+    assertPresetDefaults(
+        "aquatic_swimming", ModelEntityTypeIds.GROUND_ENTITY, ModelBodyType.AQUATIC);
+    assertPresetDefaults(
+        "winged_wandering", ModelEntityTypeIds.GROUND_ENTITY, ModelBodyType.WINGED);
+    assertPresetDefaults(
+        "winged_humanoid_wandering",
+        ModelEntityTypeIds.GROUND_ENTITY,
+        ModelBodyType.WINGED_HUMANOID);
+    assertPresetDefaults(
+        "arthropod_wandering", ModelEntityTypeIds.GROUND_ENTITY, ModelBodyType.ARTHROPOD);
+    assertPresetDefaults("cuboid_hopping", ModelEntityTypeIds.GROUND_ENTITY, ModelBodyType.CUBOID);
+    assertPresetDefaults(
+        "floating_still", ModelEntityTypeIds.STATIC_ENTITY, ModelBodyType.FLOATING);
+    assertPresetDefaults(
+        "quadruped_still", ModelEntityTypeIds.STATIC_ENTITY, ModelBodyType.QUADRUPED);
+  }
+
+  @Test
+  void explicitFieldsOverridePresetDefaults() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "preset_type": "quadruped_wandering",
+              "client": {
+                "render_profile": "example:custom_render"
+              },
+              "dimensions": {
+                "width": 1.2,
+                "height": 0.85,
+                "eye_height": 0.6
+              },
+              "movement": {
+                "speed": 0.06,
+                "step_height": 0.4
+              },
+              "attributes": {
+                "max_health": 12.0,
+                "follow_range": 12.0
+              }
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(new ResourceLocation("example", "custom_render"), profile.renderProfileId());
+    assertEquals(1.2f, profile.width());
+    assertEquals(0.85f, profile.height());
+    assertEquals(0.6f, profile.eyeHeight());
+    assertEquals(0.06f, profile.movement().speed());
+    assertEquals(0.4f, profile.movement().stepHeight());
+    assertEquals(12.0f, profile.attributes().maxHealth());
+    assertEquals(12.0f, profile.attributes().followRange());
+  }
+
+  @Test
+  void parsesCustomProfileWithRequiredFields() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "preset_type": "custom",
+              "host": {
+                "entity_type": "easy_model_entities:ground_entity",
+                "movement_type": "ground",
+                "body_type": "biped"
+              },
+              "dimensions": {
+                "width": 0.75,
+                "height": 1.75,
+                "eye_height": 1.5
+              }
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(ModelEntityTypeIds.GROUND_ENTITY, profile.hostEntityType());
+    assertEquals(ModelMovementType.GROUND, profile.movementType());
+    assertEquals(ModelBodyType.BIPED, profile.bodyType());
+    assertEquals(0.75f, profile.width());
+  }
+
+  @Test
+  void customProfileRequiresHostAndDimensions() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "preset_type": "custom"
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.INVALID_DIMENSIONS, profile.status());
     assertFalse(profile.isActive());
+  }
+
+  @Test
+  void rejectsMissingPresetType() {
+    EasyModelEntityProfile profile = parse("{}");
+
+    assertEquals(ModelProfileStatus.DISABLED, profile.status());
+  }
+
+  @Test
+  void rejectsInvalidSchemaVersionWhenPresent() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "schema_version": "9.0.0",
+              "preset_type": "statue"
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.INVALID_SCHEMA_VERSION, profile.status());
   }
 
   @Test
   void rejectsInvalidClientRenderProfile() {
     EasyModelEntityProfile profile =
         parse(
-            validProfileJson()
-                .replace(
-                    "\"render_profile\": \"example:lizard\"", "\"render_profile\": \"bad id\""));
+            """
+            {
+              "preset_type": "statue",
+              "client": {
+                "render_profile": "bad id"
+              }
+            }
+            """);
 
     assertEquals(ModelProfileStatus.INVALID_RESOURCE_LOCATION, profile.status());
   }
@@ -234,15 +281,15 @@ class EasyModelProfileParserTest {
   @Test
   void rejectsInvalidDimensions() {
     EasyModelEntityProfile profile =
-        parse(validProfileJson().replace("\"width\": 0.6", "\"width\": -1.0"));
-
-    assertEquals(ModelProfileStatus.INVALID_DIMENSIONS, profile.status());
-  }
-
-  @Test
-  void rejectsInvalidEyeHeight() {
-    EasyModelEntityProfile profile =
-        parse(validProfileJson().replace("\"eye_height\": 0.5", "\"eye_height\": 2.0"));
+        parse(
+            """
+            {
+              "preset_type": "statue",
+              "dimensions": {
+                "width": -1.0
+              }
+            }
+            """);
 
     assertEquals(ModelProfileStatus.INVALID_DIMENSIONS, profile.status());
   }
@@ -250,29 +297,15 @@ class EasyModelProfileParserTest {
   @Test
   void rejectsInvalidMovementNumericValues() {
     EasyModelEntityProfile profile =
-        parse(validProfileJson().replace("\"speed\": 0.22", "\"speed\": 3.0"));
-
-    assertEquals(ModelProfileStatus.DISABLED, profile.status());
-    assertFalse(profile.isActive());
-  }
-
-  @Test
-  void rejectsInvalidTraitId() {
-    EasyModelEntityProfile profile =
         parse(
-            validProfileJson().replace("\"easy_model_entities:living\"", "\"not a valid trait\""));
-
-    assertEquals(ModelProfileStatus.DISABLED, profile.status());
-  }
-
-  @Test
-  void rejectsTooManyTraits() {
-    String traits =
-        IntStream.range(0, 65)
-            .mapToObj(index -> "\"example:trait_" + index + "\"")
-            .collect(Collectors.joining(", "));
-    EasyModelEntityProfile profile =
-        parse(validProfileJson().replace("\"easy_model_entities:living\"", traits));
+            """
+            {
+              "preset_type": "humanoid_wandering",
+              "movement": {
+                "speed": 3.0
+              }
+            }
+            """);
 
     assertEquals(ModelProfileStatus.DISABLED, profile.status());
   }

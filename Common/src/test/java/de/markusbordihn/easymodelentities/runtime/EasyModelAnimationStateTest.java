@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.markusbordihn.easymodelentities.api.EasyModelAnimationStates;
 import org.junit.jupiter.api.Test;
 
 class EasyModelAnimationStateTest {
@@ -40,5 +41,29 @@ class EasyModelAnimationStateTest {
     assertEquals(EasyModelAnimationState.AUTO, EasyModelAnimationState.bySerializedName("unknown"));
     assertEquals(EasyModelAnimationState.AUTO, EasyModelAnimationState.bySerializedName(""));
     assertEquals(EasyModelAnimationState.AUTO, EasyModelAnimationState.bySerializedName(null));
+  }
+
+  @Test
+  void apiStateMappingIsStable() {
+    assertEquals(EasyModelAnimationState.AUTO, EasyModelAnimationState.byApiState(999));
+    assertEquals(
+        EasyModelAnimationState.AUTO,
+        EasyModelAnimationState.byApiState(EasyModelAnimationStates.AUTO));
+    assertEquals(
+        EasyModelAnimationState.IDLE,
+        EasyModelAnimationState.byApiState(EasyModelAnimationStates.IDLE));
+    assertEquals(
+        EasyModelAnimationState.WALK,
+        EasyModelAnimationState.byApiState(EasyModelAnimationStates.WALK));
+    assertEquals(
+        EasyModelAnimationState.RUN,
+        EasyModelAnimationState.byApiState(EasyModelAnimationStates.RUN));
+    assertEquals(
+        EasyModelAnimationState.HURT,
+        EasyModelAnimationState.byApiState(EasyModelAnimationStates.HURT));
+    assertEquals(
+        EasyModelAnimationState.DEATH,
+        EasyModelAnimationState.byApiState(EasyModelAnimationStates.DEATH));
+    assertEquals(EasyModelAnimationStates.WALK, EasyModelAnimationState.WALK.getApiState());
   }
 }

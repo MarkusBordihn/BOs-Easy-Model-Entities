@@ -59,7 +59,7 @@ class BundledDemoProfilesTest {
     assertTrue(bakeResult.successful());
     assertEquals(bodyType, profile.host().bodyType());
     assertEquals(bodyType, renderProfile.bodyType());
-    assertEquals(profile.assetFingerprint(), renderProfile.assetFingerprint());
+    assertEquals(profile.version(), renderProfile.version());
   }
 
   private static EasyModelEntityProfile parseProfile(ResourceLocation id) throws IOException {

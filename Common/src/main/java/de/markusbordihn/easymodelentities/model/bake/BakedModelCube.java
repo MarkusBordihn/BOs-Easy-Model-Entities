@@ -18,13 +18,24 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
+import de.markusbordihn.easymodelentities.model.ModelCubeFaceUvs;
 import java.util.Objects;
 
-public record BakedModelCube(int[] uvOffset, float[] position, float[] dimensions, boolean mirror) {
+public record BakedModelCube(
+    int[] uvOffset,
+    ModelCubeFaceUvs faceUvs,
+    float[] position,
+    float[] dimensions,
+    boolean mirror) {
 
   public BakedModelCube {
+    Objects.requireNonNull(faceUvs, "faceUvs");
     uvOffset = Objects.requireNonNull(uvOffset, "uvOffset").clone();
     position = Objects.requireNonNull(position, "position").clone();
     dimensions = Objects.requireNonNull(dimensions, "dimensions").clone();
+  }
+
+  public BakedModelCube(int[] uvOffset, float[] position, float[] dimensions, boolean mirror) {
+    this(uvOffset, ModelCubeFaceUvs.fromBoxUv(uvOffset, dimensions), position, dimensions, mirror);
   }
 }

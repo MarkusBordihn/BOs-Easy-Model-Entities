@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.runtime;
 
+import de.markusbordihn.easymodelentities.api.EasyModelAnimationStates;
 import java.util.Locale;
 
 public enum EasyModelAnimationState {
@@ -44,7 +45,29 @@ public enum EasyModelAnimationState {
     return AUTO;
   }
 
+  public static EasyModelAnimationState byApiState(int animationState) {
+    return switch (animationState) {
+      case EasyModelAnimationStates.IDLE -> IDLE;
+      case EasyModelAnimationStates.WALK -> WALK;
+      case EasyModelAnimationStates.RUN -> RUN;
+      case EasyModelAnimationStates.HURT -> HURT;
+      case EasyModelAnimationStates.DEATH -> DEATH;
+      default -> AUTO;
+    };
+  }
+
   public String getSerializedName() {
     return this.name().toLowerCase(Locale.ROOT);
+  }
+
+  public int getApiState() {
+    return switch (this) {
+      case IDLE -> EasyModelAnimationStates.IDLE;
+      case WALK -> EasyModelAnimationStates.WALK;
+      case RUN -> EasyModelAnimationStates.RUN;
+      case HURT -> EasyModelAnimationStates.HURT;
+      case DEATH -> EasyModelAnimationStates.DEATH;
+      case AUTO -> EasyModelAnimationStates.AUTO;
+    };
   }
 }

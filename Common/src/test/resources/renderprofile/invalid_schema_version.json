@@ -1,7 +1,4 @@
 {
   "schema_version": "9.0.0",
-  "id": "example:lizard",
-  "body_type": "quadruped",
-  "model": "example:easy_model_entities/models/lizard",
-  "texture": "example:textures/entity/lizard.png"
+  "preset_type": "quadruped_wandering"
 }

@@ -23,6 +23,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import de.markusbordihn.easymodelentities.model.ModelCubeFaceUvs;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileValidationIssue;
 import java.io.ByteArrayOutputStream;
@@ -146,13 +147,18 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
       if (!"cube".equals(type)) {
         throw new EasyModelDecodeException("Unsupported Blockbench element type " + type + ".");
       }
+      float[] from = requiredFloatArray(elementObject, "from");
+      float[] to = requiredFloatArray(elementObject, "to");
+      float[] dimensions = new float[] {to[0] - from[0], to[1] - from[1], to[2] - from[2]};
+      int[] uvOffset = optionalIntArray(elementObject, "uv_offset", new int[] {0, 0});
       RawElement rawElement =
           new RawElement(
               requiredString(elementObject, "uuid"),
               requiredString(elementObject, "name"),
-              requiredFloatArray(elementObject, "from"),
-              requiredFloatArray(elementObject, "to"),
-              optionalIntArray(elementObject, "uv_offset", new int[] {0, 0}),
+              from,
+              to,
+              uvOffset,
+              parseFaceUvs(elementObject, uvOffset, dimensions),
               optionalFloatArray(elementObject, "origin", new float[] {0.0f, 0.0f, 0.0f}),
               optionalFloatArray(elementObject, "rotation", new float[] {0.0f, 0.0f, 0.0f}),
               optionalBoolean(elementObject, "mirror_uv", false));
@@ -162,6 +168,44 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
     }
 
     return elementsByUuid;
+  }
+
+  private static ModelCubeFaceUvs parseFaceUvs(
+      JsonObject elementObject, int[] uvOffset, float[] dimensions)
+      throws EasyModelDecodeException {
+    ModelCubeFaceUvs boxUvs = ModelCubeFaceUvs.fromBoxUv(uvOffset, dimensions);
+    JsonElement facesElement = elementObject.get("faces");
+    if (facesElement == null || facesElement.isJsonNull()) {
+      return boxUvs;
+    }
+    if (!facesElement.isJsonObject()) {
+      throw new EasyModelDecodeException("Field faces must be an object.");
+    }
+
+    JsonObject faces = facesElement.getAsJsonObject();
+    return new ModelCubeFaceUvs(
+        faceUv(faces, "north", boxUvs.north()),
+        faceUv(faces, "east", boxUvs.east()),
+        faceUv(faces, "south", boxUvs.south()),
+        faceUv(faces, "west", boxUvs.west()),
+        faceUv(faces, "up", boxUvs.up()),
+        faceUv(faces, "down", boxUvs.down()));
+  }
+
+  private static float[] faceUv(JsonObject faces, String face, float[] fallback)
+      throws EasyModelDecodeException {
+    JsonElement faceElement = faces.get(face);
+    if (faceElement == null || faceElement.isJsonNull()) {
+      return fallback;
+    }
+    if (!faceElement.isJsonObject()) {
+      throw new EasyModelDecodeException("Face " + face + " must be an object.");
+    }
+
+    JsonElement uvElement = faceElement.getAsJsonObject().get("uv");
+    return uvElement == null || uvElement.isJsonNull()
+        ? fallback
+        : parseFloatArray(uvElement, "faces." + face + ".uv", 4);
   }
 
   private static Map<String, RawGroup> parseGroups(JsonArray groupsArray)
@@ -253,6 +297,7 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
     float[] elementOrigin = element.origin();
     return new DecodedModelCube(
         element.uvOffset(),
+        element.faceUvs(),
         new float[] {from[0] - groupOrigin[0], -(to[1] - groupOrigin[1]), from[2] - groupOrigin[2]},
         new float[] {to[0] - from[0], to[1] - from[1], to[2] - from[2]},
         element.mirrorUv(),
@@ -427,10 +472,16 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
 
   private static float[] parseFloatArray(JsonElement value, String field)
       throws EasyModelDecodeException {
-    if (!value.isJsonArray() || value.getAsJsonArray().size() != 3) {
-      throw new EasyModelDecodeException("Field " + field + " must be an array with 3 numbers.");
+    return parseFloatArray(value, field, 3);
+  }
+
+  private static float[] parseFloatArray(JsonElement value, String field, int expectedSize)
+      throws EasyModelDecodeException {
+    if (!value.isJsonArray() || value.getAsJsonArray().size() != expectedSize) {
+      throw new EasyModelDecodeException(
+          "Field " + field + " must be an array with " + expectedSize + " numbers.");
     }
-    float[] values = new float[3];
+    float[] values = new float[expectedSize];
     for (int index = 0; index < values.length; index++) {
       JsonElement element = value.getAsJsonArray().get(index);
       if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isNumber()) {
@@ -570,6 +621,7 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
       float[] from,
       float[] to,
       int[] uvOffset,
+      ModelCubeFaceUvs faceUvs,
       float[] origin,
       float[] rotation,
       boolean mirrorUv) {}

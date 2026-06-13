@@ -28,7 +28,7 @@ import net.minecraft.resources.ResourceLocation;
 public record EasyModelRuntimeContract(
     ResourceLocation profileId,
     ResourceLocation renderProfileId,
-    String assetFingerprint,
+    String version,
     float width,
     float height,
     float eyeHeight,
@@ -38,7 +38,7 @@ public record EasyModelRuntimeContract(
   public EasyModelRuntimeContract {
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(renderProfileId, "renderProfileId");
-    Objects.requireNonNull(assetFingerprint, "assetFingerprint");
+    Objects.requireNonNull(version, "version");
     Objects.requireNonNull(bodyType, "bodyType");
     Objects.requireNonNull(animationState, "animationState");
   }
@@ -53,7 +53,7 @@ public record EasyModelRuntimeContract(
     return new EasyModelRuntimeContract(
         profile.id(),
         profile.renderProfileId(),
-        profile.assetFingerprint(),
+        profile.version(),
         profile.width(),
         profile.height(),
         profile.eyeHeight(),

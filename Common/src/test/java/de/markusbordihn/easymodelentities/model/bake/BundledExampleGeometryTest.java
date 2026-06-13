@@ -30,7 +30,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelPackPair;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationMode;
@@ -109,7 +108,7 @@ class BundledExampleGeometryTest {
     return new EasyModelRenderProfile(
         modelId,
         "0.1.0",
-        new ModelPackPair("test", "fingerprint"),
+        "test-version",
         bodyType,
         modelId,
         new ResourceLocation("example", "textures/entity/" + modelId.getPath() + ".png"),

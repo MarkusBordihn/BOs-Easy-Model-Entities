@@ -40,17 +40,8 @@ class EasyModelRuntimeContractTest {
             new StringReader(
                 """
                 {
-                  "schema_version": "0.1.0",
-                  "id": "example:lizard",
-                  "pack_pair": {
-                    "pair_id": "2cbb2c6e-4f28-4f1d-b9f7-0d8c1f63d24a",
-                    "asset_fingerprint": "sha256:abc123"
-                  },
-                  "host": {
-                    "entity_type": "easy_model_entities:ground_entity",
-                    "movement_type": "ground",
-                    "body_type": "quadruped"
-                  },
+                  "preset_type": "quadruped_wandering",
+                  "version": "v1",
                   "client": {
                     "render_profile": "example:lizard_render"
                   },
@@ -67,7 +58,7 @@ class EasyModelRuntimeContractTest {
 
     assertEquals(PROFILE_ID, contract.profileId());
     assertEquals(new ResourceLocation("example", "lizard_render"), contract.renderProfileId());
-    assertEquals("sha256:abc123", contract.assetFingerprint());
+    assertEquals("v1", contract.version());
     assertEquals(0.6f, contract.width());
     assertEquals(0.8f, contract.height());
     assertEquals(0.5f, contract.eyeHeight());
@@ -81,7 +72,7 @@ class EasyModelRuntimeContractTest {
 
     assertEquals(new ResourceLocation("example", "missing"), contract.profileId());
     assertEquals(new ResourceLocation("example", "missing"), contract.renderProfileId());
-    assertEquals("", contract.assetFingerprint());
+    assertEquals("", contract.version());
     assertEquals(0.6f, contract.width());
     assertEquals(1.8f, contract.height());
     assertEquals(1.62f, contract.eyeHeight());

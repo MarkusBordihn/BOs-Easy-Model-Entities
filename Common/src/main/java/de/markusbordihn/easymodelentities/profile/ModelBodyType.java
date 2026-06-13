@@ -24,7 +24,13 @@ import java.util.Locale;
 public enum ModelBodyType {
   STATIC,
   BIPED,
-  QUADRUPED;
+  QUADRUPED,
+  AQUATIC,
+  WINGED,
+  WINGED_HUMANOID,
+  ARTHROPOD,
+  CUBOID,
+  FLOATING;
 
   public static ModelBodyType bySerializedName(String serializedName) {
     if (serializedName == null) {

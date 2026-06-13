@@ -20,7 +20,6 @@
 package de.markusbordihn.easymodelentities.renderprofile;
 
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelPackPair;
 import java.util.List;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
@@ -28,7 +27,7 @@ import net.minecraft.resources.ResourceLocation;
 public record EasyModelRenderProfile(
     ResourceLocation id,
     String schemaVersion,
-    ModelPackPair packPair,
+    String version,
     ModelBodyType bodyType,
     ResourceLocation model,
     ResourceLocation texture,
@@ -40,7 +39,7 @@ public record EasyModelRenderProfile(
   public EasyModelRenderProfile {
     Objects.requireNonNull(id, "id");
     Objects.requireNonNull(schemaVersion, "schemaVersion");
-    Objects.requireNonNull(packPair, "packPair");
+    Objects.requireNonNull(version, "version");
     Objects.requireNonNull(bodyType, "bodyType");
     Objects.requireNonNull(model, "model");
     Objects.requireNonNull(texture, "texture");
@@ -63,14 +62,6 @@ public record EasyModelRenderProfile(
     return this.status == ModelRenderProfileStatus.MISSING_TEXTURE;
   }
 
-  public String pairId() {
-    return this.packPair.pairId();
-  }
-
-  public String assetFingerprint() {
-    return this.packPair.assetFingerprint();
-  }
-
   public float scale() {
     return this.rendering.scale();
   }
@@ -84,7 +75,7 @@ public record EasyModelRenderProfile(
     return new EasyModelRenderProfile(
         this.id,
         this.schemaVersion,
-        this.packPair,
+        this.version,
         this.bodyType,
         this.model,
         this.texture,

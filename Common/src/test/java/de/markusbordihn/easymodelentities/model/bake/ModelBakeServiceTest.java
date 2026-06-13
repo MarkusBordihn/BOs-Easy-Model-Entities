@@ -32,7 +32,6 @@ import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecodeException
 import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecoder;
 import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelPackPair;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationMode;
@@ -67,12 +66,11 @@ class ModelBakeServiceTest {
     return ModelRenderProfileStatus.statusForIssues(result.validationIssues());
   }
 
-  private static EasyModelRenderProfile renderProfile(
-      ModelBodyType bodyType, String assetFingerprint) {
+  private static EasyModelRenderProfile renderProfile(ModelBodyType bodyType, String version) {
     return new EasyModelRenderProfile(
         PROFILE_ID,
         "1.0",
-        new ModelPackPair("test", assetFingerprint),
+        version,
         bodyType,
         MODEL_ID,
         TEXTURE_ID,
@@ -108,6 +106,19 @@ class ModelBakeServiceTest {
     }
   }
 
+  private static byte[] textureFixture(String fixtureName) throws IOException {
+    try (InputStream inputStream =
+        ModelBakeServiceTest.class
+            .getClassLoader()
+            .getResourceAsStream("textures/" + fixtureName)) {
+      if (inputStream == null) {
+        throw new IOException("Missing fixture " + fixtureName);
+      }
+
+      return inputStream.readAllBytes();
+    }
+  }
+
   private static byte[] png(int width, int height) throws IOException {
     BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -129,6 +140,24 @@ class ModelBakeServiceTest {
         + "\"groups\":[{\"uuid\":\"group_root\",\"name\":\"root\","
         + "\"origin\":[0,0,0],\"rotation\":[0,0,0]}],"
         + "\"outliner\":[{\"uuid\":\"group_root\",\"children\":[\"element_tilted\"]}]}";
+  }
+
+  private static BakedModelCube cube(BakedModelPart rootPart, String partName, int cubeIndex) {
+    return part(rootPart, partName).cubes().get(cubeIndex);
+  }
+
+  private static BakedModelPart part(BakedModelPart part, String partName) {
+    if (part.name().equals(partName)) {
+      return part;
+    }
+    for (BakedModelPart child : part.children()) {
+      BakedModelPart match = part(child, partName);
+      if (match != null) {
+        return match;
+      }
+    }
+
+    return null;
   }
 
   @Test
@@ -273,6 +302,27 @@ class ModelBakeServiceTest {
     assertArrayEquals(new int[] {2, 4}, cube.uvOffset());
     assertArrayEquals(new float[] {-1.0f, -1.0f, -1.0f}, cube.position(), 0.01f);
     assertArrayEquals(new float[] {2.0f, 2.0f, 2.0f}, cube.dimensions(), 0.01f);
+  }
+
+  @Test
+  void preservesBlockbenchFaceUvsFromTextureExport() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.BIPED, "fingerprint"),
+                resourceManager(
+                    "little_explorer_texture.bbmodel",
+                    textureFixture("little_explorer_texture.png")));
+
+    BakedModelCube headCube = cube(result.bakedModel().rootParts().get(0), "head", 0);
+
+    assertTrue(result.successful());
+    assertArrayEquals(new float[] {8.0f, 8.0f, 16.0f, 16.0f}, headCube.faceUvs().north());
+    assertArrayEquals(new float[] {0.0f, 8.0f, 8.0f, 16.0f}, headCube.faceUvs().east());
+    assertArrayEquals(new float[] {24.0f, 8.0f, 32.0f, 16.0f}, headCube.faceUvs().south());
+    assertArrayEquals(new float[] {16.0f, 8.0f, 24.0f, 16.0f}, headCube.faceUvs().west());
+    assertArrayEquals(new float[] {16.0f, 8.0f, 8.0f, 0.0f}, headCube.faceUvs().up());
+    assertArrayEquals(new float[] {24.0f, 0.0f, 16.0f, 8.0f}, headCube.faceUvs().down());
   }
 
   @Test

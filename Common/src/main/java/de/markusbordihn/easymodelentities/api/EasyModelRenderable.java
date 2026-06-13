@@ -17,14 +17,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.profile;
+package de.markusbordihn.easymodelentities.api;
 
-import java.util.Objects;
+import net.minecraft.resources.ResourceLocation;
 
-public record ModelPackPair(String pairId, String assetFingerprint) {
+public interface EasyModelRenderable {
 
-  public ModelPackPair {
-    Objects.requireNonNull(pairId, "pairId");
-    Objects.requireNonNull(assetFingerprint, "assetFingerprint");
+  ResourceLocation getEasyModelProfileId();
+
+  default ResourceLocation getEasyModelRenderProfileId() {
+    return getEasyModelProfileId();
+  }
+
+  default String getEasyModelVersion() {
+    return "";
+  }
+
+  default int getEasyModelAnimationState() {
+    return EasyModelAnimationStates.AUTO;
   }
 }

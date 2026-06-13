@@ -1,7 +1,4 @@
 {
-  "schema_version": "0.1.0",
-  "id": "example:lizard",
-  "body_type": "blob",
-  "model": "example:easy_model_entities/models/lizard",
-  "texture": "example:textures/entity/lizard.png"
+  "preset_type": "custom",
+  "body_type": "blob"
 }

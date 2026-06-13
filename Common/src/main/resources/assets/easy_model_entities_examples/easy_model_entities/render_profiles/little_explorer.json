@@ -1,22 +1,7 @@
 {
-  "schema_version": "0.1.0",
-  "id": "easy_model_entities_examples:little_explorer",
-  "pack_pair": {
-    "pair_id": "easy_model_entities_examples:little_explorer",
-    "asset_fingerprint": "demo-little-explorer-v2"
-  },
-  "body_type": "biped",
-  "model": "easy_model_entities_examples:easy_model_entities/models/little_explorer",
-  "texture": "minecraft:textures/block/blue_wool.png",
-  "rendering": {
-    "scale": 1.0,
-    "shadow_radius": 0.3,
-    "visible_bounds_width": 0.8,
-    "visible_bounds_height": 1.8,
-    "visible_bounds_offset": [0.0, 0.9, 0.0]
-  },
+  "preset_type": "humanoid_wandering",
+  "version": "demo-little-explorer-v3",
   "animation": {
-    "mode": "automatic",
     "walk_speed_multiplier": 0.85
   }
 }

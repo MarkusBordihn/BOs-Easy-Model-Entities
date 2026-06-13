@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 
 import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelPackPair;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
@@ -57,25 +56,16 @@ class EasyModelRenderStateResolverTest {
   private static final ResourceLocation TEXTURE_ID =
       new ResourceLocation("example", "textures/entity/model.png");
 
-  private static EasyModelRuntimeContract contract(
-      ModelBodyType bodyType, String assetFingerprint) {
+  private static EasyModelRuntimeContract contract(ModelBodyType bodyType, String version) {
     return new EasyModelRuntimeContract(
-        PROFILE_ID,
-        PROFILE_ID,
-        assetFingerprint,
-        0.6f,
-        1.8f,
-        1.62f,
-        bodyType,
-        EasyModelAnimationState.AUTO);
+        PROFILE_ID, PROFILE_ID, version, 0.6f, 1.8f, 1.62f, bodyType, EasyModelAnimationState.AUTO);
   }
 
-  private static EasyModelRenderProfile renderProfile(
-      ModelBodyType bodyType, String assetFingerprint) {
+  private static EasyModelRenderProfile renderProfile(ModelBodyType bodyType, String version) {
     return new EasyModelRenderProfile(
         PROFILE_ID,
         "1.0",
-        new ModelPackPair("test", assetFingerprint),
+        version,
         bodyType,
         MODEL_ID,
         TEXTURE_ID,
@@ -160,7 +150,7 @@ class EasyModelRenderStateResolverTest {
   }
 
   @Test
-  void fingerprintMismatchReturnsFallbackState() throws Exception {
+  void versionMismatchReturnsFallbackState() throws Exception {
     EasyModelRenderState renderState =
         EasyModelRenderStateResolver.resolve(
             contract(ModelBodyType.STATIC, "server-fingerprint"),

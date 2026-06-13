@@ -30,7 +30,7 @@ public interface EasyModelBakeService {
 
   default ModelBakeResult bake(
       EasyModelRenderProfile renderProfile, ResourceManager resourceManager) {
-    ModelCacheKey cacheKey = cacheKey(renderProfile.model(), renderProfile.assetFingerprint());
+    ModelCacheKey cacheKey = cacheKey(renderProfile.model(), renderProfile.version());
     return ModelBakeResult.failure(cacheKey, renderProfile.validationIssues());
   }
 

@@ -64,7 +64,7 @@ public final class HostEntityGameTestCases {
     EasyModelRuntimeContract contract = groundEntity.getEasyModelRuntimeContract();
     if (!GROUND_PROFILE_ID.equals(contract.profileId())
         || !new ResourceLocation("example", "ground_render").equals(contract.renderProfileId())
-        || !"sha256:ground".equals(contract.assetFingerprint())
+        || !"ground-v1".equals(contract.version())
         || contract.bodyType() != ModelBodyType.QUADRUPED
         || contract.width() != 0.7f
         || contract.height() != 0.9f
@@ -160,7 +160,7 @@ public final class HostEntityGameTestCases {
     CompoundTag compoundTag = new CompoundTag();
     compoundTag.putString("ProfileId", "bad id");
     compoundTag.putString("RenderProfileId", "also bad");
-    compoundTag.putString("AssetFingerprint", "sha256:stale");
+    compoundTag.putString("Version", "stale");
     compoundTag.putString("BodyType", "unknown");
     compoundTag.putString("AnimationState", "unknown");
     hostEntity.readAdditionalSaveData(compoundTag);
@@ -216,15 +216,9 @@ public final class HostEntityGameTestCases {
   private static String groundProfileJson() {
     return """
         {
-          "schema_version": "0.1.0",
-          "id": "example:ground",
-          "pack_pair": {
-            "pair_id": "2cbb2c6e-4f28-4f1d-b9f7-0d8c1f63d24a",
-            "asset_fingerprint": "sha256:ground"
-          },
+          "preset_type": "quadruped_wandering",
+          "version": "ground-v1",
           "host": {
-            "entity_type": "easy_model_entities:ground_entity",
-            "movement_type": "ground",
             "body_type": "quadruped"
           },
           "client": {
@@ -252,13 +246,7 @@ public final class HostEntityGameTestCases {
   private static String staticProfileJson() {
     return """
         {
-          "schema_version": "0.1.0",
-          "id": "example:static",
-          "host": {
-            "entity_type": "easy_model_entities:static_entity",
-            "movement_type": "static",
-            "body_type": "static"
-          },
+          "preset_type": "statue",
           "client": {
             "render_profile": "example:static_render"
           },
@@ -275,20 +263,7 @@ public final class HostEntityGameTestCases {
     return """
         {
           "schema_version": "9.0.0",
-          "id": "example:invalid",
-          "host": {
-            "entity_type": "easy_model_entities:ground_entity",
-            "movement_type": "ground",
-            "body_type": "quadruped"
-          },
-          "client": {
-            "render_profile": "example:invalid"
-          },
-          "dimensions": {
-            "width": 0.6,
-            "height": 0.8,
-            "eye_height": 0.5
-          }
+          "preset_type": "quadruped_wandering"
         }
         """;
   }

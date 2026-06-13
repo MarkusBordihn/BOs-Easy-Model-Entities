@@ -1,10 +1,6 @@
 {
-  "schema_version": "0.1.0",
-  "id": "example:lizard",
+  "preset_type": "quadruped_wandering",
   "unknown": {
     "value": true
-  },
-  "body_type": "quadruped",
-  "model": "example:easy_model_entities/models/lizard",
-  "texture": "example:textures/entity/lizard.png"
+  }
 }

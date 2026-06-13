@@ -90,14 +90,16 @@ public final class EasyModelRenderStateResolver {
                   + "."));
     }
 
-    if (!contract.assetFingerprint().isBlank()
-        && !contract.assetFingerprint().equals(renderProfile.assetFingerprint())) {
+    boolean hasContractVersion = !contract.version().isBlank();
+    boolean hasRenderVersion = !renderProfile.version().isBlank();
+    if ((hasContractVersion || hasRenderVersion)
+        && !contract.version().equals(renderProfile.version())) {
       return fallback(
           contract,
           new ModelRenderProfileValidationIssue(
               ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
-              "asset_fingerprint",
-              "Render profile fingerprint does not match runtime fingerprint."));
+              "version",
+              "Render profile version does not match runtime version."));
     }
 
     ModelBakeResult bakeResult = bakeService.bake(renderProfile, resourceManager);
@@ -122,7 +124,7 @@ public final class EasyModelRenderStateResolver {
 
   private static EasyModelRenderState fallback(
       EasyModelRuntimeContract contract, ModelRenderProfileValidationIssue issue) {
-    ModelCacheKey cacheKey = new ModelCacheKey(FALLBACK_MODEL, contract.assetFingerprint());
+    ModelCacheKey cacheKey = new ModelCacheKey(FALLBACK_MODEL, contract.version());
     return new EasyModelRenderState(
         ModelFallbackFactory.createFallback(
             cacheKey.modelId(), contract.width(), contract.height()),

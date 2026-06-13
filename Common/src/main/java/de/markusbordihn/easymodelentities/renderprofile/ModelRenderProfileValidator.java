@@ -23,7 +23,6 @@ import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.diagnostics.ModelDiagnostic;
 import de.markusbordihn.easymodelentities.diagnostics.ModelDiagnostic.Severity;
 import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
-import de.markusbordihn.easymodelentities.profile.ModelPackPair;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +37,7 @@ public final class ModelRenderProfileValidator {
 
   public static final String CLIENT_ASSET_MISMATCH_CODE = "CLIENT_ASSET_MISMATCH";
   public static final String CLIENT_BODY_TYPE_MISMATCH_CODE = "CLIENT_BODY_TYPE_MISMATCH";
-  public static final String CLIENT_PAIR_ID_MISMATCH_CODE = "CLIENT_PAIR_ID_MISMATCH";
-  public static final String CLIENT_PAIR_ID_MISSING_CODE = "CLIENT_PAIR_ID_MISSING";
-  public static final String CLIENT_FINGERPRINT_INFO_CODE = "CLIENT_FINGERPRINT_INFO";
+  public static final String CLIENT_VERSION_INFO_CODE = "CLIENT_VERSION_INFO";
   private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
   private static final Set<String> LOGGED_DIAGNOSTICS = ConcurrentHashMap.newKeySet();
 
@@ -65,65 +62,35 @@ public final class ModelRenderProfileValidator {
               renderProfile.id()));
     }
 
-    String serverFingerprint = runtimeContract.assetFingerprint();
-    String clientFingerprint = renderProfile.assetFingerprint();
-    if (!serverFingerprint.isEmpty()) {
-      if (clientFingerprint.isEmpty() || !serverFingerprint.equals(clientFingerprint)) {
+    String serverVersion = runtimeContract.version();
+    String clientVersion = renderProfile.version();
+    if (!serverVersion.isEmpty() || !clientVersion.isEmpty()) {
+      if (!serverVersion.equals(clientVersion)) {
         diagnostics.add(
             diagnostic(
                 Severity.ERROR,
                 CLIENT_ASSET_MISMATCH_CODE,
-                "Render profile asset fingerprint does not match runtime fingerprint.",
+                "Render profile version does not match runtime version.",
                 renderProfile.id()));
       }
-    } else if (!clientFingerprint.isEmpty()) {
-      diagnostics.add(
-          diagnostic(
-              Severity.INFO,
-              CLIENT_FINGERPRINT_INFO_CODE,
-              "Runtime fingerprint is empty; using client render profile fingerprint for debug output.",
-              renderProfile.id()));
     }
 
     logOnce(diagnostics);
     return List.copyOf(diagnostics);
   }
 
-  public static List<ModelDiagnostic> validateServerProfilePair(
+  public static List<ModelDiagnostic> validateServerProfileVersion(
       EasyModelRenderProfile renderProfile, EasyModelEntityProfile serverProfile) {
     Objects.requireNonNull(renderProfile, "renderProfile");
     Objects.requireNonNull(serverProfile, "serverProfile");
-    return validatePackPair(renderProfile.id(), renderProfile.packPair(), serverProfile.packPair());
-  }
-
-  public static List<ModelDiagnostic> validatePackPair(
-      net.minecraft.resources.ResourceLocation renderProfileId,
-      ModelPackPair clientPackPair,
-      ModelPackPair serverPackPair) {
-    Objects.requireNonNull(renderProfileId, "renderProfileId");
-    Objects.requireNonNull(clientPackPair, "clientPackPair");
-    Objects.requireNonNull(serverPackPair, "serverPackPair");
-
-    String clientPairId = clientPackPair.pairId();
-    String serverPairId = serverPackPair.pairId();
-    if (clientPairId.isEmpty() && serverPairId.isEmpty()) {
-      return List.of();
-    }
-    if (clientPairId.isEmpty() || serverPairId.isEmpty()) {
+    if ((!renderProfile.version().isBlank() || !serverProfile.version().isBlank())
+        && !renderProfile.version().equals(serverProfile.version())) {
       return List.of(
           diagnostic(
-              Severity.WARNING,
-              CLIENT_PAIR_ID_MISSING_CODE,
-              "Render profile and server profile pair ids are not both present.",
-              renderProfileId));
-    }
-    if (!clientPairId.equals(serverPairId)) {
-      return List.of(
-          diagnostic(
-              Severity.WARNING,
-              CLIENT_PAIR_ID_MISMATCH_CODE,
-              "Render profile pair id does not match server profile pair id.",
-              renderProfileId));
+              Severity.ERROR,
+              CLIENT_ASSET_MISMATCH_CODE,
+              "Render profile version does not match server profile version.",
+              renderProfile.id()));
     }
 
     return List.of();

@@ -26,15 +26,14 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
 public final class EasyModelProfileParser {
@@ -43,10 +42,8 @@ public final class EasyModelProfileParser {
   private static final String EMPTY_VALUE = "";
   private static final String ISSUE_JSON_FIELD = "json";
   private static final String SCHEMA_VERSION_FIELD = "schema_version";
-  private static final String ID_FIELD = "id";
-  private static final String PACK_PAIR_FIELD = "pack_pair";
-  private static final String PAIR_ID_FIELD = "pair_id";
-  private static final String ASSET_FINGERPRINT_FIELD = "asset_fingerprint";
+  private static final String PRESET_TYPE_FIELD = "preset_type";
+  private static final String VERSION_FIELD = "version";
   private static final String HOST_FIELD = "host";
   private static final String ENTITY_TYPE_FIELD = "entity_type";
   private static final String MOVEMENT_TYPE_FIELD = "movement_type";
@@ -69,10 +66,6 @@ public final class EasyModelProfileParser {
   private static final String MAX_HEALTH_FIELD = "max_health";
   private static final String MOVEMENT_SPEED_FIELD = "movement_speed";
   private static final String FOLLOW_RANGE_FIELD = "follow_range";
-  private static final String TRAITS_FIELD = "traits";
-  private static final String PACK_PAIR_PAIR_ID_FIELD = PACK_PAIR_FIELD + "." + PAIR_ID_FIELD;
-  private static final String PACK_PAIR_ASSET_FINGERPRINT_FIELD =
-      PACK_PAIR_FIELD + "." + ASSET_FINGERPRINT_FIELD;
   private static final String HOST_ENTITY_TYPE_FIELD = HOST_FIELD + "." + ENTITY_TYPE_FIELD;
   private static final String HOST_MOVEMENT_TYPE_FIELD = HOST_FIELD + "." + MOVEMENT_TYPE_FIELD;
   private static final String HOST_BODY_TYPE_FIELD = HOST_FIELD + "." + BODY_TYPE_FIELD;
@@ -131,135 +124,154 @@ public final class EasyModelProfileParser {
       ResourceLocation expectedId, JsonObject jsonObject) {
     List<ModelProfileValidationIssue> issues = new ArrayList<>();
     RawProfile rawProfile = GSON.fromJson(jsonObject, RawProfile.class);
-    String schemaVersion = requiredString(rawProfile.schemaVersion, SCHEMA_VERSION_FIELD, issues);
-    if (schemaVersion != null && !Constants.SCHEMA_VERSION.equals(schemaVersion)) {
-      addIssue(
-          issues,
-          ModelProfileStatus.INVALID_SCHEMA_VERSION,
-          SCHEMA_VERSION_FIELD,
-          "Unsupported schema_version " + schemaVersion + ".");
-    }
+    String schemaVersion = parseSchemaVersion(rawProfile.schemaVersion, issues);
+    String version = optionalString(rawProfile.version, EMPTY_VALUE, VERSION_FIELD, issues);
+    ModelPresetType presetType = parsePresetType(rawProfile.presetType, issues);
+    ModelPresetType resolvedPresetType = presetType == null ? ModelPresetType.STATUE : presetType;
+    boolean custom = resolvedPresetType.isCustom();
 
-    ResourceLocation profileId = parseRequiredResourceLocation(rawProfile.id, ID_FIELD, issues);
-    if (profileId != null && !expectedId.equals(profileId)) {
-      addIssue(
-          issues,
-          ModelProfileStatus.INVALID_RESOURCE_LOCATION,
-          ID_FIELD,
-          "Profile id " + profileId + " does not match path id " + expectedId + ".");
-    }
+    RawHost rawHost =
+        custom
+            ? requiredObject(rawProfile.host, HOST_FIELD, RawHost.class, issues)
+            : optionalObject(rawProfile.host, HOST_FIELD, RawHost.class, issues);
+    ModelHostSettings host = parseHost(rawHost, resolvedPresetType, custom, issues);
 
-    RawPackPair rawPackPair =
-        optionalObject(rawProfile.packPair, PACK_PAIR_FIELD, RawPackPair.class, issues);
-    ModelPackPair packPair =
-        new ModelPackPair(
-            optionalString(
-                rawPackPair == null ? null : rawPackPair.pairId,
-                EMPTY_VALUE,
-                PACK_PAIR_PAIR_ID_FIELD,
-                issues),
-            optionalString(
-                rawPackPair == null ? null : rawPackPair.assetFingerprint,
-                EMPTY_VALUE,
-                PACK_PAIR_ASSET_FINGERPRINT_FIELD,
-                issues));
+    RawClient rawClient = optionalObject(rawProfile.client, CLIENT_FIELD, RawClient.class, issues);
+    ResourceLocation renderProfile =
+        parseOptionalResourceLocation(
+            rawClient == null ? null : rawClient.renderProfile,
+            expectedId,
+            CLIENT_RENDER_PROFILE_FIELD,
+            issues);
 
-    RawHost rawHost = requiredObject(rawProfile.host, HOST_FIELD, RawHost.class, issues);
-    ResourceLocation hostEntityType =
-        parseRequiredResourceLocation(
-            rawHost == null ? null : rawHost.entityType, HOST_ENTITY_TYPE_FIELD, issues);
-    if (hostEntityType != null && !ModelEntityTypeIds.isSupportedHostEntityType(hostEntityType)) {
+    RawDimensions rawDimensions =
+        custom
+            ? requiredObject(rawProfile.dimensions, DIMENSIONS_FIELD, RawDimensions.class, issues)
+            : optionalObject(rawProfile.dimensions, DIMENSIONS_FIELD, RawDimensions.class, issues);
+    ModelDimensions dimensions = parseDimensions(rawDimensions, resolvedPresetType, custom, issues);
+
+    RawMovement rawMovement =
+        optionalObject(rawProfile.movement, MOVEMENT_FIELD, RawMovement.class, issues);
+    ModelMovementSettings movement =
+        parseMovement(rawMovement, resolvedPresetType, host.movementType(), issues);
+    RawBehavior rawBehavior =
+        optionalObject(rawProfile.behavior, BEHAVIOR_FIELD, RawBehavior.class, issues);
+    ModelBehaviorSettings behavior =
+        parseBehavior(rawBehavior, resolvedPresetType, host.movementType(), issues);
+    RawAttributes rawAttributes =
+        optionalObject(rawProfile.attributes, ATTRIBUTES_FIELD, RawAttributes.class, issues);
+    ModelAttributes attributes = parseAttributes(rawAttributes, movement, issues);
+
+    return new EasyModelEntityProfile(
+        expectedId,
+        schemaVersion,
+        version,
+        host,
+        new ModelClientSettings(renderProfile == null ? expectedId : renderProfile),
+        dimensions,
+        movement,
+        behavior,
+        attributes,
+        statusForIssues(issues),
+        issues);
+  }
+
+  private static ModelHostSettings parseHost(
+      RawHost rawHost,
+      ModelPresetType presetType,
+      boolean required,
+      List<ModelProfileValidationIssue> issues) {
+    ModelHostSettings defaults = defaultHost(presetType);
+    ResourceLocation entityType =
+        required
+            ? parseRequiredResourceLocation(
+                rawHost == null ? null : rawHost.entityType, HOST_ENTITY_TYPE_FIELD, issues)
+            : parseOptionalResourceLocation(
+                rawHost == null ? null : rawHost.entityType,
+                defaults.entityType(),
+                HOST_ENTITY_TYPE_FIELD,
+                issues);
+    if (entityType != null && !ModelEntityTypeIds.isSupportedHostEntityType(entityType)) {
       addIssue(
           issues,
           ModelProfileStatus.INVALID_HOST_ENTITY,
           HOST_ENTITY_TYPE_FIELD,
-          "Unsupported host entity type " + hostEntityType + ".");
+          "Unsupported host entity type " + entityType + ".");
     }
 
-    ModelMovementType movementType = parseMovementType(rawHost, issues);
-
-    ModelBodyType bodyType = parseBodyType(rawHost, issues);
-    RawClient rawClient = requiredObject(rawProfile.client, CLIENT_FIELD, RawClient.class, issues);
-    ResourceLocation renderProfile =
-        parseRequiredResourceLocation(
-            rawClient == null ? null : rawClient.renderProfile,
-            CLIENT_RENDER_PROFILE_FIELD,
+    ModelMovementType movementType =
+        parseMovementType(
+            rawHost == null ? null : rawHost.movementType,
+            defaults.movementType(),
+            required,
             issues);
-    RawDimensions rawDimensions =
-        requiredObject(rawProfile.dimensions, DIMENSIONS_FIELD, RawDimensions.class, issues);
-    Float width =
-        requiredFloat(
-            rawDimensions == null ? null : rawDimensions.width, DIMENSIONS_WIDTH_FIELD, issues);
-    Float height =
-        requiredFloat(
-            rawDimensions == null ? null : rawDimensions.height, DIMENSIONS_HEIGHT_FIELD, issues);
-    Float eyeHeight =
-        requiredFloat(
-            rawDimensions == null ? null : rawDimensions.eyeHeight,
-            DIMENSIONS_EYE_HEIGHT_FIELD,
-            issues);
+    ModelBodyType bodyType =
+        parseBodyType(
+            rawHost == null ? null : rawHost.bodyType, defaults.bodyType(), required, issues);
+    return new ModelHostSettings(
+        entityType == null ? defaults.entityType() : entityType,
+        movementType == null ? defaults.movementType() : movementType,
+        bodyType == null ? defaults.bodyType() : bodyType);
+  }
 
-    if (width != null && !isInRange(width, 0.01f, 8.0f)) {
-      addIssue(
-          issues,
-          ModelProfileStatus.INVALID_DIMENSIONS,
-          DIMENSIONS_WIDTH_FIELD,
-          "Width must be between 0.01 and 8.0.");
+  private static ModelDimensions parseDimensions(
+      RawDimensions rawDimensions,
+      ModelPresetType presetType,
+      boolean required,
+      List<ModelProfileValidationIssue> issues) {
+    ModelDimensions defaults = defaultDimensions(presetType);
+    Float width;
+    if (required) {
+      width =
+          requiredFloat(
+              rawDimensions == null ? null : rawDimensions.width, DIMENSIONS_WIDTH_FIELD, issues);
+    } else {
+      width =
+          optionalFloat(
+              rawDimensions == null ? null : rawDimensions.width,
+              defaults.width(),
+              DIMENSIONS_WIDTH_FIELD,
+              issues);
     }
-    if (height != null && !isInRange(height, 0.01f, 8.0f)) {
-      addIssue(
-          issues,
-          ModelProfileStatus.INVALID_DIMENSIONS,
-          DIMENSIONS_HEIGHT_FIELD,
-          "Height must be between 0.01 and 8.0.");
+    Float height;
+    if (required) {
+      height =
+          requiredFloat(
+              rawDimensions == null ? null : rawDimensions.height, DIMENSIONS_HEIGHT_FIELD, issues);
+    } else {
+      height =
+          optionalFloat(
+              rawDimensions == null ? null : rawDimensions.height,
+              defaults.height(),
+              DIMENSIONS_HEIGHT_FIELD,
+              issues);
     }
-    if (eyeHeight != null
-        && height != null
-        && (!Float.isFinite(eyeHeight) || eyeHeight < 0.0f || eyeHeight > height)) {
-      addIssue(
-          issues,
-          ModelProfileStatus.INVALID_DIMENSIONS,
-          DIMENSIONS_EYE_HEIGHT_FIELD,
-          "Eye height must be between 0.0 and " + DIMENSIONS_HEIGHT_FIELD + ".");
+    Float eyeHeight;
+    if (required) {
+      eyeHeight =
+          requiredFloat(
+              rawDimensions == null ? null : rawDimensions.eyeHeight,
+              DIMENSIONS_EYE_HEIGHT_FIELD,
+              issues);
+    } else {
+      eyeHeight =
+          optionalFloat(
+              rawDimensions == null ? null : rawDimensions.eyeHeight,
+              defaults.eyeHeight(),
+              DIMENSIONS_EYE_HEIGHT_FIELD,
+              issues);
     }
 
-    ModelMovementType resolvedMovementType =
-        movementType == null ? ModelMovementType.STATIC : movementType;
-    RawMovement rawMovement =
-        optionalObject(rawProfile.movement, MOVEMENT_FIELD, RawMovement.class, issues);
-    ModelMovementSettings movement = parseMovement(rawMovement, resolvedMovementType, issues);
-    RawBehavior rawBehavior =
-        optionalObject(rawProfile.behavior, BEHAVIOR_FIELD, RawBehavior.class, issues);
-    ModelBehaviorSettings behavior = parseBehavior(rawBehavior, resolvedMovementType, issues);
-    RawAttributes rawAttributes =
-        optionalObject(rawProfile.attributes, ATTRIBUTES_FIELD, RawAttributes.class, issues);
-    ModelAttributes attributes = parseAttributes(rawAttributes, movement, issues);
-    Set<ResourceLocation> traits = parseTraits(rawProfile.traits, issues);
-    ModelProfileStatus status = statusForIssues(issues);
-
-    return new EasyModelEntityProfile(
-        expectedId,
-        schemaVersion == null ? EMPTY_VALUE : schemaVersion,
-        packPair,
-        new ModelHostSettings(
-            hostEntityType == null ? ModelEntityTypeIds.STATIC_ENTITY : hostEntityType,
-            resolvedMovementType,
-            bodyType == null ? ModelBodyType.STATIC : bodyType),
-        new ModelClientSettings(renderProfile == null ? expectedId : renderProfile),
-        new ModelDimensions(
-            width == null ? 0.01f : width,
-            height == null ? 0.01f : height,
-            eyeHeight == null ? 0.0f : eyeHeight),
-        movement,
-        behavior,
-        attributes,
-        traits,
-        status,
-        issues);
+    float resolvedWidth = width == null ? defaults.width() : width;
+    float resolvedHeight = height == null ? defaults.height() : height;
+    float resolvedEyeHeight = eyeHeight == null ? defaults.eyeHeight() : eyeHeight;
+    validateDimensions(resolvedWidth, resolvedHeight, resolvedEyeHeight, issues);
+    return new ModelDimensions(resolvedWidth, resolvedHeight, resolvedEyeHeight);
   }
 
   private static ModelMovementSettings parseMovement(
       RawMovement rawMovement,
+      ModelPresetType presetType,
       ModelMovementType movementType,
       List<ModelProfileValidationIssue> issues) {
     float speed =
@@ -277,7 +289,7 @@ public final class EasyModelProfileParser {
     boolean gravity =
         optionalBoolean(
             rawMovement == null ? null : rawMovement.gravity,
-            movementType.defaultGravity(),
+            defaultGravity(presetType, movementType),
             MOVEMENT_GRAVITY_FIELD,
             issues);
 
@@ -299,11 +311,17 @@ public final class EasyModelProfileParser {
     return new ModelMovementSettings(speed, stepHeight, gravity);
   }
 
+  private static boolean defaultGravity(
+      ModelPresetType presetType, ModelMovementType movementType) {
+    return presetType == ModelPresetType.STATIC || movementType.defaultGravity();
+  }
+
   private static ModelBehaviorSettings parseBehavior(
       RawBehavior rawBehavior,
+      ModelPresetType presetType,
       ModelMovementType movementType,
       List<ModelProfileValidationIssue> issues) {
-    ModelBehaviorMode defaultMode = movementType.defaultBehaviorMode();
+    ModelBehaviorMode defaultMode = defaultBehaviorMode(presetType, movementType);
     ModelBehaviorMode mode = parseOptionalBehaviorMode(rawBehavior, defaultMode, issues);
     boolean lookAtPlayers =
         optionalBoolean(
@@ -314,53 +332,10 @@ public final class EasyModelProfileParser {
     boolean randomStroll =
         optionalBoolean(
             rawBehavior == null ? null : rawBehavior.randomStroll,
-            false,
+            movementType.isGround() && mode == ModelBehaviorMode.AMBIENT,
             BEHAVIOR_RANDOM_STROLL_FIELD,
             issues);
     return new ModelBehaviorSettings(mode, lookAtPlayers, randomStroll);
-  }
-
-  private static ModelMovementType parseMovementType(
-      RawHost rawHost, List<ModelProfileValidationIssue> issues) {
-    String movementTypeName =
-        requiredString(
-            rawHost == null ? null : rawHost.movementType, HOST_MOVEMENT_TYPE_FIELD, issues);
-    if (movementTypeName == null) {
-      return null;
-    }
-
-    return ModelMovementType.bySerializedName(movementTypeName)
-        .orElseGet(
-            () -> {
-              addIssue(
-                  issues,
-                  ModelProfileStatus.INVALID_HOST_ENTITY,
-                  HOST_MOVEMENT_TYPE_FIELD,
-                  "Unsupported movement type " + movementTypeName + ".");
-              return null;
-            });
-  }
-
-  private static ModelBehaviorMode parseOptionalBehaviorMode(
-      RawBehavior rawBehavior,
-      ModelBehaviorMode defaultMode,
-      List<ModelProfileValidationIssue> issues) {
-    String modeName =
-        optionalString(
-            rawBehavior == null ? null : rawBehavior.mode,
-            defaultMode.getSerializedName(),
-            BEHAVIOR_MODE_FIELD,
-            issues);
-    return ModelBehaviorMode.bySerializedName(modeName)
-        .orElseGet(
-            () -> {
-              addIssue(
-                  issues,
-                  ModelProfileStatus.DISABLED,
-                  BEHAVIOR_MODE_FIELD,
-                  "Unsupported behavior mode " + modeName + ".");
-              return defaultMode;
-            });
   }
 
   private static ModelAttributes parseAttributes(
@@ -408,46 +383,80 @@ public final class EasyModelProfileParser {
     return new ModelAttributes(maxHealth, movementSpeed, followRange);
   }
 
-  private static Set<ResourceLocation> parseTraits(
-      JsonElement traitsElement, List<ModelProfileValidationIssue> issues) {
-    if (traitsElement == null || traitsElement.isJsonNull()) {
-      return Set.of();
-    }
-    if (!traitsElement.isJsonArray()) {
-      addIssue(issues, ModelProfileStatus.DISABLED, TRAITS_FIELD, "Traits must be an array.");
-      return Set.of();
-    }
-    if (traitsElement.getAsJsonArray().size() > 64) {
-      addIssue(
-          issues, ModelProfileStatus.DISABLED, TRAITS_FIELD, "Profiles support at most 64 traits.");
-      return Set.of();
-    }
-
-    Set<ResourceLocation> traits = new LinkedHashSet<>();
-    for (JsonElement traitElement : traitsElement.getAsJsonArray()) {
-      if (!traitElement.isJsonPrimitive() || !traitElement.getAsJsonPrimitive().isString()) {
-        addIssue(issues, ModelProfileStatus.DISABLED, TRAITS_FIELD, "Trait ids must be strings.");
-        continue;
-      }
-      ResourceLocation traitId = ResourceLocation.tryParse(traitElement.getAsString());
-      if (traitId == null) {
-        addIssue(
+  private static String parseSchemaVersion(
+      JsonElement schemaVersionElement, List<ModelProfileValidationIssue> issues) {
+    String schemaVersion =
+        optionalString(
+            schemaVersionElement,
+            Constants.SCHEMA_VERSION,
+            SCHEMA_VERSION_FIELD,
             issues,
-            ModelProfileStatus.DISABLED,
-            TRAITS_FIELD,
-            "Invalid trait id " + traitElement.getAsString() + ".");
-        continue;
-      }
-      traits.add(traitId);
+            ModelProfileStatus.INVALID_SCHEMA_VERSION);
+    if (!Constants.SCHEMA_VERSION.equals(schemaVersion)) {
+      addIssue(
+          issues,
+          ModelProfileStatus.INVALID_SCHEMA_VERSION,
+          SCHEMA_VERSION_FIELD,
+          "Unsupported schema_version " + schemaVersion + ".");
     }
 
-    return traits;
+    return schemaVersion;
+  }
+
+  private static ModelPresetType parsePresetType(
+      JsonElement value, List<ModelProfileValidationIssue> issues) {
+    String presetTypeName = requiredString(value, PRESET_TYPE_FIELD, issues);
+    if (presetTypeName == null) {
+      return null;
+    }
+
+    return ModelPresetType.bySerializedName(presetTypeName)
+        .orElseGet(
+            () -> {
+              addIssue(
+                  issues,
+                  ModelProfileStatus.DISABLED,
+                  PRESET_TYPE_FIELD,
+                  "Unsupported preset type " + presetTypeName + ".");
+              return null;
+            });
+  }
+
+  private static ModelMovementType parseMovementType(
+      JsonElement value,
+      ModelMovementType defaultValue,
+      boolean required,
+      List<ModelProfileValidationIssue> issues) {
+    String movementTypeName =
+        required
+            ? requiredString(value, HOST_MOVEMENT_TYPE_FIELD, issues)
+            : optionalString(
+                value, defaultValue.getSerializedName(), HOST_MOVEMENT_TYPE_FIELD, issues);
+    if (movementTypeName == null) {
+      return null;
+    }
+
+    return ModelMovementType.bySerializedName(movementTypeName)
+        .orElseGet(
+            () -> {
+              addIssue(
+                  issues,
+                  ModelProfileStatus.INVALID_HOST_ENTITY,
+                  HOST_MOVEMENT_TYPE_FIELD,
+                  "Unsupported movement type " + movementTypeName + ".");
+              return null;
+            });
   }
 
   private static ModelBodyType parseBodyType(
-      RawHost rawHost, List<ModelProfileValidationIssue> issues) {
+      JsonElement value,
+      ModelBodyType defaultValue,
+      boolean required,
+      List<ModelProfileValidationIssue> issues) {
     String bodyTypeName =
-        requiredString(rawHost == null ? null : rawHost.bodyType, HOST_BODY_TYPE_FIELD, issues);
+        required
+            ? requiredString(value, HOST_BODY_TYPE_FIELD, issues)
+            : optionalString(value, defaultValue.getSerializedName(), HOST_BODY_TYPE_FIELD, issues);
     if (bodyTypeName == null) {
       return null;
     }
@@ -464,6 +473,108 @@ public final class EasyModelProfileParser {
         HOST_BODY_TYPE_FIELD,
         "Unsupported body type " + bodyTypeName + ".");
     return null;
+  }
+
+  private static ModelBehaviorMode parseOptionalBehaviorMode(
+      RawBehavior rawBehavior,
+      ModelBehaviorMode defaultMode,
+      List<ModelProfileValidationIssue> issues) {
+    String modeName =
+        optionalString(
+            rawBehavior == null ? null : rawBehavior.mode,
+            defaultMode.getSerializedName(),
+            BEHAVIOR_MODE_FIELD,
+            issues);
+    return ModelBehaviorMode.bySerializedName(modeName)
+        .orElseGet(
+            () -> {
+              addIssue(
+                  issues,
+                  ModelProfileStatus.DISABLED,
+                  BEHAVIOR_MODE_FIELD,
+                  "Unsupported behavior mode " + modeName + ".");
+              return defaultMode;
+            });
+  }
+
+  private static ModelHostSettings defaultHost(ModelPresetType presetType) {
+    ResourceLocation entityType =
+        presetType.isMoving() || presetType == ModelPresetType.STATIC
+            ? ModelEntityTypeIds.GROUND_ENTITY
+            : ModelEntityTypeIds.STATIC_ENTITY;
+    ModelMovementType movementType =
+        presetType.isMoving() ? ModelMovementType.GROUND : ModelMovementType.STATIC;
+    return new ModelHostSettings(entityType, movementType, defaultBodyType(presetType));
+  }
+
+  private static ModelBodyType defaultBodyType(ModelPresetType presetType) {
+    return switch (presetType) {
+      case HUMANOID_STILL, HUMANOID_WANDERING -> ModelBodyType.BIPED;
+      case QUADRUPED_STILL, QUADRUPED_WANDERING -> ModelBodyType.QUADRUPED;
+      case AQUATIC_STILL, AQUATIC_SWIMMING -> ModelBodyType.AQUATIC;
+      case WINGED_STILL, WINGED_WANDERING -> ModelBodyType.WINGED;
+      case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING -> ModelBodyType.WINGED_HUMANOID;
+      case ARTHROPOD_STILL, ARTHROPOD_WANDERING -> ModelBodyType.ARTHROPOD;
+      case CUBOID_STILL, CUBOID_HOPPING -> ModelBodyType.CUBOID;
+      case FLOATING_STILL -> ModelBodyType.FLOATING;
+      case CUSTOM, STATIC, STATUE -> ModelBodyType.STATIC;
+    };
+  }
+
+  private static ModelDimensions defaultDimensions(ModelPresetType presetType) {
+    return switch (presetType) {
+      case QUADRUPED_STILL, QUADRUPED_WANDERING -> new ModelDimensions(0.9f, 0.9f, 0.6f);
+      case AQUATIC_STILL, AQUATIC_SWIMMING -> new ModelDimensions(0.7f, 0.4f, 0.25f);
+      case WINGED_STILL, WINGED_WANDERING -> new ModelDimensions(0.6f, 0.9f, 0.6f);
+      case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING ->
+          new ModelDimensions(0.6f, 0.8f, 0.6f);
+      case ARTHROPOD_STILL, ARTHROPOD_WANDERING -> new ModelDimensions(1.4f, 0.9f, 0.45f);
+      case CUBOID_STILL, CUBOID_HOPPING -> new ModelDimensions(1.0f, 1.0f, 0.5f);
+      case FLOATING_STILL -> new ModelDimensions(1.0f, 1.0f, 0.5f);
+      case CUSTOM, STATIC, STATUE, HUMANOID_STILL, HUMANOID_WANDERING ->
+          new ModelDimensions(
+              EasyModelHostEntity.FALLBACK_WIDTH,
+              EasyModelHostEntity.FALLBACK_HEIGHT,
+              EasyModelHostEntity.FALLBACK_EYE_HEIGHT);
+    };
+  }
+
+  private static ModelBehaviorMode defaultBehaviorMode(
+      ModelPresetType presetType, ModelMovementType movementType) {
+    if (presetType.isMoving()) {
+      return ModelBehaviorMode.AMBIENT;
+    }
+    if (presetType.isStill()) {
+      return ModelBehaviorMode.IDLE_ONLY;
+    }
+    return presetType == ModelPresetType.CUSTOM
+        ? movementType.defaultBehaviorMode()
+        : ModelBehaviorMode.STATIC;
+  }
+
+  private static void validateDimensions(
+      float width, float height, float eyeHeight, List<ModelProfileValidationIssue> issues) {
+    if (!isInRange(width, 0.01f, 8.0f)) {
+      addIssue(
+          issues,
+          ModelProfileStatus.INVALID_DIMENSIONS,
+          DIMENSIONS_WIDTH_FIELD,
+          "Width must be between 0.01 and 8.0.");
+    }
+    if (!isInRange(height, 0.01f, 8.0f)) {
+      addIssue(
+          issues,
+          ModelProfileStatus.INVALID_DIMENSIONS,
+          DIMENSIONS_HEIGHT_FIELD,
+          "Height must be between 0.01 and 8.0.");
+    }
+    if (!Float.isFinite(eyeHeight) || eyeHeight < 0.0f || eyeHeight > height) {
+      addIssue(
+          issues,
+          ModelProfileStatus.INVALID_DIMENSIONS,
+          DIMENSIONS_EYE_HEIGHT_FIELD,
+          "Eye height must be between 0.0 and " + DIMENSIONS_HEIGHT_FIELD + ".");
+    }
   }
 
   private static <T> T requiredObject(
@@ -529,15 +640,20 @@ public final class EasyModelProfileParser {
       String defaultValue,
       String issueField,
       List<ModelProfileValidationIssue> issues) {
+    return optionalString(value, defaultValue, issueField, issues, ModelProfileStatus.DISABLED);
+  }
+
+  private static String optionalString(
+      JsonElement value,
+      String defaultValue,
+      String issueField,
+      List<ModelProfileValidationIssue> issues,
+      ModelProfileStatus status) {
     if (value == null || value.isJsonNull()) {
       return defaultValue;
     }
     if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
-      addIssue(
-          issues,
-          ModelProfileStatus.DISABLED,
-          issueField,
-          "Field " + issueField + " must be a string.");
+      addIssue(issues, status, issueField, "Field " + issueField + " must be a string.");
       return defaultValue;
     }
 
@@ -550,6 +666,21 @@ public final class EasyModelProfileParser {
     if (rawValue == null) {
       return null;
     }
+
+    return parseResourceLocation(rawValue, issueField, issues);
+  }
+
+  private static ResourceLocation parseOptionalResourceLocation(
+      JsonElement value,
+      ResourceLocation defaultValue,
+      String issueField,
+      List<ModelProfileValidationIssue> issues) {
+    String rawValue = optionalString(value, null, issueField, issues);
+    return rawValue == null ? defaultValue : parseResourceLocation(rawValue, issueField, issues);
+  }
+
+  private static ResourceLocation parseResourceLocation(
+      String rawValue, String issueField, List<ModelProfileValidationIssue> issues) {
     ResourceLocation resourceLocation = ResourceLocation.tryParse(rawValue);
     if (resourceLocation == null) {
       addIssue(
@@ -632,8 +763,8 @@ public final class EasyModelProfileParser {
         List.of(new ModelProfileValidationIssue(status, field, message));
     return new EasyModelEntityProfile(
         expectedId,
+        Constants.SCHEMA_VERSION,
         EMPTY_VALUE,
-        new ModelPackPair(EMPTY_VALUE, EMPTY_VALUE),
         new ModelHostSettings(
             ModelEntityTypeIds.STATIC_ENTITY, ModelMovementType.STATIC, ModelBodyType.STATIC),
         new ModelClientSettings(expectedId),
@@ -645,7 +776,6 @@ public final class EasyModelProfileParser {
         new ModelBehaviorSettings(ModelBehaviorMode.STATIC, false, false),
         new ModelAttributes(
             DEFAULT_MAX_HEALTH, ModelMovementType.STATIC.defaultSpeed(), DEFAULT_FOLLOW_RANGE),
-        Set.of(),
         status,
         issues);
   }
@@ -673,7 +803,7 @@ public final class EasyModelProfileParser {
       return ModelProfileStatus.INVALID_HOST_ENTITY;
     }
 
-    return ModelProfileStatus.INVALID_RESOURCE_LOCATION;
+    return ModelProfileStatus.DISABLED;
   }
 
   private static ModelProfileStatus statusForIssues(List<ModelProfileValidationIssue> issues) {
@@ -687,11 +817,11 @@ public final class EasyModelProfileParser {
     @SerializedName(SCHEMA_VERSION_FIELD)
     JsonElement schemaVersion;
 
-    @SerializedName(ID_FIELD)
-    JsonElement id;
+    @SerializedName(PRESET_TYPE_FIELD)
+    JsonElement presetType;
 
-    @SerializedName(PACK_PAIR_FIELD)
-    JsonElement packPair;
+    @SerializedName(VERSION_FIELD)
+    JsonElement version;
 
     @SerializedName(HOST_FIELD)
     JsonElement host;
@@ -710,17 +840,6 @@ public final class EasyModelProfileParser {
 
     @SerializedName(ATTRIBUTES_FIELD)
     JsonElement attributes;
-
-    @SerializedName(TRAITS_FIELD)
-    JsonElement traits;
-  }
-
-  private static class RawPackPair {
-    @SerializedName(PAIR_ID_FIELD)
-    JsonElement pairId;
-
-    @SerializedName(ASSET_FINGERPRINT_FIELD)
-    JsonElement assetFingerprint;
   }
 
   private static class RawHost {

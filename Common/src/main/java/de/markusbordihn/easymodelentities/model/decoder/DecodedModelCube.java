@@ -18,10 +18,12 @@
 
 package de.markusbordihn.easymodelentities.model.decoder;
 
+import de.markusbordihn.easymodelentities.model.ModelCubeFaceUvs;
 import java.util.Objects;
 
 public record DecodedModelCube(
     int[] uvOffset,
+    ModelCubeFaceUvs faceUvs,
     float[] position,
     float[] dimensions,
     boolean mirror,
@@ -32,6 +34,7 @@ public record DecodedModelCube(
 
   public DecodedModelCube {
     Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(faceUvs, "faceUvs");
     uvOffset = uvOffset.clone();
     position = position.clone();
     dimensions = dimensions.clone();
@@ -43,6 +46,7 @@ public record DecodedModelCube(
   public DecodedModelCube(int[] uvOffset, float[] position, float[] dimensions, boolean mirror) {
     this(
         uvOffset,
+        ModelCubeFaceUvs.fromBoxUv(uvOffset, dimensions),
         position,
         dimensions,
         mirror,

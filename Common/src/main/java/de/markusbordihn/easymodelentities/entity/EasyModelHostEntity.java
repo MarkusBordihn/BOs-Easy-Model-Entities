@@ -51,7 +51,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
 
   private static final String PROFILE_ID_TAG = "ProfileId";
   private static final String RENDER_PROFILE_ID_TAG = "RenderProfileId";
-  private static final String ASSET_FINGERPRINT_TAG = "AssetFingerprint";
+  private static final String VERSION_TAG = "Version";
   private static final String BODY_TYPE_TAG = "BodyType";
   private static final String ANIMATION_STATE_TAG = "AnimationState";
 
@@ -61,7 +61,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
   private static final EntityDataAccessor<String> RENDER_PROFILE_ID =
       EasyModelEntityDataSerializers.defineId(
           EasyModelHostEntity.class, EasyModelEntityDataSerializers.STRING);
-  private static final EntityDataAccessor<String> ASSET_FINGERPRINT =
+  private static final EntityDataAccessor<String> VERSION =
       EasyModelEntityDataSerializers.defineId(
           EasyModelHostEntity.class, EasyModelEntityDataSerializers.STRING);
   private static final EntityDataAccessor<Float> WIDTH =
@@ -115,7 +115,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
     EasyModelRuntimeContract contract = EasyModelRuntimeContract.fallback(MISSING_PROFILE_ID);
     this.entityData.define(PROFILE_ID, contract.profileId().toString());
     this.entityData.define(RENDER_PROFILE_ID, contract.renderProfileId().toString());
-    this.entityData.define(ASSET_FINGERPRINT, contract.assetFingerprint());
+    this.entityData.define(VERSION, contract.version());
     this.entityData.define(WIDTH, contract.width());
     this.entityData.define(HEIGHT, contract.height());
     this.entityData.define(EYE_HEIGHT, contract.eyeHeight());
@@ -138,7 +138,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
     super.addAdditionalSaveData(compoundTag);
     compoundTag.putString(PROFILE_ID_TAG, this.entityData.get(PROFILE_ID));
     compoundTag.putString(RENDER_PROFILE_ID_TAG, this.entityData.get(RENDER_PROFILE_ID));
-    compoundTag.putString(ASSET_FINGERPRINT_TAG, this.entityData.get(ASSET_FINGERPRINT));
+    compoundTag.putString(VERSION_TAG, this.entityData.get(VERSION));
     compoundTag.putString(BODY_TYPE_TAG, this.entityData.get(BODY_TYPE).getSerializedName());
     compoundTag.putString(
         ANIMATION_STATE_TAG, this.entityData.get(ANIMATION_STATE).getSerializedName());
@@ -151,7 +151,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
     ResourceLocation profileId = parseResourceLocation(compoundTag.getString(PROFILE_ID_TAG));
     ResourceLocation renderProfileId =
         parseResourceLocation(compoundTag.getString(RENDER_PROFILE_ID_TAG));
-    String assetFingerprint = compoundTag.getString(ASSET_FINGERPRINT_TAG);
+    String version = compoundTag.getString(VERSION_TAG);
     ModelBodyType bodyType = ModelBodyType.bySerializedName(compoundTag.getString(BODY_TYPE_TAG));
     EasyModelAnimationState animationState =
         EasyModelAnimationState.bySerializedName(compoundTag.getString(ANIMATION_STATE_TAG));
@@ -171,7 +171,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
         new EasyModelRuntimeContract(
             profileId,
             renderProfileId == null ? profileId : renderProfileId,
-            Objects.requireNonNullElse(assetFingerprint, ""),
+            Objects.requireNonNullElse(version, ""),
             FALLBACK_WIDTH,
             FALLBACK_HEIGHT,
             FALLBACK_EYE_HEIGHT,
@@ -199,8 +199,8 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
     return parseResourceLocationOrMissing(this.entityData.get(RENDER_PROFILE_ID));
   }
 
-  public String getEasyModelAssetFingerprint() {
-    return this.entityData.get(ASSET_FINGERPRINT);
+  public String getEasyModelVersion() {
+    return this.entityData.get(VERSION);
   }
 
   public EasyModelAnimationState getEasyModelAnimationState() {
@@ -215,7 +215,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
     return new EasyModelRuntimeContract(
         getEasyModelProfileId(),
         getEasyModelRenderProfileId(),
-        getEasyModelAssetFingerprint(),
+        getEasyModelVersion(),
         this.entityData.get(WIDTH),
         this.entityData.get(HEIGHT),
         this.entityData.get(EYE_HEIGHT),
@@ -256,7 +256,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
   private void applyRuntimeContract(EasyModelRuntimeContract contract) {
     this.entityData.set(PROFILE_ID, contract.profileId().toString());
     this.entityData.set(RENDER_PROFILE_ID, contract.renderProfileId().toString());
-    this.entityData.set(ASSET_FINGERPRINT, contract.assetFingerprint());
+    this.entityData.set(VERSION, contract.version());
     this.entityData.set(WIDTH, contract.width());
     this.entityData.set(HEIGHT, contract.height());
     this.entityData.set(EYE_HEIGHT, contract.eyeHeight());

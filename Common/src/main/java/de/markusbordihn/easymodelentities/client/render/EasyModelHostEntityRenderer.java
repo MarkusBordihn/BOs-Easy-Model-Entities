@@ -20,15 +20,9 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
-import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.render.EasyModelRenderState;
-import de.markusbordihn.easymodelentities.render.EasyModelRenderStateResolver;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
@@ -50,37 +44,17 @@ public class EasyModelHostEntityRenderer<T extends EasyModelHostEntity> extends 
       int packedLight) {
     EasyModelRenderState renderState = resolveRenderState(entity);
     this.shadowRadius = renderState.shadowRadius();
-
-    poseStack.pushPose();
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
-    poseStack.scale(-renderState.scale(), -renderState.scale(), renderState.scale());
-    poseStack.translate(0.0f, -1.501f, 0.0f);
-
-    VertexConsumer vertexConsumer =
-        bufferSource.getBuffer(RenderType.entityCutoutNoCull(renderState.texture()));
-    EasyModelBakedModelRenderer.render(
-        renderState.bakedModel(),
-        renderState,
-        entity.walkAnimation.position(partialTick),
-        Math.min(entity.walkAnimation.speed(partialTick), 1.0f),
-        poseStack,
-        vertexConsumer,
-        packedLight);
-    poseStack.popPose();
-
+    EasyModelEntityRenderBackend.render(
+        entity, renderState, entityYaw, partialTick, poseStack, bufferSource, packedLight);
     super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
   }
 
   @Override
   public ResourceLocation getTextureLocation(T entity) {
-    return EasyModelRenderStateResolver.FALLBACK_TEXTURE;
+    return resolveRenderState(entity).texture();
   }
 
   private EasyModelRenderState resolveRenderState(T entity) {
-    return EasyModelRenderStateResolver.resolve(
-        entity.getEasyModelRuntimeContract(),
-        EasyModelServices.renderProfileService(),
-        EasyModelServices.bakeService(),
-        Minecraft.getInstance().getResourceManager());
+    return EasyModelEntityRenderBackend.resolveRenderState(entity.getEasyModelRuntimeContract());
   }
 }

@@ -21,40 +21,33 @@ package de.markusbordihn.easymodelentities.profile;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
 public record EasyModelEntityProfile(
     ResourceLocation id,
     String schemaVersion,
-    ModelPackPair packPair,
+    String version,
     ModelHostSettings host,
     ModelClientSettings client,
     ModelDimensions dimensions,
     ModelMovementSettings movement,
     ModelBehaviorSettings behavior,
     ModelAttributes attributes,
-    Set<ResourceLocation> traits,
     ModelProfileStatus status,
     List<ModelProfileValidationIssue> validationIssues) {
 
   public EasyModelEntityProfile {
     Objects.requireNonNull(id, "id");
     Objects.requireNonNull(schemaVersion, "schemaVersion");
-    Objects.requireNonNull(packPair, "packPair");
+    Objects.requireNonNull(version, "version");
     Objects.requireNonNull(host, "host");
     Objects.requireNonNull(client, "client");
     Objects.requireNonNull(dimensions, "dimensions");
     Objects.requireNonNull(movement, "movement");
     Objects.requireNonNull(behavior, "behavior");
     Objects.requireNonNull(attributes, "attributes");
-    traits = Set.copyOf(Objects.requireNonNull(traits, "traits"));
     Objects.requireNonNull(status, "status");
     validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
-  }
-
-  public boolean hasTrait(ResourceLocation traitId) {
-    return this.traits.contains(traitId);
   }
 
   public boolean isActive() {
@@ -75,10 +68,6 @@ public record EasyModelEntityProfile(
 
   public ResourceLocation renderProfileId() {
     return this.client.renderProfile();
-  }
-
-  public String assetFingerprint() {
-    return this.packPair.assetFingerprint();
   }
 
   public float width() {

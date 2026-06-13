@@ -27,7 +27,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelPackPair;
+import de.markusbordihn.easymodelentities.profile.ModelPresetType;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -42,10 +42,8 @@ public final class ModelRenderProfileParser {
   private static final String EMPTY_VALUE = "";
   private static final String JSON_FIELD = "json";
   private static final String SCHEMA_VERSION_FIELD = "schema_version";
-  private static final String ID_FIELD = "id";
-  private static final String PACK_PAIR_FIELD = "pack_pair";
-  private static final String PAIR_ID_FIELD = "pair_id";
-  private static final String ASSET_FINGERPRINT_FIELD = "asset_fingerprint";
+  private static final String PRESET_TYPE_FIELD = "preset_type";
+  private static final String VERSION_FIELD = "version";
   private static final String BODY_TYPE_FIELD = "body_type";
   private static final String MODEL_FIELD = "model";
   private static final String TEXTURE_FIELD = "texture";
@@ -64,9 +62,6 @@ public final class ModelRenderProfileParser {
   private static final String DEATH_FIELD = "death";
   private static final String SWING_SPEED_FIELD = "swing_speed";
   private static final String WALK_SPEED_MULTIPLIER_FIELD = "walk_speed_multiplier";
-  private static final String PACK_PAIR_PAIR_ID_FIELD = PACK_PAIR_FIELD + "." + PAIR_ID_FIELD;
-  private static final String PACK_PAIR_ASSET_FINGERPRINT_FIELD =
-      PACK_PAIR_FIELD + "." + ASSET_FINGERPRINT_FIELD;
   private static final String RENDERING_SCALE_FIELD = RENDERING_FIELD + "." + SCALE_FIELD;
   private static final String RENDERING_SHADOW_RADIUS_FIELD =
       RENDERING_FIELD + "." + SHADOW_RADIUS_FIELD;
@@ -87,9 +82,6 @@ public final class ModelRenderProfileParser {
   private static final String ANIMATION_WALK_SPEED_MULTIPLIER_FIELD =
       ANIMATION_FIELD + "." + WALK_SPEED_MULTIPLIER_FIELD;
   private static final float DEFAULT_SCALE = 1.0f;
-  private static final float DEFAULT_SHADOW_RADIUS = 0.3f;
-  private static final float DEFAULT_VISIBLE_BOUNDS_WIDTH = 1.0f;
-  private static final float DEFAULT_VISIBLE_BOUNDS_HEIGHT = 1.0f;
   private static final float DEFAULT_SWING_SPEED = 1.0f;
   private static final float DEFAULT_WALK_SPEED_MULTIPLIER = 1.0f;
 
@@ -127,13 +119,13 @@ public final class ModelRenderProfileParser {
         List.of(new ModelRenderProfileValidationIssue(status, field, message));
     return new EasyModelRenderProfile(
         expectedId,
+        Constants.SCHEMA_VERSION,
         EMPTY_VALUE,
-        new ModelPackPair(EMPTY_VALUE, EMPTY_VALUE),
         ModelBodyType.STATIC,
         ModelResourcePaths.defaultModelId(expectedId),
         ModelResourcePaths.defaultTextureId(expectedId),
-        defaultRenderSettings(),
-        defaultAnimationSettings(),
+        defaultRenderSettings(ModelPresetType.STATUE),
+        defaultAnimationSettings(ModelPresetType.STATUE),
         status,
         issues);
   }
@@ -143,51 +135,33 @@ public final class ModelRenderProfileParser {
     List<ModelRenderProfileValidationIssue> issues = new ArrayList<>();
     RawRenderProfile rawProfile = GSON.fromJson(jsonObject, RawRenderProfile.class);
 
-    String schemaVersion = requiredString(rawProfile.schemaVersion, SCHEMA_VERSION_FIELD, issues);
-    if (schemaVersion != null && !Constants.SCHEMA_VERSION.equals(schemaVersion)) {
-      addIssue(
-          issues,
-          ModelRenderProfileStatus.INVALID_SCHEMA_VERSION,
-          SCHEMA_VERSION_FIELD,
-          "Unsupported schema_version " + schemaVersion + ".");
-    }
+    String schemaVersion = parseSchemaVersion(rawProfile.schemaVersion, issues);
+    String version = optionalString(rawProfile.version, EMPTY_VALUE, VERSION_FIELD, issues);
+    ModelPresetType presetType = parsePresetType(rawProfile.presetType, issues);
+    ModelPresetType resolvedPresetType = presetType == null ? ModelPresetType.STATUE : presetType;
+    boolean custom = resolvedPresetType.isCustom();
 
-    ResourceLocation renderProfileId =
-        parseRequiredResourceLocation(rawProfile.id, ID_FIELD, issues);
-    if (renderProfileId != null && !expectedId.equals(renderProfileId)) {
-      addIssue(
-          issues,
-          ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION,
-          ID_FIELD,
-          "Render profile id " + renderProfileId + " does not match path id " + expectedId + ".");
-    }
-
-    RawPackPair rawPackPair =
-        optionalObject(rawProfile.packPair, PACK_PAIR_FIELD, RawPackPair.class, issues);
-    ModelPackPair packPair =
-        new ModelPackPair(
-            optionalString(
-                rawPackPair == null ? null : rawPackPair.pairId,
-                EMPTY_VALUE,
-                PACK_PAIR_PAIR_ID_FIELD,
-                issues),
-            optionalString(
-                rawPackPair == null ? null : rawPackPair.assetFingerprint,
-                EMPTY_VALUE,
-                PACK_PAIR_ASSET_FINGERPRINT_FIELD,
-                issues));
-    ModelBodyType bodyType = parseBodyType(rawProfile.bodyType, issues);
-    ResourceLocation model = parseRequiredResourceLocation(rawProfile.model, MODEL_FIELD, issues);
+    ModelBodyType bodyType =
+        parseBodyType(rawProfile.bodyType, defaultBodyType(resolvedPresetType), custom, issues);
+    ResourceLocation model =
+        parseOptionalResourceLocation(
+            rawProfile.model, ModelResourcePaths.defaultModelId(expectedId), MODEL_FIELD, issues);
     ResourceLocation texture =
-        parseRequiredResourceLocation(rawProfile.texture, TEXTURE_FIELD, issues);
-    ModelRenderSettings renderSettings = parseRenderSettings(rawProfile.rendering, issues);
-    ModelAnimationSettings animationSettings = parseAnimationSettings(rawProfile.animation, issues);
+        parseOptionalResourceLocation(
+            rawProfile.texture,
+            ModelResourcePaths.defaultTextureId(expectedId),
+            TEXTURE_FIELD,
+            issues);
+    ModelRenderSettings renderSettings =
+        parseRenderSettings(rawProfile.rendering, resolvedPresetType, issues);
+    ModelAnimationSettings animationSettings =
+        parseAnimationSettings(rawProfile.animation, resolvedPresetType, issues);
 
     return new EasyModelRenderProfile(
         expectedId,
-        schemaVersion == null ? EMPTY_VALUE : schemaVersion,
-        packPair,
-        bodyType == null ? ModelBodyType.STATIC : bodyType,
+        schemaVersion,
+        version,
+        bodyType == null ? defaultBodyType(resolvedPresetType) : bodyType,
         model == null ? ModelResourcePaths.defaultModelId(expectedId) : model,
         texture == null ? ModelResourcePaths.defaultTextureId(expectedId) : texture,
         renderSettings,
@@ -197,36 +171,43 @@ public final class ModelRenderProfileParser {
   }
 
   private static ModelRenderSettings parseRenderSettings(
-      JsonElement renderingElement, List<ModelRenderProfileValidationIssue> issues) {
+      JsonElement renderingElement,
+      ModelPresetType presetType,
+      List<ModelRenderProfileValidationIssue> issues) {
     RawRendering rawRendering =
         optionalObject(renderingElement, RENDERING_FIELD, RawRendering.class, issues);
+    ModelRenderSettings defaults = defaultRenderSettings(presetType);
     float visibleBoundsHeight =
         optionalFloat(
             rawRendering == null ? null : rawRendering.visibleBoundsHeight,
-            DEFAULT_VISIBLE_BOUNDS_HEIGHT,
+            defaults.visibleBoundsHeight(),
             RENDERING_VISIBLE_BOUNDS_HEIGHT_FIELD,
             issues);
     float[] visibleBoundsOffset =
         optionalFloatArray(
             rawRendering == null ? null : rawRendering.visibleBoundsOffset,
-            new float[] {0.0f, visibleBoundsHeight / 2.0f, 0.0f},
+            new float[] {
+              defaults.visibleBoundsOffsetX(),
+              defaults.visibleBoundsOffsetY(),
+              defaults.visibleBoundsOffsetZ()
+            },
             RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD,
             issues);
 
     return new ModelRenderSettings(
         optionalFloat(
             rawRendering == null ? null : rawRendering.scale,
-            DEFAULT_SCALE,
+            defaults.scale(),
             RENDERING_SCALE_FIELD,
             issues),
         optionalFloat(
             rawRendering == null ? null : rawRendering.shadowRadius,
-            DEFAULT_SHADOW_RADIUS,
+            defaults.shadowRadius(),
             RENDERING_SHADOW_RADIUS_FIELD,
             issues),
         optionalFloat(
             rawRendering == null ? null : rawRendering.visibleBoundsWidth,
-            DEFAULT_VISIBLE_BOUNDS_WIDTH,
+            defaults.visibleBoundsWidth(),
             RENDERING_VISIBLE_BOUNDS_WIDTH_FIELD,
             issues),
         visibleBoundsHeight,
@@ -236,73 +217,101 @@ public final class ModelRenderProfileParser {
   }
 
   private static ModelAnimationSettings parseAnimationSettings(
-      JsonElement animationElement, List<ModelRenderProfileValidationIssue> issues) {
+      JsonElement animationElement,
+      ModelPresetType presetType,
+      List<ModelRenderProfileValidationIssue> issues) {
     RawAnimation rawAnimation =
         optionalObject(animationElement, ANIMATION_FIELD, RawAnimation.class, issues);
-    ModelAnimationMode mode = parseAnimationMode(rawAnimation, issues);
+    ModelAnimationSettings defaults = defaultAnimationSettings(presetType);
+    ModelAnimationMode mode = parseAnimationMode(rawAnimation, defaults.mode(), issues);
 
     return new ModelAnimationSettings(
         mode,
         optionalString(
             rawAnimation == null ? null : rawAnimation.idle,
-            IDLE_FIELD,
+            defaults.idle(),
             ANIMATION_IDLE_FIELD,
             issues),
         optionalString(
             rawAnimation == null ? null : rawAnimation.walk,
-            WALK_FIELD,
+            defaults.walk(),
             ANIMATION_WALK_FIELD,
             issues),
         optionalString(
-            rawAnimation == null ? null : rawAnimation.run, RUN_FIELD, ANIMATION_RUN_FIELD, issues),
+            rawAnimation == null ? null : rawAnimation.run,
+            defaults.run(),
+            ANIMATION_RUN_FIELD,
+            issues),
         optionalString(
             rawAnimation == null ? null : rawAnimation.hurt,
-            HURT_FIELD,
+            defaults.hurt(),
             ANIMATION_HURT_FIELD,
             issues),
         optionalString(
             rawAnimation == null ? null : rawAnimation.death,
-            DEATH_FIELD,
+            defaults.death(),
             ANIMATION_DEATH_FIELD,
             issues),
         optionalFloat(
             rawAnimation == null ? null : rawAnimation.swingSpeed,
-            DEFAULT_SWING_SPEED,
+            defaults.swingSpeed(),
             ANIMATION_SWING_SPEED_FIELD,
             issues),
         optionalFloat(
             rawAnimation == null ? null : rawAnimation.walkSpeedMultiplier,
-            DEFAULT_WALK_SPEED_MULTIPLIER,
+            defaults.walkSpeedMultiplier(),
             ANIMATION_WALK_SPEED_MULTIPLIER_FIELD,
             issues));
   }
 
-  private static ModelRenderSettings defaultRenderSettings() {
-    return new ModelRenderSettings(
-        DEFAULT_SCALE,
-        DEFAULT_SHADOW_RADIUS,
-        DEFAULT_VISIBLE_BOUNDS_WIDTH,
-        DEFAULT_VISIBLE_BOUNDS_HEIGHT,
-        0.0f,
-        DEFAULT_VISIBLE_BOUNDS_HEIGHT / 2.0f,
-        0.0f);
+  private static String parseSchemaVersion(
+      JsonElement schemaVersionElement, List<ModelRenderProfileValidationIssue> issues) {
+    String schemaVersion =
+        optionalString(
+            schemaVersionElement,
+            Constants.SCHEMA_VERSION,
+            SCHEMA_VERSION_FIELD,
+            issues,
+            ModelRenderProfileStatus.INVALID_SCHEMA_VERSION);
+    if (!Constants.SCHEMA_VERSION.equals(schemaVersion)) {
+      addIssue(
+          issues,
+          ModelRenderProfileStatus.INVALID_SCHEMA_VERSION,
+          SCHEMA_VERSION_FIELD,
+          "Unsupported schema_version " + schemaVersion + ".");
+    }
+
+    return schemaVersion;
   }
 
-  private static ModelAnimationSettings defaultAnimationSettings() {
-    return new ModelAnimationSettings(
-        ModelAnimationMode.AUTOMATIC,
-        IDLE_FIELD,
-        WALK_FIELD,
-        RUN_FIELD,
-        HURT_FIELD,
-        DEATH_FIELD,
-        DEFAULT_SWING_SPEED,
-        DEFAULT_WALK_SPEED_MULTIPLIER);
+  private static ModelPresetType parsePresetType(
+      JsonElement value, List<ModelRenderProfileValidationIssue> issues) {
+    String presetTypeName = requiredString(value, PRESET_TYPE_FIELD, issues);
+    if (presetTypeName == null) {
+      return null;
+    }
+
+    return ModelPresetType.bySerializedName(presetTypeName)
+        .orElseGet(
+            () -> {
+              addIssue(
+                  issues,
+                  ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
+                  PRESET_TYPE_FIELD,
+                  "Unsupported preset type " + presetTypeName + ".");
+              return null;
+            });
   }
 
   private static ModelBodyType parseBodyType(
-      JsonElement value, List<ModelRenderProfileValidationIssue> issues) {
-    String bodyTypeName = requiredString(value, BODY_TYPE_FIELD, issues);
+      JsonElement value,
+      ModelBodyType defaultValue,
+      boolean required,
+      List<ModelRenderProfileValidationIssue> issues) {
+    String bodyTypeName =
+        required
+            ? requiredString(value, BODY_TYPE_FIELD, issues)
+            : optionalString(value, defaultValue.getSerializedName(), BODY_TYPE_FIELD, issues);
     if (bodyTypeName == null) {
       return null;
     }
@@ -322,11 +331,13 @@ public final class ModelRenderProfileParser {
   }
 
   private static ModelAnimationMode parseAnimationMode(
-      RawAnimation rawAnimation, List<ModelRenderProfileValidationIssue> issues) {
+      RawAnimation rawAnimation,
+      ModelAnimationMode defaultMode,
+      List<ModelRenderProfileValidationIssue> issues) {
     String modeName =
         optionalString(
             rawAnimation == null ? null : rawAnimation.mode,
-            ModelAnimationMode.AUTOMATIC.getSerializedName(),
+            defaultMode.getSerializedName(),
             ANIMATION_MODE_FIELD,
             issues);
     return ModelAnimationMode.bySerializedName(modeName)
@@ -337,8 +348,61 @@ public final class ModelRenderProfileParser {
                   ModelRenderProfileStatus.INVALID_ANIMATION_MODE,
                   ANIMATION_MODE_FIELD,
                   "Unsupported animation mode " + modeName + ".");
-              return ModelAnimationMode.AUTOMATIC;
+              return defaultMode;
             });
+  }
+
+  private static ModelBodyType defaultBodyType(ModelPresetType presetType) {
+    return switch (presetType) {
+      case HUMANOID_STILL, HUMANOID_WANDERING -> ModelBodyType.BIPED;
+      case QUADRUPED_STILL, QUADRUPED_WANDERING -> ModelBodyType.QUADRUPED;
+      case AQUATIC_STILL, AQUATIC_SWIMMING -> ModelBodyType.AQUATIC;
+      case WINGED_STILL, WINGED_WANDERING -> ModelBodyType.WINGED;
+      case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING -> ModelBodyType.WINGED_HUMANOID;
+      case ARTHROPOD_STILL, ARTHROPOD_WANDERING -> ModelBodyType.ARTHROPOD;
+      case CUBOID_STILL, CUBOID_HOPPING -> ModelBodyType.CUBOID;
+      case FLOATING_STILL -> ModelBodyType.FLOATING;
+      case CUSTOM, STATIC, STATUE -> ModelBodyType.STATIC;
+    };
+  }
+
+  private static ModelRenderSettings defaultRenderSettings(ModelPresetType presetType) {
+    return switch (presetType) {
+      case QUADRUPED_STILL, QUADRUPED_WANDERING -> renderSettings(0.9f, 0.9f, 0.45f, 0.45f);
+      case AQUATIC_STILL, AQUATIC_SWIMMING -> renderSettings(0.7f, 0.4f, 0.2f, 0.25f);
+      case WINGED_STILL, WINGED_WANDERING -> renderSettings(0.6f, 0.9f, 0.45f, 0.25f);
+      case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING ->
+          renderSettings(0.6f, 0.8f, 0.4f, 0.25f);
+      case ARTHROPOD_STILL, ARTHROPOD_WANDERING -> renderSettings(1.4f, 0.9f, 0.45f, 0.7f);
+      case CUBOID_STILL, CUBOID_HOPPING -> renderSettings(1.0f, 1.0f, 0.5f, 0.5f);
+      case FLOATING_STILL -> renderSettings(1.0f, 1.0f, 0.5f, 0.5f);
+      case CUSTOM, STATIC, STATUE, HUMANOID_STILL, HUMANOID_WANDERING ->
+          renderSettings(0.6f, 1.8f, 0.9f, 0.3f);
+    };
+  }
+
+  private static ModelRenderSettings renderSettings(
+      float boundsWidth, float boundsHeight, float boundsOffsetY, float shadowRadius) {
+    return new ModelRenderSettings(
+        DEFAULT_SCALE, shadowRadius, boundsWidth, boundsHeight, 0.0f, boundsOffsetY, 0.0f);
+  }
+
+  private static ModelAnimationSettings defaultAnimationSettings(ModelPresetType presetType) {
+    ModelAnimationMode mode =
+        presetType == ModelPresetType.CUSTOM
+                || presetType == ModelPresetType.STATIC
+                || presetType == ModelPresetType.STATUE
+            ? ModelAnimationMode.NONE
+            : ModelAnimationMode.AUTOMATIC;
+    return new ModelAnimationSettings(
+        mode,
+        IDLE_FIELD,
+        WALK_FIELD,
+        RUN_FIELD,
+        HURT_FIELD,
+        DEATH_FIELD,
+        DEFAULT_SWING_SPEED,
+        DEFAULT_WALK_SPEED_MULTIPLIER);
   }
 
   private static <T> T optionalObject(
@@ -382,26 +446,35 @@ public final class ModelRenderProfileParser {
       String defaultValue,
       String field,
       List<ModelRenderProfileValidationIssue> issues) {
+    return optionalString(
+        value, defaultValue, field, issues, ModelRenderProfileStatus.INVALID_RENDER_SETTINGS);
+  }
+
+  private static String optionalString(
+      JsonElement value,
+      String defaultValue,
+      String field,
+      List<ModelRenderProfileValidationIssue> issues,
+      ModelRenderProfileStatus status) {
     if (value == null || value.isJsonNull()) {
       return defaultValue;
     }
     if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
-      addIssue(
-          issues,
-          ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
-          field,
-          "Field " + field + " must be a string.");
+      addIssue(issues, status, field, "Field " + field + " must be a string.");
       return defaultValue;
     }
 
     return value.getAsString();
   }
 
-  private static ResourceLocation parseRequiredResourceLocation(
-      JsonElement value, String field, List<ModelRenderProfileValidationIssue> issues) {
-    String rawValue = requiredString(value, field, issues);
+  private static ResourceLocation parseOptionalResourceLocation(
+      JsonElement value,
+      ResourceLocation defaultValue,
+      String field,
+      List<ModelRenderProfileValidationIssue> issues) {
+    String rawValue = optionalString(value, null, field, issues);
     if (rawValue == null) {
-      return null;
+      return defaultValue;
     }
     ResourceLocation resourceLocation = ResourceLocation.tryParse(rawValue);
     if (resourceLocation == null) {
@@ -487,7 +560,7 @@ public final class ModelRenderProfileParser {
       return ModelRenderProfileStatus.INVALID_BODY_TYPE;
     }
 
-    return ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION;
+    return ModelRenderProfileStatus.INVALID_RENDER_SETTINGS;
   }
 
   private static void addIssue(
@@ -502,11 +575,11 @@ public final class ModelRenderProfileParser {
     @SerializedName(SCHEMA_VERSION_FIELD)
     JsonElement schemaVersion;
 
-    @SerializedName(ID_FIELD)
-    JsonElement id;
+    @SerializedName(PRESET_TYPE_FIELD)
+    JsonElement presetType;
 
-    @SerializedName(PACK_PAIR_FIELD)
-    JsonElement packPair;
+    @SerializedName(VERSION_FIELD)
+    JsonElement version;
 
     @SerializedName(BODY_TYPE_FIELD)
     JsonElement bodyType;
@@ -522,14 +595,6 @@ public final class ModelRenderProfileParser {
 
     @SerializedName(ANIMATION_FIELD)
     JsonElement animation;
-  }
-
-  private static class RawPackPair {
-    @SerializedName(PAIR_ID_FIELD)
-    JsonElement pairId;
-
-    @SerializedName(ASSET_FINGERPRINT_FIELD)
-    JsonElement assetFingerprint;
   }
 
   private static class RawRendering {
