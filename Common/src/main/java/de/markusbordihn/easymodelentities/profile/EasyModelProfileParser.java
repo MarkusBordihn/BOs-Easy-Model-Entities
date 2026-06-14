@@ -27,6 +27,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
+import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -42,10 +43,12 @@ public final class EasyModelProfileParser {
   private static final String EMPTY_VALUE = "";
   private static final String ISSUE_JSON_FIELD = "json";
   private static final String SCHEMA_VERSION_FIELD = "schema_version";
+  private static final String MODEL_TYPE_FIELD = "model_type";
   private static final String PRESET_TYPE_FIELD = "preset_type";
   private static final String VERSION_FIELD = "version";
-  private static final String HOST_FIELD = "host";
-  private static final String ENTITY_TYPE_FIELD = "entity_type";
+  private static final String ENTITY_FIELD = "entity";
+  private static final String BLOCK_ENTITY_FIELD = "block_entity";
+  private static final String TYPE_FIELD = "type";
   private static final String MOVEMENT_TYPE_FIELD = "movement_type";
   private static final String BODY_TYPE_FIELD = "body_type";
   private static final String CLIENT_FIELD = "client";
@@ -66,9 +69,12 @@ public final class EasyModelProfileParser {
   private static final String MAX_HEALTH_FIELD = "max_health";
   private static final String MOVEMENT_SPEED_FIELD = "movement_speed";
   private static final String FOLLOW_RANGE_FIELD = "follow_range";
-  private static final String HOST_ENTITY_TYPE_FIELD = HOST_FIELD + "." + ENTITY_TYPE_FIELD;
-  private static final String HOST_MOVEMENT_TYPE_FIELD = HOST_FIELD + "." + MOVEMENT_TYPE_FIELD;
-  private static final String HOST_BODY_TYPE_FIELD = HOST_FIELD + "." + BODY_TYPE_FIELD;
+  private static final String ENTITY_TYPE_FIELD = ENTITY_FIELD + "." + TYPE_FIELD;
+  private static final String ENTITY_MOVEMENT_TYPE_FIELD = ENTITY_FIELD + "." + MOVEMENT_TYPE_FIELD;
+  private static final String ENTITY_BODY_TYPE_FIELD = ENTITY_FIELD + "." + BODY_TYPE_FIELD;
+  private static final String BLOCK_ENTITY_TYPE_FIELD = BLOCK_ENTITY_FIELD + "." + TYPE_FIELD;
+  private static final String BLOCK_ENTITY_BODY_TYPE_FIELD =
+      BLOCK_ENTITY_FIELD + "." + BODY_TYPE_FIELD;
   private static final String CLIENT_RENDER_PROFILE_FIELD =
       CLIENT_FIELD + "." + RENDER_PROFILE_FIELD;
   private static final String DIMENSIONS_WIDTH_FIELD = DIMENSIONS_FIELD + "." + WIDTH_FIELD;
@@ -126,15 +132,39 @@ public final class EasyModelProfileParser {
     RawProfile rawProfile = GSON.fromJson(jsonObject, RawProfile.class);
     String schemaVersion = parseSchemaVersion(rawProfile.schemaVersion, issues);
     String version = optionalString(rawProfile.version, EMPTY_VALUE, VERSION_FIELD, issues);
-    ModelPresetType presetType = parsePresetType(rawProfile.presetType, issues);
-    ModelPresetType resolvedPresetType = presetType == null ? ModelPresetType.STATUE : presetType;
-    boolean custom = resolvedPresetType.isCustom();
+    ModelType modelType = parseModelType(rawProfile.modelType, issues);
+    ModelType resolvedModelType = modelType == null ? ModelType.ENTITY : modelType;
+    ModelPresetType entityPresetType = null;
+    ModelBlockEntityPresetType blockEntityPresetType = null;
+    if (resolvedModelType == ModelType.BLOCK_ENTITY) {
+      blockEntityPresetType = parseBlockEntityPresetType(rawProfile.presetType, issues);
+    } else {
+      entityPresetType = parseEntityPresetType(rawProfile.presetType, issues);
+    }
+    ModelPresetType resolvedEntityPresetType =
+        entityPresetType == null ? ModelPresetType.STATUE : entityPresetType;
+    ModelBlockEntityPresetType resolvedBlockEntityPresetType =
+        blockEntityPresetType == null ? ModelBlockEntityPresetType.STATIC : blockEntityPresetType;
+    boolean custom = resolvedModelType == ModelType.ENTITY && resolvedEntityPresetType.isCustom();
 
-    RawHost rawHost =
+    RawEntity rawEntity =
         custom
-            ? requiredObject(rawProfile.host, HOST_FIELD, RawHost.class, issues)
-            : optionalObject(rawProfile.host, HOST_FIELD, RawHost.class, issues);
-    ModelHostSettings host = parseHost(rawHost, resolvedPresetType, custom, issues);
+            ? requiredObject(rawProfile.entity, ENTITY_FIELD, RawEntity.class, issues)
+            : optionalObject(rawProfile.entity, ENTITY_FIELD, RawEntity.class, issues);
+    ModelEntitySettings entity =
+        resolvedModelType == ModelType.ENTITY
+            ? parseEntity(rawEntity, resolvedEntityPresetType, custom, issues)
+            : null;
+
+    RawBlockEntity rawBlockEntity =
+        resolvedModelType == ModelType.BLOCK_ENTITY
+            ? optionalObject(
+                rawProfile.blockEntity, BLOCK_ENTITY_FIELD, RawBlockEntity.class, issues)
+            : null;
+    ModelBlockEntitySettings blockEntity =
+        resolvedModelType == ModelType.BLOCK_ENTITY
+            ? parseBlockEntity(rawBlockEntity, resolvedBlockEntityPresetType, issues)
+            : null;
 
     RawClient rawClient = optionalObject(rawProfile.client, CLIENT_FIELD, RawClient.class, issues);
     ResourceLocation renderProfile =
@@ -148,16 +178,27 @@ public final class EasyModelProfileParser {
         custom
             ? requiredObject(rawProfile.dimensions, DIMENSIONS_FIELD, RawDimensions.class, issues)
             : optionalObject(rawProfile.dimensions, DIMENSIONS_FIELD, RawDimensions.class, issues);
-    ModelDimensions dimensions = parseDimensions(rawDimensions, resolvedPresetType, custom, issues);
+    ModelDimensions dimensions =
+        parseDimensions(rawDimensions, resolvedEntityPresetType, resolvedModelType, custom, issues);
 
     RawMovement rawMovement =
         optionalObject(rawProfile.movement, MOVEMENT_FIELD, RawMovement.class, issues);
     ModelMovementSettings movement =
-        parseMovement(rawMovement, resolvedPresetType, host.movementType(), issues);
+        parseMovement(
+            rawMovement,
+            resolvedEntityPresetType,
+            entity == null ? ModelMovementType.STATIC : entity.movementType(),
+            resolvedModelType,
+            issues);
     RawBehavior rawBehavior =
         optionalObject(rawProfile.behavior, BEHAVIOR_FIELD, RawBehavior.class, issues);
     ModelBehaviorSettings behavior =
-        parseBehavior(rawBehavior, resolvedPresetType, host.movementType(), issues);
+        parseBehavior(
+            rawBehavior,
+            resolvedEntityPresetType,
+            entity == null ? ModelMovementType.STATIC : entity.movementType(),
+            resolvedModelType,
+            issues);
     RawAttributes rawAttributes =
         optionalObject(rawProfile.attributes, ATTRIBUTES_FIELD, RawAttributes.class, issues);
     ModelAttributes attributes = parseAttributes(rawAttributes, movement, issues);
@@ -166,7 +207,9 @@ public final class EasyModelProfileParser {
         expectedId,
         schemaVersion,
         version,
-        host,
+        resolvedModelType,
+        entity,
+        blockEntity,
         new ModelClientSettings(renderProfile == null ? expectedId : renderProfile),
         dimensions,
         movement,
@@ -176,50 +219,93 @@ public final class EasyModelProfileParser {
         issues);
   }
 
-  private static ModelHostSettings parseHost(
-      RawHost rawHost,
+  private static ModelEntitySettings parseEntity(
+      RawEntity rawEntity,
       ModelPresetType presetType,
       boolean required,
       List<ModelProfileValidationIssue> issues) {
-    ModelHostSettings defaults = defaultHost(presetType);
+    ModelEntitySettings defaults = defaultEntity(presetType);
     ResourceLocation entityType =
         required
             ? parseRequiredResourceLocation(
-                rawHost == null ? null : rawHost.entityType, HOST_ENTITY_TYPE_FIELD, issues)
+                rawEntity == null ? null : rawEntity.type, ENTITY_TYPE_FIELD, issues)
             : parseOptionalResourceLocation(
-                rawHost == null ? null : rawHost.entityType,
-                defaults.entityType(),
-                HOST_ENTITY_TYPE_FIELD,
+                rawEntity == null ? null : rawEntity.type,
+                defaults.type(),
+                ENTITY_TYPE_FIELD,
                 issues);
     if (entityType != null && !ModelEntityTypeIds.isSupportedHostEntityType(entityType)) {
       addIssue(
           issues,
           ModelProfileStatus.INVALID_HOST_ENTITY,
-          HOST_ENTITY_TYPE_FIELD,
+          ENTITY_TYPE_FIELD,
           "Unsupported host entity type " + entityType + ".");
     }
 
     ModelMovementType movementType =
         parseMovementType(
-            rawHost == null ? null : rawHost.movementType,
+            rawEntity == null ? null : rawEntity.movementType,
             defaults.movementType(),
             required,
             issues);
     ModelBodyType bodyType =
         parseBodyType(
-            rawHost == null ? null : rawHost.bodyType, defaults.bodyType(), required, issues);
-    return new ModelHostSettings(
-        entityType == null ? defaults.entityType() : entityType,
+            rawEntity == null ? null : rawEntity.bodyType,
+            defaults.bodyType(),
+            required,
+            ENTITY_BODY_TYPE_FIELD,
+            ModelProfileStatus.INVALID_HOST_ENTITY,
+            issues);
+    return new ModelEntitySettings(
+        entityType == null ? defaults.type() : entityType,
         movementType == null ? defaults.movementType() : movementType,
         bodyType == null ? defaults.bodyType() : bodyType);
+  }
+
+  private static ModelBlockEntitySettings parseBlockEntity(
+      RawBlockEntity rawBlockEntity,
+      ModelBlockEntityPresetType presetType,
+      List<ModelProfileValidationIssue> issues) {
+    ResourceLocation defaultType = defaultBlockEntityType(presetType);
+    ResourceLocation blockEntityType =
+        parseOptionalResourceLocation(
+            rawBlockEntity == null ? null : rawBlockEntity.type,
+            defaultType,
+            BLOCK_ENTITY_TYPE_FIELD,
+            issues);
+    if (blockEntityType != null
+        && !ModelBlockEntityTypeIds.isSupportedHostBlockEntityType(blockEntityType)) {
+      addIssue(
+          issues,
+          ModelProfileStatus.INVALID_HOST_BLOCK_ENTITY,
+          BLOCK_ENTITY_TYPE_FIELD,
+          "Unsupported host block entity type " + blockEntityType + ".");
+    }
+
+    ModelBodyType bodyType =
+        parseBodyType(
+            rawBlockEntity == null ? null : rawBlockEntity.bodyType,
+            ModelBodyType.STATIC,
+            false,
+            BLOCK_ENTITY_BODY_TYPE_FIELD,
+            ModelProfileStatus.INVALID_HOST_BLOCK_ENTITY,
+            issues);
+    return new ModelBlockEntitySettings(
+        blockEntityType == null ? defaultType : blockEntityType,
+        presetType,
+        bodyType == null ? ModelBodyType.STATIC : bodyType);
   }
 
   private static ModelDimensions parseDimensions(
       RawDimensions rawDimensions,
       ModelPresetType presetType,
+      ModelType modelType,
       boolean required,
       List<ModelProfileValidationIssue> issues) {
-    ModelDimensions defaults = defaultDimensions(presetType);
+    ModelDimensions defaults =
+        modelType == ModelType.BLOCK_ENTITY
+            ? new ModelDimensions(1.0f, 1.0f, 0.5f)
+            : defaultDimensions(presetType);
     Float width;
     if (required) {
       width =
@@ -273,7 +359,12 @@ public final class EasyModelProfileParser {
       RawMovement rawMovement,
       ModelPresetType presetType,
       ModelMovementType movementType,
+      ModelType modelType,
       List<ModelProfileValidationIssue> issues) {
+    if (modelType == ModelType.BLOCK_ENTITY) {
+      return new ModelMovementSettings(0.0f, 0.0f, false);
+    }
+
     float speed =
         optionalFloat(
             rawMovement == null ? null : rawMovement.speed,
@@ -320,7 +411,12 @@ public final class EasyModelProfileParser {
       RawBehavior rawBehavior,
       ModelPresetType presetType,
       ModelMovementType movementType,
+      ModelType modelType,
       List<ModelProfileValidationIssue> issues) {
+    if (modelType == ModelType.BLOCK_ENTITY) {
+      return new ModelBehaviorSettings(ModelBehaviorMode.STATIC, false, false);
+    }
+
     ModelBehaviorMode defaultMode = defaultBehaviorMode(presetType, movementType);
     ModelBehaviorMode mode = parseOptionalBehaviorMode(rawBehavior, defaultMode, issues);
     boolean lookAtPlayers =
@@ -403,7 +499,26 @@ public final class EasyModelProfileParser {
     return schemaVersion;
   }
 
-  private static ModelPresetType parsePresetType(
+  private static ModelType parseModelType(
+      JsonElement value, List<ModelProfileValidationIssue> issues) {
+    String modelTypeName = requiredString(value, MODEL_TYPE_FIELD, issues);
+    if (modelTypeName == null) {
+      return null;
+    }
+
+    return ModelType.bySerializedName(modelTypeName)
+        .orElseGet(
+            () -> {
+              addIssue(
+                  issues,
+                  ModelProfileStatus.INVALID_MODEL_TYPE,
+                  MODEL_TYPE_FIELD,
+                  "Unsupported model type " + modelTypeName + ".");
+              return null;
+            });
+  }
+
+  private static ModelPresetType parseEntityPresetType(
       JsonElement value, List<ModelProfileValidationIssue> issues) {
     String presetTypeName = requiredString(value, PRESET_TYPE_FIELD, issues);
     if (presetTypeName == null) {
@@ -422,6 +537,25 @@ public final class EasyModelProfileParser {
             });
   }
 
+  private static ModelBlockEntityPresetType parseBlockEntityPresetType(
+      JsonElement value, List<ModelProfileValidationIssue> issues) {
+    String presetTypeName = requiredString(value, PRESET_TYPE_FIELD, issues);
+    if (presetTypeName == null) {
+      return null;
+    }
+
+    return ModelBlockEntityPresetType.bySerializedName(presetTypeName)
+        .orElseGet(
+            () -> {
+              addIssue(
+                  issues,
+                  ModelProfileStatus.INVALID_HOST_BLOCK_ENTITY,
+                  PRESET_TYPE_FIELD,
+                  "Unsupported block entity preset type " + presetTypeName + ".");
+              return null;
+            });
+  }
+
   private static ModelMovementType parseMovementType(
       JsonElement value,
       ModelMovementType defaultValue,
@@ -429,9 +563,9 @@ public final class EasyModelProfileParser {
       List<ModelProfileValidationIssue> issues) {
     String movementTypeName =
         required
-            ? requiredString(value, HOST_MOVEMENT_TYPE_FIELD, issues)
+            ? requiredString(value, ENTITY_MOVEMENT_TYPE_FIELD, issues)
             : optionalString(
-                value, defaultValue.getSerializedName(), HOST_MOVEMENT_TYPE_FIELD, issues);
+                value, defaultValue.getSerializedName(), ENTITY_MOVEMENT_TYPE_FIELD, issues);
     if (movementTypeName == null) {
       return null;
     }
@@ -442,7 +576,7 @@ public final class EasyModelProfileParser {
               addIssue(
                   issues,
                   ModelProfileStatus.INVALID_HOST_ENTITY,
-                  HOST_MOVEMENT_TYPE_FIELD,
+                  ENTITY_MOVEMENT_TYPE_FIELD,
                   "Unsupported movement type " + movementTypeName + ".");
               return null;
             });
@@ -452,11 +586,13 @@ public final class EasyModelProfileParser {
       JsonElement value,
       ModelBodyType defaultValue,
       boolean required,
+      String issueField,
+      ModelProfileStatus status,
       List<ModelProfileValidationIssue> issues) {
     String bodyTypeName =
         required
-            ? requiredString(value, HOST_BODY_TYPE_FIELD, issues)
-            : optionalString(value, defaultValue.getSerializedName(), HOST_BODY_TYPE_FIELD, issues);
+            ? requiredString(value, issueField, issues)
+            : optionalString(value, defaultValue.getSerializedName(), issueField, issues, status);
     if (bodyTypeName == null) {
       return null;
     }
@@ -467,11 +603,7 @@ public final class EasyModelProfileParser {
       }
     }
 
-    addIssue(
-        issues,
-        ModelProfileStatus.INVALID_HOST_ENTITY,
-        HOST_BODY_TYPE_FIELD,
-        "Unsupported body type " + bodyTypeName + ".");
+    addIssue(issues, status, issueField, "Unsupported body type " + bodyTypeName + ".");
     return null;
   }
 
@@ -497,14 +629,22 @@ public final class EasyModelProfileParser {
             });
   }
 
-  private static ModelHostSettings defaultHost(ModelPresetType presetType) {
+  private static ModelEntitySettings defaultEntity(ModelPresetType presetType) {
     ResourceLocation entityType =
         presetType.isMoving() || presetType == ModelPresetType.STATIC
             ? ModelEntityTypeIds.GROUND_ENTITY
             : ModelEntityTypeIds.STATIC_ENTITY;
     ModelMovementType movementType =
         presetType.isMoving() ? ModelMovementType.GROUND : ModelMovementType.STATIC;
-    return new ModelHostSettings(entityType, movementType, defaultBodyType(presetType));
+    return new ModelEntitySettings(entityType, movementType, defaultBodyType(presetType));
+  }
+
+  private static ResourceLocation defaultBlockEntityType(ModelBlockEntityPresetType presetType) {
+    return switch (presetType) {
+      case STATIC -> ModelBlockEntityTypeIds.STATIC_BLOCK_ENTITY;
+      case TICKING -> ModelBlockEntityTypeIds.TICKING_BLOCK_ENTITY;
+      case ANIMATED -> ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY;
+    };
   }
 
   private static ModelBodyType defaultBodyType(ModelPresetType presetType) {
@@ -765,8 +905,10 @@ public final class EasyModelProfileParser {
         expectedId,
         Constants.SCHEMA_VERSION,
         EMPTY_VALUE,
-        new ModelHostSettings(
+        ModelType.ENTITY,
+        new ModelEntitySettings(
             ModelEntityTypeIds.STATIC_ENTITY, ModelMovementType.STATIC, ModelBodyType.STATIC),
+        null,
         new ModelClientSettings(expectedId),
         new ModelDimensions(0.01f, 0.01f, 0.0f),
         new ModelMovementSettings(
@@ -799,8 +941,14 @@ public final class EasyModelProfileParser {
     if (field.startsWith(DIMENSIONS_FIELD)) {
       return ModelProfileStatus.INVALID_DIMENSIONS;
     }
-    if (field.startsWith(HOST_FIELD)) {
+    if (MODEL_TYPE_FIELD.equals(field)) {
+      return ModelProfileStatus.INVALID_MODEL_TYPE;
+    }
+    if (field.startsWith(ENTITY_FIELD)) {
       return ModelProfileStatus.INVALID_HOST_ENTITY;
+    }
+    if (field.startsWith(BLOCK_ENTITY_FIELD)) {
+      return ModelProfileStatus.INVALID_HOST_BLOCK_ENTITY;
     }
 
     return ModelProfileStatus.DISABLED;
@@ -817,14 +965,20 @@ public final class EasyModelProfileParser {
     @SerializedName(SCHEMA_VERSION_FIELD)
     JsonElement schemaVersion;
 
+    @SerializedName(MODEL_TYPE_FIELD)
+    JsonElement modelType;
+
     @SerializedName(PRESET_TYPE_FIELD)
     JsonElement presetType;
 
     @SerializedName(VERSION_FIELD)
     JsonElement version;
 
-    @SerializedName(HOST_FIELD)
-    JsonElement host;
+    @SerializedName(ENTITY_FIELD)
+    JsonElement entity;
+
+    @SerializedName(BLOCK_ENTITY_FIELD)
+    JsonElement blockEntity;
 
     @SerializedName(CLIENT_FIELD)
     JsonElement client;
@@ -842,12 +996,20 @@ public final class EasyModelProfileParser {
     JsonElement attributes;
   }
 
-  private static class RawHost {
-    @SerializedName(ENTITY_TYPE_FIELD)
-    JsonElement entityType;
+  private static class RawEntity {
+    @SerializedName(TYPE_FIELD)
+    JsonElement type;
 
     @SerializedName(MOVEMENT_TYPE_FIELD)
     JsonElement movementType;
+
+    @SerializedName(BODY_TYPE_FIELD)
+    JsonElement bodyType;
+  }
+
+  private static class RawBlockEntity {
+    @SerializedName(TYPE_FIELD)
+    JsonElement type;
 
     @SerializedName(BODY_TYPE_FIELD)
     JsonElement bodyType;

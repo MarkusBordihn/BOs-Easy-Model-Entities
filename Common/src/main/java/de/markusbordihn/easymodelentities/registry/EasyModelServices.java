@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.registry;
 
+import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntityTypeProvider;
 import de.markusbordihn.easymodelentities.diagnostics.EasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelEntityFactory;
 import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
@@ -33,6 +34,7 @@ public final class EasyModelServices {
   private static volatile EasyModelProfileService profileService;
   private static volatile EasyModelRenderProfileService renderProfileService;
   private static volatile EasyModelEntityFactory entityFactory;
+  private static volatile EasyModelHostBlockEntityTypeProvider blockEntityTypeProvider;
   private static volatile EasyModelDecoderRegistry decoderRegistry;
   private static volatile EasyModelBakeService bakeService;
   private static volatile EasyModelValidationService validationService;
@@ -67,6 +69,16 @@ public final class EasyModelServices {
 
   public static void setEntityFactory(EasyModelEntityFactory entityFactory) {
     EasyModelServices.entityFactory = Objects.requireNonNull(entityFactory, "entityFactory");
+  }
+
+  public static EasyModelHostBlockEntityTypeProvider blockEntityTypeProvider() {
+    return blockEntityTypeProvider;
+  }
+
+  public static void setBlockEntityTypeProvider(
+      EasyModelHostBlockEntityTypeProvider blockEntityTypeProvider) {
+    EasyModelServices.blockEntityTypeProvider =
+        Objects.requireNonNull(blockEntityTypeProvider, "blockEntityTypeProvider");
   }
 
   public static EasyModelDecoderRegistry decoderRegistry() {
@@ -107,6 +119,7 @@ public final class EasyModelServices {
     profileService = EasyModelProfileService.EMPTY;
     renderProfileService = EasyModelRenderProfileService.EMPTY;
     entityFactory = EasyModelEntityFactory.EMPTY;
+    blockEntityTypeProvider = EasyModelHostBlockEntityTypeProvider.EMPTY;
     decoderRegistry = EasyModelDecoderRegistry.EMPTY;
     bakeService = EasyModelBakeService.EMPTY;
     validationService = EasyModelValidationService.EMPTY;

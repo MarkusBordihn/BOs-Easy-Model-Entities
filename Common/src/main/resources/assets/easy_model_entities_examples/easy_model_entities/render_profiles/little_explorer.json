@@ -1,6 +1,8 @@
 {
   "preset_type": "humanoid_wandering",
   "version": "demo-little-explorer-v3",
+  "model": "easy_model_entities_examples:easy_model_entities/models/little_explorer",
+  "texture": "easy_model_entities_examples:textures/entity/little_explorer.png",
   "animation": {
     "walk_speed_multiplier": 0.85
   }

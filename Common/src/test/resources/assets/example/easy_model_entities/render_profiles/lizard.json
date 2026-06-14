@@ -1,6 +1,8 @@
 {
   "preset_type": "quadruped_wandering",
   "version": "v1",
+  "model": "example:easy_model_entities/models/lizard",
+  "texture": "example:textures/entity/lizard.png",
   "rendering": {
     "scale": 1.25,
     "shadow_radius": 0.4,

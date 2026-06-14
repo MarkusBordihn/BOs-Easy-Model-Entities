@@ -32,8 +32,14 @@ class ModelResourcePathsTest {
   @Test
   void resourcePathsMatchSplitArchitecture() {
     assertEquals(
-        "data/example/easy_model_entities/profiles/lizard.json",
-        ModelResourcePaths.serverProfilePath(PROFILE_ID));
+        "data/example/easy_model_entities/profiles/entity/lizard.json",
+        ModelResourcePaths.entityServerProfilePath(PROFILE_ID));
+    assertEquals(
+        "data/example/easy_model_entities/profiles/block_entity/lizard.json",
+        ModelResourcePaths.blockEntityServerProfilePath(PROFILE_ID));
+    assertEquals(
+        "data/example/easy_model_entities/profiles/entity/lizard.json",
+        ModelResourcePaths.serverProfilePath(new ResourceLocation("example", "entity/lizard")));
     assertEquals(
         "assets/example/easy_model_entities/render_profiles/lizard.json",
         ModelResourcePaths.renderProfilePath(PROFILE_ID));

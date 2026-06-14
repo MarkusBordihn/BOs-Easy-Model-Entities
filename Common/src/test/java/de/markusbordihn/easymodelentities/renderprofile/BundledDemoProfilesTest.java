@@ -47,17 +47,23 @@ import org.junit.jupiter.api.Test;
 
 class BundledDemoProfilesTest {
 
-  private static void assertDemo(String path, ModelBodyType bodyType) throws Exception {
+  private static void assertDemo(String path, String renderPath, ModelBodyType bodyType)
+      throws Exception {
     ResourceLocation id = new ResourceLocation("easy_model_entities_examples", path);
+    ResourceLocation renderProfileId =
+        new ResourceLocation("easy_model_entities_examples", renderPath);
     EasyModelEntityProfile profile = parseProfile(id);
-    EasyModelRenderProfile renderProfile = parseRenderProfile(id);
+    EasyModelRenderProfile renderProfile = parseRenderProfile(profile.renderProfileId());
     ModelBakeResult bakeResult =
         ModelBakeService.createDefault().bake(renderProfile, resourceManager(renderProfile));
 
     assertTrue(profile.isActive());
     assertTrue(renderProfile.isActive());
     assertTrue(bakeResult.successful());
-    assertEquals(bodyType, profile.host().bodyType());
+    assertEquals(id, profile.id());
+    assertEquals(renderProfileId, profile.renderProfileId());
+    assertEquals(profile.renderProfileId(), renderProfile.id());
+    assertEquals(bodyType, profile.bodyType());
     assertEquals(bodyType, renderProfile.bodyType());
     assertEquals(profile.version(), renderProfile.version());
   }
@@ -137,8 +143,9 @@ class BundledDemoProfilesTest {
 
   @Test
   void bundledDemoProfilesParseAndBake() throws Exception {
-    assertDemo("training_dummy", ModelBodyType.STATIC);
-    assertDemo("little_explorer", ModelBodyType.BIPED);
-    assertDemo("stone_turtle", ModelBodyType.QUADRUPED);
+    assertDemo("entity/training_dummy", "training_dummy", ModelBodyType.STATIC);
+    assertDemo("entity/little_explorer", "little_explorer", ModelBodyType.BIPED);
+    assertDemo("entity/stone_turtle", "stone_turtle", ModelBodyType.QUADRUPED);
+    assertDemo("block_entity/shrine", "shrine", ModelBodyType.STATIC);
   }
 }

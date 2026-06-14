@@ -13,6 +13,15 @@ base {
   archivesName = "${mod_id}-forge-${minecraft_version}"
 }
 
+publishing {
+  publications {
+    register('mavenJava', MavenPublication) {
+      artifactId = base.archivesName.get()
+      artifact tasks.named('jar')
+    }
+  }
+}
+
 minecraft {
   mappings channel: 'official', version: "${project.minecraft_version}"
 

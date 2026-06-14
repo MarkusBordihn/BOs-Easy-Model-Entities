@@ -19,8 +19,10 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.server.packs.PackType;
@@ -38,6 +40,15 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
         FabricEasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     EntityRendererRegistry.register(
         FabricEasyModelEntityTypes.INSTANCE.staticEntityType(), EasyModelHostEntityRenderer::new);
+    BlockEntityRendererRegistry.register(
+        FabricEasyModelBlockEntityTypes.INSTANCE.staticBlockEntityType(),
+        EasyModelHostBlockEntityRenderer::new);
+    BlockEntityRendererRegistry.register(
+        FabricEasyModelBlockEntityTypes.INSTANCE.tickingBlockEntityType(),
+        EasyModelHostBlockEntityRenderer::new);
+    BlockEntityRendererRegistry.register(
+        FabricEasyModelBlockEntityTypes.INSTANCE.animatedBlockEntityType(),
+        EasyModelHostBlockEntityRenderer::new);
     ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
         .registerReloadListener(new FabricModelRenderProfileReloadListener());
   }

@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.api.client;
 
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 public final class EasyModelEntitiesClientApi {
 
@@ -29,5 +30,10 @@ public final class EasyModelEntitiesClientApi {
   public static <T extends Entity & EasyModelRenderable>
       EasyModelEntityRenderDelegate<T> createRenderDelegate() {
     return new EasyModelEntityRenderDelegate<>();
+  }
+
+  public static <T extends BlockEntity & EasyModelRenderable>
+      EasyModelBlockEntityRenderDelegate<T> createBlockEntityRenderDelegate() {
+    return new EasyModelBlockEntityRenderDelegate<>();
   }
 }

@@ -76,6 +76,10 @@ public final class EasyModelProfileManager implements EasyModelProfileService {
     }
 
     String profilePath = path.substring(prefix.length(), path.length() - JSON_EXTENSION.length());
+    if (!profilePath.startsWith("entity/") && !profilePath.startsWith("block_entity/")) {
+      return Optional.empty();
+    }
+
     ResourceLocation profileId =
         ResourceLocation.tryParse(resourceLocation.getNamespace() + ":" + profilePath);
     return Optional.ofNullable(profileId);

@@ -40,6 +40,7 @@ class EasyModelRuntimeContractTest {
             new StringReader(
                 """
                 {
+                  "model_type": "entity",
                   "preset_type": "quadruped_wandering",
                   "version": "v1",
                   "client": {

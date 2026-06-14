@@ -38,10 +38,11 @@ import de.markusbordihn.easymodelentities.profile.ModelBehaviorSettings;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.profile.ModelClientSettings;
 import de.markusbordihn.easymodelentities.profile.ModelDimensions;
-import de.markusbordihn.easymodelentities.profile.ModelHostSettings;
+import de.markusbordihn.easymodelentities.profile.ModelEntitySettings;
 import de.markusbordihn.easymodelentities.profile.ModelMovementSettings;
 import de.markusbordihn.easymodelentities.profile.ModelMovementType;
 import de.markusbordihn.easymodelentities.profile.ModelProfileStatus;
+import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.util.Collection;
@@ -113,8 +114,10 @@ class EasyModelEntitiesApiTest {
         profileId,
         "0.1.0",
         "server-v1",
-        new ModelHostSettings(
+        ModelType.ENTITY,
+        new ModelEntitySettings(
             ModelEntityTypeIds.GROUND_ENTITY, ModelMovementType.GROUND, ModelBodyType.QUADRUPED),
+        null,
         new ModelClientSettings(profileId),
         new ModelDimensions(0.6f, 0.8f, 0.5f),
         new ModelMovementSettings(0.22f, 0.6f, true),

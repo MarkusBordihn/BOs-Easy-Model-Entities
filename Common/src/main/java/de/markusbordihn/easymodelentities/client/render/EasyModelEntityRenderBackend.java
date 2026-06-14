@@ -27,6 +27,7 @@ import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.render.EasyModelRenderStateResolver;
@@ -103,6 +104,7 @@ public final class EasyModelEntityRenderBackend {
     return profileService
         .getProfile(profileId)
         .filter(EasyModelEntityProfile::isActive)
+        .filter(profile -> profile.modelType() == ModelType.ENTITY)
         .map(profile -> EasyModelRuntimeContract.fromProfile(profile, animationState))
         .orElseGet(
             () ->

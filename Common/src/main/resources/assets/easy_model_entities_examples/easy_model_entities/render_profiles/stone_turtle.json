@@ -1,6 +1,8 @@
 {
   "preset_type": "quadruped_wandering",
   "version": "demo-stone-turtle-v4",
+  "model": "easy_model_entities_examples:easy_model_entities/models/stone_turtle",
+  "texture": "easy_model_entities_examples:textures/entity/stone_turtle.png",
   "rendering": {
     "shadow_radius": 0.5,
     "visible_bounds_width": 1.2,

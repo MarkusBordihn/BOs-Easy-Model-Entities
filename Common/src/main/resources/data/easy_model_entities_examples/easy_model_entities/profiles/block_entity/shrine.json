@@ -1,0 +1,13 @@
+{
+  "model_type": "block_entity",
+  "preset_type": "animated",
+  "version": "demo-shrine-v1",
+  "client": {
+    "render_profile": "easy_model_entities_examples:shrine"
+  },
+  "dimensions": {
+    "width": 1.0,
+    "height": 1.35,
+    "eye_height": 0.75
+  }
+}

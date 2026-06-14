@@ -24,6 +24,7 @@ import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSer
 import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.profile.ModelBehaviorMode;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
@@ -95,7 +96,8 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
   private static Optional<EasyModelEntityProfile> activeProfile(ResourceLocation profileId) {
     return EasyModelServices.profileService()
         .getProfile(profileId)
-        .filter(EasyModelEntityProfile::isActive);
+        .filter(EasyModelEntityProfile::isActive)
+        .filter(profile -> profile.modelType() == ModelType.ENTITY);
   }
 
   private static ResourceLocation parseResourceLocationOrMissing(String resourceLocation) {

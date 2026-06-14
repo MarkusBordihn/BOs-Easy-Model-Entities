@@ -19,6 +19,8 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.command.EasyModelEntitiesCommand;
+import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
@@ -26,6 +28,7 @@ import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
@@ -49,15 +52,23 @@ public class EasyModelEntities {
 
     EasyModelEntityDataSerializers.register();
     ForgeEasyModelEntityTypes.register(modEventBus);
+    ForgeEasyModelBlockEntityTypes.register(modEventBus);
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(ForgeEasyModelEntityTypes.INSTANCE));
+    EasyModelServices.setBlockEntityTypeProvider(ForgeEasyModelBlockEntityTypes.INSTANCE);
+    EasyModelServices.setDiagnosticsService(new DefaultEasyModelDiagnosticsService());
 
     MinecraftForge.EVENT_BUS.addListener(this::addReloadListeners);
+    MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
 
     DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new EasyModelEntitiesClient(modEventBus));
   }
 
   private void addReloadListeners(AddReloadListenerEvent event) {
     event.addListener(new EasyModelProfileReloadListener());
+  }
+
+  private void registerCommands(RegisterCommandsEvent event) {
+    EasyModelEntitiesCommand.register(event.getDispatcher());
   }
 }

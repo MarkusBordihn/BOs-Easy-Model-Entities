@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.gametest;
 
+import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelGroundEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelStaticEntity;
@@ -27,17 +28,22 @@ import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
+import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 public final class HostEntityGameTestCases {
@@ -48,6 +54,8 @@ public final class HostEntityGameTestCases {
       new ResourceLocation("example", "static");
   private static final ResourceLocation INVALID_PROFILE_ID =
       new ResourceLocation("example", "invalid");
+  private static final ResourceLocation BLOCK_PROFILE_ID =
+      new ResourceLocation("example", "animated_block");
 
   private HostEntityGameTestCases() {}
 
@@ -195,6 +203,38 @@ public final class HostEntityGameTestCases {
     helper.succeed();
   }
 
+  public static void blockEntityCanBePlacedAndInitialized(GameTestHelper helper) {
+    installProfiles();
+    Block block = BuiltInRegistries.BLOCK.get(ModelBlockIds.ANIMATED_BLOCK);
+    if (block == Blocks.AIR) {
+      helper.fail("Animated host block was not registered.");
+      return;
+    }
+
+    BlockPos blockPos = new BlockPos(1, 1, 1);
+    helper.setBlock(blockPos, block.defaultBlockState());
+    if (!(helper.getBlockEntity(blockPos) instanceof EasyModelHostBlockEntity hostBlockEntity)) {
+      helper.fail("Placed host block did not create an EasyModelHostBlockEntity.");
+      return;
+    }
+
+    hostBlockEntity.setEasyModelProfileId(BLOCK_PROFILE_ID);
+    EasyModelRuntimeContract contract = hostBlockEntity.getEasyModelRuntimeContract();
+    if (!BLOCK_PROFILE_ID.equals(contract.profileId())
+        || !new ResourceLocation("example", "animated_block_render")
+            .equals(contract.renderProfileId())
+        || !"block-v1".equals(contract.version())
+        || contract.bodyType() != ModelBodyType.STATIC
+        || contract.width() != 1.0f
+        || contract.height() != 1.0f
+        || contract.eyeHeight() != 0.5f) {
+      helper.fail("BlockEntity runtime contract was not initialized from the active profile.");
+      return;
+    }
+
+    helper.succeed();
+  }
+
   private static void installProfiles() {
     EasyModelServices.setProfileService(new StaticProfileService(activeProfiles()));
   }
@@ -205,6 +245,8 @@ public final class HostEntityGameTestCases {
         parse(GROUND_PROFILE_ID, groundProfileJson()),
         STATIC_PROFILE_ID,
         parse(STATIC_PROFILE_ID, staticProfileJson()),
+        BLOCK_PROFILE_ID,
+        parse(BLOCK_PROFILE_ID, blockEntityProfileJson()),
         INVALID_PROFILE_ID,
         parse(INVALID_PROFILE_ID, invalidProfileJson()));
   }
@@ -216,9 +258,10 @@ public final class HostEntityGameTestCases {
   private static String groundProfileJson() {
     return """
         {
+          "model_type": "entity",
           "preset_type": "quadruped_wandering",
           "version": "ground-v1",
-          "host": {
+          "entity": {
             "body_type": "quadruped"
           },
           "client": {
@@ -246,6 +289,7 @@ public final class HostEntityGameTestCases {
   private static String staticProfileJson() {
     return """
         {
+          "model_type": "entity",
           "preset_type": "statue",
           "client": {
             "render_profile": "example:static_render"
@@ -259,10 +303,29 @@ public final class HostEntityGameTestCases {
         """;
   }
 
+  private static String blockEntityProfileJson() {
+    return """
+        {
+          "model_type": "block_entity",
+          "preset_type": "animated",
+          "version": "block-v1",
+          "client": {
+            "render_profile": "example:animated_block_render"
+          },
+          "dimensions": {
+            "width": 1.0,
+            "height": 1.0,
+            "eye_height": 0.5
+          }
+        }
+        """;
+  }
+
   private static String invalidProfileJson() {
     return """
         {
           "schema_version": "9.0.0",
+          "model_type": "entity",
           "preset_type": "quadruped_wandering"
         }
         """;

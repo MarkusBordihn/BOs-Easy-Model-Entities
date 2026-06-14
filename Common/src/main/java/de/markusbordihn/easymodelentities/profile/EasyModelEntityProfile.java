@@ -27,7 +27,9 @@ public record EasyModelEntityProfile(
     ResourceLocation id,
     String schemaVersion,
     String version,
-    ModelHostSettings host,
+    ModelType modelType,
+    ModelEntitySettings entity,
+    ModelBlockEntitySettings blockEntity,
     ModelClientSettings client,
     ModelDimensions dimensions,
     ModelMovementSettings movement,
@@ -40,7 +42,13 @@ public record EasyModelEntityProfile(
     Objects.requireNonNull(id, "id");
     Objects.requireNonNull(schemaVersion, "schemaVersion");
     Objects.requireNonNull(version, "version");
-    Objects.requireNonNull(host, "host");
+    Objects.requireNonNull(modelType, "modelType");
+    if (modelType == ModelType.ENTITY) {
+      Objects.requireNonNull(entity, "entity");
+    }
+    if (modelType == ModelType.BLOCK_ENTITY) {
+      Objects.requireNonNull(blockEntity, "blockEntity");
+    }
     Objects.requireNonNull(client, "client");
     Objects.requireNonNull(dimensions, "dimensions");
     Objects.requireNonNull(movement, "movement");
@@ -55,15 +63,25 @@ public record EasyModelEntityProfile(
   }
 
   public ResourceLocation hostEntityType() {
-    return this.host.entityType();
+    return this.entity.type();
+  }
+
+  public ResourceLocation hostBlockEntityType() {
+    return this.blockEntity.type();
   }
 
   public ModelMovementType movementType() {
-    return this.host.movementType();
+    return this.entity == null ? ModelMovementType.STATIC : this.entity.movementType();
+  }
+
+  public ModelBlockEntityPresetType blockEntityPresetType() {
+    return this.blockEntity == null ? null : this.blockEntity.presetType();
   }
 
   public ModelBodyType bodyType() {
-    return this.host.bodyType();
+    return this.modelType == ModelType.BLOCK_ENTITY
+        ? this.blockEntity.bodyType()
+        : this.entity.bodyType();
   }
 
   public ResourceLocation renderProfileId() {

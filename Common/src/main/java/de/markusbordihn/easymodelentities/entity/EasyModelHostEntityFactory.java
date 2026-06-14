@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.entity;
 
 import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.util.Objects;
@@ -47,7 +48,8 @@ public class EasyModelHostEntityFactory implements EasyModelEntityFactory {
     Optional<EasyModelEntityProfile> profile =
         EasyModelServices.profileService()
             .getProfile(profileId)
-            .filter(EasyModelEntityProfile::isActive);
+            .filter(EasyModelEntityProfile::isActive)
+            .filter(profileValue -> profileValue.modelType() == ModelType.ENTITY);
     if (profile.isEmpty()) {
       return Optional.empty();
     }

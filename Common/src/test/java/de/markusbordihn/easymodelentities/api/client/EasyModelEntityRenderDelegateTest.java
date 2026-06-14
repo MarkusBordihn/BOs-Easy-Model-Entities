@@ -35,10 +35,11 @@ import de.markusbordihn.easymodelentities.profile.ModelBehaviorSettings;
 import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.profile.ModelClientSettings;
 import de.markusbordihn.easymodelentities.profile.ModelDimensions;
-import de.markusbordihn.easymodelentities.profile.ModelHostSettings;
+import de.markusbordihn.easymodelentities.profile.ModelEntitySettings;
 import de.markusbordihn.easymodelentities.profile.ModelMovementSettings;
 import de.markusbordihn.easymodelentities.profile.ModelMovementType;
 import de.markusbordihn.easymodelentities.profile.ModelProfileStatus;
+import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
@@ -130,7 +131,10 @@ class EasyModelEntityRenderDelegateTest {
         PROFILE_ID,
         "0.1.0",
         "server-v1",
-        new ModelHostSettings(ModelEntityTypeIds.GROUND_ENTITY, ModelMovementType.GROUND, bodyType),
+        ModelType.ENTITY,
+        new ModelEntitySettings(
+            ModelEntityTypeIds.GROUND_ENTITY, ModelMovementType.GROUND, bodyType),
+        null,
         new ModelClientSettings(RENDER_PROFILE_ID),
         new ModelDimensions(0.6f, 0.8f, 0.5f),
         new ModelMovementSettings(0.22f, 0.6f, true),

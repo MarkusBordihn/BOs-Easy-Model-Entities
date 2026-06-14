@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.io.StringReader;
 import net.minecraft.resources.ResourceLocation;
@@ -39,9 +40,11 @@ class EasyModelProfileParserTest {
 
   private static void assertPresetDefaults(
       String presetType, ResourceLocation entityType, ModelBodyType bodyType) {
-    EasyModelEntityProfile profile = parse("{\"preset_type\":\"" + presetType + "\"}");
+    EasyModelEntityProfile profile =
+        parse("{\"model_type\":\"entity\",\"preset_type\":\"" + presetType + "\"}");
 
     assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(ModelType.ENTITY, profile.modelType());
     assertEquals(entityType, profile.hostEntityType());
     assertEquals(bodyType, profile.bodyType());
   }
@@ -52,6 +55,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "humanoid_wandering",
               "version": "v1"
             }
@@ -78,6 +82,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "statue"
             }
             """);
@@ -96,6 +101,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "humanoid_still"
             }
             """);
@@ -114,6 +120,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "quadruped_wandering"
             }
             """);
@@ -132,6 +139,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "static"
             }
             """);
@@ -169,6 +177,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "quadruped_wandering",
               "client": {
                 "render_profile": "example:custom_render"
@@ -206,9 +215,10 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "custom",
-              "host": {
-                "entity_type": "easy_model_entities:ground_entity",
+              "entity": {
+                "type": "easy_model_entities:ground_entity",
                 "movement_type": "ground",
                 "body_type": "biped"
               },
@@ -233,6 +243,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "custom"
             }
             """);
@@ -243,9 +254,16 @@ class EasyModelProfileParserTest {
 
   @Test
   void rejectsMissingPresetType() {
-    EasyModelEntityProfile profile = parse("{}");
+    EasyModelEntityProfile profile = parse("{\"model_type\":\"entity\"}");
 
     assertEquals(ModelProfileStatus.DISABLED, profile.status());
+  }
+
+  @Test
+  void rejectsMissingModelType() {
+    EasyModelEntityProfile profile = parse("{\"preset_type\":\"statue\"}");
+
+    assertEquals(ModelProfileStatus.INVALID_MODEL_TYPE, profile.status());
   }
 
   @Test
@@ -254,6 +272,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "schema_version": "9.0.0",
               "preset_type": "statue"
             }
@@ -268,6 +287,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "statue",
               "client": {
                 "render_profile": "bad id"
@@ -284,6 +304,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "statue",
               "dimensions": {
                 "width": -1.0
@@ -300,6 +321,7 @@ class EasyModelProfileParserTest {
         parse(
             """
             {
+              "model_type": "entity",
               "preset_type": "humanoid_wandering",
               "movement": {
                 "speed": 3.0
@@ -308,6 +330,80 @@ class EasyModelProfileParserTest {
             """);
 
     assertEquals(ModelProfileStatus.DISABLED, profile.status());
+  }
+
+  @Test
+  void parsesStaticBlockEntityPreset() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "model_type": "block_entity",
+              "preset_type": "static"
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(ModelType.BLOCK_ENTITY, profile.modelType());
+    assertEquals(ModelBlockEntityTypeIds.STATIC_BLOCK_ENTITY, profile.hostBlockEntityType());
+    assertEquals(ModelBlockEntityPresetType.STATIC, profile.blockEntityPresetType());
+    assertEquals(ModelBodyType.STATIC, profile.bodyType());
+    assertFalse(profile.blockEntityPresetType().hasClientTick());
+    assertFalse(profile.blockEntityPresetType().hasServerTick());
+  }
+
+  @Test
+  void parsesTickingBlockEntityPreset() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "model_type": "block_entity",
+              "preset_type": "ticking"
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(ModelBlockEntityTypeIds.TICKING_BLOCK_ENTITY, profile.hostBlockEntityType());
+    assertEquals(ModelBlockEntityPresetType.TICKING, profile.blockEntityPresetType());
+    assertTrue(profile.blockEntityPresetType().hasClientTick());
+    assertTrue(profile.blockEntityPresetType().hasServerTick());
+  }
+
+  @Test
+  void parsesAnimatedBlockEntityPreset() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "model_type": "block_entity",
+              "preset_type": "animated",
+              "block_entity": {
+                "body_type": "biped"
+              }
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY, profile.hostBlockEntityType());
+    assertEquals(ModelBlockEntityPresetType.ANIMATED, profile.blockEntityPresetType());
+    assertEquals(ModelBodyType.BIPED, profile.bodyType());
+    assertTrue(profile.blockEntityPresetType().hasClientTick());
+    assertFalse(profile.blockEntityPresetType().hasServerTick());
+  }
+
+  @Test
+  void rejectsEntityPresetForBlockEntityModelType() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "model_type": "block_entity",
+              "preset_type": "quadruped_wandering"
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.INVALID_HOST_BLOCK_ENTITY, profile.status());
   }
 
   @Test

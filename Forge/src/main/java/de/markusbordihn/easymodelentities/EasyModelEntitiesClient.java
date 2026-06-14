@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -42,6 +43,15 @@ public class EasyModelEntitiesClient {
         ForgeEasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     event.registerEntityRenderer(
         ForgeEasyModelEntityTypes.INSTANCE.staticEntityType(), EasyModelHostEntityRenderer::new);
+    event.registerBlockEntityRenderer(
+        ForgeEasyModelBlockEntityTypes.INSTANCE.staticBlockEntityType(),
+        EasyModelHostBlockEntityRenderer::new);
+    event.registerBlockEntityRenderer(
+        ForgeEasyModelBlockEntityTypes.INSTANCE.tickingBlockEntityType(),
+        EasyModelHostBlockEntityRenderer::new);
+    event.registerBlockEntityRenderer(
+        ForgeEasyModelBlockEntityTypes.INSTANCE.animatedBlockEntityType(),
+        EasyModelHostBlockEntityRenderer::new);
   }
 
   private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {

@@ -55,4 +55,9 @@ public class HostEntityGameTest {
   public void dimensionRefreshUsesProfileDimensions(GameTestHelper helper) {
     HostEntityGameTestCases.dimensionRefreshUsesProfileDimensions(helper);
   }
+
+  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  public void blockEntityCanBePlacedAndInitialized(GameTestHelper helper) {
+    HostEntityGameTestCases.blockEntityCanBePlacedAndInitialized(helper);
+  }
 }

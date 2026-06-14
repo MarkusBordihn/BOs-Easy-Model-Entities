@@ -22,12 +22,12 @@ package de.markusbordihn.easymodelentities.profile;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
-public record ModelHostSettings(
-    ResourceLocation entityType, ModelMovementType movementType, ModelBodyType bodyType) {
+public record ModelBlockEntitySettings(
+    ResourceLocation type, ModelBlockEntityPresetType presetType, ModelBodyType bodyType) {
 
-  public ModelHostSettings {
-    Objects.requireNonNull(entityType, "entityType");
-    Objects.requireNonNull(movementType, "movementType");
+  public ModelBlockEntitySettings {
+    Objects.requireNonNull(type, "type");
+    Objects.requireNonNull(presetType, "presetType");
     Objects.requireNonNull(bodyType, "bodyType");
   }
 }

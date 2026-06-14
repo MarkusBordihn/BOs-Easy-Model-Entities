@@ -1,6 +1,10 @@
 {
+  "model_type": "entity",
   "preset_type": "quadruped_wandering",
   "version": "demo-stone-turtle-v4",
+  "client": {
+    "render_profile": "easy_model_entities_examples:stone_turtle"
+  },
   "dimensions": {
     "width": 1.2,
     "height": 0.85,

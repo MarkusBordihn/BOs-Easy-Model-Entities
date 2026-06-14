@@ -19,10 +19,13 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.command.EasyModelEntitiesCommand;
+import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.packs.PackType;
@@ -42,10 +45,15 @@ public class EasyModelEntities implements ModInitializer {
 
     EasyModelEntityDataSerializers.register();
     FabricEasyModelEntityTypes.register();
+    FabricEasyModelBlockEntityTypes.register();
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(FabricEasyModelEntityTypes.INSTANCE));
+    EasyModelServices.setBlockEntityTypeProvider(FabricEasyModelBlockEntityTypes.INSTANCE);
+    EasyModelServices.setDiagnosticsService(new DefaultEasyModelDiagnosticsService());
 
     ResourceManagerHelper.get(PackType.SERVER_DATA)
         .registerReloadListener(new FabricEasyModelProfileReloadListener());
+    CommandRegistrationCallback.EVENT.register(
+        (dispatcher, registryAccess, environment) -> EasyModelEntitiesCommand.register(dispatcher));
   }
 }

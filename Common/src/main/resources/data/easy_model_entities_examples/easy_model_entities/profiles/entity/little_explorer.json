@@ -1,0 +1,8 @@
+{
+  "model_type": "entity",
+  "preset_type": "humanoid_wandering",
+  "version": "demo-little-explorer-v3",
+  "client": {
+    "render_profile": "easy_model_entities_examples:little_explorer"
+  }
+}

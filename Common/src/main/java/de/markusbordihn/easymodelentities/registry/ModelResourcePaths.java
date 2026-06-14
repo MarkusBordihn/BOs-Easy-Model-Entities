@@ -28,6 +28,9 @@ import net.minecraft.resources.ResourceLocation;
 public final class ModelResourcePaths {
 
   public static final String SERVER_PROFILE_DIRECTORY = Constants.MOD_ID + "/profiles";
+  public static final String ENTITY_SERVER_PROFILE_DIRECTORY = SERVER_PROFILE_DIRECTORY + "/entity";
+  public static final String BLOCK_ENTITY_SERVER_PROFILE_DIRECTORY =
+      SERVER_PROFILE_DIRECTORY + "/block_entity";
   public static final String RENDER_PROFILE_DIRECTORY = Constants.MOD_ID + "/render_profiles";
   public static final String MODEL_DIRECTORY = Constants.MOD_ID + "/models";
   public static final String TEXTURE_ENTITY_DIRECTORY = "textures/entity";
@@ -40,6 +43,19 @@ public final class ModelResourcePaths {
     return dataPath(
         profileId,
         pathWithExtension(SERVER_PROFILE_DIRECTORY, profileId, ResourceFileExtension.JSON));
+  }
+
+  public static String entityServerProfilePath(ResourceLocation profileId) {
+    return dataPath(
+        profileId,
+        pathWithExtension(ENTITY_SERVER_PROFILE_DIRECTORY, profileId, ResourceFileExtension.JSON));
+  }
+
+  public static String blockEntityServerProfilePath(ResourceLocation profileId) {
+    return dataPath(
+        profileId,
+        pathWithExtension(
+            BLOCK_ENTITY_SERVER_PROFILE_DIRECTORY, profileId, ResourceFileExtension.JSON));
   }
 
   public static String renderProfilePath(ResourceLocation renderProfileId) {
