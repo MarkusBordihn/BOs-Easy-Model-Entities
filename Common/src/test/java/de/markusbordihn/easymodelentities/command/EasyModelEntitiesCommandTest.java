@@ -25,34 +25,34 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mojang.brigadier.CommandDispatcher;
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
+import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
+import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorSettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
+import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntitySettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelClientSettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelDimensions;
+import de.markusbordihn.easymodelentities.data.profile.ModelEntitySettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelMovementSettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelMovementType;
+import de.markusbordihn.easymodelentities.data.profile.ModelProfileStatus;
+import de.markusbordihn.easymodelentities.data.profile.ModelProfileValidationIssue;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderSettings;
 import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
-import de.markusbordihn.easymodelentities.profile.ModelAttributes;
-import de.markusbordihn.easymodelentities.profile.ModelBehaviorMode;
-import de.markusbordihn.easymodelentities.profile.ModelBehaviorSettings;
-import de.markusbordihn.easymodelentities.profile.ModelBlockEntityPresetType;
-import de.markusbordihn.easymodelentities.profile.ModelBlockEntitySettings;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelClientSettings;
-import de.markusbordihn.easymodelentities.profile.ModelDimensions;
-import de.markusbordihn.easymodelentities.profile.ModelEntitySettings;
-import de.markusbordihn.easymodelentities.profile.ModelMovementSettings;
-import de.markusbordihn.easymodelentities.profile.ModelMovementType;
-import de.markusbordihn.easymodelentities.profile.ModelProfileStatus;
-import de.markusbordihn.easymodelentities.profile.ModelProfileValidationIssue;
-import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
-import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
-import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationMode;
-import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationSettings;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileValidationIssue;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderSettings;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -119,16 +119,23 @@ class EasyModelEntitiesCommandTest {
   }
 
   private static EasyModelEntityProfile blockEntityProfile(ResourceLocation profileId) {
+    return blockEntityProfile(
+        profileId,
+        ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY,
+        ModelBlockEntityPresetType.ANIMATED);
+  }
+
+  private static EasyModelEntityProfile blockEntityProfile(
+      ResourceLocation profileId,
+      ResourceLocation blockEntityType,
+      ModelBlockEntityPresetType presetType) {
     return new EasyModelEntityProfile(
         profileId,
         Constants.SCHEMA_VERSION,
         "server-v1",
         ModelType.BLOCK_ENTITY,
         null,
-        new ModelBlockEntitySettings(
-            ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY,
-            ModelBlockEntityPresetType.ANIMATED,
-            ModelBodyType.STATIC),
+        new ModelBlockEntitySettings(blockEntityType, presetType, ModelBodyType.STATIC),
         new ModelClientSettings(profileId),
         new ModelDimensions(1.0f, 1.0f, 0.5f),
         new ModelMovementSettings(0.0f, 0.0f, false),
@@ -333,6 +340,19 @@ class EasyModelEntitiesCommandTest {
     assertTrue(EasyModelEntitiesCommand.placeBlockRejectionMessage(BLOCK_PROFILE_ID).isEmpty());
     assertEquals(
         Optional.of(ModelBlockIds.ANIMATED_BLOCK),
+        EasyModelEntitiesCommand.blockIdForProfile(blockProfile));
+  }
+
+  @Test
+  void placeBlockResolvesAnimatedRandomlyHostBlock() {
+    EasyModelEntityProfile blockProfile =
+        blockEntityProfile(
+            BLOCK_PROFILE_ID,
+            ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY,
+            ModelBlockEntityPresetType.ANIMATED_RANDOMLY);
+
+    assertEquals(
+        Optional.of(ModelBlockIds.ANIMATED_RANDOMLY_BLOCK),
         EasyModelEntitiesCommand.blockIdForProfile(blockProfile));
   }
 }

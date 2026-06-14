@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.profile.*;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.io.StringReader;
@@ -390,6 +391,26 @@ class EasyModelProfileParserTest {
     assertEquals(ModelBodyType.BIPED, profile.bodyType());
     assertTrue(profile.blockEntityPresetType().hasClientTick());
     assertFalse(profile.blockEntityPresetType().hasServerTick());
+  }
+
+  @Test
+  void parsesAnimatedRandomlyBlockEntityPreset() {
+    EasyModelEntityProfile profile =
+        parse(
+            """
+            {
+              "model_type": "block_entity",
+              "preset_type": "animated_randomly"
+            }
+            """);
+
+    assertEquals(ModelProfileStatus.ACTIVE, profile.status());
+    assertEquals(
+        ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY, profile.hostBlockEntityType());
+    assertEquals(ModelBlockEntityPresetType.ANIMATED_RANDOMLY, profile.blockEntityPresetType());
+    assertTrue(profile.blockEntityPresetType().hasClientTick());
+    assertFalse(profile.blockEntityPresetType().hasServerTick());
+    assertTrue(profile.blockEntityPresetType().hasRandomIdleAnimation());
   }
 
   @Test

@@ -19,7 +19,8 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
-import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.model.bake.*;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -31,7 +32,10 @@ public interface EasyModelBakeService {
   default ModelBakeResult bake(
       EasyModelRenderProfile renderProfile, ResourceManager resourceManager) {
     ModelCacheKey cacheKey = cacheKey(renderProfile.model(), renderProfile.version());
-    return ModelBakeResult.failure(cacheKey, renderProfile.validationIssues());
+    return ModelBakeResult.failure(
+        cacheKey,
+        ModelFallbackFactory.createFallback(cacheKey.modelId()),
+        renderProfile.validationIssues());
   }
 
   default Optional<ModelBakeResult> getCached(ResourceLocation modelId, String assetFingerprint) {

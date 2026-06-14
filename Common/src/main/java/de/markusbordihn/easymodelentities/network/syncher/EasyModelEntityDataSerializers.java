@@ -19,7 +19,7 @@
 
 package de.markusbordihn.easymodelentities.network.syncher;
 
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializer;

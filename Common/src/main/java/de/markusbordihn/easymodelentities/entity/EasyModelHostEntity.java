@@ -20,13 +20,14 @@
 package de.markusbordihn.easymodelentities.entity;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
-import de.markusbordihn.easymodelentities.profile.ModelBehaviorMode;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import java.util.Optional;
@@ -49,12 +50,6 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
   public static final float FALLBACK_EYE_HEIGHT = 1.62f;
   public static final ResourceLocation MISSING_PROFILE_ID =
       new ResourceLocation(Constants.MOD_ID, "missing");
-
-  private static final String PROFILE_ID_TAG = "ProfileId";
-  private static final String RENDER_PROFILE_ID_TAG = "RenderProfileId";
-  private static final String VERSION_TAG = "Version";
-  private static final String BODY_TYPE_TAG = "BodyType";
-  private static final String ANIMATION_STATE_TAG = "AnimationState";
 
   private static final EntityDataAccessor<String> PROFILE_ID =
       EasyModelEntityDataSerializers.defineId(
@@ -100,17 +95,6 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
         .filter(profile -> profile.modelType() == ModelType.ENTITY);
   }
 
-  private static ResourceLocation parseResourceLocationOrMissing(String resourceLocation) {
-    ResourceLocation parsedResourceLocation = parseResourceLocation(resourceLocation);
-    return parsedResourceLocation == null ? MISSING_PROFILE_ID : parsedResourceLocation;
-  }
-
-  private static ResourceLocation parseResourceLocation(String resourceLocation) {
-    return resourceLocation == null || resourceLocation.isBlank()
-        ? null
-        : ResourceLocation.tryParse(resourceLocation);
-  }
-
   @Override
   protected void defineSynchedData() {
     super.defineSynchedData();
@@ -138,25 +122,27 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
   @Override
   public void addAdditionalSaveData(CompoundTag compoundTag) {
     super.addAdditionalSaveData(compoundTag);
-    compoundTag.putString(PROFILE_ID_TAG, this.entityData.get(PROFILE_ID));
-    compoundTag.putString(RENDER_PROFILE_ID_TAG, this.entityData.get(RENDER_PROFILE_ID));
-    compoundTag.putString(VERSION_TAG, this.entityData.get(VERSION));
-    compoundTag.putString(BODY_TYPE_TAG, this.entityData.get(BODY_TYPE).getSerializedName());
+    compoundTag.putString(EasyModelHostPersistence.PROFILE_ID_TAG, this.entityData.get(PROFILE_ID));
     compoundTag.putString(
-        ANIMATION_STATE_TAG, this.entityData.get(ANIMATION_STATE).getSerializedName());
+        EasyModelHostPersistence.RENDER_PROFILE_ID_TAG, this.entityData.get(RENDER_PROFILE_ID));
+    compoundTag.putString(EasyModelHostPersistence.VERSION_TAG, this.entityData.get(VERSION));
+    compoundTag.putString(
+        EasyModelHostPersistence.BODY_TYPE_TAG, this.entityData.get(BODY_TYPE).getSerializedName());
+    compoundTag.putString(
+        EasyModelHostPersistence.ANIMATION_STATE_TAG,
+        this.entityData.get(ANIMATION_STATE).getSerializedName());
   }
 
   @Override
   public void readAdditionalSaveData(CompoundTag compoundTag) {
     super.readAdditionalSaveData(compoundTag);
 
-    ResourceLocation profileId = parseResourceLocation(compoundTag.getString(PROFILE_ID_TAG));
-    ResourceLocation renderProfileId =
-        parseResourceLocation(compoundTag.getString(RENDER_PROFILE_ID_TAG));
-    String version = compoundTag.getString(VERSION_TAG);
-    ModelBodyType bodyType = ModelBodyType.bySerializedName(compoundTag.getString(BODY_TYPE_TAG));
-    EasyModelAnimationState animationState =
-        EasyModelAnimationState.bySerializedName(compoundTag.getString(ANIMATION_STATE_TAG));
+    EasyModelHostPersistence.State state = EasyModelHostPersistence.read(compoundTag);
+    ResourceLocation profileId = state.profileId();
+    ResourceLocation renderProfileId = state.renderProfileId();
+    String version = state.version();
+    ModelBodyType bodyType = state.bodyType();
+    EasyModelAnimationState animationState = state.animationState();
 
     if (profileId == null) {
       applyRuntimeContract(EasyModelRuntimeContract.fallback(MISSING_PROFILE_ID, animationState));
@@ -182,7 +168,8 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
   }
 
   public ResourceLocation getEasyModelProfileId() {
-    return parseResourceLocationOrMissing(this.entityData.get(PROFILE_ID));
+    return EasyModelHostPersistence.parseResourceLocationOrMissing(
+        this.entityData.get(PROFILE_ID), MISSING_PROFILE_ID);
   }
 
   public void setEasyModelProfileId(ResourceLocation profileId) {
@@ -198,7 +185,8 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
   }
 
   public ResourceLocation getEasyModelRenderProfileId() {
-    return parseResourceLocationOrMissing(this.entityData.get(RENDER_PROFILE_ID));
+    return EasyModelHostPersistence.parseResourceLocationOrMissing(
+        this.entityData.get(RENDER_PROFILE_ID), MISSING_PROFILE_ID);
   }
 
   public String getEasyModelVersion() {

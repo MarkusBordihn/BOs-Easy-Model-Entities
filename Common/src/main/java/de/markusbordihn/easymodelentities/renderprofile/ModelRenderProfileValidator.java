@@ -20,9 +20,11 @@
 package de.markusbordihn.easymodelentities.renderprofile;
 
 import de.markusbordihn.easymodelentities.Constants;
-import de.markusbordihn.easymodelentities.diagnostics.ModelDiagnostic;
-import de.markusbordihn.easymodelentities.diagnostics.ModelDiagnostic.Severity;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnosticSeverity;
+import de.markusbordihn.easymodelentities.data.renderprofile.*;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +39,6 @@ public final class ModelRenderProfileValidator {
 
   public static final String CLIENT_ASSET_MISMATCH_CODE = "CLIENT_ASSET_MISMATCH";
   public static final String CLIENT_BODY_TYPE_MISMATCH_CODE = "CLIENT_BODY_TYPE_MISMATCH";
-  public static final String CLIENT_VERSION_INFO_CODE = "CLIENT_VERSION_INFO";
   private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
   private static final Set<String> LOGGED_DIAGNOSTICS = ConcurrentHashMap.newKeySet();
 
@@ -52,7 +53,7 @@ public final class ModelRenderProfileValidator {
     if (renderProfile.bodyType() != runtimeContract.bodyType()) {
       diagnostics.add(
           diagnostic(
-              Severity.ERROR,
+              ModelDiagnosticSeverity.ERROR,
               CLIENT_BODY_TYPE_MISMATCH_CODE,
               "Render profile body type "
                   + renderProfile.bodyType().getSerializedName()
@@ -68,7 +69,7 @@ public final class ModelRenderProfileValidator {
       if (!serverVersion.equals(clientVersion)) {
         diagnostics.add(
             diagnostic(
-                Severity.ERROR,
+                ModelDiagnosticSeverity.ERROR,
                 CLIENT_ASSET_MISMATCH_CODE,
                 "Render profile version does not match runtime version.",
                 renderProfile.id()));
@@ -77,23 +78,6 @@ public final class ModelRenderProfileValidator {
 
     logOnce(diagnostics);
     return List.copyOf(diagnostics);
-  }
-
-  public static List<ModelDiagnostic> validateServerProfileVersion(
-      EasyModelRenderProfile renderProfile, EasyModelEntityProfile serverProfile) {
-    Objects.requireNonNull(renderProfile, "renderProfile");
-    Objects.requireNonNull(serverProfile, "serverProfile");
-    if ((!renderProfile.version().isBlank() || !serverProfile.version().isBlank())
-        && !renderProfile.version().equals(serverProfile.version())) {
-      return List.of(
-          diagnostic(
-              Severity.ERROR,
-              CLIENT_ASSET_MISMATCH_CODE,
-              "Render profile version does not match server profile version.",
-              renderProfile.id()));
-    }
-
-    return List.of();
   }
 
   public static ModelRenderProfileStatus runtimeStatus(
@@ -112,7 +96,7 @@ public final class ModelRenderProfileValidator {
   }
 
   private static ModelDiagnostic diagnostic(
-      Severity severity,
+      ModelDiagnosticSeverity severity,
       String code,
       String message,
       net.minecraft.resources.ResourceLocation renderProfileId) {
@@ -121,7 +105,7 @@ public final class ModelRenderProfileValidator {
 
   private static void logOnce(List<ModelDiagnostic> diagnostics) {
     for (ModelDiagnostic diagnostic : diagnostics) {
-      if (diagnostic.severity() != Severity.ERROR) {
+      if (diagnostic.severity() != ModelDiagnosticSeverity.ERROR) {
         continue;
       }
       String profileId = diagnostic.profileId().map(Object::toString).orElse("");

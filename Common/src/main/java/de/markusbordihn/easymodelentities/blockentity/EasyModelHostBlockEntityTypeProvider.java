@@ -39,6 +39,12 @@ public interface EasyModelHostBlockEntityTypeProvider {
         public BlockEntityType<EasyModelAnimatedBlockEntity> animatedBlockEntityType() {
           return null;
         }
+
+        @Override
+        public BlockEntityType<EasyModelRandomlyAnimatedBlockEntity>
+            animatedRandomlyBlockEntityType() {
+          return null;
+        }
       };
 
   BlockEntityType<EasyModelStaticBlockEntity> staticBlockEntityType();
@@ -46,4 +52,6 @@ public interface EasyModelHostBlockEntityTypeProvider {
   BlockEntityType<EasyModelTickingBlockEntity> tickingBlockEntityType();
 
   BlockEntityType<EasyModelAnimatedBlockEntity> animatedBlockEntityType();
+
+  BlockEntityType<EasyModelRandomlyAnimatedBlockEntity> animatedRandomlyBlockEntityType();
 }

@@ -30,6 +30,8 @@ public final class ModelBlockIds {
       new ResourceLocation(Constants.MOD_ID, "ticking_block");
   public static final ResourceLocation ANIMATED_BLOCK =
       new ResourceLocation(Constants.MOD_ID, "animated_block");
+  public static final ResourceLocation ANIMATED_RANDOMLY_BLOCK =
+      new ResourceLocation(Constants.MOD_ID, "animated_randomly_block");
 
   private ModelBlockIds() {}
 }

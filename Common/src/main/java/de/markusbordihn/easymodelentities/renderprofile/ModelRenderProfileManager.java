@@ -19,8 +19,9 @@
 
 package de.markusbordihn.easymodelentities.renderprofile;
 
+import de.markusbordihn.easymodelentities.data.model.bake.ModelBakeResult;
+import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
-import de.markusbordihn.easymodelentities.model.bake.ModelBakeResult;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -112,11 +113,6 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
           "json",
           "Could not read render profile JSON: " + exception.getMessage());
     }
-  }
-
-  private static EasyModelRenderProfile validateClientAssets(
-      EasyModelRenderProfile renderProfile, ResourceManager resourceManager) {
-    return validateClientAssets(renderProfile, resourceManager, true);
   }
 
   private static EasyModelRenderProfile validateClientAssets(

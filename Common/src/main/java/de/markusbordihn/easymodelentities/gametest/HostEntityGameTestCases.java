@@ -20,13 +20,13 @@
 package de.markusbordihn.easymodelentities.gametest;
 
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.entity.EasyModelGroundEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelStaticEntity;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;

@@ -22,9 +22,10 @@ package de.markusbordihn.easymodelentities;
 import de.markusbordihn.easymodelentities.block.EasyModelHostBlock;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelAnimatedBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntityTypeProvider;
+import de.markusbordihn.easymodelentities.blockentity.EasyModelRandomlyAnimatedBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelStaticBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelTickingBlockEntity;
-import de.markusbordihn.easymodelentities.profile.ModelBlockEntityPresetType;
+import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
 import net.minecraft.world.level.block.Block;
@@ -78,6 +79,18 @@ public final class ForgeEasyModelBlockEntityTypes implements EasyModelHostBlockE
                   BlockEntityType.Builder.of(
                           EasyModelAnimatedBlockEntity::new, ANIMATED_BLOCK.get())
                       .build(null));
+  private static final RegistryObject<Block> ANIMATED_RANDOMLY_BLOCK =
+      BLOCKS.register(
+          ModelBlockIds.ANIMATED_RANDOMLY_BLOCK.getPath(),
+          () -> new EasyModelHostBlock(ModelBlockEntityPresetType.ANIMATED_RANDOMLY));
+  private static final RegistryObject<BlockEntityType<EasyModelRandomlyAnimatedBlockEntity>>
+      ANIMATED_RANDOMLY_BLOCK_ENTITY =
+          BLOCK_ENTITY_TYPES.register(
+              ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY.getPath(),
+              () ->
+                  BlockEntityType.Builder.of(
+                          EasyModelRandomlyAnimatedBlockEntity::new, ANIMATED_RANDOMLY_BLOCK.get())
+                      .build(null));
 
   private ForgeEasyModelBlockEntityTypes() {}
 
@@ -99,5 +112,10 @@ public final class ForgeEasyModelBlockEntityTypes implements EasyModelHostBlockE
   @Override
   public BlockEntityType<EasyModelAnimatedBlockEntity> animatedBlockEntityType() {
     return ANIMATED_BLOCK_ENTITY.get();
+  }
+
+  @Override
+  public BlockEntityType<EasyModelRandomlyAnimatedBlockEntity> animatedRandomlyBlockEntityType() {
+    return ANIMATED_RANDOMLY_BLOCK_ENTITY.get();
   }
 }

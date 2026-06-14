@@ -49,6 +49,9 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
     BlockEntityRendererRegistry.register(
         FabricEasyModelBlockEntityTypes.INSTANCE.animatedBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
+    BlockEntityRendererRegistry.register(
+        FabricEasyModelBlockEntityTypes.INSTANCE.animatedRandomlyBlockEntityType(),
+        EasyModelHostBlockEntityRenderer::new);
     ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
         .registerReloadListener(new FabricModelRenderProfileReloadListener());
   }

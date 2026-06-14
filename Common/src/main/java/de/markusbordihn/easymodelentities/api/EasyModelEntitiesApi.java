@@ -19,8 +19,8 @@
 
 package de.markusbordihn.easymodelentities.api;
 
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import java.util.Objects;
 import java.util.Optional;

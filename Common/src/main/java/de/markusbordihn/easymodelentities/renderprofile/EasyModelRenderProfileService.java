@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.renderprofile;
 
+import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;

@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.diagnostics;
 
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 

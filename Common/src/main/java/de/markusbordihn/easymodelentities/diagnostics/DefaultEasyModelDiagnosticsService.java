@@ -19,12 +19,14 @@
 
 package de.markusbordihn.easymodelentities.diagnostics;
 
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
-import de.markusbordihn.easymodelentities.profile.ModelProfileValidationIssue;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnosticSeverity;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelProfileValidationIssue;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileValidationIssue;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -33,10 +35,10 @@ import net.minecraft.resources.ResourceLocation;
 
 public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagnosticsService {
 
-  private static ModelDiagnostic.Severity severity(ModelRenderProfileStatus status) {
+  private static ModelDiagnosticSeverity severity(ModelRenderProfileStatus status) {
     return status == ModelRenderProfileStatus.MISSING_TEXTURE
-        ? ModelDiagnostic.Severity.WARNING
-        : ModelDiagnostic.Severity.ERROR;
+        ? ModelDiagnosticSeverity.WARNING
+        : ModelDiagnosticSeverity.ERROR;
   }
 
   @Override
@@ -60,7 +62,7 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
     for (ModelProfileValidationIssue issue : profile.validationIssues()) {
       diagnostics.add(
           new ModelDiagnostic(
-              ModelDiagnostic.Severity.ERROR,
+              ModelDiagnosticSeverity.ERROR,
               issue.status().name(),
               issue.message(),
               Optional.of(profile.id())));
@@ -72,7 +74,7 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
       if (!EasyModelServices.renderProfileService().getRenderProfiles().isEmpty()) {
         diagnostics.add(
             new ModelDiagnostic(
-                ModelDiagnostic.Severity.ERROR,
+                ModelDiagnosticSeverity.ERROR,
                 ModelRenderProfileStatus.MISSING_RENDER_PROFILE.name(),
                 "Missing render profile " + profile.renderProfileId() + ".",
                 Optional.of(profile.id())));
@@ -84,7 +86,7 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
     if (renderProfileValue.bodyType() != profile.bodyType()) {
       diagnostics.add(
           new ModelDiagnostic(
-              ModelDiagnostic.Severity.ERROR,
+              ModelDiagnosticSeverity.ERROR,
               ModelRenderProfileStatus.CLIENT_BODY_TYPE_MISMATCH.name(),
               "Render profile body type "
                   + renderProfileValue.bodyType().getSerializedName()
@@ -96,7 +98,7 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
     if (!profile.version().equals(renderProfileValue.version())) {
       diagnostics.add(
           new ModelDiagnostic(
-              ModelDiagnostic.Severity.WARNING,
+              ModelDiagnosticSeverity.WARNING,
               ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH.name(),
               "Render profile version does not match server profile version.",
               Optional.of(profile.id())));

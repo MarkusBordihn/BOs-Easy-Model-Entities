@@ -52,6 +52,9 @@ public class EasyModelEntitiesClient {
     event.registerBlockEntityRenderer(
         ForgeEasyModelBlockEntityTypes.INSTANCE.animatedBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
+    event.registerBlockEntityRenderer(
+        ForgeEasyModelBlockEntityTypes.INSTANCE.animatedRandomlyBlockEntityType(),
+        EasyModelHostBlockEntityRenderer::new);
   }
 
   private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {

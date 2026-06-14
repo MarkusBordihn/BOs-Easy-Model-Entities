@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.profile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.markusbordihn.easymodelentities.data.profile.*;
 import org.junit.jupiter.api.Test;
 
 class ModelBodyTypeTest {

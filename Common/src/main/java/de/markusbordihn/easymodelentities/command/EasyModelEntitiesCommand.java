@@ -24,16 +24,16 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
-import de.markusbordihn.easymodelentities.diagnostics.ModelDiagnostic;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
-import de.markusbordihn.easymodelentities.profile.ModelProfileValidationIssue;
-import de.markusbordihn.easymodelentities.profile.ModelType;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelProfileValidationIssue;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
-import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileValidationIssue;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -368,6 +368,9 @@ public final class EasyModelEntitiesCommand {
     }
     if (ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY.equals(blockEntityType)) {
       return Optional.of(ModelBlockIds.ANIMATED_BLOCK);
+    }
+    if (ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY.equals(blockEntityType)) {
+      return Optional.of(ModelBlockIds.ANIMATED_RANDOMLY_BLOCK);
     }
 
     return Optional.empty();

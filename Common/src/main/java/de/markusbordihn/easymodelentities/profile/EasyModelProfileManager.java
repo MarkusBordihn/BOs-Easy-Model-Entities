@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.profile;
 
+import de.markusbordihn.easymodelentities.data.profile.*;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.io.IOException;
 import java.io.InputStreamReader;

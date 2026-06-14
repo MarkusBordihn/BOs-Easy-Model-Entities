@@ -18,6 +18,7 @@
 
 package de.markusbordihn.easymodelentities.model.decoder;
 
+import de.markusbordihn.easymodelentities.data.model.decoder.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 

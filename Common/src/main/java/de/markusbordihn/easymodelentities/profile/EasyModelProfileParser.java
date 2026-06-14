@@ -26,7 +26,9 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.profile.*;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
+import de.markusbordihn.easymodelentities.json.JsonValues;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.io.Reader;
@@ -636,7 +638,7 @@ public final class EasyModelProfileParser {
             : ModelEntityTypeIds.STATIC_ENTITY;
     ModelMovementType movementType =
         presetType.isMoving() ? ModelMovementType.GROUND : ModelMovementType.STATIC;
-    return new ModelEntitySettings(entityType, movementType, defaultBodyType(presetType));
+    return new ModelEntitySettings(entityType, movementType, presetType.defaultBodyType());
   }
 
   private static ResourceLocation defaultBlockEntityType(ModelBlockEntityPresetType presetType) {
@@ -644,20 +646,7 @@ public final class EasyModelProfileParser {
       case STATIC -> ModelBlockEntityTypeIds.STATIC_BLOCK_ENTITY;
       case TICKING -> ModelBlockEntityTypeIds.TICKING_BLOCK_ENTITY;
       case ANIMATED -> ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY;
-    };
-  }
-
-  private static ModelBodyType defaultBodyType(ModelPresetType presetType) {
-    return switch (presetType) {
-      case HUMANOID_STILL, HUMANOID_WANDERING -> ModelBodyType.BIPED;
-      case QUADRUPED_STILL, QUADRUPED_WANDERING -> ModelBodyType.QUADRUPED;
-      case AQUATIC_STILL, AQUATIC_SWIMMING -> ModelBodyType.AQUATIC;
-      case WINGED_STILL, WINGED_WANDERING -> ModelBodyType.WINGED;
-      case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING -> ModelBodyType.WINGED_HUMANOID;
-      case ARTHROPOD_STILL, ARTHROPOD_WANDERING -> ModelBodyType.ARTHROPOD;
-      case CUBOID_STILL, CUBOID_HOPPING -> ModelBodyType.CUBOID;
-      case FLOATING_STILL -> ModelBodyType.FLOATING;
-      case CUSTOM, STATIC, STATUE -> ModelBodyType.STATIC;
+      case ANIMATED_RANDOMLY -> ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY;
     };
   }
 
@@ -755,24 +744,10 @@ public final class EasyModelProfileParser {
 
   private static String requiredString(
       JsonElement value, String issueField, List<ModelProfileValidationIssue> issues) {
-    if (value == null || value.isJsonNull()) {
-      addIssue(
-          issues,
-          statusForRequiredField(issueField),
-          issueField,
-          "Missing required field " + issueField + ".");
-      return null;
-    }
-    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
-      addIssue(
-          issues,
-          statusForRequiredField(issueField),
-          issueField,
-          "Field " + issueField + " must be a string.");
-      return null;
-    }
-
-    return value.getAsString();
+    return JsonValues.requiredString(
+        value,
+        issueField,
+        (field, message) -> addIssue(issues, statusForRequiredField(field), field, message));
   }
 
   private static String optionalString(
@@ -789,15 +764,11 @@ public final class EasyModelProfileParser {
       String issueField,
       List<ModelProfileValidationIssue> issues,
       ModelProfileStatus status) {
-    if (value == null || value.isJsonNull()) {
-      return defaultValue;
-    }
-    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
-      addIssue(issues, status, issueField, "Field " + issueField + " must be a string.");
-      return defaultValue;
-    }
-
-    return value.getAsString();
+    return JsonValues.optionalString(
+        value,
+        defaultValue,
+        issueField,
+        (field, message) -> addIssue(issues, status, field, message));
   }
 
   private static ResourceLocation parseRequiredResourceLocation(

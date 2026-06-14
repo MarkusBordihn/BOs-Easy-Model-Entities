@@ -20,21 +20,22 @@
 package de.markusbordihn.easymodelentities.blockentity;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
+import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
+import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorSettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
+import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntitySettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelClientSettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelDimensions;
+import de.markusbordihn.easymodelentities.data.profile.ModelMovementSettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelProfileStatus;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
-import de.markusbordihn.easymodelentities.profile.ModelAttributes;
-import de.markusbordihn.easymodelentities.profile.ModelBehaviorMode;
-import de.markusbordihn.easymodelentities.profile.ModelBehaviorSettings;
-import de.markusbordihn.easymodelentities.profile.ModelBlockEntityPresetType;
-import de.markusbordihn.easymodelentities.profile.ModelBlockEntitySettings;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelClientSettings;
-import de.markusbordihn.easymodelentities.profile.ModelDimensions;
-import de.markusbordihn.easymodelentities.profile.ModelMovementSettings;
-import de.markusbordihn.easymodelentities.profile.ModelProfileStatus;
-import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
@@ -126,10 +127,53 @@ class EasyModelHostBlockEntityTest {
     assertEquals(1, blockEntity.getEasyModelAnimationTicks());
   }
 
+  @Test
+  void randomlyAnimatedClientTickRestsBetweenBurstsAndEventuallyAnimates() {
+    EasyModelServices.setBlockEntityTypeProvider(
+        new EasyModelHostBlockEntityTypeProvider() {
+          @Override
+          public BlockEntityType<EasyModelStaticBlockEntity> staticBlockEntityType() {
+            return mock(BlockEntityType.class);
+          }
+
+          @Override
+          public BlockEntityType<EasyModelTickingBlockEntity> tickingBlockEntityType() {
+            return mock(BlockEntityType.class);
+          }
+
+          @Override
+          public BlockEntityType<EasyModelAnimatedBlockEntity> animatedBlockEntityType() {
+            return mock(BlockEntityType.class);
+          }
+
+          @Override
+          public BlockEntityType<EasyModelRandomlyAnimatedBlockEntity>
+              animatedRandomlyBlockEntityType() {
+            return mock(BlockEntityType.class);
+          }
+        });
+    RandomlyAnimatedTestBlockEntity blockEntity = new RandomlyAnimatedTestBlockEntity();
+
+    assertEquals(0.0f, blockEntity.getEasyModelAnimationTicks(0.5f));
+    for (int tick = 0; tick < 450 && blockEntity.getEasyModelAnimationTicks(0.0f) == 0.0f; tick++) {
+      blockEntity.clientTick(null, BlockPos.ZERO, mock(BlockState.class));
+    }
+
+    assertTrue(blockEntity.getEasyModelAnimationTicks(0.5f) > 0.0f);
+  }
+
   private static class TestBlockEntity extends EasyModelHostBlockEntity {
 
     TestBlockEntity() {
       super(mock(BlockEntityType.class), BlockPos.ZERO, mock(BlockState.class));
+    }
+  }
+
+  private static class RandomlyAnimatedTestBlockEntity
+      extends EasyModelRandomlyAnimatedBlockEntity {
+
+    RandomlyAnimatedTestBlockEntity() {
+      super(BlockPos.ZERO, mock(BlockState.class));
     }
   }
 }

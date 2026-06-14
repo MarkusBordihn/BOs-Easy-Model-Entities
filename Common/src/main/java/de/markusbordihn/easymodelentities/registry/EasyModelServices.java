@@ -26,7 +26,6 @@ import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
 import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
-import de.markusbordihn.easymodelentities.validation.EasyModelValidationService;
 import java.util.Objects;
 
 public final class EasyModelServices {
@@ -37,7 +36,6 @@ public final class EasyModelServices {
   private static volatile EasyModelHostBlockEntityTypeProvider blockEntityTypeProvider;
   private static volatile EasyModelDecoderRegistry decoderRegistry;
   private static volatile EasyModelBakeService bakeService;
-  private static volatile EasyModelValidationService validationService;
   private static volatile EasyModelDiagnosticsService diagnosticsService;
 
   static {
@@ -97,15 +95,6 @@ public final class EasyModelServices {
     EasyModelServices.bakeService = Objects.requireNonNull(bakeService, "bakeService");
   }
 
-  public static EasyModelValidationService validationService() {
-    return validationService;
-  }
-
-  public static void setValidationService(EasyModelValidationService validationService) {
-    EasyModelServices.validationService =
-        Objects.requireNonNull(validationService, "validationService");
-  }
-
   public static EasyModelDiagnosticsService diagnosticsService() {
     return diagnosticsService;
   }
@@ -122,7 +111,6 @@ public final class EasyModelServices {
     blockEntityTypeProvider = EasyModelHostBlockEntityTypeProvider.EMPTY;
     decoderRegistry = EasyModelDecoderRegistry.EMPTY;
     bakeService = EasyModelBakeService.EMPTY;
-    validationService = EasyModelValidationService.EMPTY;
     diagnosticsService = EasyModelDiagnosticsService.EMPTY;
   }
 }

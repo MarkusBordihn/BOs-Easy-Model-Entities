@@ -20,8 +20,8 @@
 package de.markusbordihn.easymodelentities.runtime;
 
 import de.markusbordihn.easymodelentities.Constants;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
@@ -41,10 +41,6 @@ public record EasyModelRuntimeContract(
     Objects.requireNonNull(version, "version");
     Objects.requireNonNull(bodyType, "bodyType");
     Objects.requireNonNull(animationState, "animationState");
-  }
-
-  public static EasyModelRuntimeContract fromProfile(EasyModelEntityProfile profile) {
-    return fromProfile(profile, EasyModelAnimationState.AUTO);
   }
 
   public static EasyModelRuntimeContract fromProfile(

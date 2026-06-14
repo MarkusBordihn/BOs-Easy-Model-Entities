@@ -31,8 +31,14 @@ public final class ModelBlockEntityTypeIds {
       new ResourceLocation(Constants.MOD_ID, "ticking_block_entity");
   public static final ResourceLocation ANIMATED_BLOCK_ENTITY =
       new ResourceLocation(Constants.MOD_ID, "animated_block_entity");
+  public static final ResourceLocation ANIMATED_RANDOMLY_BLOCK_ENTITY =
+      new ResourceLocation(Constants.MOD_ID, "animated_randomly_block_entity");
   public static final Set<ResourceLocation> SUPPORTED_HOST_BLOCK_ENTITY_TYPES =
-      Set.of(STATIC_BLOCK_ENTITY, TICKING_BLOCK_ENTITY, ANIMATED_BLOCK_ENTITY);
+      Set.of(
+          STATIC_BLOCK_ENTITY,
+          TICKING_BLOCK_ENTITY,
+          ANIMATED_BLOCK_ENTITY,
+          ANIMATED_RANDOMLY_BLOCK_ENTITY);
 
   private ModelBlockEntityTypeIds() {}
 

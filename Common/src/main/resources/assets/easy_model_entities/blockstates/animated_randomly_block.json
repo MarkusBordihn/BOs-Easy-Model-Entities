@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "easy_model_entities:block/host_block"
+    }
+  }
+}

@@ -20,17 +20,18 @@
 package de.markusbordihn.easymodelentities.render;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.model.bake.ModelBakeResult;
+import de.markusbordihn.easymodelentities.data.model.bake.ModelCacheKey;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
-import de.markusbordihn.easymodelentities.model.bake.ModelBakeResult;
-import de.markusbordihn.easymodelentities.model.bake.ModelCacheKey;
 import de.markusbordihn.easymodelentities.model.bake.ModelFallbackFactory;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
-import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
-import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationMode;
-import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationSettings;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
 import java.util.Objects;

@@ -21,10 +21,13 @@ package de.markusbordihn.easymodelentities.api.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartDefinition;
 import de.markusbordihn.easymodelentities.client.render.EasyModelEntityRenderBackend;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
+import java.util.List;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -40,14 +43,44 @@ public final class EasyModelEntityRenderDelegate<T extends Entity & EasyModelRen
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
+    render(
+        entity,
+        entityYaw,
+        partialTick,
+        poseStack,
+        bufferSource,
+        packedLight,
+        EasyModelEntityRenderOptions.DEFAULT);
+  }
+
+  public void render(
+      T entity,
+      float entityYaw,
+      float partialTick,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      EasyModelEntityRenderOptions options) {
     EasyModelRenderState renderState =
         EasyModelEntityRenderBackend.resolveRenderState(contract(entity));
     EasyModelEntityRenderBackend.render(
-        entity, renderState, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        entity, renderState, entityYaw, partialTick, options, poseStack, bufferSource, packedLight);
   }
 
   public ResourceLocation getTextureLocation(T entity) {
     return EasyModelEntityRenderBackend.resolveRenderState(contract(entity)).texture();
+  }
+
+  public List<EasyModelPartDefinition> rootModelParts(T entity) {
+    EasyModelRenderState renderState =
+        EasyModelEntityRenderBackend.resolveRenderState(contract(entity));
+    return renderState.bakedModel().rootParts().stream()
+        .map(EasyModelPartDefinitions::fromBakedPart)
+        .toList();
+  }
+
+  public List<EasyModelPartDefinition> modelParts(T entity) {
+    return EasyModelPartDefinitions.flatten(rootModelParts(entity));
   }
 
   private EasyModelRuntimeContract contract(T entity) {

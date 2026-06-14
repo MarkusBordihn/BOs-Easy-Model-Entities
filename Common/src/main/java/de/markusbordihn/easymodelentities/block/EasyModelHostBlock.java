@@ -21,9 +21,10 @@ package de.markusbordihn.easymodelentities.block;
 
 import de.markusbordihn.easymodelentities.blockentity.EasyModelAnimatedBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
+import de.markusbordihn.easymodelentities.blockentity.EasyModelRandomlyAnimatedBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelStaticBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelTickingBlockEntity;
-import de.markusbordihn.easymodelentities.profile.ModelBlockEntityPresetType;
+import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -67,6 +68,7 @@ public class EasyModelHostBlock extends BaseEntityBlock {
       case STATIC -> new EasyModelStaticBlockEntity(blockPos, blockState);
       case TICKING -> new EasyModelTickingBlockEntity(blockPos, blockState);
       case ANIMATED -> new EasyModelAnimatedBlockEntity(blockPos, blockState);
+      case ANIMATED_RANDOMLY -> new EasyModelRandomlyAnimatedBlockEntity(blockPos, blockState);
     };
   }
 

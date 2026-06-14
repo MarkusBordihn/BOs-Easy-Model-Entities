@@ -21,9 +21,9 @@ package de.markusbordihn.easymodelentities.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import java.io.StringReader;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;

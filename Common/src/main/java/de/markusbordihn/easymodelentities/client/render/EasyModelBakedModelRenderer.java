@@ -22,13 +22,17 @@ package de.markusbordihn.easymodelentities.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
-import de.markusbordihn.easymodelentities.model.ModelCubeFaceUvs.Face;
-import de.markusbordihn.easymodelentities.model.bake.BakedModel;
-import de.markusbordihn.easymodelentities.model.bake.BakedModelCube;
-import de.markusbordihn.easymodelentities.model.bake.BakedModelPart;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.render.EasyModelRenderState;
-import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationMode;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
+import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import java.util.Objects;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.util.Mth;
@@ -70,10 +74,83 @@ public final class EasyModelBakedModelRenderer {
       float limbSwing,
       float limbSwingAmount,
       float ageInTicks,
+      EasyModelPartAnimator partAnimator,
       PoseStack poseStack,
       VertexConsumer vertexConsumer,
       int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        partAnimator,
+        EasyModelPartAnimationMode.ADD,
+        poseStack,
+        vertexConsumer,
+        packedLight);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
+      VertexConsumer vertexConsumer,
+      int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        poseStack,
+        vertexConsumer,
+        packedLight,
+        partAnimator,
+        partAnimationMode);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      PoseStack poseStack,
+      VertexConsumer vertexConsumer,
+      int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        poseStack,
+        vertexConsumer,
+        packedLight);
+  }
+
+  private static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      PoseStack poseStack,
+      VertexConsumer vertexConsumer,
+      int packedLight,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode) {
     Objects.requireNonNull(bakedModel, "bakedModel");
+    Objects.requireNonNull(partAnimator, "partAnimator");
+    Objects.requireNonNull(partAnimationMode, "partAnimationMode");
     for (BakedModelPart part : bakedModel.rootParts()) {
       renderPart(
           part,
@@ -83,7 +160,9 @@ public final class EasyModelBakedModelRenderer {
           ageInTicks,
           poseStack,
           vertexConsumer,
-          packedLight);
+          packedLight,
+          partAnimator,
+          partAnimationMode);
     }
   }
 
@@ -95,18 +174,39 @@ public final class EasyModelBakedModelRenderer {
       float ageInTicks,
       PoseStack poseStack,
       VertexConsumer vertexConsumer,
-      int packedLight) {
+      int packedLight,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode) {
     poseStack.pushPose();
     float[] offset = part.offset();
     float[] rotation = part.rotation();
-    float[] animationRotation =
+    EasyModelPartTransform automaticTransform =
         animationRotation(part.name(), renderState, limbSwing, limbSwingAmount, ageInTicks);
+    EasyModelPartTransform animationTransform =
+        partAnimationMode == EasyModelPartAnimationMode.REPLACE
+            ? partAnimator.animate(
+                new EasyModelPartAnimationContext(
+                    part.name(),
+                    renderState.bodyType(),
+                    limbSwing,
+                    limbSwingAmount,
+                    ageInTicks,
+                    automaticTransform))
+            : automaticTransform.add(
+                partAnimator.animate(
+                    new EasyModelPartAnimationContext(
+                        part.name(),
+                        renderState.bodyType(),
+                        limbSwing,
+                        limbSwingAmount,
+                        ageInTicks,
+                        automaticTransform)));
     poseStack.translate(offset[0] * PIXEL, offset[1] * PIXEL, offset[2] * PIXEL);
     rotate(
         poseStack,
-        rotation[0] + animationRotation[0],
-        rotation[1] + animationRotation[1],
-        rotation[2] + animationRotation[2]);
+        rotation[0] + animationTransform.xRotation(),
+        rotation[1] + animationTransform.yRotation(),
+        rotation[2] + animationTransform.zRotation());
 
     for (BakedModelCube cube : part.cubes()) {
       renderCube(cube, poseStack, vertexConsumer, packedLight, renderState.bakedModel());
@@ -120,13 +220,15 @@ public final class EasyModelBakedModelRenderer {
           ageInTicks,
           poseStack,
           vertexConsumer,
-          packedLight);
+          packedLight,
+          partAnimator,
+          partAnimationMode);
     }
 
     poseStack.popPose();
   }
 
-  private static float[] animationRotation(
+  private static EasyModelPartTransform animationRotation(
       String partName,
       EasyModelRenderState renderState,
       float limbSwing,
@@ -145,7 +247,7 @@ public final class EasyModelBakedModelRenderer {
     return idleRotation(partName, renderState.bodyType(), ageInTicks);
   }
 
-  private static float[] walkRotation(
+  private static EasyModelPartTransform walkRotation(
       String partName, EasyModelRenderState renderState, float limbSwing, float limbSwingAmount) {
     ModelBodyType bodyType = renderState.bodyType();
     float phase =
@@ -157,13 +259,13 @@ public final class EasyModelBakedModelRenderer {
                 bodyType, limbSwingAmount, renderState.animation().walkSpeedMultiplier());
 
     if (animatesOnX(partName, bodyType)) {
-      return new float[] {swing, 0.0f, 0.0f};
+      return new EasyModelPartTransform(swing, 0.0f, 0.0f);
     }
     if (animatesOnY(partName, bodyType)) {
-      return new float[] {0.0f, swing * 0.75f, 0.0f};
+      return new EasyModelPartTransform(0.0f, swing * 0.75f, 0.0f);
     }
     if (animatesOnZ(partName, bodyType)) {
-      return new float[] {0.0f, 0.0f, wingSwing(partName, swing)};
+      return new EasyModelPartTransform(0.0f, 0.0f, wingSwing(partName, swing));
     }
     return noRotation();
   }
@@ -176,21 +278,22 @@ public final class EasyModelBakedModelRenderer {
         : rotationScale;
   }
 
-  private static float[] idleRotation(String partName, ModelBodyType bodyType, float ageInTicks) {
+  private static EasyModelPartTransform idleRotation(
+      String partName, ModelBodyType bodyType, float ageInTicks) {
     float breath = Mth.sin(ageInTicks * 0.12f) * IDLE_BREATH_ROTATION;
     if ("body".equals(partName)) {
-      return new float[] {breath, 0.0f, 0.0f};
+      return new EasyModelPartTransform(breath, 0.0f, 0.0f);
     }
     if ("head".equals(partName)) {
-      return new float[] {breath * 0.5f, 0.0f, 0.0f};
+      return new EasyModelPartTransform(breath * 0.5f, 0.0f, 0.0f);
     }
     if (animatesOnY(partName, bodyType)) {
-      return new float[] {0.0f, Mth.sin(ageInTicks * 0.18f) * IDLE_TAIL_ROTATION, 0.0f};
+      return new EasyModelPartTransform(
+          0.0f, Mth.sin(ageInTicks * 0.18f) * IDLE_TAIL_ROTATION, 0.0f);
     }
     if (animatesOnZ(partName, bodyType)) {
-      return new float[] {
-        0.0f, 0.0f, wingSwing(partName, Mth.sin(ageInTicks * 0.24f) * IDLE_WING_ROTATION)
-      };
+      return new EasyModelPartTransform(
+          0.0f, 0.0f, wingSwing(partName, Mth.sin(ageInTicks * 0.24f) * IDLE_WING_ROTATION));
     }
     return noRotation();
   }
@@ -265,8 +368,8 @@ public final class EasyModelBakedModelRenderer {
     };
   }
 
-  private static float[] noRotation() {
-    return new float[] {0.0f, 0.0f, 0.0f};
+  private static EasyModelPartTransform noRotation() {
+    return EasyModelPartTransform.NONE;
   }
 
   private static void rotate(
@@ -315,7 +418,7 @@ public final class EasyModelBakedModelRenderer {
         0,
         0,
         1,
-        uv(cube, bakedModel, Face.SOUTH),
+        uv(cube, bakedModel, ModelCubeFace.SOUTH),
         packedLight);
     quad(
         vertexConsumer,
@@ -335,7 +438,7 @@ public final class EasyModelBakedModelRenderer {
         0,
         0,
         -1,
-        uv(cube, bakedModel, Face.NORTH),
+        uv(cube, bakedModel, ModelCubeFace.NORTH),
         packedLight);
     quad(
         vertexConsumer,
@@ -355,7 +458,7 @@ public final class EasyModelBakedModelRenderer {
         -1,
         0,
         0,
-        uv(cube, bakedModel, Face.WEST),
+        uv(cube, bakedModel, ModelCubeFace.WEST),
         packedLight);
     quad(
         vertexConsumer,
@@ -375,7 +478,7 @@ public final class EasyModelBakedModelRenderer {
         1,
         0,
         0,
-        uv(cube, bakedModel, Face.EAST),
+        uv(cube, bakedModel, ModelCubeFace.EAST),
         packedLight);
     quad(
         vertexConsumer,
@@ -395,7 +498,7 @@ public final class EasyModelBakedModelRenderer {
         0,
         -1,
         0,
-        uv(cube, bakedModel, Face.UP),
+        uv(cube, bakedModel, ModelCubeFace.UP),
         packedLight);
     quad(
         vertexConsumer,
@@ -415,11 +518,11 @@ public final class EasyModelBakedModelRenderer {
         0,
         1,
         0,
-        uv(cube, bakedModel, Face.DOWN),
+        uv(cube, bakedModel, ModelCubeFace.DOWN),
         packedLight);
   }
 
-  private static float[] uv(BakedModelCube cube, BakedModel bakedModel, Face face) {
+  private static float[] uv(BakedModelCube cube, BakedModel bakedModel, ModelCubeFace face) {
     float[] uv = cube.faceUvs().uv(face);
     return new float[] {
       uv[0] / bakedModel.textureWidth(),

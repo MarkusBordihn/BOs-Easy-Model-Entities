@@ -18,18 +18,19 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
-import de.markusbordihn.easymodelentities.model.decoder.DecodedModel;
-import de.markusbordihn.easymodelentities.model.decoder.DecodedModelCube;
-import de.markusbordihn.easymodelentities.model.decoder.DecodedModelPart;
+import de.markusbordihn.easymodelentities.data.model.bake.*;
+import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
+import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelCube;
+import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelPart;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecodeException;
 import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecoder;
 import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
-import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileValidationIssue;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -297,7 +298,9 @@ public final class ModelBakeService implements EasyModelBakeService {
   private static ModelBakeResult failure(
       ModelCacheKey cacheKey, ModelRenderProfileStatus status, String field, String message) {
     return ModelBakeResult.failure(
-        cacheKey, List.of(new ModelRenderProfileValidationIssue(status, field, message)));
+        cacheKey,
+        ModelFallbackFactory.createFallback(cacheKey.modelId()),
+        List.of(new ModelRenderProfileValidationIssue(status, field, message)));
   }
 
   private ModelResourceLookup findModelResource(
@@ -390,7 +393,8 @@ public final class ModelBakeService implements EasyModelBakeService {
       issues.addAll(validateTexture(renderProfile, resourceManager));
       issues.addAll(validateBodyType(renderProfile.bodyType(), decodedModel));
       if (hasHardFailure(issues)) {
-        return ModelBakeResult.failure(cacheKey, issues);
+        return ModelBakeResult.failure(
+            cacheKey, ModelFallbackFactory.createFallback(cacheKey.modelId()), issues);
       }
 
       return ModelBakeResult.success(

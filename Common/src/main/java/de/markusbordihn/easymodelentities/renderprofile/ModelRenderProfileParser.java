@@ -26,8 +26,10 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import de.markusbordihn.easymodelentities.Constants;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelPresetType;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelPresetType;
+import de.markusbordihn.easymodelentities.data.renderprofile.*;
+import de.markusbordihn.easymodelentities.json.JsonValues;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -142,7 +144,7 @@ public final class ModelRenderProfileParser {
     boolean custom = resolvedPresetType.isCustom();
 
     ModelBodyType bodyType =
-        parseBodyType(rawProfile.bodyType, defaultBodyType(resolvedPresetType), custom, issues);
+        parseBodyType(rawProfile.bodyType, resolvedPresetType.defaultBodyType(), custom, issues);
     ResourceLocation model =
         parseOptionalResourceLocation(
             rawProfile.model, ModelResourcePaths.defaultModelId(expectedId), MODEL_FIELD, issues);
@@ -161,7 +163,7 @@ public final class ModelRenderProfileParser {
         expectedId,
         schemaVersion,
         version,
-        bodyType == null ? defaultBodyType(resolvedPresetType) : bodyType,
+        bodyType == null ? resolvedPresetType.defaultBodyType() : bodyType,
         model == null ? ModelResourcePaths.defaultModelId(expectedId) : model,
         texture == null ? ModelResourcePaths.defaultTextureId(expectedId) : texture,
         renderSettings,
@@ -352,20 +354,6 @@ public final class ModelRenderProfileParser {
             });
   }
 
-  private static ModelBodyType defaultBodyType(ModelPresetType presetType) {
-    return switch (presetType) {
-      case HUMANOID_STILL, HUMANOID_WANDERING -> ModelBodyType.BIPED;
-      case QUADRUPED_STILL, QUADRUPED_WANDERING -> ModelBodyType.QUADRUPED;
-      case AQUATIC_STILL, AQUATIC_SWIMMING -> ModelBodyType.AQUATIC;
-      case WINGED_STILL, WINGED_WANDERING -> ModelBodyType.WINGED;
-      case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING -> ModelBodyType.WINGED_HUMANOID;
-      case ARTHROPOD_STILL, ARTHROPOD_WANDERING -> ModelBodyType.ARTHROPOD;
-      case CUBOID_STILL, CUBOID_HOPPING -> ModelBodyType.CUBOID;
-      case FLOATING_STILL -> ModelBodyType.FLOATING;
-      case CUSTOM, STATIC, STATUE -> ModelBodyType.STATIC;
-    };
-  }
-
   private static ModelRenderSettings defaultRenderSettings(ModelPresetType presetType) {
     return switch (presetType) {
       case QUADRUPED_STILL, QUADRUPED_WANDERING -> renderSettings(0.9f, 0.9f, 0.45f, 0.45f);
@@ -427,18 +415,11 @@ public final class ModelRenderProfileParser {
 
   private static String requiredString(
       JsonElement value, String field, List<ModelRenderProfileValidationIssue> issues) {
-    if (value == null || value.isJsonNull()) {
-      addIssue(
-          issues, statusForRequiredField(field), field, "Missing required field " + field + ".");
-      return null;
-    }
-    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
-      addIssue(
-          issues, statusForRequiredField(field), field, "Field " + field + " must be a string.");
-      return null;
-    }
-
-    return value.getAsString();
+    return JsonValues.requiredString(
+        value,
+        field,
+        (issueField, message) ->
+            addIssue(issues, statusForRequiredField(issueField), issueField, message));
   }
 
   private static String optionalString(
@@ -456,15 +437,11 @@ public final class ModelRenderProfileParser {
       String field,
       List<ModelRenderProfileValidationIssue> issues,
       ModelRenderProfileStatus status) {
-    if (value == null || value.isJsonNull()) {
-      return defaultValue;
-    }
-    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
-      addIssue(issues, status, field, "Field " + field + " must be a string.");
-      return defaultValue;
-    }
-
-    return value.getAsString();
+    return JsonValues.optionalString(
+        value,
+        defaultValue,
+        field,
+        (issueField, message) -> addIssue(issues, status, issueField, message));
   }
 
   private static ResourceLocation parseOptionalResourceLocation(

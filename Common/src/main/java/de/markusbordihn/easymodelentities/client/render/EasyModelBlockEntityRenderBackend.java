@@ -23,15 +23,16 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.render.EasyModelRenderStateResolver;
-import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
@@ -61,19 +62,42 @@ public final class EasyModelBlockEntityRenderBackend {
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
+    render(
+        blockEntity,
+        renderState,
+        partialTick,
+        EasyModelBlockEntityRenderOptions.DEFAULT,
+        poseStack,
+        bufferSource,
+        packedLight);
+  }
+
+  public static void render(
+      BlockEntity blockEntity,
+      EasyModelRenderState renderState,
+      float partialTick,
+      EasyModelBlockEntityRenderOptions options,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight) {
     Objects.requireNonNull(blockEntity, "blockEntity");
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(poseStack, "poseStack");
     Objects.requireNonNull(bufferSource, "bufferSource");
 
+    EasyModelBlockEntityRenderOptions safeOptions =
+        options == null ? EasyModelBlockEntityRenderOptions.DEFAULT : options;
     float ageInTicks =
-        blockEntity instanceof EasyModelHostBlockEntity hostBlockEntity
-            ? hostBlockEntity.getEasyModelAnimationTicks() + partialTick
-            : 0.0f;
+        safeOptions.animationTicks() != null
+            ? safeOptions.animationTicks()
+            : blockEntity instanceof EasyModelHostBlockEntity hostBlockEntity
+                ? hostBlockEntity.getEasyModelAnimationTicks(partialTick)
+                : 0.0f;
+    float yawDegrees = safeOptions.yawDegrees() == null ? 0.0f : safeOptions.yawDegrees();
 
     poseStack.pushPose();
     poseStack.translate(0.5f, 1.5f, 0.5f);
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f));
+    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yawDegrees));
     poseStack.scale(-renderState.scale(), -renderState.scale(), renderState.scale());
 
     VertexConsumer vertexConsumer =
@@ -84,6 +108,8 @@ public final class EasyModelBlockEntityRenderBackend {
         0.0f,
         0.0f,
         ageInTicks,
+        safeOptions.partAnimator(),
+        safeOptions.partAnimationMode(),
         poseStack,
         vertexConsumer,
         packedLight);

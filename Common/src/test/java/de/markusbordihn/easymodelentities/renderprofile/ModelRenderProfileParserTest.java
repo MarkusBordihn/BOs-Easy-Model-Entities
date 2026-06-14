@@ -24,7 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.Constants;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import java.io.StringReader;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
@@ -82,6 +83,24 @@ class ModelRenderProfileParserTest {
     assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
     assertEquals(ModelBodyType.STATIC, renderProfile.bodyType());
     assertEquals(ModelAnimationMode.NONE, renderProfile.animation().mode());
+  }
+
+  @Test
+  void parsesRandomIdleAnimationMode() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            """
+            {
+              "preset_type": "cuboid_still",
+              "body_type": "cuboid",
+              "animation": {
+                "mode": "random_idle"
+              }
+            }
+            """);
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(ModelAnimationMode.RANDOM_IDLE, renderProfile.animation().mode());
   }
 
   @Test

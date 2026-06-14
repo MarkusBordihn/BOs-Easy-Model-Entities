@@ -24,11 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import de.markusbordihn.easymodelentities.model.bake.ModelBakeResult;
+import de.markusbordihn.easymodelentities.data.model.bake.ModelBakeResult;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;

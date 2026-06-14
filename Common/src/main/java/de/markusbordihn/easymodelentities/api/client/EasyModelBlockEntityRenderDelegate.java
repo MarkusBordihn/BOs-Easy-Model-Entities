@@ -21,14 +21,24 @@ package de.markusbordihn.easymodelentities.api.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartDefinition;
+import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.client.render.EasyModelBlockEntityRenderBackend;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public final class EasyModelBlockEntityRenderDelegate<T extends BlockEntity & EasyModelRenderable> {
+
+  private final Map<T, RandomIdleState> randomIdleStates = new WeakHashMap<>();
 
   EasyModelBlockEntityRenderDelegate() {}
 
@@ -38,14 +48,103 @@ public final class EasyModelBlockEntityRenderDelegate<T extends BlockEntity & Ea
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
+    render(
+        blockEntity,
+        partialTick,
+        poseStack,
+        bufferSource,
+        packedLight,
+        EasyModelBlockEntityRenderOptions.DEFAULT);
+  }
+
+  public void render(
+      T blockEntity,
+      float partialTick,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      EasyModelBlockEntityRenderOptions options) {
     EasyModelRenderState renderState =
         EasyModelBlockEntityRenderBackend.resolveRenderState(contract(blockEntity));
+    EasyModelBlockEntityRenderOptions resolvedOptions =
+        resolveOptions(blockEntity, renderState, partialTick, options);
     EasyModelBlockEntityRenderBackend.render(
-        blockEntity, renderState, partialTick, poseStack, bufferSource, packedLight);
+        blockEntity,
+        renderState,
+        partialTick,
+        resolvedOptions,
+        poseStack,
+        bufferSource,
+        packedLight);
+  }
+
+  public List<EasyModelPartDefinition> rootModelParts(T blockEntity) {
+    EasyModelRenderState renderState =
+        EasyModelBlockEntityRenderBackend.resolveRenderState(contract(blockEntity));
+    return renderState.bakedModel().rootParts().stream()
+        .map(EasyModelPartDefinitions::fromBakedPart)
+        .toList();
+  }
+
+  public List<EasyModelPartDefinition> modelParts(T blockEntity) {
+    return EasyModelPartDefinitions.flatten(rootModelParts(blockEntity));
   }
 
   private EasyModelRuntimeContract contract(T blockEntity) {
     return EasyModelBlockEntityRenderBackend.runtimeContract(
         blockEntity, EasyModelServices.profileService(), EasyModelServices.renderProfileService());
+  }
+
+  private EasyModelBlockEntityRenderOptions resolveOptions(
+      T blockEntity,
+      EasyModelRenderState renderState,
+      float partialTick,
+      EasyModelBlockEntityRenderOptions options) {
+    EasyModelBlockEntityRenderOptions safeOptions =
+        options == null ? EasyModelBlockEntityRenderOptions.DEFAULT : options;
+    if (safeOptions.animationTicks() != null
+        || renderState.animation().mode() != ModelAnimationMode.RANDOM_IDLE) {
+      return safeOptions;
+    }
+
+    return safeOptions.withAnimationTicks(randomIdleAnimationTicks(blockEntity, partialTick));
+  }
+
+  private float randomIdleAnimationTicks(T blockEntity, float partialTick) {
+    if (blockEntity.getLevel() == null) {
+      return 0.0f;
+    }
+
+    return this.randomIdleStates
+        .computeIfAbsent(blockEntity, key -> new RandomIdleState())
+        .animationTicks(
+            blockEntity.getLevel().getGameTime(), blockEntity.getLevel().random, partialTick);
+  }
+
+  private static class RandomIdleState {
+    private long nextStartTick = Long.MIN_VALUE;
+    private long startTick = Long.MIN_VALUE;
+    private long endTick = Long.MIN_VALUE;
+
+    private static int randomIdleDelay(RandomSource random) {
+      return EasyModelHostBlockEntity.RANDOM_IDLE_MIN_GAP
+          + random.nextInt(EasyModelHostBlockEntity.RANDOM_IDLE_GAP_RANGE);
+    }
+
+    float animationTicks(long gameTime, RandomSource random, float partialTick) {
+      if (this.nextStartTick == Long.MIN_VALUE) {
+        this.nextStartTick = gameTime + randomIdleDelay(random);
+      }
+      if (gameTime >= this.endTick && gameTime >= this.nextStartTick) {
+        this.startTick = gameTime;
+        this.endTick = gameTime + EasyModelHostBlockEntity.RANDOM_IDLE_BURST_LENGTH;
+        this.nextStartTick = this.endTick + randomIdleDelay(random);
+      }
+      if (gameTime < this.endTick) {
+        return gameTime - this.startTick + partialTick;
+      }
+
+      return 0.0f;
+    }
   }
 }

@@ -1,6 +1,6 @@
 {
   "preset_type": "static",
-  "version": "demo-shrine-v1",
+  "version": "demo-shrine-v2",
   "model": "easy_model_entities_examples:easy_model_entities/models/shrine",
   "texture": "easy_model_entities_examples:textures/block/shrine.png",
   "rendering": {
@@ -10,7 +10,7 @@
     "visible_bounds_offset": [0.0, 0.675, 0.0]
   },
   "animation": {
-    "mode": "automatic",
+    "mode": "random_idle",
     "idle": "idle"
   }
 }

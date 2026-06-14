@@ -22,9 +22,10 @@ package de.markusbordihn.easymodelentities;
 import de.markusbordihn.easymodelentities.block.EasyModelHostBlock;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelAnimatedBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntityTypeProvider;
+import de.markusbordihn.easymodelentities.blockentity.EasyModelRandomlyAnimatedBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelStaticBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelTickingBlockEntity;
-import de.markusbordihn.easymodelentities.profile.ModelBlockEntityPresetType;
+import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
 import net.minecraft.core.Registry;
@@ -52,6 +53,11 @@ public final class FabricEasyModelBlockEntityTypes implements EasyModelHostBlock
           BuiltInRegistries.BLOCK,
           ModelBlockIds.ANIMATED_BLOCK,
           new EasyModelHostBlock(ModelBlockEntityPresetType.ANIMATED));
+  public static final Block ANIMATED_RANDOMLY_BLOCK =
+      Registry.register(
+          BuiltInRegistries.BLOCK,
+          ModelBlockIds.ANIMATED_RANDOMLY_BLOCK,
+          new EasyModelHostBlock(ModelBlockEntityPresetType.ANIMATED_RANDOMLY));
 
   private static final BlockEntityType<EasyModelStaticBlockEntity> STATIC_BLOCK_ENTITY =
       Registry.register(
@@ -69,6 +75,14 @@ public final class FabricEasyModelBlockEntityTypes implements EasyModelHostBlock
           ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY,
           BlockEntityType.Builder.of(EasyModelAnimatedBlockEntity::new, ANIMATED_BLOCK)
               .build(null));
+  private static final BlockEntityType<EasyModelRandomlyAnimatedBlockEntity>
+      ANIMATED_RANDOMLY_BLOCK_ENTITY =
+          Registry.register(
+              BuiltInRegistries.BLOCK_ENTITY_TYPE,
+              ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY,
+              BlockEntityType.Builder.of(
+                      EasyModelRandomlyAnimatedBlockEntity::new, ANIMATED_RANDOMLY_BLOCK)
+                  .build(null));
 
   private FabricEasyModelBlockEntityTypes() {}
 
@@ -87,5 +101,10 @@ public final class FabricEasyModelBlockEntityTypes implements EasyModelHostBlock
   @Override
   public BlockEntityType<EasyModelAnimatedBlockEntity> animatedBlockEntityType() {
     return ANIMATED_BLOCK_ENTITY;
+  }
+
+  @Override
+  public BlockEntityType<EasyModelRandomlyAnimatedBlockEntity> animatedRandomlyBlockEntityType() {
+    return ANIMATED_RANDOMLY_BLOCK_ENTITY;
   }
 }

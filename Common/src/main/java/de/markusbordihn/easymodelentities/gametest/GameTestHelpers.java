@@ -33,12 +33,4 @@ public final class GameTestHelpers {
 
     helper.fail(message);
   }
-
-  public static void assertFalse(GameTestHelper helper, String message, boolean condition) {
-    assertTrue(helper, message, !condition);
-  }
-
-  public static void assertNotNull(GameTestHelper helper, String message, Object object) {
-    assertTrue(helper, message, object != null);
-  }
 }

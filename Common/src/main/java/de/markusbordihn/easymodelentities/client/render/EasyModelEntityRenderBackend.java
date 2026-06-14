@@ -23,15 +23,16 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.render.EasyModelRenderStateResolver;
-import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
@@ -63,10 +64,37 @@ public final class EasyModelEntityRenderBackend {
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
+    render(
+        entity,
+        renderState,
+        entityYaw,
+        partialTick,
+        EasyModelEntityRenderOptions.DEFAULT,
+        poseStack,
+        bufferSource,
+        packedLight);
+  }
+
+  public static void render(
+      Entity entity,
+      EasyModelRenderState renderState,
+      float entityYaw,
+      float partialTick,
+      EasyModelEntityRenderOptions options,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight) {
     Objects.requireNonNull(entity, "entity");
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(poseStack, "poseStack");
     Objects.requireNonNull(bufferSource, "bufferSource");
+
+    EasyModelEntityRenderOptions safeOptions =
+        options == null ? EasyModelEntityRenderOptions.DEFAULT : options;
+    float ageInTicks =
+        safeOptions.animationTicks() == null
+            ? entity.tickCount + partialTick
+            : safeOptions.animationTicks();
 
     poseStack.pushPose();
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
@@ -80,7 +108,9 @@ public final class EasyModelEntityRenderBackend {
         renderState,
         limbSwing(entity, partialTick),
         limbSwingAmount(entity, partialTick),
-        entity.tickCount + partialTick,
+        ageInTicks,
+        safeOptions.partAnimator(),
+        safeOptions.partAnimationMode(),
         poseStack,
         vertexConsumer,
         packedLight);

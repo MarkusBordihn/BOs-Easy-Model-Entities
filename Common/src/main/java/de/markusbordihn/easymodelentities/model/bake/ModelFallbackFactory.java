@@ -18,6 +18,7 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
+import de.markusbordihn.easymodelentities.data.model.bake.*;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 

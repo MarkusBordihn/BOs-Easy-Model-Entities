@@ -21,11 +21,12 @@ package de.markusbordihn.easymodelentities.blockentity;
 
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelType;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,6 +34,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -46,16 +48,16 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   public static final float FALLBACK_EYE_HEIGHT = 0.5f;
   public static final ResourceLocation MISSING_PROFILE_ID =
       new ResourceLocation(Constants.MOD_ID, "missing");
-
-  private static final String PROFILE_ID_TAG = "ProfileId";
-  private static final String RENDER_PROFILE_ID_TAG = "RenderProfileId";
-  private static final String VERSION_TAG = "Version";
-  private static final String BODY_TYPE_TAG = "BodyType";
-  private static final String ANIMATION_STATE_TAG = "AnimationState";
+  public static final int RANDOM_IDLE_BURST_LENGTH = 53;
+  public static final int RANDOM_IDLE_MIN_GAP = 200;
+  public static final int RANDOM_IDLE_GAP_RANGE = 201;
 
   private EasyModelRuntimeContract runtimeContract =
       EasyModelRuntimeContract.fallback(MISSING_PROFILE_ID);
   private int animationTicks = 0;
+  private int randomIdleTicks = 0;
+  private int randomIdleBurstTicks = 0;
+  private int randomIdleDelayTicks = -1;
 
   protected EasyModelHostBlockEntity(
       BlockEntityType<? extends EasyModelHostBlockEntity> blockEntityType,
@@ -82,20 +84,18 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
         .filter(profile -> profile.modelType() == ModelType.BLOCK_ENTITY);
   }
 
-  private static ResourceLocation parseResourceLocationOrMissing(String resourceLocation) {
-    ResourceLocation parsedResourceLocation = parseResourceLocation(resourceLocation);
-    return parsedResourceLocation == null ? MISSING_PROFILE_ID : parsedResourceLocation;
-  }
-
-  private static ResourceLocation parseResourceLocation(String resourceLocation) {
-    return resourceLocation == null || resourceLocation.isBlank()
-        ? null
-        : ResourceLocation.tryParse(resourceLocation);
+  private static int randomIdleDelay(RandomSource random) {
+    return RANDOM_IDLE_MIN_GAP + random.nextInt(RANDOM_IDLE_GAP_RANGE);
   }
 
   public void serverTick(Level level, BlockPos blockPos, BlockState blockState) {}
 
   public void clientTick(Level level, BlockPos blockPos, BlockState blockState) {
+    if (this instanceof EasyModelRandomlyAnimatedBlockEntity) {
+      randomIdleTick(level == null ? RandomSource.create() : level.random);
+      return;
+    }
+
     this.animationTicks++;
   }
 
@@ -103,13 +103,12 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   public void load(CompoundTag compoundTag) {
     super.load(compoundTag);
 
-    ResourceLocation profileId = parseResourceLocation(compoundTag.getString(PROFILE_ID_TAG));
-    ResourceLocation renderProfileId =
-        parseResourceLocation(compoundTag.getString(RENDER_PROFILE_ID_TAG));
-    String version = compoundTag.getString(VERSION_TAG);
-    ModelBodyType bodyType = ModelBodyType.bySerializedName(compoundTag.getString(BODY_TYPE_TAG));
-    EasyModelAnimationState animationState =
-        EasyModelAnimationState.bySerializedName(compoundTag.getString(ANIMATION_STATE_TAG));
+    EasyModelHostPersistence.State state = EasyModelHostPersistence.read(compoundTag);
+    ResourceLocation profileId = state.profileId();
+    ResourceLocation renderProfileId = state.renderProfileId();
+    String version = state.version();
+    ModelBodyType bodyType = state.bodyType();
+    EasyModelAnimationState animationState = state.animationState();
 
     if (profileId == null) {
       applyRuntimeContract(fallbackRuntimeContract(MISSING_PROFILE_ID, animationState), false);
@@ -138,12 +137,18 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   @Override
   protected void saveAdditional(CompoundTag compoundTag) {
     super.saveAdditional(compoundTag);
-    compoundTag.putString(PROFILE_ID_TAG, this.runtimeContract.profileId().toString());
-    compoundTag.putString(RENDER_PROFILE_ID_TAG, this.runtimeContract.renderProfileId().toString());
-    compoundTag.putString(VERSION_TAG, this.runtimeContract.version());
-    compoundTag.putString(BODY_TYPE_TAG, this.runtimeContract.bodyType().getSerializedName());
     compoundTag.putString(
-        ANIMATION_STATE_TAG, this.runtimeContract.animationState().getSerializedName());
+        EasyModelHostPersistence.PROFILE_ID_TAG, this.runtimeContract.profileId().toString());
+    compoundTag.putString(
+        EasyModelHostPersistence.RENDER_PROFILE_ID_TAG,
+        this.runtimeContract.renderProfileId().toString());
+    compoundTag.putString(EasyModelHostPersistence.VERSION_TAG, this.runtimeContract.version());
+    compoundTag.putString(
+        EasyModelHostPersistence.BODY_TYPE_TAG,
+        this.runtimeContract.bodyType().getSerializedName());
+    compoundTag.putString(
+        EasyModelHostPersistence.ANIMATION_STATE_TAG,
+        this.runtimeContract.animationState().getSerializedName());
   }
 
   @Override
@@ -160,7 +165,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
 
   @Override
   public ResourceLocation getEasyModelProfileId() {
-    return parseResourceLocationOrMissing(this.runtimeContract.profileId().toString());
+    return EasyModelHostPersistence.parseResourceLocationOrMissing(
+        this.runtimeContract.profileId().toString(), MISSING_PROFILE_ID);
   }
 
   public void setEasyModelProfileId(ResourceLocation profileId) {
@@ -208,6 +214,12 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     return this.animationTicks;
   }
 
+  public float getEasyModelAnimationTicks(float partialTick) {
+    return this instanceof EasyModelRandomlyAnimatedBlockEntity
+        ? getRandomIdleAnimationTicks(partialTick)
+        : this.animationTicks + partialTick;
+  }
+
   public EasyModelRuntimeContract getEasyModelRuntimeContract() {
     return this.runtimeContract;
   }
@@ -245,5 +257,26 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
       BlockState blockState = getBlockState();
       this.level.sendBlockUpdated(this.worldPosition, blockState, blockState, Block.UPDATE_CLIENTS);
     }
+  }
+
+  private void randomIdleTick(RandomSource random) {
+    if (this.randomIdleDelayTicks < 0) {
+      this.randomIdleDelayTicks = randomIdleDelay(random);
+    }
+    if (this.randomIdleBurstTicks > 0) {
+      this.randomIdleTicks++;
+      this.randomIdleBurstTicks--;
+      return;
+    }
+
+    if (--this.randomIdleDelayTicks <= 0) {
+      this.randomIdleTicks = 0;
+      this.randomIdleBurstTicks = RANDOM_IDLE_BURST_LENGTH;
+      this.randomIdleDelayTicks = randomIdleDelay(random);
+    }
+  }
+
+  private float getRandomIdleAnimationTicks(float partialTick) {
+    return this.randomIdleBurstTicks > 0 ? this.randomIdleTicks + partialTick : 0.0f;
   }
 }

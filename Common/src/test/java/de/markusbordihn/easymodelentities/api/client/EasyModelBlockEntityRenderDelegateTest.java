@@ -19,37 +19,51 @@
 
 package de.markusbordihn.easymodelentities.api.client;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.markusbordihn.easymodelentities.api.EasyModelAnimationStates;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartDefinition;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
 import de.markusbordihn.easymodelentities.client.render.EasyModelBlockEntityRenderBackend;
-import de.markusbordihn.easymodelentities.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
+import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
+import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorSettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
+import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntitySettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.profile.ModelClientSettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelDimensions;
+import de.markusbordihn.easymodelentities.data.profile.ModelMovementSettings;
+import de.markusbordihn.easymodelentities.data.profile.ModelProfileStatus;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderSettings;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
-import de.markusbordihn.easymodelentities.profile.ModelAttributes;
-import de.markusbordihn.easymodelentities.profile.ModelBehaviorMode;
-import de.markusbordihn.easymodelentities.profile.ModelBehaviorSettings;
-import de.markusbordihn.easymodelentities.profile.ModelBlockEntityPresetType;
-import de.markusbordihn.easymodelentities.profile.ModelBlockEntitySettings;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.profile.ModelClientSettings;
-import de.markusbordihn.easymodelentities.profile.ModelDimensions;
-import de.markusbordihn.easymodelentities.profile.ModelMovementSettings;
-import de.markusbordihn.easymodelentities.profile.ModelProfileStatus;
-import de.markusbordihn.easymodelentities.profile.ModelType;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
-import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
-import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationMode;
-import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationSettings;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderSettings;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.SharedConstants;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
@@ -58,6 +72,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
 class EasyModelBlockEntityRenderDelegateTest {
 
@@ -150,12 +165,62 @@ class EasyModelBlockEntityRenderDelegateTest {
         List.of());
   }
 
+  private static EasyModelRenderState renderState(BakedModel bakedModel) {
+    return new EasyModelRenderState(
+        bakedModel,
+        new ResourceLocation("example", "textures/block/bell.png"),
+        1.0f,
+        0.0f,
+        ModelBodyType.STATIC,
+        new ModelAnimationSettings(ModelAnimationMode.NONE, "", "", "", "", "", 1.0f, 1.0f),
+        false,
+        false,
+        List.of());
+  }
+
   @Test
   void createsDelegateForRenderableBlockEntityType() {
     EasyModelBlockEntityRenderDelegate<RenderableBlockEntity> delegate =
         EasyModelEntitiesClientApi.createBlockEntityRenderDelegate();
 
     assertNotNull(delegate);
+  }
+
+  @Test
+  void createsBlockEntityRenderOptionsWithCustomAnimatorMode() {
+    EasyModelBlockEntityRenderOptions options =
+        EasyModelBlockEntityRenderOptions.DEFAULT
+            .withYawDegrees(90.0f)
+            .withAnimationTicks(12.0f)
+            .withPartAnimator(context -> EasyModelPartTransform.NONE)
+            .withPartAnimationMode(EasyModelPartAnimationMode.REPLACE);
+
+    assertEquals(90.0f, options.yawDegrees(), 0.0001f);
+    assertEquals(12.0f, options.animationTicks(), 0.0001f);
+    assertNotNull(options.partAnimator());
+    assertEquals(EasyModelPartAnimationMode.REPLACE, options.partAnimationMode());
+  }
+
+  @Test
+  void renderBackendUsesDefaultOptionsWhenOptionsAreNull() {
+    RenderableBlockEntity blockEntity =
+        mock(RenderableBlockEntity.class, Answers.CALLS_REAL_METHODS);
+    BakedModel bakedModel =
+        new BakedModel(new ResourceLocation("example", "empty"), 64, 64, List.of());
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);
+
+    assertDoesNotThrow(
+        () ->
+            EasyModelBlockEntityRenderBackend.render(
+                blockEntity,
+                renderState(bakedModel),
+                0.0f,
+                null,
+                new PoseStack(),
+                bufferSource,
+                0));
   }
 
   @Test
@@ -187,6 +252,30 @@ class EasyModelBlockEntityRenderDelegateTest {
     assertEquals(1.0f, contract.width());
     assertEquals(1.0f, contract.height());
     assertEquals(0.5f, contract.eyeHeight());
+  }
+
+  @Test
+  void partDefinitionsCanBeFlattened() {
+    EasyModelPartDefinition root =
+        EasyModelPartDefinitions.fromBakedPart(
+            new BakedModelPart(
+                "root",
+                new float[] {0.0f, 0.0f, 0.0f},
+                new float[] {0.0f, 0.0f, 0.0f},
+                List.of(),
+                List.of(
+                    new BakedModelPart(
+                        "crystal",
+                        new float[] {0.0f, 1.0f, 0.0f},
+                        new float[] {0.0f, 0.0f, 0.0f},
+                        List.of(),
+                        List.of()))));
+
+    List<EasyModelPartDefinition> flattenedParts = EasyModelPartDefinitions.flatten(List.of(root));
+
+    assertEquals(
+        List.of("root", "crystal"),
+        flattenedParts.stream().map(EasyModelPartDefinition::name).toList());
   }
 
   private abstract static class RenderableBlockEntity extends BlockEntity

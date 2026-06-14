@@ -23,7 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.model.decoder.*;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;

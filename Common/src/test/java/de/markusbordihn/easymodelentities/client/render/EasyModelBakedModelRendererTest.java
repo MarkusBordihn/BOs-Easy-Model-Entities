@@ -19,23 +19,30 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import de.markusbordihn.easymodelentities.model.ModelCubeFaceUvs;
-import de.markusbordihn.easymodelentities.model.bake.BakedModel;
-import de.markusbordihn.easymodelentities.model.bake.BakedModelCube;
-import de.markusbordihn.easymodelentities.model.bake.BakedModelPart;
-import de.markusbordihn.easymodelentities.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.render.EasyModelRenderState;
-import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationMode;
-import de.markusbordihn.easymodelentities.renderprofile.ModelAnimationSettings;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
+import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.resources.ResourceLocation;
+import org.joml.Matrix4f;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
@@ -53,13 +60,18 @@ class EasyModelBakedModelRendererTest {
   }
 
   private static EasyModelRenderState renderState(BakedModel bakedModel) {
+    return renderState(bakedModel, ModelBodyType.STATIC, ModelAnimationMode.NONE);
+  }
+
+  private static EasyModelRenderState renderState(
+      BakedModel bakedModel, ModelBodyType bodyType, ModelAnimationMode animationMode) {
     return new EasyModelRenderState(
         bakedModel,
         new ResourceLocation("example", "textures/entity/uv_model.png"),
         1.0f,
         0.3f,
-        ModelBodyType.STATIC,
-        new ModelAnimationSettings(ModelAnimationMode.NONE, "", "", "", "", "", 1.0f, 1.0f),
+        bodyType,
+        new ModelAnimationSettings(animationMode, "", "", "", "", "", 1.0f, 1.0f),
         false,
         false,
         List.of());
@@ -139,5 +151,131 @@ class EasyModelBakedModelRendererTest {
         0.0f,
         1.0f,
         0.0f);
+  }
+
+  @Test
+  void forwardsPartsToCustomAnimator() {
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "animated_part"),
+            64,
+            64,
+            List.of(
+                new BakedModelPart(
+                    "crystal",
+                    new float[] {0.0f, 0.0f, 0.0f},
+                    new float[] {0.0f, 0.0f, 0.0f},
+                    List.of(),
+                    List.of())));
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        12.0f,
+        animationContext -> {
+          context.set(animationContext);
+          return new EasyModelPartTransform(0.0f, 0.25f, 0.0f);
+        },
+        new PoseStack(),
+        vertexConsumer,
+        0);
+
+    assertEquals("crystal", context.get().partName());
+    assertEquals(12.0f, context.get().ageInTicks());
+  }
+
+  @Test
+  void forwardsAutomaticTransformToCustomAnimator() {
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "animated_leg"),
+            64,
+            64,
+            List.of(
+                new BakedModelPart(
+                    "left_leg",
+                    new float[] {0.0f, 0.0f, 0.0f},
+                    new float[] {0.0f, 0.0f, 0.0f},
+                    List.of(),
+                    List.of())));
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel, ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC),
+        1.0f,
+        1.0f,
+        12.0f,
+        animationContext -> {
+          context.set(animationContext);
+          return new EasyModelPartTransform(0.0f, 0.25f, 0.0f);
+        },
+        new PoseStack(),
+        vertexConsumer,
+        0);
+
+    assertNotEquals(EasyModelPartTransform.NONE, context.get().automaticTransform());
+  }
+
+  @Test
+  void replacePartAnimationModeSuppressesAutomaticTransform() {
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "replace_animation"),
+            64,
+            64,
+            List.of(
+                new BakedModelPart(
+                    "left_leg",
+                    new float[] {0.0f, 0.0f, 0.0f},
+                    new float[] {0.0f, 0.0f, 0.0f},
+                    List.of(
+                        new BakedModelCube(
+                            new int[] {0, 0},
+                            faceUvs(),
+                            new float[] {0.0f, 0.0f, 0.0f},
+                            new float[] {1.0f, 1.0f, 1.0f},
+                            false)),
+                    List.of())));
+    VertexConsumer addVertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    VertexConsumer replaceVertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    EasyModelPartTransform animatorTransform = new EasyModelPartTransform(0.25f, 0.0f, 0.0f);
+    ArgumentCaptor<Matrix4f> addPoseCaptor = ArgumentCaptor.forClass(Matrix4f.class);
+    ArgumentCaptor<Matrix4f> replacePoseCaptor = ArgumentCaptor.forClass(Matrix4f.class);
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel, ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC),
+        0.0f,
+        1.0f,
+        12.0f,
+        context -> animatorTransform,
+        EasyModelPartAnimationMode.ADD,
+        new PoseStack(),
+        addVertexConsumer,
+        0);
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel, ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC),
+        0.0f,
+        1.0f,
+        12.0f,
+        context -> animatorTransform,
+        EasyModelPartAnimationMode.REPLACE,
+        new PoseStack(),
+        replaceVertexConsumer,
+        0);
+
+    verify(addVertexConsumer, times(24))
+        .vertex(addPoseCaptor.capture(), anyFloat(), anyFloat(), anyFloat());
+    verify(replaceVertexConsumer, times(24))
+        .vertex(replacePoseCaptor.capture(), anyFloat(), anyFloat(), anyFloat());
+    assertEquals(Math.cos(1.65f), addPoseCaptor.getAllValues().get(0).m11(), 0.0001f);
+    assertEquals(Math.cos(0.25f), replacePoseCaptor.getValue().m11(), 0.0001f);
   }
 }
