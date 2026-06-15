@@ -1,11 +1,22 @@
 # Easy Model Entities (1.20.1)
 
+![Easy NPC Versions](http://cf.way2muchnoise.eu/versions/Minecraft_1539533_all.svg)
+
+[![Download on CurseForge](http://cf.way2muchnoise.eu/title/1539533.svg)](https://www.curseforge.com/minecraft/mc-mods/easy-model-entities)
+[![CurseForge Downloads](http://cf.way2muchnoise.eu/full_1539533_downloads.svg)](https://www.curseforge.com/minecraft/mc-mods/easy-model-entities)
+
+[![Download on Modrinth](https://img.shields.io/badge/dynamic/json?labelColor=black&color=grey&label=&query=title&url=https://api.modrinth.com/v2/project/ngLoLP1P&style=flat&logo=modrinth)](https://modrinth.com/mod/easy-model-entities)
+[![Modrinth Downloads](https://img.shields.io/badge/dynamic/json?labelColor=black&color=grey&label=&suffix=%20downloads&query=downloads&url=https://api.modrinth.com/v2/project/ngLoLP1P&style=flat&logo=modrinth)](https://modrinth.com/mod/easy-model-entities)
+
 [![Report an Issue](https://img.shields.io/badge/Report%20an%20Issue-Bug%20%2F%20Crash%20%2F%20Feature%20Request-black?style=flat&logo=github)][issues]
+
 [![Wiki](https://img.shields.io/badge/Wiki-Documentation-black?style=flat&logo=github)][wiki]
-[![CurseForge](https://img.shields.io/badge/CurseForge-Easy%20Model%20Entities-f16436?style=flat&logo=curseforge)][curseforge]
-[![Support me on Ko-fi](https://img.shields.io/badge/Support_me_on_Ko--fi-!?labelColor=black&style=flat&logo=ko-fi)][ko-fi]
 
 ![Easy Model Entities Logo][logo]
+
+> **Beta:** This is an early release to gather feedback. Some settings, file formats and the export
+> output may still change before the final version. Please report problems and ideas on the
+> [issue tracker](https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues).
 
 **Easy Model Entities** turns Blockbench models into Minecraft entities and
 block-entities without requiring custom Java code for every model.
@@ -20,7 +31,7 @@ Install it if you want custom Blockbench models that can appear as ambient
 creatures, static display entities, decorative block-entities, shrines, mimics,
 or mod-integrated renderable objects with much less boilerplate.
 
-## Why Use It?
+## ✨ Why Use It?
 
 - **No per-model Java required**: Define most models with data packs and
   resource packs.
@@ -37,7 +48,7 @@ or mod-integrated renderable objects with much less boilerplate.
 - **Diagnostics and demo profiles**: Commands help list, validate, debug, spawn,
   and place test models in a dev world.
 
-## What Can You Build?
+## 🗣 What Can You Build?
 
 - Ambient critters, NPCs, training dummies, and simple custom entities.
 - Static display models that still use Minecraft entity rendering.
@@ -45,7 +56,7 @@ or mod-integrated renderable objects with much less boilerplate.
 - Mod-controlled entities and block-entities that use EME for model loading,
   rendering, texture handling, and optional part animation.
 
-## Quick Start
+## ℹ️ Quick Start
 
 After installing the mod, try the bundled demo profiles in a dev or test world:
 
@@ -66,7 +77,7 @@ Useful diagnostic commands:
 More demo commands and explanations are available in the
 [Demo Commands wiki page](wiki/Demo.md).
 
-## Pack Workflow
+## 📦 Pack Workflow
 
 Easy Model Entities uses two profile layers:
 
@@ -113,27 +124,40 @@ for **Fabric** and **Forge**.
 Install the matching loader build on both client and server when profiles,
 entities, or block-entities are used in multiplayer.
 
-## Documentation
+## ℹ️ Documentation
 
-- [Wiki Home][wiki]
-- [Pack Usage](wiki/User-Guide.md)
-- [Entities](wiki/Entity-Guide.md)
-- [Block-Entities](wiki/Block-Entity-Guide.md)
-- [Developer Integration](wiki/Developer-Guide.md)
-- [Profile Reference](wiki/Profile-Reference.md)
-- [Demo Commands](wiki/Demo.md)
+Please check the [wiki][wiki] for additional information.
 
-## License
+## 🐛 Report Issues, Bugs, Crashes or Feature Requests
 
-The [MIT LICENSE](LICENSE.md) applies to the code in this repository.
-Images, models, textures, and other assets may have separate rights and are not
-automatically covered by the code license.
+Please report issues and feature requests over the [issues link][issues]. I'm happy to help you.
 
-[curseforge]: https://curseforge.com/minecraft/mc-mods/easy-model-entities
+## 🧠 AI Assistance
+
+AI-assisted tools are used to improve documentation, translations, and repetitive code sections.
+This allows more time to be spent on feature development, maintenance, and long-term support.
+All technical concepts, gameplay logic, and final assets are created manually.
+See [AI ASSISTANCE](AI_ASSISTANCE.md) for full details.
+
+## ⚖️ License
+
+**This project is open source under the MIT License.**
+
+⚠️ **Important:** The license applies **only to the source code** in this repository.
+
+**Assets are excluded from the license:**
+
+* 3D models (`.bbmodel` files)
+* Textures and images
+* Sounds and music
+* Animations
+* Other creative/artistic content
+
+**These assets may not be redistributed, modified, or used in other projects without permission.**
+
+For the full license text, see [LICENSE.md](LICENSE.md).
 
 [issues]: https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues
-
-[ko-fi]: https://ko-fi.com/Kaworru
 
 [wiki]: https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/wiki
 
