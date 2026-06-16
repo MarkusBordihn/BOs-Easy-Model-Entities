@@ -1,16 +1,10 @@
 {
+  "schema_version": "0.1.0",
   "preset_type": "statue",
   "version": "demo-text-example-v1",
   "model": "easy_model_entities_examples:easy_model_entities/models/text_example",
   "texture": "easy_model_entities_examples:textures/entity/text_example.png",
   "rendering": {
-    "shadow_radius": 0.5,
-    "visible_bounds_width": 2.0,
-    "visible_bounds_height": 1.0,
-    "visible_bounds_offset": [
-      0.0,
-      0.5,
-      0.0
-    ]
+    "shadow_radius": 0.5
   }
 }

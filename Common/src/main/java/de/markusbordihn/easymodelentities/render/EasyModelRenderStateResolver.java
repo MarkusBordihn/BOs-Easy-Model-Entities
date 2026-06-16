@@ -45,7 +45,7 @@ public final class EasyModelRenderStateResolver {
   private static final ResourceLocation FALLBACK_MODEL =
       new ResourceLocation(Constants.MOD_ID, "fallback");
   private static final ModelAnimationSettings NO_ANIMATION =
-      new ModelAnimationSettings(ModelAnimationMode.NONE, "", "", "", "", "", 1.0f, 1.0f);
+      new ModelAnimationSettings(ModelAnimationMode.NONE, 1.0f, 1.0f);
 
   private EasyModelRenderStateResolver() {}
 
@@ -115,6 +115,9 @@ public final class EasyModelRenderStateResolver {
         textures,
         renderProfile.scale(),
         renderProfile.shadowRadius(),
+        renderProfile.visibleBoundsWidth(),
+        renderProfile.visibleBoundsHeight(),
+        renderProfile.visibleBoundsOffset(),
         renderProfile.bodyType(),
         renderProfile.animation(),
         bakeResult.fallback(),

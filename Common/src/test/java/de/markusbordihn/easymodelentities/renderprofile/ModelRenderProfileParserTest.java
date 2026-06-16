@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import java.io.StringReader;
@@ -65,6 +66,55 @@ class ModelRenderProfileParserTest {
     assertEquals(1.0f, renderProfile.scale());
     assertEquals(0.3f, renderProfile.shadowRadius());
     assertEquals(ModelAnimationMode.AUTOMATIC, renderProfile.animation().mode());
+  }
+
+  @Test
+  void defaultsToNoVisibleBounds() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"static\"}");
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertFalse(renderProfile.hasVisibleBounds());
+    assertEquals(0.0f, renderProfile.visibleBoundsWidth());
+    assertEquals(0.0f, renderProfile.visibleBoundsHeight());
+    assertEquals(Vec3f.ZERO, renderProfile.visibleBoundsOffset());
+  }
+
+  @Test
+  void parsesVisibleBounds() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            """
+            {
+              "preset_type": "statue",
+              "rendering": {
+                "visible_bounds_width": 1.066,
+                "visible_bounds_height": 1.031,
+                "visible_bounds_offset": [0.0, 0.469, 0.0]
+              }
+            }
+            """);
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertTrue(renderProfile.hasVisibleBounds());
+    assertEquals(1.066f, renderProfile.visibleBoundsWidth());
+    assertEquals(1.031f, renderProfile.visibleBoundsHeight());
+    assertEquals(new Vec3f(0.0f, 0.469f, 0.0f), renderProfile.visibleBoundsOffset());
+  }
+
+  @Test
+  void rejectsMalformedVisibleBoundsOffset() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            """
+            {
+              "preset_type": "statue",
+              "rendering": {
+                "visible_bounds_offset": [0.0, 1.0]
+              }
+            }
+            """);
+
+    assertEquals(ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, renderProfile.status());
   }
 
   @Test
@@ -166,11 +216,23 @@ class ModelRenderProfileParserTest {
     assertEquals(ModelBodyType.QUADRUPED, renderProfile.bodyType());
     assertEquals(1.25f, renderProfile.scale());
     assertEquals(0.4f, renderProfile.shadowRadius());
-    assertEquals(1.2f, renderProfile.rendering().visibleBoundsWidth());
-    assertEquals(1.0f, renderProfile.rendering().visibleBoundsHeight());
-    assertEquals(0.5f, renderProfile.rendering().visibleBoundsOffsetY());
     assertEquals(1.1f, renderProfile.animation().swingSpeed());
     assertEquals(0.9f, renderProfile.animation().walkSpeedMultiplier());
+  }
+
+  @Test
+  void parsesIdleStrength() {
+    EasyModelRenderProfile renderProfile =
+        parse("{\"preset_type\":\"cuboid_hopping\",\"animation\":{\"idle_strength\":2.5}}");
+
+    assertEquals(2.5f, renderProfile.animation().idleStrength());
+  }
+
+  @Test
+  void defaultsIdleStrengthToOne() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"cuboid_hopping\"}");
+
+    assertEquals(1.0f, renderProfile.animation().idleStrength());
   }
 
   @Test

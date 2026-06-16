@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.render.*;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
@@ -70,9 +71,8 @@ class EasyModelRenderStateResolverTest {
         bodyType,
         MODEL_ID,
         TEXTURE_ID,
-        new ModelRenderSettings(1.25f, 0.45f, 1.0f, 1.0f, 0.0f, 0.5f, 0.0f),
-        new ModelAnimationSettings(
-            ModelAnimationMode.AUTOMATIC, "idle", "walk", "run", "hurt", "death", 1.0f, 1.0f),
+        new ModelRenderSettings(1.25f, 0.45f, 0.0f, 0.0f, Vec3f.ZERO),
+        new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
         List.of());
   }

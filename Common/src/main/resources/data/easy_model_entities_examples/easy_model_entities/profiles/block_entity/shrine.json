@@ -1,4 +1,5 @@
 {
+  "schema_version": "0.1.0",
   "model_type": "block_entity",
   "preset_type": "animated_randomly",
   "version": "demo-shrine-v2",

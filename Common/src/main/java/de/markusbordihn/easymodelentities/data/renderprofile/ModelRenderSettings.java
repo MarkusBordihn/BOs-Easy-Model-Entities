@@ -19,11 +19,22 @@
 
 package de.markusbordihn.easymodelentities.data.renderprofile;
 
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
+
 public record ModelRenderSettings(
     float scale,
     float shadowRadius,
     float visibleBoundsWidth,
     float visibleBoundsHeight,
-    float visibleBoundsOffsetX,
-    float visibleBoundsOffsetY,
-    float visibleBoundsOffsetZ) {}
+    Vec3f visibleBoundsOffset) {
+
+  public ModelRenderSettings {
+    if (visibleBoundsOffset == null) {
+      visibleBoundsOffset = Vec3f.ZERO;
+    }
+  }
+
+  public boolean hasVisibleBounds() {
+    return this.visibleBoundsWidth > 0.0f && this.visibleBoundsHeight > 0.0f;
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schema_version": "0.1.0",
+  "preset_type": "arthropod_wandering",
+  "version": "demo-dust-skitter-v1",
+  "model": "easy_model_entities_examples:easy_model_entities/models/dust_skitter",
+  "texture": "easy_model_entities_examples:textures/entity/dust_skitter.png",
+  "animation": {
+    "walk_speed_multiplier": 1.6
+  }
+}

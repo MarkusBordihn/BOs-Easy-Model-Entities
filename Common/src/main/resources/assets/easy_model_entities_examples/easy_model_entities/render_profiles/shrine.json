@@ -1,16 +1,13 @@
 {
+  "schema_version": "0.1.0",
   "preset_type": "static",
   "version": "demo-shrine-v2",
   "model": "easy_model_entities_examples:easy_model_entities/models/shrine",
   "texture": "easy_model_entities_examples:textures/block/shrine.png",
   "rendering": {
-    "shadow_radius": 0.5,
-    "visible_bounds_width": 1.0,
-    "visible_bounds_height": 1.35,
-    "visible_bounds_offset": [0.0, 0.675, 0.0]
+    "shadow_radius": 0.5
   },
   "animation": {
-    "mode": "random_idle",
-    "idle": "idle"
+    "mode": "random_idle"
   }
 }

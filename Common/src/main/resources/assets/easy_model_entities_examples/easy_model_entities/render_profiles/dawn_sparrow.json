@@ -1,0 +1,10 @@
+{
+  "schema_version": "0.1.0",
+  "preset_type": "winged_wandering",
+  "version": "demo-dawn-sparrow-v1",
+  "model": "easy_model_entities_examples:easy_model_entities/models/dawn_sparrow",
+  "texture": "easy_model_entities_examples:textures/entity/dawn_sparrow.png",
+  "animation": {
+    "walk_speed_multiplier": 1.0
+  }
+}

@@ -77,9 +77,8 @@ class ModelBakeServiceTest {
         bodyType,
         MODEL_ID,
         TEXTURE_ID,
-        new ModelRenderSettings(1.0f, 0.3f, 1.0f, 1.0f, 0.0f, 0.5f, 0.0f),
-        new ModelAnimationSettings(
-            ModelAnimationMode.AUTOMATIC, "idle", "walk", "run", "hurt", "death", 1.0f, 1.0f),
+        new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
+        new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
         List.of());
   }

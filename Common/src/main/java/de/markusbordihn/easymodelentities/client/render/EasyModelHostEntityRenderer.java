@@ -20,12 +20,15 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.AABB;
 
 public class EasyModelHostEntityRenderer<T extends EasyModelHostEntity> extends EntityRenderer<T> {
 
@@ -47,6 +50,34 @@ public class EasyModelHostEntityRenderer<T extends EasyModelHostEntity> extends 
     EasyModelEntityRenderBackend.render(
         entity, renderState, entityYaw, partialTick, poseStack, bufferSource, packedLight);
     super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+  }
+
+  @Override
+  public boolean shouldRender(T entity, Frustum frustum, double camX, double camY, double camZ) {
+    EasyModelRenderState renderState = resolveRenderState(entity);
+    if (!renderState.hasVisibleBounds()) {
+      return super.shouldRender(entity, frustum, camX, camY, camZ);
+    }
+    if (!entity.shouldRender(camX, camY, camZ)) {
+      return false;
+    }
+    return entity.noCulling || frustum.isVisible(visibleBounds(entity, renderState));
+  }
+
+  private AABB visibleBounds(T entity, EasyModelRenderState renderState) {
+    Vec3f offset = renderState.visibleBoundsOffset();
+    double halfWidth = renderState.visibleBoundsWidth() / 2.0;
+    double height = renderState.visibleBoundsHeight();
+    double centerX = entity.getX() + offset.x();
+    double centerZ = entity.getZ() + offset.z();
+    double baseY = entity.getY() + offset.y();
+    return new AABB(
+        centerX - halfWidth,
+        baseY,
+        centerZ - halfWidth,
+        centerX + halfWidth,
+        baseY + height,
+        centerZ + halfWidth);
   }
 
   @Override

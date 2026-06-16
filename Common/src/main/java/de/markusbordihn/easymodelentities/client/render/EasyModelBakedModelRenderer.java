@@ -54,6 +54,9 @@ public final class EasyModelBakedModelRenderer {
   private static final float IDLE_BREATH_ROTATION = 0.025f;
   private static final float IDLE_WING_ROTATION = 0.12f;
   private static final float IDLE_TAIL_ROTATION = 0.18f;
+  private static final float CUBOID_IDLE_SPEED = 0.1f;
+  private static final float CUBOID_LID_ROTATION = 0.16f;
+  private static final float CUBOID_BODY_ROTATION = 0.03f;
 
   private EasyModelBakedModelRenderer() {}
 
@@ -311,7 +314,8 @@ public final class EasyModelBakedModelRenderer {
       return walkRotation(partName, part, renderState, limbSwing, limbSwingAmount);
     }
 
-    return idleRotation(partName, part, renderState.bodyType(), ageInTicks);
+    return idleRotation(
+        partName, part, renderState.bodyType(), ageInTicks, renderState.animation().idleStrength());
   }
 
   private static EasyModelPartTransform walkRotation(
@@ -350,8 +354,23 @@ public final class EasyModelBakedModelRenderer {
   }
 
   private static EasyModelPartTransform idleRotation(
-      String partName, ModelPartType part, ModelBodyType bodyType, float ageInTicks) {
-    float breath = Mth.sin(ageInTicks * 0.12f) * IDLE_BREATH_ROTATION;
+      String partName,
+      ModelPartType part,
+      ModelBodyType bodyType,
+      float ageInTicks,
+      float idleStrength) {
+    if (bodyType == ModelBodyType.CUBOID) {
+      float cuboidIdle = Mth.sin(ageInTicks * CUBOID_IDLE_SPEED) * idleStrength;
+      if (part == ModelPartType.HEAD) {
+        return new EasyModelPartTransform(cuboidIdle * CUBOID_LID_ROTATION, 0.0f, 0.0f);
+      }
+      if (part == ModelPartType.BODY) {
+        return new EasyModelPartTransform(cuboidIdle * CUBOID_BODY_ROTATION, 0.0f, 0.0f);
+      }
+      return noRotation();
+    }
+
+    float breath = Mth.sin(ageInTicks * 0.12f) * IDLE_BREATH_ROTATION * idleStrength;
     if (part == ModelPartType.BODY) {
       return new EasyModelPartTransform(breath, 0.0f, 0.0f);
     }
@@ -360,11 +379,13 @@ public final class EasyModelBakedModelRenderer {
     }
     if (animatesOnY(partName, bodyType)) {
       return new EasyModelPartTransform(
-          0.0f, Mth.sin(ageInTicks * 0.18f) * IDLE_TAIL_ROTATION, 0.0f);
+          0.0f, Mth.sin(ageInTicks * 0.18f) * IDLE_TAIL_ROTATION * idleStrength, 0.0f);
     }
     if (animatesOnZ(part, bodyType)) {
       return new EasyModelPartTransform(
-          0.0f, 0.0f, wingSwing(part, Mth.sin(ageInTicks * 0.24f) * IDLE_WING_ROTATION));
+          0.0f,
+          0.0f,
+          wingSwing(part, Mth.sin(ageInTicks * 0.24f) * IDLE_WING_ROTATION * idleStrength));
     }
     return noRotation();
   }

@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.data.renderprofile;
 
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +97,22 @@ public record EasyModelRenderProfile(
 
   public float shadowRadius() {
     return this.rendering.shadowRadius();
+  }
+
+  public float visibleBoundsWidth() {
+    return this.rendering.visibleBoundsWidth();
+  }
+
+  public float visibleBoundsHeight() {
+    return this.rendering.visibleBoundsHeight();
+  }
+
+  public Vec3f visibleBoundsOffset() {
+    return this.rendering.visibleBoundsOffset();
+  }
+
+  public boolean hasVisibleBounds() {
+    return this.rendering.hasVisibleBounds();
   }
 
   public EasyModelRenderProfile withValidationIssues(

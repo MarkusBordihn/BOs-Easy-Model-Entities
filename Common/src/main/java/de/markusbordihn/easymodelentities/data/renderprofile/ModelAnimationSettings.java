@@ -22,21 +22,14 @@ package de.markusbordihn.easymodelentities.data.renderprofile;
 import java.util.Objects;
 
 public record ModelAnimationSettings(
-    ModelAnimationMode mode,
-    String idle,
-    String walk,
-    String run,
-    String hurt,
-    String death,
-    float swingSpeed,
-    float walkSpeedMultiplier) {
+    ModelAnimationMode mode, float swingSpeed, float walkSpeedMultiplier, float idleStrength) {
 
   public ModelAnimationSettings {
     Objects.requireNonNull(mode, "mode");
-    Objects.requireNonNull(idle, "idle");
-    Objects.requireNonNull(walk, "walk");
-    Objects.requireNonNull(run, "run");
-    Objects.requireNonNull(hurt, "hurt");
-    Objects.requireNonNull(death, "death");
+  }
+
+  public ModelAnimationSettings(
+      ModelAnimationMode mode, float swingSpeed, float walkSpeedMultiplier) {
+    this(mode, swingSpeed, walkSpeedMultiplier, 1.0f);
   }
 }

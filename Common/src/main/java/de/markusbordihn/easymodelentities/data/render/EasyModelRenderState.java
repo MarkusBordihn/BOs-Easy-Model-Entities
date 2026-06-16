@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.data.render;
 
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
@@ -34,6 +35,9 @@ public record EasyModelRenderState(
     Map<Integer, ResourceLocation> textures,
     float scale,
     float shadowRadius,
+    float visibleBoundsWidth,
+    float visibleBoundsHeight,
+    Vec3f visibleBoundsOffset,
     ModelBodyType bodyType,
     ModelAnimationSettings animation,
     boolean fallbackModel,
@@ -45,6 +49,9 @@ public record EasyModelRenderState(
     Objects.requireNonNull(texture, "texture");
     Objects.requireNonNull(bodyType, "bodyType");
     Objects.requireNonNull(animation, "animation");
+    if (visibleBoundsOffset == null) {
+      visibleBoundsOffset = Vec3f.ZERO;
+    }
     textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
     validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
   }
@@ -65,10 +72,17 @@ public record EasyModelRenderState(
         Map.of(),
         scale,
         shadowRadius,
+        0.0f,
+        0.0f,
+        Vec3f.ZERO,
         bodyType,
         animation,
         fallbackModel,
         fallbackTexture,
         validationIssues);
+  }
+
+  public boolean hasVisibleBounds() {
+    return this.visibleBoundsWidth > 0.0f && this.visibleBoundsHeight > 0.0f;
   }
 }

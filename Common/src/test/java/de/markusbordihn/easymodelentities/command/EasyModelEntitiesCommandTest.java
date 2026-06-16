@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.mojang.brigadier.CommandDispatcher;
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
@@ -189,9 +190,8 @@ class EasyModelEntitiesCommandTest {
         bodyType,
         new ResourceLocation("example", "alpha"),
         new ResourceLocation("example", "alpha"),
-        new ModelRenderSettings(1.0f, 0.3f, 1.0f, 1.0f, 0.0f, 0.5f, 0.0f),
-        new ModelAnimationSettings(
-            ModelAnimationMode.AUTOMATIC, "idle", "walk", "run", "hurt", "death", 1.0f, 1.0f),
+        new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
+        new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.statusForIssues(issues),
         issues);
   }

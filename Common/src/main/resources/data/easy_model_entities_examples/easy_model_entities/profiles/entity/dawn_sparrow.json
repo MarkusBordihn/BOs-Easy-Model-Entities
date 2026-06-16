@@ -1,0 +1,9 @@
+{
+  "schema_version": "0.1.0",
+  "model_type": "entity",
+  "preset_type": "winged_wandering",
+  "version": "demo-dawn-sparrow-v1",
+  "client": {
+    "render_profile": "easy_model_entities_examples:dawn_sparrow"
+  }
+}

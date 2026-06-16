@@ -1,4 +1,5 @@
 {
+  "schema_version": "0.1.0",
   "model_type": "entity",
   "preset_type": "statue",
   "version": "demo-training-dummy-v2",

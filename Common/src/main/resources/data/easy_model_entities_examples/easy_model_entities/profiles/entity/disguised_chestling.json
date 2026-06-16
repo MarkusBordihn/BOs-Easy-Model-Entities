@@ -1,0 +1,14 @@
+{
+  "schema_version": "0.1.0",
+  "model_type": "entity",
+  "preset_type": "cuboid_hopping",
+  "version": "demo-disguised-chestling-v1",
+  "client": {
+    "render_profile": "easy_model_entities_examples:disguised_chestling"
+  },
+  "dimensions": {
+    "width": 0.969,
+    "height": 0.938,
+    "eye_height": 0.797
+  }
+}

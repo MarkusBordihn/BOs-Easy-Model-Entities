@@ -26,6 +26,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelPresetType;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
@@ -60,13 +61,9 @@ public final class ModelRenderProfileParser {
   private static final String VISIBLE_BOUNDS_OFFSET_FIELD = "visible_bounds_offset";
   private static final String ANIMATION_FIELD = "animation";
   private static final String MODE_FIELD = "mode";
-  private static final String IDLE_FIELD = "idle";
-  private static final String WALK_FIELD = "walk";
-  private static final String RUN_FIELD = "run";
-  private static final String HURT_FIELD = "hurt";
-  private static final String DEATH_FIELD = "death";
   private static final String SWING_SPEED_FIELD = "swing_speed";
   private static final String WALK_SPEED_MULTIPLIER_FIELD = "walk_speed_multiplier";
+  private static final String IDLE_STRENGTH_FIELD = "idle_strength";
   private static final String RENDERING_SCALE_FIELD = RENDERING_FIELD + "." + SCALE_FIELD;
   private static final String RENDERING_SHADOW_RADIUS_FIELD =
       RENDERING_FIELD + "." + SHADOW_RADIUS_FIELD;
@@ -77,18 +74,16 @@ public final class ModelRenderProfileParser {
   private static final String RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD =
       RENDERING_FIELD + "." + VISIBLE_BOUNDS_OFFSET_FIELD;
   private static final String ANIMATION_MODE_FIELD = ANIMATION_FIELD + "." + MODE_FIELD;
-  private static final String ANIMATION_IDLE_FIELD = ANIMATION_FIELD + "." + IDLE_FIELD;
-  private static final String ANIMATION_WALK_FIELD = ANIMATION_FIELD + "." + WALK_FIELD;
-  private static final String ANIMATION_RUN_FIELD = ANIMATION_FIELD + "." + RUN_FIELD;
-  private static final String ANIMATION_HURT_FIELD = ANIMATION_FIELD + "." + HURT_FIELD;
-  private static final String ANIMATION_DEATH_FIELD = ANIMATION_FIELD + "." + DEATH_FIELD;
   private static final String ANIMATION_SWING_SPEED_FIELD =
       ANIMATION_FIELD + "." + SWING_SPEED_FIELD;
   private static final String ANIMATION_WALK_SPEED_MULTIPLIER_FIELD =
       ANIMATION_FIELD + "." + WALK_SPEED_MULTIPLIER_FIELD;
+  private static final String ANIMATION_IDLE_STRENGTH_FIELD =
+      ANIMATION_FIELD + "." + IDLE_STRENGTH_FIELD;
   private static final float DEFAULT_SCALE = 1.0f;
   private static final float DEFAULT_SWING_SPEED = 1.0f;
   private static final float DEFAULT_WALK_SPEED_MULTIPLIER = 1.0f;
+  private static final float DEFAULT_IDLE_STRENGTH = 1.0f;
 
   private ModelRenderProfileParser() {}
 
@@ -184,22 +179,6 @@ public final class ModelRenderProfileParser {
     RawRendering rawRendering =
         optionalObject(renderingElement, RENDERING_FIELD, RawRendering.class, issues);
     ModelRenderSettings defaults = defaultRenderSettings(presetType);
-    float visibleBoundsHeight =
-        optionalFloat(
-            rawRendering == null ? null : rawRendering.visibleBoundsHeight,
-            defaults.visibleBoundsHeight(),
-            RENDERING_VISIBLE_BOUNDS_HEIGHT_FIELD,
-            issues);
-    float[] visibleBoundsOffset =
-        optionalFloatArray(
-            rawRendering == null ? null : rawRendering.visibleBoundsOffset,
-            new float[] {
-              defaults.visibleBoundsOffsetX(),
-              defaults.visibleBoundsOffsetY(),
-              defaults.visibleBoundsOffsetZ()
-            },
-            RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD,
-            issues);
 
     return new ModelRenderSettings(
         optionalFloat(
@@ -217,10 +196,43 @@ public final class ModelRenderProfileParser {
             defaults.visibleBoundsWidth(),
             RENDERING_VISIBLE_BOUNDS_WIDTH_FIELD,
             issues),
-        visibleBoundsHeight,
-        visibleBoundsOffset[0],
-        visibleBoundsOffset[1],
-        visibleBoundsOffset[2]);
+        optionalFloat(
+            rawRendering == null ? null : rawRendering.visibleBoundsHeight,
+            defaults.visibleBoundsHeight(),
+            RENDERING_VISIBLE_BOUNDS_HEIGHT_FIELD,
+            issues),
+        parseVisibleBoundsOffset(
+            rawRendering == null ? null : rawRendering.visibleBoundsOffset,
+            defaults.visibleBoundsOffset(),
+            issues));
+  }
+
+  private static Vec3f parseVisibleBoundsOffset(
+      JsonElement value, Vec3f defaultValue, List<ModelRenderProfileValidationIssue> issues) {
+    if (value == null || value.isJsonNull()) {
+      return defaultValue;
+    }
+    if (!value.isJsonArray() || value.getAsJsonArray().size() != 3) {
+      addIssue(
+          issues,
+          ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
+          RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD,
+          "Field " + RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD + " must be an array of 3 numbers.");
+      return defaultValue;
+    }
+
+    float[] offset = new float[3];
+    for (int index = 0; index < 3; index++) {
+      Float component =
+          parseFloat(
+              value.getAsJsonArray().get(index), RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD, issues);
+      if (component == null) {
+        return defaultValue;
+      }
+      offset[index] = component;
+    }
+
+    return Vec3f.of(offset);
   }
 
   private static ModelAnimationSettings parseAnimationSettings(
@@ -234,31 +246,6 @@ public final class ModelRenderProfileParser {
 
     return new ModelAnimationSettings(
         mode,
-        optionalString(
-            rawAnimation == null ? null : rawAnimation.idle,
-            defaults.idle(),
-            ANIMATION_IDLE_FIELD,
-            issues),
-        optionalString(
-            rawAnimation == null ? null : rawAnimation.walk,
-            defaults.walk(),
-            ANIMATION_WALK_FIELD,
-            issues),
-        optionalString(
-            rawAnimation == null ? null : rawAnimation.run,
-            defaults.run(),
-            ANIMATION_RUN_FIELD,
-            issues),
-        optionalString(
-            rawAnimation == null ? null : rawAnimation.hurt,
-            defaults.hurt(),
-            ANIMATION_HURT_FIELD,
-            issues),
-        optionalString(
-            rawAnimation == null ? null : rawAnimation.death,
-            defaults.death(),
-            ANIMATION_DEATH_FIELD,
-            issues),
         optionalFloat(
             rawAnimation == null ? null : rawAnimation.swingSpeed,
             defaults.swingSpeed(),
@@ -268,6 +255,11 @@ public final class ModelRenderProfileParser {
             rawAnimation == null ? null : rawAnimation.walkSpeedMultiplier,
             defaults.walkSpeedMultiplier(),
             ANIMATION_WALK_SPEED_MULTIPLIER_FIELD,
+            issues),
+        optionalFloat(
+            rawAnimation == null ? null : rawAnimation.idleStrength,
+            defaults.idleStrength(),
+            ANIMATION_IDLE_STRENGTH_FIELD,
             issues));
   }
 
@@ -361,23 +353,19 @@ public final class ModelRenderProfileParser {
 
   private static ModelRenderSettings defaultRenderSettings(ModelPresetType presetType) {
     return switch (presetType) {
-      case QUADRUPED_STILL, QUADRUPED_WANDERING -> renderSettings(0.9f, 0.9f, 0.45f, 0.45f);
-      case AQUATIC_STILL, AQUATIC_SWIMMING -> renderSettings(0.7f, 0.4f, 0.2f, 0.25f);
-      case WINGED_STILL, WINGED_WANDERING -> renderSettings(0.6f, 0.9f, 0.45f, 0.25f);
-      case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING ->
-          renderSettings(0.6f, 0.8f, 0.4f, 0.25f);
-      case ARTHROPOD_STILL, ARTHROPOD_WANDERING -> renderSettings(1.4f, 0.9f, 0.45f, 0.7f);
-      case CUBOID_STILL, CUBOID_HOPPING -> renderSettings(1.0f, 1.0f, 0.5f, 0.5f);
-      case FLOATING_STILL -> renderSettings(1.0f, 1.0f, 0.5f, 0.5f);
-      case CUSTOM, STATIC, STATUE, HUMANOID_STILL, HUMANOID_WANDERING ->
-          renderSettings(0.6f, 1.8f, 0.9f, 0.3f);
+      case QUADRUPED_STILL, QUADRUPED_WANDERING -> renderSettings(0.45f);
+      case AQUATIC_STILL, AQUATIC_SWIMMING -> renderSettings(0.25f);
+      case WINGED_STILL, WINGED_WANDERING -> renderSettings(0.25f);
+      case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING -> renderSettings(0.25f);
+      case ARTHROPOD_STILL, ARTHROPOD_WANDERING -> renderSettings(0.7f);
+      case CUBOID_STILL, CUBOID_HOPPING -> renderSettings(0.5f);
+      case FLOATING_STILL -> renderSettings(0.5f);
+      case CUSTOM, STATIC, STATUE, HUMANOID_STILL, HUMANOID_WANDERING -> renderSettings(0.3f);
     };
   }
 
-  private static ModelRenderSettings renderSettings(
-      float boundsWidth, float boundsHeight, float boundsOffsetY, float shadowRadius) {
-    return new ModelRenderSettings(
-        DEFAULT_SCALE, shadowRadius, boundsWidth, boundsHeight, 0.0f, boundsOffsetY, 0.0f);
+  private static ModelRenderSettings renderSettings(float shadowRadius) {
+    return new ModelRenderSettings(DEFAULT_SCALE, shadowRadius, 0.0f, 0.0f, Vec3f.ZERO);
   }
 
   private static ModelAnimationSettings defaultAnimationSettings(ModelPresetType presetType) {
@@ -388,14 +376,7 @@ public final class ModelRenderProfileParser {
             ? ModelAnimationMode.NONE
             : ModelAnimationMode.AUTOMATIC;
     return new ModelAnimationSettings(
-        mode,
-        IDLE_FIELD,
-        WALK_FIELD,
-        RUN_FIELD,
-        HURT_FIELD,
-        DEATH_FIELD,
-        DEFAULT_SWING_SPEED,
-        DEFAULT_WALK_SPEED_MULTIPLIER);
+        mode, DEFAULT_SWING_SPEED, DEFAULT_WALK_SPEED_MULTIPLIER, DEFAULT_IDLE_STRENGTH);
   }
 
   private static <T> T optionalObject(
@@ -551,35 +532,6 @@ public final class ModelRenderProfileParser {
     return floatValue;
   }
 
-  private static float[] optionalFloatArray(
-      JsonElement value,
-      float[] defaultValue,
-      String field,
-      List<ModelRenderProfileValidationIssue> issues) {
-    if (value == null || value.isJsonNull()) {
-      return defaultValue;
-    }
-    if (!value.isJsonArray() || value.getAsJsonArray().size() != 3) {
-      addIssue(
-          issues,
-          ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
-          field,
-          "Field " + field + " must be an array with 3 numbers.");
-      return defaultValue;
-    }
-
-    float[] values = new float[3];
-    for (int index = 0; index < values.length; index++) {
-      Float floatValue = parseFloat(value.getAsJsonArray().get(index), field, issues);
-      if (floatValue == null) {
-        return defaultValue;
-      }
-      values[index] = floatValue;
-    }
-
-    return values;
-  }
-
   private static ModelRenderProfileStatus statusForRequiredField(String field) {
     if (SCHEMA_VERSION_FIELD.equals(field)) {
       return ModelRenderProfileStatus.INVALID_SCHEMA_VERSION;
@@ -649,25 +601,13 @@ public final class ModelRenderProfileParser {
     @SerializedName(MODE_FIELD)
     JsonElement mode;
 
-    @SerializedName(IDLE_FIELD)
-    JsonElement idle;
-
-    @SerializedName(WALK_FIELD)
-    JsonElement walk;
-
-    @SerializedName(RUN_FIELD)
-    JsonElement run;
-
-    @SerializedName(HURT_FIELD)
-    JsonElement hurt;
-
-    @SerializedName(DEATH_FIELD)
-    JsonElement death;
-
     @SerializedName(SWING_SPEED_FIELD)
     JsonElement swingSpeed;
 
     @SerializedName(WALK_SPEED_MULTIPLIER_FIELD)
     JsonElement walkSpeedMultiplier;
+
+    @SerializedName(IDLE_STRENGTH_FIELD)
+    JsonElement idleStrength;
   }
 }

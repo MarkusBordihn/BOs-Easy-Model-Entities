@@ -67,16 +67,51 @@ class EasyModelBakedModelRendererTest {
 
   private static EasyModelRenderState renderState(
       BakedModel bakedModel, ModelBodyType bodyType, ModelAnimationMode animationMode) {
+    return renderState(bakedModel, bodyType, animationMode, 1.0f);
+  }
+
+  private static EasyModelRenderState renderState(
+      BakedModel bakedModel,
+      ModelBodyType bodyType,
+      ModelAnimationMode animationMode,
+      float idleStrength) {
     return new EasyModelRenderState(
         bakedModel,
         new ResourceLocation("example", "textures/entity/uv_model.png"),
         1.0f,
         0.3f,
         bodyType,
-        new ModelAnimationSettings(animationMode, "", "", "", "", "", 1.0f, 1.0f),
+        new ModelAnimationSettings(animationMode, 1.0f, 1.0f, idleStrength),
         false,
         false,
         List.of());
+  }
+
+  private static EasyModelPartTransform captureCuboidHeadIdle(float idleStrength) {
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "chestling"),
+            64,
+            64,
+            List.of(new BakedModelPart("head", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())));
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel, ModelBodyType.CUBOID, ModelAnimationMode.AUTOMATIC, idleStrength),
+        0.0f,
+        0.0f,
+        15.0f,
+        animationContext -> {
+          context.set(animationContext);
+          return EasyModelPartTransform.NONE;
+        },
+        new PoseStack(),
+        vertexConsumer,
+        0);
+
+    return context.get().automaticTransform();
   }
 
   private static void assertUv(
@@ -265,6 +300,17 @@ class EasyModelBakedModelRendererTest {
         0);
 
     assertNotEquals(EasyModelPartTransform.NONE, context.get().automaticTransform());
+  }
+
+  @Test
+  void cuboidIdleRotatesHeadLidScaledByIdleStrength() {
+    EasyModelPartTransform singleStrength = captureCuboidHeadIdle(1.0f);
+    EasyModelPartTransform doubleStrength = captureCuboidHeadIdle(2.0f);
+
+    assertNotEquals(0.0f, singleStrength.xRotation());
+    assertEquals(0.0f, singleStrength.yRotation(), 0.0001f);
+    assertEquals(0.0f, singleStrength.zRotation(), 0.0001f);
+    assertEquals(2.0f * singleStrength.xRotation(), doubleStrength.xRotation(), 0.0001f);
   }
 
   @Test

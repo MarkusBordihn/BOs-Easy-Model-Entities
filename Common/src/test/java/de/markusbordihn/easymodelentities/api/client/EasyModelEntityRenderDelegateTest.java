@@ -166,8 +166,8 @@ class EasyModelEntityRenderDelegateTest {
         bodyType,
         new ResourceLocation("example", "easy_model_entities/models/mimic"),
         new ResourceLocation("example", "textures/entity/mimic.png"),
-        new ModelRenderSettings(1.0f, 0.3f, 1.0f, 1.0f, 0.0f, 0.5f, 0.0f),
-        new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, "", "", "", "", "", 1.0f, 1.0f),
+        new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
+        new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
         List.of());
   }
@@ -179,7 +179,7 @@ class EasyModelEntityRenderDelegateTest {
         1.0f,
         0.3f,
         ModelBodyType.STATIC,
-        new ModelAnimationSettings(ModelAnimationMode.NONE, "", "", "", "", "", 1.0f, 1.0f),
+        new ModelAnimationSettings(ModelAnimationMode.NONE, 1.0f, 1.0f),
         false,
         false,
         List.of());

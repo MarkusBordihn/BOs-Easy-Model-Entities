@@ -63,6 +63,7 @@ class BundledDemoProfilesTest {
           new Demo("entity/rune_cube", "rune_cube", ModelBodyType.CUBOID),
           new Demo("entity/wisp_lantern", "wisp_lantern", ModelBodyType.FLOATING),
           new Demo("entity/orientation_test", "orientation_test", ModelBodyType.STATIC),
+          new Demo("entity/disguised_chestling", "disguised_chestling", ModelBodyType.CUBOID),
           new Demo("block_entity/shrine", "shrine", ModelBodyType.STATIC));
 
   private static void assertDemo(String path, String renderPath, ModelBodyType bodyType)

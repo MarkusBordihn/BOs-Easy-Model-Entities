@@ -5,18 +5,10 @@
   "texture": "example:textures/entity/lizard.png",
   "rendering": {
     "scale": 1.25,
-    "shadow_radius": 0.4,
-    "visible_bounds_width": 1.2,
-    "visible_bounds_height": 1.0,
-    "visible_bounds_offset": [0.0, 0.5, 0.0]
+    "shadow_radius": 0.4
   },
   "animation": {
     "mode": "automatic",
-    "idle": "idle",
-    "walk": "walk",
-    "run": "run",
-    "hurt": "hurt",
-    "death": "death",
     "swing_speed": 1.1,
     "walk_speed_multiplier": 0.9
   }
