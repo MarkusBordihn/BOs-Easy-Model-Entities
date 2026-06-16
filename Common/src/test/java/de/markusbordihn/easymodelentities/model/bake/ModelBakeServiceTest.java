@@ -25,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.markusbordihn.easymodelentities.data.model.FaceUv;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.*;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelCube;
@@ -159,6 +161,12 @@ class ModelBakeServiceTest {
     }
 
     return null;
+  }
+
+  private static void assertVec(float x, float y, float z, Vec3f actual) {
+    assertEquals(x, actual.x(), 0.01f);
+    assertEquals(y, actual.y(), 0.01f);
+    assertEquals(z, actual.z(), 0.01f);
   }
 
   @Test
@@ -298,11 +306,11 @@ class ModelBakeServiceTest {
     assertTrue(result.successful());
     assertEquals(0, root.cubes().size());
     assertEquals("tilted_r1", rotatedPart.name());
-    assertArrayEquals(new float[] {0.0f, -1.0f, 0.0f}, rotatedPart.offset(), 0.01f);
-    assertArrayEquals(new float[] {-1.5708f, 0.0f, 0.0f}, rotatedPart.rotation(), 0.01f);
+    assertVec(0.0f, -1.0f, 0.0f, rotatedPart.offset());
+    assertVec(-1.5708f, 0.0f, 0.0f, rotatedPart.rotation());
     assertArrayEquals(new int[] {2, 4}, cube.uvOffset());
-    assertArrayEquals(new float[] {-1.0f, -1.0f, -1.0f}, cube.position(), 0.01f);
-    assertArrayEquals(new float[] {2.0f, 2.0f, 2.0f}, cube.dimensions(), 0.01f);
+    assertVec(-1.0f, -1.0f, -1.0f, cube.position());
+    assertVec(2.0f, 2.0f, 2.0f, cube.dimensions());
   }
 
   @Test
@@ -318,12 +326,12 @@ class ModelBakeServiceTest {
     BakedModelCube headCube = cube(result.bakedModel().rootParts().get(0), "head", 0);
 
     assertTrue(result.successful());
-    assertArrayEquals(new float[] {8.0f, 8.0f, 16.0f, 16.0f}, headCube.faceUvs().north());
-    assertArrayEquals(new float[] {0.0f, 8.0f, 8.0f, 16.0f}, headCube.faceUvs().east());
-    assertArrayEquals(new float[] {24.0f, 8.0f, 32.0f, 16.0f}, headCube.faceUvs().south());
-    assertArrayEquals(new float[] {16.0f, 8.0f, 24.0f, 16.0f}, headCube.faceUvs().west());
-    assertArrayEquals(new float[] {16.0f, 8.0f, 8.0f, 0.0f}, headCube.faceUvs().up());
-    assertArrayEquals(new float[] {24.0f, 0.0f, 16.0f, 8.0f}, headCube.faceUvs().down());
+    assertEquals(new FaceUv(0.125f, 0.125f, 0.25f, 0.25f), headCube.faceUvs().north());
+    assertEquals(new FaceUv(0.0f, 0.125f, 0.125f, 0.25f), headCube.faceUvs().east());
+    assertEquals(new FaceUv(0.375f, 0.125f, 0.5f, 0.25f), headCube.faceUvs().south());
+    assertEquals(new FaceUv(0.25f, 0.125f, 0.375f, 0.25f), headCube.faceUvs().west());
+    assertEquals(new FaceUv(0.25f, 0.125f, 0.125f, 0.0f), headCube.faceUvs().up());
+    assertEquals(new FaceUv(0.375f, 0.0f, 0.25f, 0.125f), headCube.faceUvs().down());
   }
 
   @Test
@@ -365,13 +373,13 @@ class ModelBakeServiceTest {
           List.of(
               new DecodedModelPart(
                   "root",
-                  new float[] {0.0f, 24.0f, 0.0f},
-                  new float[] {0.0f, 0.0f, 0.0f},
+                  new Vec3f(0.0f, 24.0f, 0.0f),
+                  Vec3f.ZERO,
                   List.of(
                       new DecodedModelCube(
                           new int[] {0, 0},
-                          new float[] {-1.0f, -1.0f, -1.0f},
-                          new float[] {2.0f, 2.0f, 2.0f},
+                          new Vec3f(-1.0f, -1.0f, -1.0f),
+                          new Vec3f(2.0f, 2.0f, 2.0f),
                           false)),
                   List.of())),
           List.of());

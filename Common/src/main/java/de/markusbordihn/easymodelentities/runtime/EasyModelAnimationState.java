@@ -30,6 +30,8 @@ public enum EasyModelAnimationState {
   HURT,
   DEATH;
 
+  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
   public static EasyModelAnimationState bySerializedName(String serializedName) {
     if (serializedName == null) {
       return AUTO;
@@ -57,7 +59,7 @@ public enum EasyModelAnimationState {
   }
 
   public String getSerializedName() {
-    return this.name().toLowerCase(Locale.ROOT);
+    return this.serializedName;
   }
 
   public int getApiState() {

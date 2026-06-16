@@ -35,6 +35,7 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimation
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartDefinition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
 import de.markusbordihn.easymodelentities.client.render.EasyModelBlockEntityRenderBackend;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
@@ -260,14 +261,14 @@ class EasyModelBlockEntityRenderDelegateTest {
         EasyModelPartDefinitions.fromBakedPart(
             new BakedModelPart(
                 "root",
-                new float[] {0.0f, 0.0f, 0.0f},
-                new float[] {0.0f, 0.0f, 0.0f},
+                Vec3f.ZERO,
+                Vec3f.ZERO,
                 List.of(),
                 List.of(
                     new BakedModelPart(
                         "crystal",
-                        new float[] {0.0f, 1.0f, 0.0f},
-                        new float[] {0.0f, 0.0f, 0.0f},
+                        new Vec3f(0.0f, 1.0f, 0.0f),
+                        Vec3f.ZERO,
                         List.of(),
                         List.of()))));
 

@@ -26,15 +26,23 @@ import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
+import de.markusbordihn.easymodelentities.data.model.FaceUv;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
+import de.markusbordihn.easymodelentities.data.model.ModelPartType;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import java.util.function.IntFunction;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 public final class EasyModelBakedModelRenderer {
@@ -137,6 +145,40 @@ public final class EasyModelBakedModelRenderer {
         packedLight);
   }
 
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight) {
+    Objects.requireNonNull(renderState, "renderState");
+    Objects.requireNonNull(bufferSource, "bufferSource");
+    IntFunction<VertexConsumer> bufferProvider =
+        textureIndex ->
+            bufferSource.getBuffer(
+                RenderType.entityCutoutNoCull(textureFor(renderState, textureIndex)));
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        poseStack,
+        bufferProvider,
+        packedLight,
+        partAnimator,
+        partAnimationMode);
+  }
+
+  private static ResourceLocation textureFor(EasyModelRenderState renderState, int textureIndex) {
+    return renderState.textures().getOrDefault(textureIndex, renderState.texture());
+  }
+
   private static void render(
       BakedModel bakedModel,
       EasyModelRenderState renderState,
@@ -148,9 +190,34 @@ public final class EasyModelBakedModelRenderer {
       int packedLight,
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        poseStack,
+        textureIndex -> vertexConsumer,
+        packedLight,
+        partAnimator,
+        partAnimationMode);
+  }
+
+  private static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      PoseStack poseStack,
+      IntFunction<VertexConsumer> bufferProvider,
+      int packedLight,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode) {
     Objects.requireNonNull(bakedModel, "bakedModel");
     Objects.requireNonNull(partAnimator, "partAnimator");
     Objects.requireNonNull(partAnimationMode, "partAnimationMode");
+    VertexSinks sinks = new VertexSinks(bufferProvider, poseStack, packedLight);
     for (BakedModelPart part : bakedModel.rootParts()) {
       renderPart(
           part,
@@ -159,8 +226,7 @@ public final class EasyModelBakedModelRenderer {
           limbSwingAmount,
           ageInTicks,
           poseStack,
-          vertexConsumer,
-          packedLight,
+          sinks,
           partAnimator,
           partAnimationMode);
     }
@@ -173,43 +239,44 @@ public final class EasyModelBakedModelRenderer {
       float limbSwingAmount,
       float ageInTicks,
       PoseStack poseStack,
-      VertexConsumer vertexConsumer,
-      int packedLight,
+      VertexSinks sinks,
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode) {
     poseStack.pushPose();
-    float[] offset = part.offset();
-    float[] rotation = part.rotation();
+    Vec3f offset = part.offset();
+    Vec3f rotation = part.rotation();
     EasyModelPartTransform automaticTransform =
         animationRotation(part.name(), renderState, limbSwing, limbSwingAmount, ageInTicks);
-    EasyModelPartTransform animationTransform =
-        partAnimationMode == EasyModelPartAnimationMode.REPLACE
-            ? partAnimator.animate(
-                new EasyModelPartAnimationContext(
-                    part.name(),
-                    renderState.bodyType(),
-                    limbSwing,
-                    limbSwingAmount,
-                    ageInTicks,
-                    automaticTransform))
-            : automaticTransform.add(
-                partAnimator.animate(
-                    new EasyModelPartAnimationContext(
-                        part.name(),
-                        renderState.bodyType(),
-                        limbSwing,
-                        limbSwingAmount,
-                        ageInTicks,
-                        automaticTransform)));
-    poseStack.translate(offset[0] * PIXEL, offset[1] * PIXEL, offset[2] * PIXEL);
+    EasyModelPartTransform animationTransform;
+    if (partAnimator == EasyModelPartAnimator.NONE) {
+      animationTransform =
+          partAnimationMode == EasyModelPartAnimationMode.REPLACE
+              ? EasyModelPartTransform.NONE
+              : automaticTransform;
+    } else {
+      EasyModelPartTransform animatorTransform =
+          partAnimator.animate(
+              new EasyModelPartAnimationContext(
+                  part.name(),
+                  renderState.bodyType(),
+                  limbSwing,
+                  limbSwingAmount,
+                  ageInTicks,
+                  automaticTransform));
+      animationTransform =
+          partAnimationMode == EasyModelPartAnimationMode.REPLACE
+              ? animatorTransform
+              : automaticTransform.add(animatorTransform);
+    }
+    poseStack.translate(offset.x() * PIXEL, offset.y() * PIXEL, offset.z() * PIXEL);
     rotate(
         poseStack,
-        rotation[0] + animationTransform.xRotation(),
-        rotation[1] + animationTransform.yRotation(),
-        rotation[2] + animationTransform.zRotation());
+        rotation.x() + animationTransform.xRotation(),
+        rotation.y() + animationTransform.yRotation(),
+        rotation.z() + animationTransform.zRotation());
 
     for (BakedModelCube cube : part.cubes()) {
-      renderCube(cube, poseStack, vertexConsumer, packedLight, renderState.bakedModel());
+      renderCube(cube, sinks);
     }
     for (BakedModelPart child : part.children()) {
       renderPart(
@@ -219,8 +286,7 @@ public final class EasyModelBakedModelRenderer {
           limbSwingAmount,
           ageInTicks,
           poseStack,
-          vertexConsumer,
-          packedLight,
+          sinks,
           partAnimator,
           partAnimationMode);
     }
@@ -240,32 +306,37 @@ public final class EasyModelBakedModelRenderer {
       return noRotation();
     }
 
+    ModelPartType part = ModelPartType.get(partName);
     if (limbSwingAmount > 0.01f) {
-      return walkRotation(partName, renderState, limbSwing, limbSwingAmount);
+      return walkRotation(partName, part, renderState, limbSwing, limbSwingAmount);
     }
 
-    return idleRotation(partName, renderState.bodyType(), ageInTicks);
+    return idleRotation(partName, part, renderState.bodyType(), ageInTicks);
   }
 
   private static EasyModelPartTransform walkRotation(
-      String partName, EasyModelRenderState renderState, float limbSwing, float limbSwingAmount) {
+      String partName,
+      ModelPartType part,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount) {
     ModelBodyType bodyType = renderState.bodyType();
     float phase =
         limbSwing * WALK_SWING_FREQUENCY * renderState.animation().swingSpeed()
-            + animationPhase(partName, bodyType);
+            + animationPhase(part, bodyType);
     float swing =
         Mth.cos(phase)
             * walkRotationScale(
                 bodyType, limbSwingAmount, renderState.animation().walkSpeedMultiplier());
 
-    if (animatesOnX(partName, bodyType)) {
+    if (animatesOnX(part, bodyType)) {
       return new EasyModelPartTransform(swing, 0.0f, 0.0f);
     }
     if (animatesOnY(partName, bodyType)) {
       return new EasyModelPartTransform(0.0f, swing * 0.75f, 0.0f);
     }
-    if (animatesOnZ(partName, bodyType)) {
-      return new EasyModelPartTransform(0.0f, 0.0f, wingSwing(partName, swing));
+    if (animatesOnZ(part, bodyType)) {
+      return new EasyModelPartTransform(0.0f, 0.0f, wingSwing(part, swing));
     }
     return noRotation();
   }
@@ -279,49 +350,49 @@ public final class EasyModelBakedModelRenderer {
   }
 
   private static EasyModelPartTransform idleRotation(
-      String partName, ModelBodyType bodyType, float ageInTicks) {
+      String partName, ModelPartType part, ModelBodyType bodyType, float ageInTicks) {
     float breath = Mth.sin(ageInTicks * 0.12f) * IDLE_BREATH_ROTATION;
-    if ("body".equals(partName)) {
+    if (part == ModelPartType.BODY) {
       return new EasyModelPartTransform(breath, 0.0f, 0.0f);
     }
-    if ("head".equals(partName)) {
+    if (part == ModelPartType.HEAD) {
       return new EasyModelPartTransform(breath * 0.5f, 0.0f, 0.0f);
     }
     if (animatesOnY(partName, bodyType)) {
       return new EasyModelPartTransform(
           0.0f, Mth.sin(ageInTicks * 0.18f) * IDLE_TAIL_ROTATION, 0.0f);
     }
-    if (animatesOnZ(partName, bodyType)) {
+    if (animatesOnZ(part, bodyType)) {
       return new EasyModelPartTransform(
-          0.0f, 0.0f, wingSwing(partName, Mth.sin(ageInTicks * 0.24f) * IDLE_WING_ROTATION));
+          0.0f, 0.0f, wingSwing(part, Mth.sin(ageInTicks * 0.24f) * IDLE_WING_ROTATION));
     }
     return noRotation();
   }
 
-  private static boolean animatesOnX(String partName, ModelBodyType bodyType) {
+  private static boolean animatesOnX(ModelPartType part, ModelBodyType bodyType) {
     return switch (bodyType) {
       case BIPED, WINGED_HUMANOID ->
-          "left_leg".equals(partName)
-              || "right_leg".equals(partName)
-              || "left_arm".equals(partName)
-              || "right_arm".equals(partName);
+          part == ModelPartType.LEFT_LEG
+              || part == ModelPartType.RIGHT_LEG
+              || part == ModelPartType.LEFT_ARM
+              || part == ModelPartType.RIGHT_ARM;
       case QUADRUPED ->
-          "front_left_leg".equals(partName)
-              || "front_right_leg".equals(partName)
-              || "back_left_leg".equals(partName)
-              || "back_right_leg".equals(partName)
-              || "left_leg".equals(partName)
-              || "right_leg".equals(partName);
-      case WINGED -> "left_leg".equals(partName) || "right_leg".equals(partName);
+          part == ModelPartType.FRONT_LEFT_LEG
+              || part == ModelPartType.FRONT_RIGHT_LEG
+              || part == ModelPartType.BACK_LEFT_LEG
+              || part == ModelPartType.BACK_RIGHT_LEG
+              || part == ModelPartType.LEFT_LEG
+              || part == ModelPartType.RIGHT_LEG;
+      case WINGED -> part == ModelPartType.LEFT_LEG || part == ModelPartType.RIGHT_LEG;
       case ARTHROPOD ->
-          "front_left_leg".equals(partName)
-              || "front_right_leg".equals(partName)
-              || "middle_front_left_leg".equals(partName)
-              || "middle_front_right_leg".equals(partName)
-              || "middle_back_left_leg".equals(partName)
-              || "middle_back_right_leg".equals(partName)
-              || "back_left_leg".equals(partName)
-              || "back_right_leg".equals(partName);
+          part == ModelPartType.FRONT_LEFT_LEG
+              || part == ModelPartType.FRONT_RIGHT_LEG
+              || part == ModelPartType.MIDDLE_FRONT_LEFT_LEG
+              || part == ModelPartType.MIDDLE_FRONT_RIGHT_LEG
+              || part == ModelPartType.MIDDLE_BACK_LEFT_LEG
+              || part == ModelPartType.MIDDLE_BACK_RIGHT_LEG
+              || part == ModelPartType.BACK_LEFT_LEG
+              || part == ModelPartType.BACK_RIGHT_LEG;
       case AQUATIC, CUBOID, FLOATING, STATIC -> false;
     };
   }
@@ -330,38 +401,38 @@ public final class EasyModelBakedModelRenderer {
     return bodyType != ModelBodyType.STATIC && isTailPart(partName);
   }
 
-  private static boolean animatesOnZ(String partName, ModelBodyType bodyType) {
+  private static boolean animatesOnZ(ModelPartType part, ModelBodyType bodyType) {
     return (bodyType == ModelBodyType.WINGED || bodyType == ModelBodyType.WINGED_HUMANOID)
-        && ("left_wing".equals(partName) || "right_wing".equals(partName));
+        && (part == ModelPartType.LEFT_WING || part == ModelPartType.RIGHT_WING);
   }
 
   private static boolean isTailPart(String partName) {
-    return "tail".equals(partName)
-        || "tail_fin".equals(partName)
+    return ModelPartType.TAIL.getTagName().equals(partName)
+        || ModelPartType.TAIL_FIN.getTagName().equals(partName)
         || partName.startsWith("tail_")
         || partName.endsWith("_tail")
         || partName.contains("_tail_");
   }
 
-  private static float wingSwing(String partName, float swing) {
-    return "right_wing".equals(partName) ? -swing : swing;
+  private static float wingSwing(ModelPartType part, float swing) {
+    return part == ModelPartType.RIGHT_WING ? -swing : swing;
   }
 
-  private static float animationPhase(String partName, ModelBodyType bodyType) {
+  private static float animationPhase(ModelPartType part, ModelBodyType bodyType) {
     return switch (bodyType) {
       case BIPED, WINGED_HUMANOID ->
-          "right_leg".equals(partName) || "left_arm".equals(partName) ? Mth.PI : 0.0f;
+          part == ModelPartType.RIGHT_LEG || part == ModelPartType.LEFT_ARM ? Mth.PI : 0.0f;
       case QUADRUPED, WINGED ->
-          "front_right_leg".equals(partName)
-                  || "back_left_leg".equals(partName)
-                  || "right_leg".equals(partName)
+          part == ModelPartType.FRONT_RIGHT_LEG
+                  || part == ModelPartType.BACK_LEFT_LEG
+                  || part == ModelPartType.RIGHT_LEG
               ? Mth.PI
               : 0.0f;
       case ARTHROPOD ->
-          "front_right_leg".equals(partName)
-                  || "middle_front_left_leg".equals(partName)
-                  || "middle_back_right_leg".equals(partName)
-                  || "back_left_leg".equals(partName)
+          part == ModelPartType.FRONT_RIGHT_LEG
+                  || part == ModelPartType.MIDDLE_FRONT_LEFT_LEG
+                  || part == ModelPartType.MIDDLE_BACK_RIGHT_LEG
+                  || part == ModelPartType.BACK_LEFT_LEG
               ? Mth.PI
               : 0.0f;
       case AQUATIC, CUBOID, FLOATING, STATIC -> 0.0f;
@@ -385,156 +456,48 @@ public final class EasyModelBakedModelRenderer {
     }
   }
 
-  private static void renderCube(
-      BakedModelCube cube,
-      PoseStack poseStack,
-      VertexConsumer vertexConsumer,
-      int packedLight,
-      BakedModel bakedModel) {
-    float[] position = cube.position();
-    float[] dimensions = cube.dimensions();
-    float x1 = position[0] * PIXEL;
-    float y1 = position[1] * PIXEL;
-    float z1 = position[2] * PIXEL;
-    float x2 = x1 + dimensions[0] * PIXEL;
-    float y2 = y1 + dimensions[1] * PIXEL;
-    float z2 = z1 + dimensions[2] * PIXEL;
+  private static void renderCube(BakedModelCube cube, VertexSinks sinks) {
+    EasyModelVertexSink sink = sinks.sink(cube.textureIndex());
+    Vec3f position = cube.position();
+    Vec3f dimensions = cube.dimensions();
+    float x1 = position.x() * PIXEL;
+    float y1 = position.y() * PIXEL;
+    float z1 = position.z() * PIXEL;
+    float x2 = x1 + dimensions.x() * PIXEL;
+    float y2 = y1 + dimensions.y() * PIXEL;
+    float z2 = z1 + dimensions.z() * PIXEL;
 
-    quad(
-        vertexConsumer,
-        poseStack,
-        x1,
-        y1,
-        z2,
-        x2,
-        y1,
-        z2,
-        x2,
-        y2,
-        z2,
-        x1,
-        y2,
-        z2,
-        0,
-        0,
-        1,
-        uv(cube, bakedModel, ModelCubeFace.SOUTH),
-        packedLight);
-    quad(
-        vertexConsumer,
-        poseStack,
-        x2,
-        y1,
-        z1,
-        x1,
-        y1,
-        z1,
-        x1,
-        y2,
-        z1,
-        x2,
-        y2,
-        z1,
-        0,
-        0,
-        -1,
-        uv(cube, bakedModel, ModelCubeFace.NORTH),
-        packedLight);
-    quad(
-        vertexConsumer,
-        poseStack,
-        x1,
-        y1,
-        z1,
-        x1,
-        y1,
-        z2,
-        x1,
-        y2,
-        z2,
-        x1,
-        y2,
-        z1,
-        -1,
-        0,
-        0,
-        uv(cube, bakedModel, ModelCubeFace.WEST),
-        packedLight);
-    quad(
-        vertexConsumer,
-        poseStack,
-        x2,
-        y1,
-        z2,
-        x2,
-        y1,
-        z1,
-        x2,
-        y2,
-        z1,
-        x2,
-        y2,
-        z2,
-        1,
-        0,
-        0,
-        uv(cube, bakedModel, ModelCubeFace.EAST),
-        packedLight);
-    quad(
-        vertexConsumer,
-        poseStack,
-        x1,
-        y1,
-        z1,
-        x2,
-        y1,
-        z1,
-        x2,
-        y1,
-        z2,
-        x1,
-        y1,
-        z2,
-        0,
-        -1,
-        0,
-        uv(cube, bakedModel, ModelCubeFace.UP),
-        packedLight);
-    quad(
-        vertexConsumer,
-        poseStack,
-        x1,
-        y2,
-        z2,
-        x2,
-        y2,
-        z2,
-        x2,
-        y2,
-        z1,
-        x1,
-        y2,
-        z1,
-        0,
-        1,
-        0,
-        uv(cube, bakedModel, ModelCubeFace.DOWN),
-        packedLight);
+    FaceUv southUv = uv(cube, ModelCubeFace.SOUTH);
+    FaceUv northUv = uv(cube, ModelCubeFace.NORTH);
+    FaceUv westUv = uv(cube, ModelCubeFace.WEST);
+    FaceUv eastUv = uv(cube, ModelCubeFace.EAST);
+    FaceUv upUv = uv(cube, ModelCubeFace.UP);
+    FaceUv downUv = uv(cube, ModelCubeFace.DOWN);
+
+    if (cube.mirror()) {
+      southUv = new FaceUv(southUv.maxU(), southUv.minV(), southUv.minU(), southUv.maxV());
+      northUv = new FaceUv(northUv.maxU(), northUv.minV(), northUv.minU(), northUv.maxV());
+      FaceUv tempEast = eastUv;
+      eastUv = new FaceUv(westUv.maxU(), westUv.minV(), westUv.minU(), westUv.maxV());
+      westUv = new FaceUv(tempEast.maxU(), tempEast.minV(), tempEast.minU(), tempEast.maxV());
+      upUv = new FaceUv(upUv.maxU(), upUv.minV(), upUv.minU(), upUv.maxV());
+      downUv = new FaceUv(downUv.maxU(), downUv.minV(), downUv.minU(), downUv.maxV());
+    }
+
+    quad(sink, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, 0, 0, 1, southUv);
+    quad(sink, x2, y1, z1, x1, y1, z1, x1, y2, z1, x2, y2, z1, 0, 0, -1, northUv);
+    quad(sink, x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1, -1, 0, 0, eastUv);
+    quad(sink, x2, y1, z2, x2, y1, z1, x2, y2, z1, x2, y2, z2, 1, 0, 0, westUv);
+    quad(sink, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, 0, -1, 0, upUv);
+    quad(sink, x1, y2, z2, x2, y2, z2, x2, y2, z1, x1, y2, z1, 0, 1, 0, downUv);
   }
 
-  private static float[] uv(BakedModelCube cube, BakedModel bakedModel, ModelCubeFace face) {
-    float[] uv = cube.faceUvs().uv(face);
-    return new float[] {
-      uv[0] / bakedModel.textureWidth(),
-      uv[1] / bakedModel.textureHeight(),
-      uv[2] / bakedModel.textureWidth(),
-      uv[3] / bakedModel.textureHeight()
-    };
+  private static FaceUv uv(BakedModelCube cube, ModelCubeFace face) {
+    return cube.faceUvs().uv(face);
   }
 
   private static void quad(
-      VertexConsumer vertexConsumer,
-      PoseStack poseStack,
+      EasyModelVertexSink sink,
       float x1,
       float y1,
       float z1,
@@ -550,78 +513,33 @@ public final class EasyModelBakedModelRenderer {
       float normalX,
       float normalY,
       float normalZ,
-      float[] uv,
-      int packedLight) {
-    vertex(
-        vertexConsumer,
-        poseStack,
-        x1,
-        y1,
-        z1,
-        uv[0],
-        uv[1],
-        normalX,
-        normalY,
-        normalZ,
-        packedLight);
-    vertex(
-        vertexConsumer,
-        poseStack,
-        x2,
-        y2,
-        z2,
-        uv[2],
-        uv[1],
-        normalX,
-        normalY,
-        normalZ,
-        packedLight);
-    vertex(
-        vertexConsumer,
-        poseStack,
-        x3,
-        y3,
-        z3,
-        uv[2],
-        uv[3],
-        normalX,
-        normalY,
-        normalZ,
-        packedLight);
-    vertex(
-        vertexConsumer,
-        poseStack,
-        x4,
-        y4,
-        z4,
-        uv[0],
-        uv[3],
-        normalX,
-        normalY,
-        normalZ,
-        packedLight);
+      FaceUv uv) {
+    sink.vertex(x1, y1, z1, uv.maxU(), uv.minV(), normalX, normalY, normalZ);
+    sink.vertex(x2, y2, z2, uv.minU(), uv.minV(), normalX, normalY, normalZ);
+    sink.vertex(x3, y3, z3, uv.minU(), uv.maxV(), normalX, normalY, normalZ);
+    sink.vertex(x4, y4, z4, uv.maxU(), uv.maxV(), normalX, normalY, normalZ);
   }
 
-  private static void vertex(
-      VertexConsumer vertexConsumer,
-      PoseStack poseStack,
-      float x,
-      float y,
-      float z,
-      float u,
-      float v,
-      float normalX,
-      float normalY,
-      float normalZ,
-      int packedLight) {
-    PoseStack.Pose pose = poseStack.last();
-    vertexConsumer
-        .vertex(pose.pose(), x, y, z)
-        .color(255, 255, 255, 255)
-        .uv(u, v)
-        .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(packedLight)
-        .normal(pose.normal(), normalX, normalY, normalZ)
-        .endVertex();
+  private static final class VertexSinks {
+
+    private final IntFunction<VertexConsumer> bufferProvider;
+    private final PoseStack poseStack;
+    private final int packedLight;
+    private final Map<Integer, EasyModelVertexSink> sinks = new HashMap<>();
+
+    private VertexSinks(
+        IntFunction<VertexConsumer> bufferProvider, PoseStack poseStack, int packedLight) {
+      this.bufferProvider = bufferProvider;
+      this.poseStack = poseStack;
+      this.packedLight = packedLight;
+    }
+
+    private EasyModelVertexSink sink(int textureIndex) {
+      return this.sinks.computeIfAbsent(
+          textureIndex,
+          index ->
+              new EasyModelVertexSink(
+                  this.bufferProvider.apply(index), this.poseStack, this.packedLight));
+    }
   }
 }

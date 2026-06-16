@@ -28,6 +28,8 @@ public enum ModelBehaviorMode {
   STATIC,
   EXTERNAL_OWNER;
 
+  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
   public static Optional<ModelBehaviorMode> bySerializedName(String serializedName) {
     if (serializedName == null) {
       return Optional.empty();
@@ -44,7 +46,7 @@ public enum ModelBehaviorMode {
   }
 
   public String getSerializedName() {
-    return this.name().toLowerCase(Locale.ROOT);
+    return this.serializedName;
   }
 
   public boolean defaultLookAtPlayers() {

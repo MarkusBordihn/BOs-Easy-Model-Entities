@@ -1,0 +1,8 @@
+{
+  "model_type": "entity",
+  "preset_type": "statue",
+  "version": "demo-orientation-test-v1",
+  "client": {
+    "render_profile": "easy_model_entities_examples:orientation_test"
+  }
+}

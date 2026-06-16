@@ -68,6 +68,30 @@ class ModelRenderProfileParserTest {
   }
 
   @Test
+  void parsesTexturesMap() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            "{\"preset_type\":\"static\",\"textures\":{"
+                + "\"0\":\"example:textures/entity/mimic.png\","
+                + "\"1\":\"minecraft:textures/block/chest.png\"}}");
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(
+        new ResourceLocation("example", "textures/entity/mimic.png"),
+        renderProfile.textures().get(0));
+    assertEquals(
+        new ResourceLocation("minecraft", "textures/block/chest.png"),
+        renderProfile.textures().get(1));
+  }
+
+  @Test
+  void defaultsToEmptyTexturesMap() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"static\"}");
+
+    assertTrue(renderProfile.textures().isEmpty());
+  }
+
+  @Test
   void parsesStillPresetWithIdleAnimationDefaults() {
     EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"humanoid_still\"}");
 

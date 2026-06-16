@@ -18,20 +18,21 @@
 
 package de.markusbordihn.easymodelentities.data.model.decoder;
 
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import java.util.List;
 import java.util.Objects;
 
 public record DecodedModelPart(
     String name,
-    float[] offset,
-    float[] rotation,
+    Vec3f offset,
+    Vec3f rotation,
     List<DecodedModelCube> cubes,
     List<DecodedModelPart> children) {
 
   public DecodedModelPart {
     Objects.requireNonNull(name, "name");
-    offset = offset.clone();
-    rotation = rotation.clone();
+    Objects.requireNonNull(offset, "offset");
+    Objects.requireNonNull(rotation, "rotation");
     cubes = List.copyOf(Objects.requireNonNull(cubes, "cubes"));
     children = List.copyOf(Objects.requireNonNull(children, "children"));
   }

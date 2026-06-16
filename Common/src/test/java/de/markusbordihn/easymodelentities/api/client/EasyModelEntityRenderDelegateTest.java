@@ -35,6 +35,7 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimation
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartDefinition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
 import de.markusbordihn.easymodelentities.client.render.EasyModelEntityRenderBackend;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
@@ -233,16 +234,12 @@ class EasyModelEntityRenderDelegateTest {
         EasyModelPartDefinitions.fromBakedPart(
             new BakedModelPart(
                 "root",
-                new float[] {0.0f, 0.0f, 0.0f},
-                new float[] {0.0f, 0.0f, 0.0f},
+                Vec3f.ZERO,
+                Vec3f.ZERO,
                 List.of(),
                 List.of(
                     new BakedModelPart(
-                        "head",
-                        new float[] {0.0f, 1.0f, 0.0f},
-                        new float[] {0.0f, 0.0f, 0.0f},
-                        List.of(),
-                        List.of()))));
+                        "head", new Vec3f(0.0f, 1.0f, 0.0f), Vec3f.ZERO, List.of(), List.of()))));
 
     List<EasyModelPartDefinition> flattenedParts = EasyModelPartDefinitions.flatten(List.of(root));
 

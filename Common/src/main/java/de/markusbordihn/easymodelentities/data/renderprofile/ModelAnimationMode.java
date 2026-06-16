@@ -27,6 +27,8 @@ public enum ModelAnimationMode {
   RANDOM_IDLE,
   NONE;
 
+  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
   public static Optional<ModelAnimationMode> bySerializedName(String serializedName) {
     for (ModelAnimationMode mode : values()) {
       if (mode.getSerializedName().equalsIgnoreCase(serializedName)) {
@@ -38,6 +40,6 @@ public enum ModelAnimationMode {
   }
 
   public String getSerializedName() {
-    return this.name().toLowerCase(Locale.ROOT);
+    return this.serializedName;
   }
 }

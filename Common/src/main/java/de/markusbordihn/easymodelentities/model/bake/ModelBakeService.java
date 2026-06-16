@@ -18,6 +18,8 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
+import de.markusbordihn.easymodelentities.data.model.ModelPartType;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.*;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelCube;
@@ -31,9 +33,6 @@ import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecoder;
 import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,7 +43,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import javax.imageio.ImageIO;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -60,60 +58,6 @@ public final class ModelBakeService implements EasyModelBakeService {
 
   public static ModelBakeService createDefault() {
     return new ModelBakeService(ModelDecoderRegistry.createDefault());
-  }
-
-  private static List<ModelRenderProfileValidationIssue> validateTexture(
-      EasyModelRenderProfile renderProfile, ResourceManager resourceManager) {
-    ResourceLocation textureResourceLocation =
-        ModelResourcePaths.textureResourceLocation(renderProfile.texture());
-    Optional<Resource> textureResource = resourceManager.getResource(textureResourceLocation);
-    if (textureResource.isEmpty()) {
-      return List.of(
-          new ModelRenderProfileValidationIssue(
-              ModelRenderProfileStatus.MISSING_TEXTURE,
-              "texture",
-              "Missing texture asset " + textureResourceLocation + "."));
-    }
-
-    try (InputStream inputStream = textureResource.get().open()) {
-      BufferedImage image = ImageIO.read(inputStream);
-      if (image == null) {
-        return List.of(
-            new ModelRenderProfileValidationIssue(
-                ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
-                "texture",
-                "Texture asset " + textureResourceLocation + " could not be decoded."));
-      }
-      if (image.getWidth() > 2048 || image.getHeight() > 2048) {
-        return List.of(
-            new ModelRenderProfileValidationIssue(
-                ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
-                "texture",
-                "Texture asset "
-                    + textureResourceLocation
-                    + " exceeds the 2048x2048 asset budget."));
-      }
-      if (image.getWidth() > 128 || image.getHeight() > 128) {
-        return List.of(
-            new ModelRenderProfileValidationIssue(
-                ModelRenderProfileStatus.ACTIVE,
-                "texture",
-                "Texture asset "
-                    + textureResourceLocation
-                    + " is larger than the recommended 64x64 or 128x128 size."));
-      }
-
-      return List.of();
-    } catch (IOException exception) {
-      return List.of(
-          new ModelRenderProfileValidationIssue(
-              ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
-              "texture",
-              "Could not read texture asset "
-                  + textureResourceLocation
-                  + ": "
-                  + exception.getMessage()));
-    }
   }
 
   private static List<ModelRenderProfileValidationIssue> validateBodyType(
@@ -142,34 +86,55 @@ public final class ModelBakeService implements EasyModelBakeService {
   private static List<String> requiredParts(ModelBodyType bodyType) {
     return switch (bodyType) {
       case BIPED ->
-          List.of("root", "head", "body", "left_arm", "right_arm", "left_leg", "right_leg");
+          List.of(
+              ModelPartType.ROOT.getTagName(),
+              ModelPartType.HEAD.getTagName(),
+              ModelPartType.BODY.getTagName(),
+              ModelPartType.LEFT_ARM.getTagName(),
+              ModelPartType.RIGHT_ARM.getTagName(),
+              ModelPartType.LEFT_LEG.getTagName(),
+              ModelPartType.RIGHT_LEG.getTagName());
       case QUADRUPED ->
           List.of(
-              "root",
-              "body",
-              "head",
-              "front_left_leg",
-              "front_right_leg",
-              "back_left_leg",
-              "back_right_leg");
-      case AQUATIC -> List.of("root", "body");
-      case WINGED -> List.of("root", "body", "head", "left_wing", "right_wing");
+              ModelPartType.ROOT.getTagName(),
+              ModelPartType.BODY.getTagName(),
+              ModelPartType.HEAD.getTagName(),
+              ModelPartType.FRONT_LEFT_LEG.getTagName(),
+              ModelPartType.FRONT_RIGHT_LEG.getTagName(),
+              ModelPartType.BACK_LEFT_LEG.getTagName(),
+              ModelPartType.BACK_RIGHT_LEG.getTagName());
+      case AQUATIC -> List.of(ModelPartType.ROOT.getTagName(), ModelPartType.BODY.getTagName());
+      case WINGED ->
+          List.of(
+              ModelPartType.ROOT.getTagName(),
+              ModelPartType.BODY.getTagName(),
+              ModelPartType.HEAD.getTagName(),
+              ModelPartType.LEFT_WING.getTagName(),
+              ModelPartType.RIGHT_WING.getTagName());
       case WINGED_HUMANOID ->
-          List.of("root", "body", "head", "left_arm", "right_arm", "left_wing", "right_wing");
+          List.of(
+              ModelPartType.ROOT.getTagName(),
+              ModelPartType.BODY.getTagName(),
+              ModelPartType.HEAD.getTagName(),
+              ModelPartType.LEFT_ARM.getTagName(),
+              ModelPartType.RIGHT_ARM.getTagName(),
+              ModelPartType.LEFT_WING.getTagName(),
+              ModelPartType.RIGHT_WING.getTagName());
       case ARTHROPOD ->
           List.of(
-              "root",
-              "body",
-              "head",
-              "front_left_leg",
-              "front_right_leg",
-              "middle_front_left_leg",
-              "middle_front_right_leg",
-              "middle_back_left_leg",
-              "middle_back_right_leg",
-              "back_left_leg",
-              "back_right_leg");
-      case CUBOID, FLOATING -> List.of("root", "body");
+              ModelPartType.ROOT.getTagName(),
+              ModelPartType.BODY.getTagName(),
+              ModelPartType.HEAD.getTagName(),
+              ModelPartType.FRONT_LEFT_LEG.getTagName(),
+              ModelPartType.FRONT_RIGHT_LEG.getTagName(),
+              ModelPartType.MIDDLE_FRONT_LEFT_LEG.getTagName(),
+              ModelPartType.MIDDLE_FRONT_RIGHT_LEG.getTagName(),
+              ModelPartType.MIDDLE_BACK_LEFT_LEG.getTagName(),
+              ModelPartType.MIDDLE_BACK_RIGHT_LEG.getTagName(),
+              ModelPartType.BACK_LEFT_LEG.getTagName(),
+              ModelPartType.BACK_RIGHT_LEG.getTagName());
+      case CUBOID, FLOATING ->
+          List.of(ModelPartType.ROOT.getTagName(), ModelPartType.BODY.getTagName());
       case STATIC -> List.of();
     };
   }
@@ -189,17 +154,23 @@ public final class ModelBakeService implements EasyModelBakeService {
                     && issue.status() != ModelRenderProfileStatus.MISSING_TEXTURE);
   }
 
-  private static BakedModel bakeDecoded(ModelBodyType bodyType, DecodedModel decodedModel) {
+  private static BakedModel bakeDecoded(
+      ModelBodyType bodyType, DecodedModel decodedModel, Map<Integer, ResourceLocation> textures) {
+    float textureWidth = decodedModel.textureWidth();
+    float textureHeight = decodedModel.textureHeight();
     List<BakedModelPart> rootParts =
-        decodedModel.rootParts().stream().map(ModelBakeService::bakePart).toList();
+        decodedModel.rootParts().stream()
+            .map(part -> bakePart(part, textureWidth, textureHeight))
+            .toList();
     if (bodyType == ModelBodyType.STATIC
-        && rootParts.stream().noneMatch(part -> "root".equals(part.name()))) {
+        && rootParts.stream()
+            .noneMatch(part -> ModelPartType.ROOT.getTagName().equals(part.name()))) {
       rootParts =
           List.of(
               new BakedModelPart(
-                  "root",
-                  new float[] {0.0f, 24.0f, 0.0f},
-                  new float[] {0.0f, 0.0f, 0.0f},
+                  ModelPartType.ROOT.getTagName(),
+                  new Vec3f(0.0f, 24.0f, 0.0f),
+                  Vec3f.ZERO,
                   List.of(),
                   rootParts));
     }
@@ -208,10 +179,12 @@ public final class ModelBakeService implements EasyModelBakeService {
         decodedModel.modelId(),
         decodedModel.textureWidth(),
         decodedModel.textureHeight(),
-        rootParts);
+        rootParts,
+        textures);
   }
 
-  private static BakedModelPart bakePart(DecodedModelPart decodedPart) {
+  private static BakedModelPart bakePart(
+      DecodedModelPart decodedPart, float textureWidth, float textureHeight) {
     Map<String, List<DecodedModelCube>> rotatedCubeGroups = new LinkedHashMap<>();
     List<DecodedModelCube> directCubes = new ArrayList<>();
     for (DecodedModelCube decodedCube : decodedPart.cubes()) {
@@ -229,42 +202,49 @@ public final class ModelBakeService implements EasyModelBakeService {
     rotatedCubeGroups.values().stream()
         .sorted(
             (left, right) ->
-                Float.compare(left.get(0).rotationOrigin()[1], right.get(0).rotationOrigin()[1]))
+                Float.compare(left.get(0).rotationOrigin().y(), right.get(0).rotationOrigin().y()))
         .forEach(
             rotatedCubes -> {
-              BakedModelPart rotatedPart = bakeRotatedPart(rotatedCubes, rotatedPartIndices);
+              BakedModelPart rotatedPart =
+                  bakeRotatedPart(rotatedCubes, rotatedPartIndices, textureWidth, textureHeight);
               children.add(rotatedPart);
             });
-    children.addAll(decodedPart.children().stream().map(ModelBakeService::bakePart).toList());
+    children.addAll(
+        decodedPart.children().stream()
+            .map(part -> bakePart(part, textureWidth, textureHeight))
+            .toList());
 
     return new BakedModelPart(
         decodedPart.name(),
         decodedPart.offset(),
         decodedPart.rotation(),
-        directCubes.stream().map(ModelBakeService::bakeCube).toList(),
+        directCubes.stream().map(cube -> bakeCube(cube, textureWidth, textureHeight)).toList(),
         children);
   }
 
   private static String rotationKey(DecodedModelCube decodedCube) {
-    float[] rotationOrigin = decodedCube.rotationOrigin();
-    float[] rotation = decodedCube.rotation();
+    Vec3f rotationOrigin = decodedCube.rotationOrigin();
+    Vec3f rotation = decodedCube.rotation();
     return decodedCube.name()
         + "_"
-        + rotation[0]
+        + rotation.x()
         + "_"
-        + rotation[1]
+        + rotation.y()
         + "_"
-        + rotation[2]
+        + rotation.z()
         + "_"
-        + rotationOrigin[0]
+        + rotationOrigin.x()
         + "_"
-        + rotationOrigin[1]
+        + rotationOrigin.y()
         + "_"
-        + rotationOrigin[2];
+        + rotationOrigin.z();
   }
 
   private static BakedModelPart bakeRotatedPart(
-      List<DecodedModelCube> rotatedCubes, Map<String, Integer> rotatedPartIndices) {
+      List<DecodedModelCube> rotatedCubes,
+      Map<String, Integer> rotatedPartIndices,
+      float textureWidth,
+      float textureHeight) {
     DecodedModelCube firstCube = rotatedCubes.get(0);
     String baseName = firstCube.name();
     int childIndex = rotatedPartIndices.getOrDefault(baseName, 0) + 1;
@@ -273,26 +253,32 @@ public final class ModelBakeService implements EasyModelBakeService {
         baseName + "_r" + childIndex,
         firstCube.rotationOrigin(),
         firstCube.rotation(),
-        rotatedCubes.stream().map(ModelBakeService::bakeRotatedCube).toList(),
+        rotatedCubes.stream()
+            .map(cube -> bakeRotatedCube(cube, textureWidth, textureHeight))
+            .toList(),
         List.of());
   }
 
-  private static BakedModelCube bakeCube(DecodedModelCube decodedCube) {
+  private static BakedModelCube bakeCube(
+      DecodedModelCube decodedCube, float textureWidth, float textureHeight) {
     return new BakedModelCube(
         decodedCube.uvOffset(),
-        decodedCube.faceUvs(),
+        decodedCube.faceUvs().scale(textureWidth, textureHeight),
         decodedCube.position(),
         decodedCube.dimensions(),
-        decodedCube.mirror());
+        decodedCube.mirror(),
+        decodedCube.textureIndex());
   }
 
-  private static BakedModelCube bakeRotatedCube(DecodedModelCube decodedCube) {
+  private static BakedModelCube bakeRotatedCube(
+      DecodedModelCube decodedCube, float textureWidth, float textureHeight) {
     return new BakedModelCube(
         decodedCube.uvOffset(),
-        decodedCube.faceUvs(),
+        decodedCube.faceUvs().scale(textureWidth, textureHeight),
         decodedCube.rotatedPosition(),
         decodedCube.dimensions(),
-        decodedCube.mirror());
+        decodedCube.mirror(),
+        decodedCube.textureIndex());
   }
 
   private static ModelBakeResult failure(
@@ -390,7 +376,9 @@ public final class ModelBakeService implements EasyModelBakeService {
           modelResource.decoder().decode(renderProfile.model(), modelResource.resource());
       List<ModelRenderProfileValidationIssue> issues =
           new ArrayList<>(decodedModel.validationIssues());
-      issues.addAll(validateTexture(renderProfile, resourceManager));
+      ModelTextureResolver.ResolvedTextures resolvedTextures =
+          ModelTextureResolver.resolve(renderProfile, decodedModel, resourceManager);
+      issues.addAll(resolvedTextures.issues());
       issues.addAll(validateBodyType(renderProfile.bodyType(), decodedModel));
       if (hasHardFailure(issues)) {
         return ModelBakeResult.failure(
@@ -398,7 +386,9 @@ public final class ModelBakeService implements EasyModelBakeService {
       }
 
       return ModelBakeResult.success(
-          cacheKey, bakeDecoded(renderProfile.bodyType(), decodedModel), issues);
+          cacheKey,
+          bakeDecoded(renderProfile.bodyType(), decodedModel, resolvedTextures.textures()),
+          issues);
     } catch (EasyModelDecodeException exception) {
       return failure(
           cacheKey,

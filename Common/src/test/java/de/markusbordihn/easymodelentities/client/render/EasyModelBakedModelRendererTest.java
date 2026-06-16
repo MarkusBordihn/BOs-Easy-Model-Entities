@@ -31,7 +31,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
+import de.markusbordihn.easymodelentities.data.model.FaceUv;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
@@ -51,12 +53,12 @@ class EasyModelBakedModelRendererTest {
 
   private static ModelCubeFaceUvs faceUvs() {
     return new ModelCubeFaceUvs(
-        new float[] {0.0f, 0.0f, 1.0f, 1.0f},
-        new float[] {2.0f, 0.0f, 3.0f, 1.0f},
-        new float[] {4.0f, 0.0f, 5.0f, 1.0f},
-        new float[] {6.0f, 0.0f, 7.0f, 1.0f},
-        new float[] {8.0f, 0.0f, 9.0f, 1.0f},
-        new float[] {10.0f, 0.0f, 11.0f, 1.0f});
+        new FaceUv(0.0f, 0.0f, 1.0f, 1.0f),
+        new FaceUv(2.0f, 0.0f, 3.0f, 1.0f),
+        new FaceUv(4.0f, 0.0f, 5.0f, 1.0f),
+        new FaceUv(6.0f, 0.0f, 7.0f, 1.0f),
+        new FaceUv(8.0f, 0.0f, 9.0f, 1.0f),
+        new FaceUv(10.0f, 0.0f, 11.0f, 1.0f));
   }
 
   private static EasyModelRenderState renderState(BakedModel bakedModel) {
@@ -79,8 +81,8 @@ class EasyModelBakedModelRendererTest {
 
   private static void assertUv(
       List<Float> uValues, List<Float> vValues, int index, float expectedU, float expectedV) {
-    assertEquals(expectedU / 64.0f, uValues.get(index), 0.0001f);
-    assertEquals(expectedV / 64.0f, vValues.get(index), 0.0001f);
+    assertEquals(expectedU, uValues.get(index), 0.0001f);
+    assertEquals(expectedV, vValues.get(index), 0.0001f);
   }
 
   private static void assertNormal(
@@ -106,14 +108,14 @@ class EasyModelBakedModelRendererTest {
             List.of(
                 new BakedModelPart(
                     "root",
-                    new float[] {0.0f, 0.0f, 0.0f},
-                    new float[] {0.0f, 0.0f, 0.0f},
+                    Vec3f.ZERO,
+                    Vec3f.ZERO,
                     List.of(
                         new BakedModelCube(
                             new int[] {0, 0},
                             faceUvs(),
-                            new float[] {0.0f, 0.0f, 0.0f},
-                            new float[] {1.0f, 1.0f, 1.0f},
+                            Vec3f.ZERO,
+                            new Vec3f(1.0f, 1.0f, 1.0f),
                             false)),
                     List.of())));
     VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
@@ -122,6 +124,7 @@ class EasyModelBakedModelRendererTest {
     ArgumentCaptor<Float> normalXCaptor = ArgumentCaptor.forClass(Float.class);
     ArgumentCaptor<Float> normalYCaptor = ArgumentCaptor.forClass(Float.class);
     ArgumentCaptor<Float> normalZCaptor = ArgumentCaptor.forClass(Float.class);
+    ArgumentCaptor<Float> zCaptor = ArgumentCaptor.forClass(Float.class);
 
     EasyModelBakedModelRenderer.render(
         bakedModel, renderState(bakedModel), 0.0f, 0.0f, new PoseStack(), vertexConsumer, 0);
@@ -129,12 +132,17 @@ class EasyModelBakedModelRendererTest {
     verify(vertexConsumer, times(24)).uv(uCaptor.capture(), vCaptor.capture());
     verify(vertexConsumer, times(24))
         .normal(any(), normalXCaptor.capture(), normalYCaptor.capture(), normalZCaptor.capture());
-    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 0, 4.0f, 0.0f);
-    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 4, 0.0f, 0.0f);
-    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 8, 6.0f, 0.0f);
-    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 12, 2.0f, 0.0f);
-    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 16, 8.0f, 0.0f);
-    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 20, 10.0f, 0.0f);
+    verify(vertexConsumer, times(24)).vertex(any(), anyFloat(), anyFloat(), zCaptor.capture());
+    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 0, 5.0f, 0.0f);
+    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 1, 4.0f, 0.0f);
+    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 4, 1.0f, 0.0f);
+    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 5, 0.0f, 0.0f);
+    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 8, 3.0f, 0.0f);
+    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 12, 7.0f, 0.0f);
+    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 16, 9.0f, 0.0f);
+    assertUv(uCaptor.getAllValues(), vCaptor.getAllValues(), 20, 11.0f, 0.0f);
+    assertEquals(0.0f, zCaptor.getAllValues().get(16), 0.0001f);
+    assertEquals(0.0625f, zCaptor.getAllValues().get(20), 0.0001f);
     assertNormal(
         normalXCaptor.getAllValues(),
         normalYCaptor.getAllValues(),
@@ -154,19 +162,62 @@ class EasyModelBakedModelRendererTest {
   }
 
   @Test
+  void upAndDownFacesMapWestEdgeToMaxU() {
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "uv_model"),
+            64,
+            64,
+            List.of(
+                new BakedModelPart(
+                    "root",
+                    Vec3f.ZERO,
+                    Vec3f.ZERO,
+                    List.of(
+                        new BakedModelCube(
+                            new int[] {0, 0},
+                            faceUvs(),
+                            Vec3f.ZERO,
+                            new Vec3f(1.0f, 1.0f, 1.0f),
+                            false)),
+                    List.of())));
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    ArgumentCaptor<Float> uCaptor = ArgumentCaptor.forClass(Float.class);
+    ArgumentCaptor<Float> vCaptor = ArgumentCaptor.forClass(Float.class);
+    ArgumentCaptor<Float> xCaptor = ArgumentCaptor.forClass(Float.class);
+    ArgumentCaptor<Float> zCaptor = ArgumentCaptor.forClass(Float.class);
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel, renderState(bakedModel), 0.0f, 0.0f, new PoseStack(), vertexConsumer, 0);
+
+    verify(vertexConsumer, times(24)).uv(uCaptor.capture(), vCaptor.capture());
+    verify(vertexConsumer, times(24))
+        .vertex(any(), xCaptor.capture(), anyFloat(), zCaptor.capture());
+    List<Float> uValues = uCaptor.getAllValues();
+    List<Float> vValues = vCaptor.getAllValues();
+    List<Float> xValues = xCaptor.getAllValues();
+    List<Float> zValues = zCaptor.getAllValues();
+
+    assertEquals(0.0f, xValues.get(16), 0.0001f);
+    assertEquals(0.0f, zValues.get(16), 0.0001f);
+    assertUv(uValues, vValues, 16, 9.0f, 0.0f);
+    assertEquals(0.0625f, xValues.get(17), 0.0001f);
+    assertUv(uValues, vValues, 17, 8.0f, 0.0f);
+
+    assertEquals(0.0f, xValues.get(20), 0.0001f);
+    assertUv(uValues, vValues, 20, 11.0f, 0.0f);
+    assertEquals(0.0625f, xValues.get(21), 0.0001f);
+    assertUv(uValues, vValues, 21, 10.0f, 0.0f);
+  }
+
+  @Test
   void forwardsPartsToCustomAnimator() {
     BakedModel bakedModel =
         new BakedModel(
             new ResourceLocation("example", "animated_part"),
             64,
             64,
-            List.of(
-                new BakedModelPart(
-                    "crystal",
-                    new float[] {0.0f, 0.0f, 0.0f},
-                    new float[] {0.0f, 0.0f, 0.0f},
-                    List.of(),
-                    List.of())));
+            List.of(new BakedModelPart("crystal", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())));
     VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
     AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
 
@@ -195,13 +246,7 @@ class EasyModelBakedModelRendererTest {
             new ResourceLocation("example", "animated_leg"),
             64,
             64,
-            List.of(
-                new BakedModelPart(
-                    "left_leg",
-                    new float[] {0.0f, 0.0f, 0.0f},
-                    new float[] {0.0f, 0.0f, 0.0f},
-                    List.of(),
-                    List.of())));
+            List.of(new BakedModelPart("left_leg", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())));
     VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
     AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
 
@@ -232,14 +277,14 @@ class EasyModelBakedModelRendererTest {
             List.of(
                 new BakedModelPart(
                     "left_leg",
-                    new float[] {0.0f, 0.0f, 0.0f},
-                    new float[] {0.0f, 0.0f, 0.0f},
+                    Vec3f.ZERO,
+                    Vec3f.ZERO,
                     List.of(
                         new BakedModelCube(
                             new int[] {0, 0},
                             faceUvs(),
-                            new float[] {0.0f, 0.0f, 0.0f},
-                            new float[] {1.0f, 1.0f, 1.0f},
+                            Vec3f.ZERO,
+                            new Vec3f(1.0f, 1.0f, 1.0f),
                             false)),
                     List.of())));
     VertexConsumer addVertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);

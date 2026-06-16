@@ -30,10 +30,10 @@ import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileS
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
 import de.markusbordihn.easymodelentities.model.bake.ModelFallbackFactory;
-import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -107,13 +107,12 @@ public final class EasyModelRenderStateResolver {
     boolean fallbackTexture =
         bakeResult.validationIssues().stream()
             .anyMatch(issue -> issue.status() == ModelRenderProfileStatus.MISSING_TEXTURE);
-    ResourceLocation texture =
-        fallbackTexture
-            ? FALLBACK_TEXTURE
-            : ModelResourcePaths.textureResourceLocation(renderProfile.texture());
+    Map<Integer, ResourceLocation> textures = bakeResult.bakedModel().textures();
+    ResourceLocation texture = textures.getOrDefault(0, FALLBACK_TEXTURE);
     return new EasyModelRenderState(
         bakeResult.bakedModel(),
         texture,
+        textures,
         renderProfile.scale(),
         renderProfile.shadowRadius(),
         renderProfile.bodyType(),

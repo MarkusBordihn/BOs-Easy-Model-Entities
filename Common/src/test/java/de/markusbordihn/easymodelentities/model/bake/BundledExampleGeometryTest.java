@@ -29,6 +29,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.*;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
@@ -81,9 +82,8 @@ class BundledExampleGeometryTest {
       String partPath = path + "/" + expectedPart.name();
 
       assertEquals(expectedPart.name(), bakedPart.name(), partPath + " name");
-      assertArrayEquals(expectedPart.offset(), bakedPart.offset(), DELTA, partPath + " offset");
-      assertArrayEquals(
-          expectedPart.rotation(), bakedPart.rotation(), DELTA, partPath + " rotation");
+      assertVec(expectedPart.offset(), bakedPart.offset(), DELTA, partPath + " offset");
+      assertVec(expectedPart.rotation(), bakedPart.rotation(), DELTA, partPath + " rotation");
       assertCubes(expectedPart.cubes(), bakedPart.cubes(), partPath);
       assertParts(expectedPart.children(), bakedPart.children(), partPath);
     }
@@ -97,11 +97,13 @@ class BundledExampleGeometryTest {
       BakedModelCube bakedCube = bakedCubes.get(index);
       String cubePath = path + "/cube[" + index + "]";
 
-      assertArrayEquals(
-          expectedCube.position(), bakedCube.position(), DELTA, cubePath + " position");
-      assertArrayEquals(
-          expectedCube.dimensions(), bakedCube.dimensions(), DELTA, cubePath + " dimensions");
+      assertVec(expectedCube.position(), bakedCube.position(), DELTA, cubePath + " position");
+      assertVec(expectedCube.dimensions(), bakedCube.dimensions(), DELTA, cubePath + " dimensions");
     }
+  }
+
+  private static void assertVec(float[] expected, Vec3f actual, float delta, String message) {
+    assertArrayEquals(expected, new float[] {actual.x(), actual.y(), actual.z()}, delta, message);
   }
 
   private static EasyModelRenderProfile renderProfile(
@@ -181,19 +183,19 @@ class BundledExampleGeometryTest {
     float[] to = element.to();
     float[] groupOrigin = group.origin();
     return new ExpectedCube(
-        new float[] {from[0] - groupOrigin[0], groupOrigin[1] - to[1], from[2] - groupOrigin[2]},
+        new float[] {groupOrigin[0] - to[0], groupOrigin[1] - to[1], from[2] - groupOrigin[2]},
         new float[] {to[0] - from[0], to[1] - from[1], to[2] - from[2]});
   }
 
   private static float[] groupOffset(RawGroup group, RawGroup parentGroup) {
     float[] groupOrigin = group.origin();
     if (parentGroup == null) {
-      return new float[] {groupOrigin[0], 24.0f - groupOrigin[1], groupOrigin[2]};
+      return new float[] {-groupOrigin[0], 24.0f - groupOrigin[1], groupOrigin[2]};
     }
 
     float[] parentOrigin = parentGroup.origin();
     return new float[] {
-      groupOrigin[0] - parentOrigin[0],
+      parentOrigin[0] - groupOrigin[0],
       parentOrigin[1] - groupOrigin[1],
       groupOrigin[2] - parentOrigin[2]
     };

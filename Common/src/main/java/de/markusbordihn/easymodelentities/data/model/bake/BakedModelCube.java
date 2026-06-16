@@ -19,23 +19,26 @@
 package de.markusbordihn.easymodelentities.data.model.bake;
 
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import java.util.Objects;
 
 public record BakedModelCube(
     int[] uvOffset,
     ModelCubeFaceUvs faceUvs,
-    float[] position,
-    float[] dimensions,
-    boolean mirror) {
+    Vec3f position,
+    Vec3f dimensions,
+    boolean mirror,
+    int textureIndex) {
 
   public BakedModelCube {
     Objects.requireNonNull(faceUvs, "faceUvs");
+    Objects.requireNonNull(position, "position");
+    Objects.requireNonNull(dimensions, "dimensions");
     uvOffset = Objects.requireNonNull(uvOffset, "uvOffset").clone();
-    position = Objects.requireNonNull(position, "position").clone();
-    dimensions = Objects.requireNonNull(dimensions, "dimensions").clone();
   }
 
-  public BakedModelCube(int[] uvOffset, float[] position, float[] dimensions, boolean mirror) {
-    this(uvOffset, ModelCubeFaceUvs.fromBoxUv(uvOffset, dimensions), position, dimensions, mirror);
+  public BakedModelCube(
+      int[] uvOffset, ModelCubeFaceUvs faceUvs, Vec3f position, Vec3f dimensions, boolean mirror) {
+    this(uvOffset, faceUvs, position, dimensions, mirror, 0);
   }
 }

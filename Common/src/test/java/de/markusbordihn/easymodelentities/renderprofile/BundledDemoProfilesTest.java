@@ -38,7 +38,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.imageio.ImageIO;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
@@ -47,6 +50,20 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import org.junit.jupiter.api.Test;
 
 class BundledDemoProfilesTest {
+
+  private static final List<Demo> DEMOS =
+      List.of(
+          new Demo("entity/training_dummy", "training_dummy", ModelBodyType.STATIC),
+          new Demo("entity/little_explorer", "little_explorer", ModelBodyType.BIPED),
+          new Demo("entity/stone_turtle", "stone_turtle", ModelBodyType.QUADRUPED),
+          new Demo("entity/coral_drifter", "coral_drifter", ModelBodyType.AQUATIC),
+          new Demo("entity/dawn_sparrow", "dawn_sparrow", ModelBodyType.WINGED),
+          new Demo("entity/skybound_wanderer", "skybound_wanderer", ModelBodyType.WINGED_HUMANOID),
+          new Demo("entity/dust_skitter", "dust_skitter", ModelBodyType.ARTHROPOD),
+          new Demo("entity/rune_cube", "rune_cube", ModelBodyType.CUBOID),
+          new Demo("entity/wisp_lantern", "wisp_lantern", ModelBodyType.FLOATING),
+          new Demo("entity/orientation_test", "orientation_test", ModelBodyType.STATIC),
+          new Demo("block_entity/shrine", "shrine", ModelBodyType.STATIC));
 
   private static void assertDemo(String path, String renderPath, ModelBodyType bodyType)
       throws Exception {
@@ -144,9 +161,20 @@ class BundledDemoProfilesTest {
 
   @Test
   void bundledDemoProfilesParseAndBake() throws Exception {
-    assertDemo("entity/training_dummy", "training_dummy", ModelBodyType.STATIC);
-    assertDemo("entity/little_explorer", "little_explorer", ModelBodyType.BIPED);
-    assertDemo("entity/stone_turtle", "stone_turtle", ModelBodyType.QUADRUPED);
-    assertDemo("block_entity/shrine", "shrine", ModelBodyType.STATIC);
+    for (Demo demo : DEMOS) {
+      assertDemo(demo.path(), demo.renderPath(), demo.bodyType());
+    }
   }
+
+  @Test
+  void bundledDemosCoverEveryBodyType() {
+    Set<ModelBodyType> coveredBodyTypes = EnumSet.noneOf(ModelBodyType.class);
+    for (Demo demo : DEMOS) {
+      coveredBodyTypes.add(demo.bodyType());
+    }
+
+    assertEquals(EnumSet.allOf(ModelBodyType.class), coveredBodyTypes);
+  }
+
+  private record Demo(String path, String renderPath, ModelBodyType bodyType) {}
 }

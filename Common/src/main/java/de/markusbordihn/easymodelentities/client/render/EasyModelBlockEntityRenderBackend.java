@@ -20,7 +20,6 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
@@ -39,7 +38,6 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -100,8 +98,6 @@ public final class EasyModelBlockEntityRenderBackend {
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yawDegrees));
     poseStack.scale(-renderState.scale(), -renderState.scale(), renderState.scale());
 
-    VertexConsumer vertexConsumer =
-        bufferSource.getBuffer(RenderType.entityCutoutNoCull(renderState.texture()));
     EasyModelBakedModelRenderer.render(
         renderState.bakedModel(),
         renderState,
@@ -111,7 +107,7 @@ public final class EasyModelBlockEntityRenderBackend {
         safeOptions.partAnimator(),
         safeOptions.partAnimationMode(),
         poseStack,
-        vertexConsumer,
+        bufferSource,
         packedLight);
     poseStack.popPose();
   }

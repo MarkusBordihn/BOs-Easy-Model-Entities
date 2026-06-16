@@ -26,6 +26,8 @@ public enum ModelType {
   ENTITY,
   BLOCK_ENTITY;
 
+  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
   public static Optional<ModelType> bySerializedName(String serializedName) {
     if (serializedName == null) {
       return Optional.empty();
@@ -42,6 +44,6 @@ public enum ModelType {
   }
 
   public String getSerializedName() {
-    return this.name().toLowerCase(Locale.ROOT);
+    return this.serializedName;
   }
 }

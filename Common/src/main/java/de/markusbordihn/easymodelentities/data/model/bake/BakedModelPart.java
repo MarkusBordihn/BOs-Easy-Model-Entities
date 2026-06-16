@@ -18,20 +18,21 @@
 
 package de.markusbordihn.easymodelentities.data.model.bake;
 
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import java.util.List;
 import java.util.Objects;
 
 public record BakedModelPart(
     String name,
-    float[] offset,
-    float[] rotation,
+    Vec3f offset,
+    Vec3f rotation,
     List<BakedModelCube> cubes,
     List<BakedModelPart> children) {
 
   public BakedModelPart {
     Objects.requireNonNull(name, "name");
-    offset = Objects.requireNonNull(offset, "offset").clone();
-    rotation = Objects.requireNonNull(rotation, "rotation").clone();
+    Objects.requireNonNull(offset, "offset");
+    Objects.requireNonNull(rotation, "rotation");
     cubes = List.copyOf(Objects.requireNonNull(cubes, "cubes"));
     children = List.copyOf(Objects.requireNonNull(children, "children"));
   }

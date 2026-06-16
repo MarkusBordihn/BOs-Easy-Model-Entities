@@ -24,12 +24,14 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
 public record EasyModelRenderState(
     BakedModel bakedModel,
     ResourceLocation texture,
+    Map<Integer, ResourceLocation> textures,
     float scale,
     float shadowRadius,
     ModelBodyType bodyType,
@@ -43,6 +45,30 @@ public record EasyModelRenderState(
     Objects.requireNonNull(texture, "texture");
     Objects.requireNonNull(bodyType, "bodyType");
     Objects.requireNonNull(animation, "animation");
+    textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
     validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
+  }
+
+  public EasyModelRenderState(
+      BakedModel bakedModel,
+      ResourceLocation texture,
+      float scale,
+      float shadowRadius,
+      ModelBodyType bodyType,
+      ModelAnimationSettings animation,
+      boolean fallbackModel,
+      boolean fallbackTexture,
+      List<ModelRenderProfileValidationIssue> validationIssues) {
+    this(
+        bakedModel,
+        texture,
+        Map.of(),
+        scale,
+        shadowRadius,
+        bodyType,
+        animation,
+        fallbackModel,
+        fallbackTexture,
+        validationIssues);
   }
 }

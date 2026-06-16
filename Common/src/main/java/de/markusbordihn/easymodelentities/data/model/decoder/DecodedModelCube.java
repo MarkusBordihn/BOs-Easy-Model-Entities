@@ -19,44 +19,48 @@
 package de.markusbordihn.easymodelentities.data.model.decoder;
 
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import java.util.Objects;
 
 public record DecodedModelCube(
     int[] uvOffset,
     ModelCubeFaceUvs faceUvs,
-    float[] position,
-    float[] dimensions,
+    Vec3f position,
+    Vec3f dimensions,
     boolean mirror,
     String name,
-    float[] rotationOrigin,
-    float[] rotation,
-    float[] rotatedPosition) {
+    Vec3f rotationOrigin,
+    Vec3f rotation,
+    Vec3f rotatedPosition,
+    int textureIndex) {
 
   public DecodedModelCube {
     Objects.requireNonNull(name, "name");
     Objects.requireNonNull(faceUvs, "faceUvs");
+    Objects.requireNonNull(position, "position");
+    Objects.requireNonNull(dimensions, "dimensions");
+    Objects.requireNonNull(rotationOrigin, "rotationOrigin");
+    Objects.requireNonNull(rotation, "rotation");
+    Objects.requireNonNull(rotatedPosition, "rotatedPosition");
     uvOffset = uvOffset.clone();
-    position = position.clone();
-    dimensions = dimensions.clone();
-    rotationOrigin = rotationOrigin.clone();
-    rotation = rotation.clone();
-    rotatedPosition = rotatedPosition.clone();
   }
 
-  public DecodedModelCube(int[] uvOffset, float[] position, float[] dimensions, boolean mirror) {
+  public DecodedModelCube(int[] uvOffset, Vec3f position, Vec3f dimensions, boolean mirror) {
     this(
         uvOffset,
-        ModelCubeFaceUvs.fromBoxUv(uvOffset, dimensions),
+        ModelCubeFaceUvs.fromBoxUv(
+            uvOffset, new float[] {dimensions.x(), dimensions.y(), dimensions.z()}),
         position,
         dimensions,
         mirror,
         "cube",
-        new float[] {0.0f, 0.0f, 0.0f},
-        new float[] {0.0f, 0.0f, 0.0f},
-        position);
+        Vec3f.ZERO,
+        Vec3f.ZERO,
+        position,
+        0);
   }
 
   public boolean hasRotation() {
-    return this.rotation[0] != 0.0f || this.rotation[1] != 0.0f || this.rotation[2] != 0.0f;
+    return !this.rotation.isZero();
   }
 }

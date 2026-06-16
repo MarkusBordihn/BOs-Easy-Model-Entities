@@ -28,12 +28,23 @@ public record DecodedModel(
     int textureWidth,
     int textureHeight,
     List<DecodedModelPart> rootParts,
+    List<DecodedTexture> textures,
     List<ModelRenderProfileValidationIssue> validationIssues) {
 
   public DecodedModel {
     Objects.requireNonNull(modelId, "modelId");
     rootParts = List.copyOf(Objects.requireNonNull(rootParts, "rootParts"));
+    textures = List.copyOf(Objects.requireNonNull(textures, "textures"));
     validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
+  }
+
+  public DecodedModel(
+      ResourceLocation modelId,
+      int textureWidth,
+      int textureHeight,
+      List<DecodedModelPart> rootParts,
+      List<ModelRenderProfileValidationIssue> validationIssues) {
+    this(modelId, textureWidth, textureHeight, rootParts, List.of(), validationIssues);
   }
 
   public int boneCount() {

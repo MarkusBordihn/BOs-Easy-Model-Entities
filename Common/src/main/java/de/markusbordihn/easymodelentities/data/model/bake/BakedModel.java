@@ -19,15 +19,29 @@
 package de.markusbordihn.easymodelentities.data.model.bake;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
 public record BakedModel(
-    ResourceLocation modelId, int textureWidth, int textureHeight, List<BakedModelPart> rootParts) {
+    ResourceLocation modelId,
+    int textureWidth,
+    int textureHeight,
+    List<BakedModelPart> rootParts,
+    Map<Integer, ResourceLocation> textures) {
 
   public BakedModel {
     Objects.requireNonNull(modelId, "modelId");
     rootParts = List.copyOf(Objects.requireNonNull(rootParts, "rootParts"));
+    textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
+  }
+
+  public BakedModel(
+      ResourceLocation modelId,
+      int textureWidth,
+      int textureHeight,
+      List<BakedModelPart> rootParts) {
+    this(modelId, textureWidth, textureHeight, rootParts, Map.of());
   }
 
   public int partCount() {

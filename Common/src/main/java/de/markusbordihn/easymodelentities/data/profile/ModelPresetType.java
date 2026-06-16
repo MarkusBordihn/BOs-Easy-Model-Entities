@@ -42,6 +42,8 @@ public enum ModelPresetType {
   WINGED_STILL,
   WINGED_WANDERING;
 
+  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
   public static Optional<ModelPresetType> bySerializedName(String serializedName) {
     if (serializedName == null) {
       return Optional.empty();
@@ -58,7 +60,7 @@ public enum ModelPresetType {
   }
 
   public String getSerializedName() {
-    return this.name().toLowerCase(Locale.ROOT);
+    return this.serializedName;
   }
 
   public boolean isCustom() {

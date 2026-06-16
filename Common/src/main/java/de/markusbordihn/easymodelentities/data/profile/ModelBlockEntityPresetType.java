@@ -28,6 +28,8 @@ public enum ModelBlockEntityPresetType {
   ANIMATED,
   ANIMATED_RANDOMLY;
 
+  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
   public static Optional<ModelBlockEntityPresetType> bySerializedName(String serializedName) {
     if (serializedName == null) {
       return Optional.empty();
@@ -44,7 +46,7 @@ public enum ModelBlockEntityPresetType {
   }
 
   public String getSerializedName() {
-    return this.name().toLowerCase(Locale.ROOT);
+    return this.serializedName;
   }
 
   public boolean hasServerTick() {

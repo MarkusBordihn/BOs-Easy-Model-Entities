@@ -18,6 +18,9 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
+import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
+import de.markusbordihn.easymodelentities.data.model.ModelPartType;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.*;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
@@ -33,20 +36,25 @@ public final class ModelFallbackFactory {
   public static BakedModel createFallback(ResourceLocation modelId, float width, float height) {
     float cubeWidth = Math.max(width, 0.1f) * 16.0f;
     float cubeHeight = Math.max(height, 0.1f) * 16.0f;
+    int[] uvOffset = new int[] {0, 0};
+    ModelCubeFaceUvs faceUvs =
+        ModelCubeFaceUvs.fromBoxUv(uvOffset, new float[] {cubeWidth, cubeHeight, cubeWidth})
+            .scale(16.0f, 16.0f);
     return new BakedModel(
         modelId,
         16,
         16,
         List.of(
             new BakedModelPart(
-                "root",
-                new float[] {0.0f, 24.0f, 0.0f},
-                new float[] {0.0f, 0.0f, 0.0f},
+                ModelPartType.ROOT.getTagName(),
+                new Vec3f(0.0f, 24.0f, 0.0f),
+                Vec3f.ZERO,
                 List.of(
                     new BakedModelCube(
-                        new int[] {0, 0},
-                        new float[] {-cubeWidth / 2.0f, -cubeHeight, -cubeWidth / 2.0f},
-                        new float[] {cubeWidth, cubeHeight, cubeWidth},
+                        uvOffset,
+                        faceUvs,
+                        new Vec3f(-cubeWidth / 2.0f, -cubeHeight, -cubeWidth / 2.0f),
+                        new Vec3f(cubeWidth, cubeHeight, cubeWidth),
                         false)),
                 List.of())));
   }

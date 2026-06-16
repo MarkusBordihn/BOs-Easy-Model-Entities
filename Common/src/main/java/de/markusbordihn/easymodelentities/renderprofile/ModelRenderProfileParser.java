@@ -33,8 +33,10 @@ import de.markusbordihn.easymodelentities.json.JsonValues;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
@@ -49,6 +51,7 @@ public final class ModelRenderProfileParser {
   private static final String BODY_TYPE_FIELD = "body_type";
   private static final String MODEL_FIELD = "model";
   private static final String TEXTURE_FIELD = "texture";
+  private static final String TEXTURES_FIELD = "textures";
   private static final String RENDERING_FIELD = "rendering";
   private static final String SCALE_FIELD = "scale";
   private static final String SHADOW_RADIUS_FIELD = "shadow_radius";
@@ -154,6 +157,7 @@ public final class ModelRenderProfileParser {
             ModelResourcePaths.defaultTextureId(expectedId),
             TEXTURE_FIELD,
             issues);
+    Map<Integer, ResourceLocation> textures = parseTextures(rawProfile.textures, issues);
     ModelRenderSettings renderSettings =
         parseRenderSettings(rawProfile.rendering, resolvedPresetType, issues);
     ModelAnimationSettings animationSettings =
@@ -166,6 +170,7 @@ public final class ModelRenderProfileParser {
         bodyType == null ? resolvedPresetType.defaultBodyType() : bodyType,
         model == null ? ModelResourcePaths.defaultModelId(expectedId) : model,
         texture == null ? ModelResourcePaths.defaultTextureId(expectedId) : texture,
+        textures,
         renderSettings,
         animationSettings,
         ModelRenderProfileStatus.statusForIssues(issues),
@@ -444,6 +449,52 @@ public final class ModelRenderProfileParser {
         (issueField, message) -> addIssue(issues, status, issueField, message));
   }
 
+  private static Map<Integer, ResourceLocation> parseTextures(
+      JsonElement value, List<ModelRenderProfileValidationIssue> issues) {
+    if (value == null || value.isJsonNull()) {
+      return Map.of();
+    }
+    if (!value.isJsonObject()) {
+      addIssue(
+          issues,
+          ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION,
+          TEXTURES_FIELD,
+          "Field " + TEXTURES_FIELD + " must be an object.");
+      return Map.of();
+    }
+
+    Map<Integer, ResourceLocation> textures = new LinkedHashMap<>();
+    for (Map.Entry<String, JsonElement> entry : value.getAsJsonObject().entrySet()) {
+      String field = TEXTURES_FIELD + "." + entry.getKey();
+      int index;
+      try {
+        index = Integer.parseInt(entry.getKey().trim());
+      } catch (NumberFormatException exception) {
+        addIssue(
+            issues,
+            ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION,
+            field,
+            "Texture key " + entry.getKey() + " must be an integer index.");
+        continue;
+      }
+      if (index < 0) {
+        addIssue(
+            issues,
+            ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION,
+            field,
+            "Texture index " + index + " must not be negative.");
+        continue;
+      }
+      ResourceLocation texture =
+          parseOptionalResourceLocation(entry.getValue(), null, field, issues);
+      if (texture != null) {
+        textures.put(index, texture);
+      }
+    }
+
+    return textures;
+  }
+
   private static ResourceLocation parseOptionalResourceLocation(
       JsonElement value,
       ResourceLocation defaultValue,
@@ -566,6 +617,9 @@ public final class ModelRenderProfileParser {
 
     @SerializedName(TEXTURE_FIELD)
     JsonElement texture;
+
+    @SerializedName(TEXTURES_FIELD)
+    JsonElement textures;
 
     @SerializedName(RENDERING_FIELD)
     JsonElement rendering;

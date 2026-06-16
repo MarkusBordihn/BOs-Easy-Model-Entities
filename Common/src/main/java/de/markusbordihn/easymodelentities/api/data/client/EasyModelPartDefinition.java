@@ -18,14 +18,16 @@
 
 package de.markusbordihn.easymodelentities.api.data.client;
 
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import java.util.List;
+import java.util.Objects;
 
 public record EasyModelPartDefinition(
-    String name, float[] offset, float[] rotation, List<EasyModelPartDefinition> children) {
+    String name, Vec3f offset, Vec3f rotation, List<EasyModelPartDefinition> children) {
 
   public EasyModelPartDefinition {
-    offset = offset.clone();
-    rotation = rotation.clone();
+    Objects.requireNonNull(offset, "offset");
+    Objects.requireNonNull(rotation, "rotation");
     children = List.copyOf(children);
   }
 }

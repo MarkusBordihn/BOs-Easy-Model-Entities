@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.data.renderprofile;
 
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
@@ -31,6 +32,7 @@ public record EasyModelRenderProfile(
     ModelBodyType bodyType,
     ResourceLocation model,
     ResourceLocation texture,
+    Map<Integer, ResourceLocation> textures,
     ModelRenderSettings rendering,
     ModelAnimationSettings animation,
     ModelRenderProfileStatus status,
@@ -46,7 +48,33 @@ public record EasyModelRenderProfile(
     Objects.requireNonNull(rendering, "rendering");
     Objects.requireNonNull(animation, "animation");
     Objects.requireNonNull(status, "status");
+    textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
     validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
+  }
+
+  public EasyModelRenderProfile(
+      ResourceLocation id,
+      String schemaVersion,
+      String version,
+      ModelBodyType bodyType,
+      ResourceLocation model,
+      ResourceLocation texture,
+      ModelRenderSettings rendering,
+      ModelAnimationSettings animation,
+      ModelRenderProfileStatus status,
+      List<ModelRenderProfileValidationIssue> validationIssues) {
+    this(
+        id,
+        schemaVersion,
+        version,
+        bodyType,
+        model,
+        texture,
+        Map.of(),
+        rendering,
+        animation,
+        status,
+        validationIssues);
   }
 
   public boolean isActive() {
@@ -79,6 +107,7 @@ public record EasyModelRenderProfile(
         this.bodyType,
         this.model,
         this.texture,
+        this.textures,
         this.rendering,
         this.animation,
         ModelRenderProfileStatus.statusForIssues(validationIssues),

@@ -26,6 +26,8 @@ public enum ModelMovementType {
   GROUND,
   STATIC;
 
+  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
   public static Optional<ModelMovementType> bySerializedName(String serializedName) {
     if (serializedName == null) {
       return Optional.empty();
@@ -42,7 +44,7 @@ public enum ModelMovementType {
   }
 
   public String getSerializedName() {
-    return this.name().toLowerCase(Locale.ROOT);
+    return this.serializedName;
   }
 
   public boolean isGround() {

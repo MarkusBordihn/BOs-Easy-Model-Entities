@@ -32,6 +32,8 @@ public enum ModelBodyType {
   CUBOID,
   FLOATING;
 
+  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
   public static ModelBodyType bySerializedName(String serializedName) {
     if (serializedName == null) {
       return STATIC;
@@ -47,6 +49,6 @@ public enum ModelBodyType {
   }
 
   public String getSerializedName() {
-    return this.name().toLowerCase(Locale.ROOT);
+    return this.serializedName;
   }
 }

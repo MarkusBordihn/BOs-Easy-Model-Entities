@@ -19,11 +19,19 @@
 
 package de.markusbordihn.easymodelentities.data.model;
 
+import java.util.Locale;
+
 public enum ModelCubeFace {
   NORTH,
   EAST,
   SOUTH,
   WEST,
   UP,
-  DOWN
+  DOWN;
+
+  private final String tagName = this.name().toLowerCase(Locale.ROOT);
+
+  public String getTagName() {
+    return this.tagName;
+  }
 }
