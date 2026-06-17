@@ -54,30 +54,49 @@ public class EasyModelHostEntityFactory implements EasyModelEntityFactory {
       return Optional.empty();
     }
 
-    EntityType<? extends EasyModelHostEntity> entityType =
-        entityType(profile.get().hostEntityType());
+    ResourceLocation hostEntityTypeId = profile.get().hostEntityType();
+
+    if (ModelEntityTypeIds.AQUATIC_ENTITY.equals(hostEntityTypeId)) {
+      return createAquaticEntity(level, profileId, position);
+    }
+
+    EntityType<?> entityType = entityType(hostEntityTypeId);
     if (entityType == null) {
       return Optional.empty();
     }
 
-    EasyModelHostEntity entity = entityType.create(level);
-    if (entity == null) {
-      return Optional.empty();
+    Entity entity = entityType.create(level);
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      entity.setPos(position);
+      hostEntity.setEasyModelProfileId(profileId);
+      return Optional.of(entity);
     }
-
-    entity.setPos(position);
-    entity.setEasyModelProfileId(profileId);
-    return Optional.of(entity);
+    return Optional.empty();
   }
 
-  private EntityType<? extends EasyModelHostEntity> entityType(ResourceLocation entityTypeId) {
+  private EntityType<?> entityType(ResourceLocation entityTypeId) {
     if (ModelEntityTypeIds.GROUND_ENTITY.equals(entityTypeId)) {
       return this.entityTypeProvider.groundEntityType();
     }
     if (ModelEntityTypeIds.STATIC_ENTITY.equals(entityTypeId)) {
       return this.entityTypeProvider.staticEntityType();
     }
+    if (ModelEntityTypeIds.AMPHIBIOUS_ENTITY.equals(entityTypeId)) {
+      return this.entityTypeProvider.amphibiousEntityType();
+    }
 
     return null;
+  }
+
+  private Optional<Entity> createAquaticEntity(
+      Level level, ResourceLocation profileId, Vec3 position) {
+    EntityType<EasyModelAquaticEntity> aquaticType = this.entityTypeProvider.aquaticEntityType();
+    EasyModelAquaticEntity entity = aquaticType.create(level);
+    if (entity == null) {
+      return Optional.empty();
+    }
+    entity.setPos(position);
+    entity.setEasyModelProfileId(profileId);
+    return Optional.of(entity);
   }
 }

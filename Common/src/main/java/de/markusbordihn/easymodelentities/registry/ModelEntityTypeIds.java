@@ -29,8 +29,12 @@ public final class ModelEntityTypeIds {
       new ResourceLocation(Constants.MOD_ID, "ground_entity");
   public static final ResourceLocation STATIC_ENTITY =
       new ResourceLocation(Constants.MOD_ID, "static_entity");
+  public static final ResourceLocation AQUATIC_ENTITY =
+      new ResourceLocation(Constants.MOD_ID, "aquatic_entity");
+  public static final ResourceLocation AMPHIBIOUS_ENTITY =
+      new ResourceLocation(Constants.MOD_ID, "amphibious_entity");
   public static final Set<ResourceLocation> SUPPORTED_HOST_ENTITY_TYPES =
-      Set.of(GROUND_ENTITY, STATIC_ENTITY);
+      Set.of(GROUND_ENTITY, STATIC_ENTITY, AQUATIC_ENTITY, AMPHIBIOUS_ENTITY);
 
   private ModelEntityTypeIds() {}
 

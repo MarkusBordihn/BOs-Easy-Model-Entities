@@ -430,7 +430,8 @@ public final class EasyModelProfileParser {
     boolean randomStroll =
         optionalBoolean(
             rawBehavior == null ? null : rawBehavior.randomStroll,
-            movementType.isGround() && mode == ModelBehaviorMode.AMBIENT,
+            (movementType.isGround() || movementType.isAmphibious() || movementType.isWater())
+                && mode == ModelBehaviorMode.AMBIENT,
             BEHAVIOR_RANDOM_STROLL_FIELD,
             issues);
     return new ModelBehaviorSettings(mode, lookAtPlayers, randomStroll);
@@ -633,11 +634,20 @@ public final class EasyModelProfileParser {
 
   private static ModelEntitySettings defaultEntity(ModelPresetType presetType) {
     ResourceLocation entityType =
-        presetType.isMoving() || presetType == ModelPresetType.STATIC
-            ? ModelEntityTypeIds.GROUND_ENTITY
-            : ModelEntityTypeIds.STATIC_ENTITY;
+        switch (presetType) {
+          case AQUATIC_STILL, AQUATIC_SWIMMING -> ModelEntityTypeIds.AQUATIC_ENTITY;
+          case AMPHIBIOUS_STILL, AMPHIBIOUS_WANDERING -> ModelEntityTypeIds.AMPHIBIOUS_ENTITY;
+          default ->
+              presetType.isMoving() || presetType == ModelPresetType.STATIC
+                  ? ModelEntityTypeIds.GROUND_ENTITY
+                  : ModelEntityTypeIds.STATIC_ENTITY;
+        };
     ModelMovementType movementType =
-        presetType.isMoving() ? ModelMovementType.GROUND : ModelMovementType.STATIC;
+        switch (presetType) {
+          case AQUATIC_STILL, AQUATIC_SWIMMING -> ModelMovementType.WATER;
+          case AMPHIBIOUS_STILL, AMPHIBIOUS_WANDERING -> ModelMovementType.AMPHIBIOUS;
+          default -> presetType.isMoving() ? ModelMovementType.GROUND : ModelMovementType.STATIC;
+        };
     return new ModelEntitySettings(entityType, movementType, presetType.defaultBodyType());
   }
 
@@ -654,6 +664,7 @@ public final class EasyModelProfileParser {
     return switch (presetType) {
       case QUADRUPED_STILL, QUADRUPED_WANDERING -> new ModelDimensions(0.9f, 0.9f, 0.6f);
       case AQUATIC_STILL, AQUATIC_SWIMMING -> new ModelDimensions(0.7f, 0.4f, 0.25f);
+      case AMPHIBIOUS_STILL, AMPHIBIOUS_WANDERING -> new ModelDimensions(0.9f, 0.6f, 0.4f);
       case WINGED_STILL, WINGED_WANDERING -> new ModelDimensions(0.6f, 0.9f, 0.6f);
       case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING ->
           new ModelDimensions(0.6f, 0.8f, 0.6f);

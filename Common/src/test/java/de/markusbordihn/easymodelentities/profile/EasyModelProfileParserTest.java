@@ -156,7 +156,12 @@ class EasyModelProfileParserTest {
   @Test
   void parsesVanillaStylePresetFamilies() {
     assertPresetDefaults(
-        "aquatic_swimming", ModelEntityTypeIds.GROUND_ENTITY, ModelBodyType.AQUATIC);
+        "aquatic_swimming", ModelEntityTypeIds.AQUATIC_ENTITY, ModelBodyType.AQUATIC);
+    assertPresetDefaults("aquatic_still", ModelEntityTypeIds.AQUATIC_ENTITY, ModelBodyType.AQUATIC);
+    assertPresetDefaults(
+        "amphibious_wandering", ModelEntityTypeIds.AMPHIBIOUS_ENTITY, ModelBodyType.AMPHIBIOUS);
+    assertPresetDefaults(
+        "amphibious_still", ModelEntityTypeIds.AMPHIBIOUS_ENTITY, ModelBodyType.AMPHIBIOUS);
     assertPresetDefaults(
         "winged_wandering", ModelEntityTypeIds.GROUND_ENTITY, ModelBodyType.WINGED);
     assertPresetDefaults(

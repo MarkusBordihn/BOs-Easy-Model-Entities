@@ -19,37 +19,26 @@
 
 package de.markusbordihn.easymodelentities.entity;
 
-import de.markusbordihn.easymodelentities.Constants;
-import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
-import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
-import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
-import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
-import java.util.Objects;
-import java.util.Optional;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 
-public abstract class EasyModelHostEntity extends PathfinderMob {
+public abstract class EasyModelHostEntity extends PathfinderMob implements EasyModelEntityHost {
 
-  public static final float FALLBACK_WIDTH = 0.6f;
-  public static final float FALLBACK_HEIGHT = 1.8f;
-  public static final float FALLBACK_EYE_HEIGHT = 1.62f;
-  public static final ResourceLocation MISSING_PROFILE_ID =
-      new ResourceLocation(Constants.MOD_ID, "missing");
+  public static final float FALLBACK_WIDTH = EasyModelHostSupport.FALLBACK_WIDTH;
+  public static final float FALLBACK_HEIGHT = EasyModelHostSupport.FALLBACK_HEIGHT;
+  public static final float FALLBACK_EYE_HEIGHT = EasyModelHostSupport.FALLBACK_EYE_HEIGHT;
+  public static final ResourceLocation MISSING_PROFILE_ID = EasyModelHostSupport.MISSING_PROFILE_ID;
 
   private static final EntityDataAccessor<String> PROFILE_ID =
       EasyModelEntityDataSerializers.defineId(
@@ -76,182 +65,99 @@ public abstract class EasyModelHostEntity extends PathfinderMob {
       EasyModelEntityDataSerializers.defineId(
           EasyModelHostEntity.class, EasyModelEntityDataSerializers.ANIMATION_STATE);
 
+  private static final EasyModelHostFields FIELDS =
+      new EasyModelHostFields(
+          PROFILE_ID,
+          RENDER_PROFILE_ID,
+          VERSION,
+          WIDTH,
+          HEIGHT,
+          EYE_HEIGHT,
+          BODY_TYPE,
+          ANIMATION_STATE);
+
   protected EasyModelHostEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
     super(entityType, level);
     this.setPersistenceRequired();
   }
 
   public static AttributeSupplier.Builder createAttributes() {
-    return Mob.createMobAttributes()
-        .add(Attributes.MAX_HEALTH, 10.0)
-        .add(Attributes.MOVEMENT_SPEED, 0.0)
-        .add(Attributes.FOLLOW_RANGE, 16.0);
-  }
-
-  private static Optional<EasyModelEntityProfile> activeProfile(ResourceLocation profileId) {
-    return EasyModelServices.profileService()
-        .getProfile(profileId)
-        .filter(EasyModelEntityProfile::isActive)
-        .filter(profile -> profile.modelType() == ModelType.ENTITY);
+    return EasyModelHostSupport.createAttributes();
   }
 
   @Override
   protected void defineSynchedData() {
     super.defineSynchedData();
-    EasyModelRuntimeContract contract = EasyModelRuntimeContract.fallback(MISSING_PROFILE_ID);
-    this.entityData.define(PROFILE_ID, contract.profileId().toString());
-    this.entityData.define(RENDER_PROFILE_ID, contract.renderProfileId().toString());
-    this.entityData.define(VERSION, contract.version());
-    this.entityData.define(WIDTH, contract.width());
-    this.entityData.define(HEIGHT, contract.height());
-    this.entityData.define(EYE_HEIGHT, contract.eyeHeight());
-    this.entityData.define(BODY_TYPE, contract.bodyType());
-    this.entityData.define(ANIMATION_STATE, contract.animationState());
+    EasyModelHostSupport.defineSynchedData(this.entityData, FIELDS);
   }
 
   @Override
   public EntityDimensions getDimensions(Pose pose) {
-    return EntityDimensions.scalable(this.entityData.get(WIDTH), this.entityData.get(HEIGHT));
+    return EasyModelHostSupport.getDimensions(this.entityData, FIELDS);
   }
 
   @Override
   protected float getStandingEyeHeight(Pose pose, EntityDimensions entityDimensions) {
-    return this.entityData.get(EYE_HEIGHT);
+    return EasyModelHostSupport.getStandingEyeHeight(this.entityData, FIELDS);
   }
 
   @Override
   public void addAdditionalSaveData(CompoundTag compoundTag) {
     super.addAdditionalSaveData(compoundTag);
-    compoundTag.putString(EasyModelHostPersistence.PROFILE_ID_TAG, this.entityData.get(PROFILE_ID));
-    compoundTag.putString(
-        EasyModelHostPersistence.RENDER_PROFILE_ID_TAG, this.entityData.get(RENDER_PROFILE_ID));
-    compoundTag.putString(EasyModelHostPersistence.VERSION_TAG, this.entityData.get(VERSION));
-    compoundTag.putString(
-        EasyModelHostPersistence.BODY_TYPE_TAG, this.entityData.get(BODY_TYPE).getSerializedName());
-    compoundTag.putString(
-        EasyModelHostPersistence.ANIMATION_STATE_TAG,
-        this.entityData.get(ANIMATION_STATE).getSerializedName());
+    EasyModelHostSupport.addAdditionalSaveData(compoundTag, this.entityData, FIELDS);
   }
 
   @Override
   public void readAdditionalSaveData(CompoundTag compoundTag) {
     super.readAdditionalSaveData(compoundTag);
-
-    EasyModelHostPersistence.State state = EasyModelHostPersistence.read(compoundTag);
-    ResourceLocation profileId = state.profileId();
-    ResourceLocation renderProfileId = state.renderProfileId();
-    String version = state.version();
-    ModelBodyType bodyType = state.bodyType();
-    EasyModelAnimationState animationState = state.animationState();
-
-    if (profileId == null) {
-      applyRuntimeContract(EasyModelRuntimeContract.fallback(MISSING_PROFILE_ID, animationState));
-      return;
-    }
-
-    Optional<EasyModelEntityProfile> profile = activeProfile(profileId);
-    if (profile.isPresent()) {
-      applyProfile(profile.get(), animationState);
-      return;
-    }
-
-    applyRuntimeContract(
-        new EasyModelRuntimeContract(
-            profileId,
-            renderProfileId == null ? profileId : renderProfileId,
-            Objects.requireNonNullElse(version, ""),
-            FALLBACK_WIDTH,
-            FALLBACK_HEIGHT,
-            FALLBACK_EYE_HEIGHT,
-            bodyType,
-            animationState));
+    EasyModelHostSupport.readAdditionalSaveData(this, compoundTag, FIELDS);
   }
 
+  @Override
   public ResourceLocation getEasyModelProfileId() {
-    return EasyModelHostPersistence.parseResourceLocationOrMissing(
-        this.entityData.get(PROFILE_ID), MISSING_PROFILE_ID);
+    return EasyModelHostSupport.getProfileId(this.entityData, FIELDS);
   }
 
+  @Override
   public void setEasyModelProfileId(ResourceLocation profileId) {
-    Objects.requireNonNull(profileId, "profileId");
-    Optional<EasyModelEntityProfile> profile = activeProfile(profileId);
-    if (profile.isPresent()) {
-      applyProfile(profile.get(), this.entityData.get(ANIMATION_STATE));
-      return;
-    }
-
-    applyRuntimeContract(
-        EasyModelRuntimeContract.fallback(profileId, this.entityData.get(ANIMATION_STATE)));
+    EasyModelHostSupport.setProfileId(this, FIELDS, profileId);
   }
 
+  @Override
   public ResourceLocation getEasyModelRenderProfileId() {
-    return EasyModelHostPersistence.parseResourceLocationOrMissing(
-        this.entityData.get(RENDER_PROFILE_ID), MISSING_PROFILE_ID);
+    return EasyModelHostSupport.getRenderProfileId(this.entityData, FIELDS);
   }
 
+  @Override
   public String getEasyModelVersion() {
-    return this.entityData.get(VERSION);
+    return EasyModelHostSupport.getVersion(this.entityData, FIELDS);
   }
 
+  @Override
   public EasyModelAnimationState getEasyModelAnimationState() {
-    return this.entityData.get(ANIMATION_STATE);
+    return EasyModelHostSupport.getAnimationState(this.entityData, FIELDS);
   }
 
+  @Override
   public void setEasyModelAnimationState(EasyModelAnimationState animationState) {
-    this.entityData.set(ANIMATION_STATE, Objects.requireNonNull(animationState, "animationState"));
+    EasyModelHostSupport.setAnimationState(this.entityData, FIELDS, animationState);
   }
 
+  @Override
   public EasyModelRuntimeContract getEasyModelRuntimeContract() {
-    return new EasyModelRuntimeContract(
-        getEasyModelProfileId(),
-        getEasyModelRenderProfileId(),
-        getEasyModelVersion(),
-        this.entityData.get(WIDTH),
-        this.entityData.get(HEIGHT),
-        this.entityData.get(EYE_HEIGHT),
-        this.entityData.get(BODY_TYPE),
-        getEasyModelAnimationState());
+    return EasyModelHostSupport.getRuntimeContract(this.entityData, FIELDS);
   }
 
+  @Override
   public boolean isEasyModelRandomStrollEnabled() {
     return shouldRandomStroll();
   }
 
   protected boolean shouldLookAtPlayers() {
-    return activeProfile(getEasyModelProfileId())
-        .map(profile -> profile.behavior().lookAtPlayers())
-        .orElse(false);
+    return EasyModelHostSupport.shouldLookAtPlayers(this.entityData, FIELDS);
   }
 
   protected boolean shouldRandomStroll() {
-    return activeProfile(getEasyModelProfileId())
-        .map(
-            profile ->
-                profile.behavior().mode() == ModelBehaviorMode.AMBIENT
-                    && profile.behavior().randomStroll())
-        .orElse(false);
-  }
-
-  private void applyProfile(
-      EasyModelEntityProfile profile, EasyModelAnimationState animationState) {
-    applyRuntimeContract(EasyModelRuntimeContract.fromProfile(profile, animationState));
-    this.setNoGravity(!profile.movement().gravity());
-    this.setMaxUpStep(profile.movement().stepHeight());
-
-    if (this.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-      this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(profile.movement().speed());
-    }
-  }
-
-  private void applyRuntimeContract(EasyModelRuntimeContract contract) {
-    this.entityData.set(PROFILE_ID, contract.profileId().toString());
-    this.entityData.set(RENDER_PROFILE_ID, contract.renderProfileId().toString());
-    this.entityData.set(VERSION, contract.version());
-    this.entityData.set(WIDTH, contract.width());
-    this.entityData.set(HEIGHT, contract.height());
-    this.entityData.set(EYE_HEIGHT, contract.eyeHeight());
-    this.entityData.set(BODY_TYPE, contract.bodyType());
-    this.entityData.set(ANIMATION_STATE, contract.animationState());
-    this.refreshDimensions();
+    return EasyModelHostSupport.shouldRandomStroll(this.entityData, FIELDS);
   }
 }

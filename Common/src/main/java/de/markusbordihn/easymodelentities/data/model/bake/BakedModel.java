@@ -28,7 +28,8 @@ public record BakedModel(
     int textureWidth,
     int textureHeight,
     List<BakedModelPart> rootParts,
-    Map<Integer, ResourceLocation> textures) {
+    Map<Integer, ResourceLocation> textures,
+    boolean cullBackfaces) {
 
   public BakedModel {
     Objects.requireNonNull(modelId, "modelId");
@@ -41,7 +42,7 @@ public record BakedModel(
       int textureWidth,
       int textureHeight,
       List<BakedModelPart> rootParts) {
-    this(modelId, textureWidth, textureHeight, rootParts, Map.of());
+    this(modelId, textureWidth, textureHeight, rootParts, Map.of(), false);
   }
 
   public int partCount() {

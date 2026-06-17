@@ -31,7 +31,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
+import de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility;
 import de.markusbordihn.easymodelentities.data.model.FaceUv;
+import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
@@ -41,7 +43,9 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelGaitType;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
@@ -114,6 +118,53 @@ class EasyModelBakedModelRendererTest {
     return context.get().automaticTransform();
   }
 
+  private static EasyModelPartTransform captureAutomaticTransform(
+      String partName,
+      ModelBodyType bodyType,
+      ModelGaitType gait,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      float airborneAmount) {
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "capture"),
+            64,
+            64,
+            List.of(new BakedModelPart(partName, Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())));
+    EasyModelRenderState renderState =
+        new EasyModelRenderState(
+            bakedModel,
+            new ResourceLocation("example", "textures/entity/uv_model.png"),
+            1.0f,
+            0.3f,
+            bodyType,
+            new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f, 1.0f, gait),
+            false,
+            false,
+            List.of());
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        airborneAmount,
+        animationContext -> {
+          context.set(animationContext);
+          return EasyModelPartTransform.NONE;
+        },
+        EasyModelPartAnimationMode.ADD,
+        new PoseStack(),
+        vertexConsumer,
+        0);
+
+    return context.get().automaticTransform();
+  }
+
   private static void assertUv(
       List<Float> uValues, List<Float> vValues, int index, float expectedU, float expectedV) {
     assertEquals(expectedU, uValues.get(index), 0.0001f);
@@ -131,6 +182,149 @@ class EasyModelBakedModelRendererTest {
     assertEquals(expectedX, xValues.get(index), 0.0001f);
     assertEquals(expectedY, yValues.get(index), 0.0001f);
     assertEquals(expectedZ, zValues.get(index), 0.0001f);
+  }
+
+  @Test
+  void wingsFoldAgainstBodyWhenGrounded() {
+    EasyModelPartTransform leftWing =
+        captureAutomaticTransform(
+            "left_wing", ModelBodyType.WINGED, ModelGaitType.NATURAL, 0.0f, 0.0f, 0.0f, 0.0f);
+    EasyModelPartTransform rightWing =
+        captureAutomaticTransform(
+            "right_wing", ModelBodyType.WINGED, ModelGaitType.NATURAL, 0.0f, 0.0f, 0.0f, 0.0f);
+
+    assertEquals(-1.4f, leftWing.zRotation(), 0.001f);
+    assertEquals(1.4f, rightWing.zRotation(), 0.001f);
+  }
+
+  @Test
+  void wingedHumanoidWingsStaySpreadWhenGrounded() {
+    EasyModelPartTransform leftWing =
+        captureAutomaticTransform(
+            "left_wing",
+            ModelBodyType.WINGED_HUMANOID,
+            ModelGaitType.NATURAL,
+            0.0f,
+            0.0f,
+            0.0f,
+            0.0f);
+
+    assertEquals(0.0f, leftWing.zRotation(), 0.001f);
+  }
+
+  @Test
+  void wingsSpreadAndFlapWhenAirborne() {
+    EasyModelPartTransform grounded =
+        captureAutomaticTransform(
+            "left_wing", ModelBodyType.WINGED, ModelGaitType.NATURAL, 0.0f, 0.0f, 0.0f, 0.0f);
+    EasyModelPartTransform airborne =
+        captureAutomaticTransform(
+            "left_wing", ModelBodyType.WINGED, ModelGaitType.NATURAL, 0.0f, 0.0f, 0.0f, 1.0f);
+
+    assertEquals(-1.4f, grounded.zRotation(), 0.001f);
+    assertEquals(0.9f, airborne.zRotation(), 0.001f);
+  }
+
+  @Test
+  void quadrupedLegSwingStaysVisibleAtLowSpeed() {
+    EasyModelPartTransform slowStep =
+        captureAutomaticTransform(
+            "front_left_leg",
+            ModelBodyType.QUADRUPED,
+            ModelGaitType.NATURAL,
+            0.0f,
+            0.05f,
+            0.0f,
+            0.0f);
+
+    assertEquals((float) (Math.PI / 4.0), slowStep.xRotation(), 0.001f);
+  }
+
+  @Test
+  void gaitScalesQuadrupedStride() {
+    EasyModelPartTransform feline =
+        captureAutomaticTransform(
+            "front_left_leg",
+            ModelBodyType.QUADRUPED,
+            ModelGaitType.FELINE,
+            0.0f,
+            0.04f,
+            0.0f,
+            0.0f);
+    EasyModelPartTransform ungulate =
+        captureAutomaticTransform(
+            "front_left_leg",
+            ModelBodyType.QUADRUPED,
+            ModelGaitType.UNGULATE,
+            0.0f,
+            0.04f,
+            0.0f,
+            0.0f);
+
+    assertEquals(0.7f * (float) (Math.PI / 4.0), feline.xRotation(), 0.001f);
+    assertEquals(1.3f * (float) (Math.PI / 4.0), ungulate.xRotation(), 0.001f);
+  }
+
+  @Test
+  void culledFacesAreNotEmitted() {
+    CubeFaceVisibility visibility =
+        CubeFaceVisibility.ALL.without(ModelCubeFace.NORTH).without(ModelCubeFace.DOWN);
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "culled"),
+            64,
+            64,
+            List.of(
+                new BakedModelPart(
+                    "root",
+                    Vec3f.ZERO,
+                    Vec3f.ZERO,
+                    List.of(
+                        new BakedModelCube(
+                            new int[] {0, 0},
+                            faceUvs(),
+                            Vec3f.ZERO,
+                            new Vec3f(1.0f, 1.0f, 1.0f),
+                            false,
+                            0,
+                            visibility)),
+                    List.of())));
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel, renderState(bakedModel), 0.0f, 0.0f, new PoseStack(), vertexConsumer, 0);
+
+    verify(vertexConsumer, times(16)).vertex(any(), anyFloat(), anyFloat(), anyFloat());
+  }
+
+  @Test
+  void fullyCulledCubeEmitsNothing() {
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "empty"),
+            64,
+            64,
+            List.of(
+                new BakedModelPart(
+                    "root",
+                    Vec3f.ZERO,
+                    Vec3f.ZERO,
+                    List.of(
+                        new BakedModelCube(
+                            new int[] {0, 0},
+                            faceUvs(),
+                            Vec3f.ZERO,
+                            new Vec3f(1.0f, 1.0f, 1.0f),
+                            false,
+                            0,
+                            CubeFaceVisibility.NONE)),
+                    List.of())));
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel, renderState(bakedModel), 0.0f, 0.0f, new PoseStack(), vertexConsumer, 0);
+
+    verify(vertexConsumer, times(0)).vertex(any(), anyFloat(), anyFloat(), anyFloat());
   }
 
   @Test
@@ -368,5 +562,180 @@ class EasyModelBakedModelRendererTest {
         .vertex(replacePoseCaptor.capture(), anyFloat(), anyFloat(), anyFloat());
     assertEquals(Math.cos(1.65f), addPoseCaptor.getAllValues().get(0).m11(), 0.0001f);
     assertEquals(Math.cos(0.25f), replacePoseCaptor.getValue().m11(), 0.0001f);
+  }
+
+  @Test
+  void consecutiveSameTextureCubesShareOneBufferFetch() {
+    BakedModelCube cube =
+        new BakedModelCube(
+            new int[] {0, 0},
+            faceUvs(),
+            Vec3f.ZERO,
+            new Vec3f(1.0f, 1.0f, 1.0f),
+            false,
+            0,
+            CubeFaceVisibility.ALL);
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "multi_cube"),
+            64,
+            64,
+            List.of(
+                new BakedModelPart(
+                    "root", Vec3f.ZERO, Vec3f.ZERO, List.of(cube, cube, cube), List.of())));
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    AtomicInteger fetches = new AtomicInteger();
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        new PoseStack(),
+        textureIndex -> {
+          fetches.incrementAndGet();
+          return vertexConsumer;
+        },
+        0,
+        de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD);
+
+    assertEquals(1, fetches.get(), "three same-texture cubes must fetch the buffer once");
+    verify(vertexConsumer, times(3 * 24)).vertex(any(), anyFloat(), anyFloat(), anyFloat());
+  }
+
+  @Test
+  void rendersCubeWhoseTextureReappearsAfterAnotherTexture() {
+    BakedModelCube cube0 =
+        new BakedModelCube(
+            new int[] {0, 0},
+            faceUvs(),
+            Vec3f.ZERO,
+            new Vec3f(1.0f, 1.0f, 1.0f),
+            false,
+            0,
+            de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility.ALL);
+    BakedModelCube cube1 =
+        new BakedModelCube(
+            new int[] {0, 0},
+            faceUvs(),
+            Vec3f.ZERO,
+            new Vec3f(1.0f, 1.0f, 1.0f),
+            false,
+            1,
+            de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility.ALL);
+    BakedModelPart head =
+        new BakedModelPart(
+            "head",
+            Vec3f.ZERO,
+            Vec3f.ZERO,
+            List.of(cube0),
+            List.of(
+                new BakedModelPart("Lid_r1", Vec3f.ZERO, Vec3f.ZERO, List.of(cube0), List.of()),
+                new BakedModelPart("eyes", Vec3f.ZERO, Vec3f.ZERO, List.of(cube1), List.of())));
+    BakedModelPart body =
+        new BakedModelPart(
+            "body",
+            Vec3f.ZERO,
+            Vec3f.ZERO,
+            List.of(),
+            List.of(
+                new BakedModelPart("Base_r1", Vec3f.ZERO, Vec3f.ZERO, List.of(cube0), List.of())));
+    BakedModel bakedModel =
+        new BakedModel(
+            new ResourceLocation("example", "chestling"),
+            64,
+            64,
+            List.of(
+                new BakedModelPart(
+                    "root", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of(head, body))));
+
+    SharedBuilderBufferProvider bufferProvider = new SharedBuilderBufferProvider();
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        new PoseStack(),
+        bufferProvider,
+        0,
+        de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD);
+
+    assertEquals(0, bufferProvider.droppedVertices, "no vertices may be written to a stale buffer");
+    assertEquals(4 * 24, bufferProvider.recordedVertices, "all four cubes must be rendered");
+  }
+
+  private static final class SharedBuilderBufferProvider
+      implements java.util.function.IntFunction<VertexConsumer> {
+
+    private int activeTextureIndex = -1;
+    private RecordingConsumer activeConsumer;
+    private int recordedVertices;
+    private int droppedVertices;
+
+    @Override
+    public VertexConsumer apply(int textureIndex) {
+      if (textureIndex != this.activeTextureIndex) {
+        if (this.activeConsumer != null) {
+          this.activeConsumer.valid = false;
+        }
+        this.activeConsumer = new RecordingConsumer();
+        this.activeTextureIndex = textureIndex;
+      }
+      return this.activeConsumer;
+    }
+
+    private final class RecordingConsumer implements VertexConsumer {
+      private boolean valid = true;
+
+      @Override
+      public VertexConsumer vertex(double x, double y, double z) {
+        if (this.valid) {
+          SharedBuilderBufferProvider.this.recordedVertices++;
+        } else {
+          SharedBuilderBufferProvider.this.droppedVertices++;
+        }
+        return this;
+      }
+
+      @Override
+      public VertexConsumer color(int red, int green, int blue, int alpha) {
+        return this;
+      }
+
+      @Override
+      public VertexConsumer uv(float u, float v) {
+        return this;
+      }
+
+      @Override
+      public VertexConsumer overlayCoords(int u, int v) {
+        return this;
+      }
+
+      @Override
+      public VertexConsumer uv2(int u, int v) {
+        return this;
+      }
+
+      @Override
+      public VertexConsumer normal(float x, float y, float z) {
+        return this;
+      }
+
+      @Override
+      public void endVertex() {}
+
+      @Override
+      public void defaultColor(int red, int green, int blue, int alpha) {}
+
+      @Override
+      public void unsetDefaultColor() {}
+    }
   }
 }

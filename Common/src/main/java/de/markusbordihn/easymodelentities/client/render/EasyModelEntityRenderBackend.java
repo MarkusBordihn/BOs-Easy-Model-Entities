@@ -39,10 +39,14 @@ import java.util.Objects;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
 public final class EasyModelEntityRenderBackend {
+
+  private static final float AIRBORNE_BASE = 0.35f;
+  private static final float AIRBORNE_MOTION_RANGE = 0.4f;
 
   private EasyModelEntityRenderBackend() {}
 
@@ -105,6 +109,7 @@ public final class EasyModelEntityRenderBackend {
         limbSwing(entity, partialTick),
         limbSwingAmount(entity, partialTick),
         ageInTicks,
+        airborneAmount(entity),
         safeOptions.partAnimator(),
         safeOptions.partAnimationMode(),
         poseStack,
@@ -175,6 +180,15 @@ public final class EasyModelEntityRenderBackend {
     return entity instanceof LivingEntity livingEntity
         ? Math.min(livingEntity.walkAnimation.speed(partialTick), 1.0f)
         : 0.0f;
+  }
+
+  private static float airborneAmount(Entity entity) {
+    if (!(entity instanceof LivingEntity livingEntity) || livingEntity.onGround()) {
+      return 0.0f;
+    }
+    float verticalMotion = (float) Math.abs(livingEntity.getDeltaMovement().y);
+    float motionFactor = Mth.clamp(verticalMotion / AIRBORNE_MOTION_RANGE, 0.0f, 1.0f);
+    return AIRBORNE_BASE + (1.0f - AIRBORNE_BASE) * motionFactor;
   }
 
   private static float width(Entity entity) {

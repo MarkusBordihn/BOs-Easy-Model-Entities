@@ -26,6 +26,7 @@ public enum ModelBodyType {
   BIPED,
   QUADRUPED,
   AQUATIC,
+  AMPHIBIOUS,
   WINGED,
   WINGED_HUMANOID,
   ARTHROPOD,

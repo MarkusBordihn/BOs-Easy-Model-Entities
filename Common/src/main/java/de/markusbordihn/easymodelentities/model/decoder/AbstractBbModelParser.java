@@ -23,6 +23,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility;
 import de.markusbordihn.easymodelentities.data.model.FaceUv;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
@@ -159,6 +160,50 @@ public abstract class AbstractBbModelParser {
         faceUv(faces, ModelCubeFace.DOWN.getTagName(), boxUvs.down()));
   }
 
+  private static CubeFaceVisibility parseFaceVisibility(JsonObject elementObject)
+      throws EasyModelDecodeException {
+    JsonElement facesElement = elementObject.get("faces");
+    if (facesElement == null || !facesElement.isJsonObject()) {
+      return CubeFaceVisibility.ALL;
+    }
+
+    boolean perFaceUv = !optionalBoolean(elementObject, "box_uv", false);
+    JsonObject faces = facesElement.getAsJsonObject();
+    CubeFaceVisibility visibility = CubeFaceVisibility.ALL;
+    for (ModelCubeFace face : ModelCubeFace.values()) {
+      JsonElement faceElement = faces.get(face.getTagName());
+      if (faceElement == null || !faceElement.isJsonObject()) {
+        continue;
+      }
+      JsonObject faceObject = faceElement.getAsJsonObject();
+      boolean hasTextureKey = faceObject.has("texture");
+      boolean nullTexture = hasTextureKey && faceObject.get("texture").isJsonNull();
+      if (nullTexture || (perFaceUv && !hasTextureKey)) {
+        visibility = visibility.without(face);
+      }
+    }
+
+    return visibility;
+  }
+
+  private static boolean hasResolvedFaceUvs(JsonObject elementObject) {
+    JsonElement facesElement = elementObject.get("faces");
+    if (facesElement == null || !facesElement.isJsonObject()) {
+      return false;
+    }
+    for (Map.Entry<String, JsonElement> face : facesElement.getAsJsonObject().entrySet()) {
+      JsonElement faceElement = face.getValue();
+      if (faceElement.isJsonObject()) {
+        JsonElement uvElement = faceElement.getAsJsonObject().get("uv");
+        if (uvElement != null && !uvElement.isJsonNull()) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   private static FaceUv faceUv(JsonObject faces, String face, FaceUv fallback)
       throws EasyModelDecodeException {
     JsonElement faceElement = faces.get(face);
@@ -276,7 +321,8 @@ public abstract class AbstractBbModelParser {
         elementRotationRadians(element.rotation()),
         new Vec3f(
             -(to[0] - elementOrigin[0]), -(to[1] - elementOrigin[1]), from[2] - elementOrigin[2]),
-        element.textureIndex());
+        element.textureIndex(),
+        element.faceVisibility());
   }
 
   private static Vec3f groupOffset(RawGroup group, RawGroup parentGroup) {
@@ -293,20 +339,17 @@ public abstract class AbstractBbModelParser {
   }
 
   private static Vec3f rotationRadians(float[] rotation) {
-    return new Vec3f(
-        (float) Math.toRadians(rotation[0]),
-        (float) Math.toRadians(rotation[1]),
-        (float) Math.toRadians(rotation[2]));
-  }
-
-  private static Vec3f elementRotationRadians(float[] rotation) {
-    float yRotation = (float) Math.toRadians(rotation[1]);
+    float yRotation = -(float) Math.toRadians(rotation[1]);
     if (Math.abs(yRotation + Math.PI) < 0.01f) {
       yRotation = (float) Math.PI;
     }
 
     return new Vec3f(
         -(float) Math.toRadians(rotation[0]), yRotation, (float) Math.toRadians(rotation[2]));
+  }
+
+  private static Vec3f elementRotationRadians(float[] rotation) {
+    return rotationRadians(rotation);
   }
 
   private static void addSoftBudgetWarnings(
@@ -605,6 +648,8 @@ public abstract class AbstractBbModelParser {
       float[] to = requiredFloatArray(elementObject, "to");
       float[] dimensions = new float[] {to[0] - from[0], to[1] - from[1], to[2] - from[2]};
       int[] uvOffset = optionalIntArray(elementObject, "uv_offset", new int[] {0, 0});
+      boolean mirror =
+          optionalBoolean(elementObject, "mirror_uv", false) && !hasResolvedFaceUvs(elementObject);
       RawElement rawElement =
           new RawElement(
               requiredString(elementObject, "uuid"),
@@ -616,7 +661,8 @@ public abstract class AbstractBbModelParser {
               textureIndex(elementObject, issues),
               optionalFloatArray(elementObject, "origin", new float[] {0.0f, 0.0f, 0.0f}),
               optionalFloatArray(elementObject, "rotation", new float[] {0.0f, 0.0f, 0.0f}),
-              optionalBoolean(elementObject, "mirror_uv", false));
+              mirror,
+              parseFaceVisibility(elementObject));
       if (elementsByUuid.put(rawElement.uuid(), rawElement) != null) {
         throw new EasyModelDecodeException("Duplicate element uuid " + rawElement.uuid() + ".");
       }
@@ -635,7 +681,8 @@ public abstract class AbstractBbModelParser {
       int textureIndex,
       float[] origin,
       float[] rotation,
-      boolean mirrorUv) {}
+      boolean mirrorUv,
+      CubeFaceVisibility faceVisibility) {}
 
   private record RawGroup(String uuid, String name, float[] origin, float[] rotation) {}
 }

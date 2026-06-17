@@ -43,6 +43,11 @@ public class EasyModelEntitiesClient {
         ForgeEasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     event.registerEntityRenderer(
         ForgeEasyModelEntityTypes.INSTANCE.staticEntityType(), EasyModelHostEntityRenderer::new);
+    event.registerEntityRenderer(
+        ForgeEasyModelEntityTypes.INSTANCE.aquaticEntityType(), EasyModelHostEntityRenderer::new);
+    event.registerEntityRenderer(
+        ForgeEasyModelEntityTypes.INSTANCE.amphibiousEntityType(),
+        EasyModelHostEntityRenderer::new);
     event.registerBlockEntityRenderer(
         ForgeEasyModelBlockEntityTypes.INSTANCE.staticBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);

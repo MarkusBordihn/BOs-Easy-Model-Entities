@@ -313,6 +313,38 @@ class ModelBakeServiceTest {
   }
 
   @Test
+  void halfTurnCreatesRotatedChildPart() throws Exception {
+    String model =
+        "{\"meta\":{\"format_version\":\"5.0\",\"model_format\":\"modded_entity\"},"
+            + "\"resolution\":{\"width\":64,\"height\":64},"
+            + "\"elements\":[{\"name\":\"tilted\",\"from\":[-1,0,-1],\"to\":[1,2,1],"
+            + "\"origin\":[0,1,0],\"rotation\":[-180,0,0],\"uv_offset\":[2,4],"
+            + "\"type\":\"cube\",\"uuid\":\"element_tilted\"}],"
+            + "\"groups\":[{\"uuid\":\"group_root\",\"name\":\"root\","
+            + "\"origin\":[0,0,0],\"rotation\":[0,0,0]}],"
+            + "\"outliner\":[{\"uuid\":\"group_root\",\"children\":[\"element_tilted\"]}]}";
+
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.STATIC, "fingerprint"),
+                resourceManager(model.getBytes(StandardCharsets.UTF_8), png(64, 64)));
+
+    BakedModelPart root = result.bakedModel().rootParts().get(0);
+    BakedModelPart rotatedPart = root.children().get(0);
+    BakedModelCube cube = rotatedPart.cubes().get(0);
+
+    assertTrue(result.successful());
+    assertEquals(0, root.cubes().size());
+    assertEquals(1, root.children().size());
+    assertEquals("tilted_r1", rotatedPart.name());
+    assertVec(0.0f, -1.0f, 0.0f, rotatedPart.offset());
+    assertVec(3.1416f, 0.0f, 0.0f, rotatedPart.rotation());
+    assertVec(-1.0f, -1.0f, -1.0f, cube.position());
+    assertVec(2.0f, 2.0f, 2.0f, cube.dimensions());
+  }
+
+  @Test
   void preservesBlockbenchFaceUvsFromTextureExport() throws Exception {
     ModelBakeResult result =
         ModelBakeService.createDefault()

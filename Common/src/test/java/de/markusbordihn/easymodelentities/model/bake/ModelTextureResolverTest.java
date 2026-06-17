@@ -90,7 +90,8 @@ class ModelTextureResolverTest {
         Vec3f.ZERO,
         Vec3f.ZERO,
         new Vec3f(-1.0f, -1.0f, -1.0f),
-        textureIndex);
+        textureIndex,
+        de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility.ALL);
   }
 
   private static EasyModelRenderProfile profile(Map<Integer, ResourceLocation> textures) {

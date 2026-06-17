@@ -46,8 +46,13 @@ import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public final class ModelBakeService implements EasyModelBakeService {
+
+  private static final Logger log =
+      LogManager.getLogger(de.markusbordihn.easymodelentities.Constants.LOG_NAME);
 
   private final EasyModelDecoderRegistry decoderRegistry;
   private final ModelCache cache = new ModelCache();
@@ -103,7 +108,8 @@ public final class ModelBakeService implements EasyModelBakeService {
               ModelPartType.FRONT_RIGHT_LEG.getTagName(),
               ModelPartType.BACK_LEFT_LEG.getTagName(),
               ModelPartType.BACK_RIGHT_LEG.getTagName());
-      case AQUATIC -> List.of(ModelPartType.ROOT.getTagName(), ModelPartType.BODY.getTagName());
+      case AQUATIC, AMPHIBIOUS ->
+          List.of(ModelPartType.ROOT.getTagName(), ModelPartType.BODY.getTagName());
       case WINGED ->
           List.of(
               ModelPartType.ROOT.getTagName(),
@@ -175,12 +181,29 @@ public final class ModelBakeService implements EasyModelBakeService {
                   rootParts));
     }
 
+    ModelFaceOcclusionCuller.Result occlusion = ModelFaceOcclusionCuller.cull(rootParts, bodyType);
+    rootParts = occlusion.rootParts();
+    ModelEmptyCubePruner.Result pruned = ModelEmptyCubePruner.prune(rootParts);
+    rootParts = pruned.rootParts();
+    boolean cullBackfaces = bodyType == ModelBodyType.STATIC;
+    if (log.isDebugEnabled()) {
+      log.debug(
+          "Baked model {} (body type {}): occlusion-culled {} faces, dropped {} fully hidden cubes,"
+              + " backface culling {}.",
+          decodedModel.modelId(),
+          bodyType.getSerializedName(),
+          occlusion.culledFaces(),
+          pruned.droppedCubes(),
+          cullBackfaces ? "enabled" : "disabled");
+    }
+
     return new BakedModel(
         decodedModel.modelId(),
         decodedModel.textureWidth(),
         decodedModel.textureHeight(),
         rootParts,
-        textures);
+        textures,
+        cullBackfaces);
   }
 
   private static BakedModelPart bakePart(
@@ -267,7 +290,8 @@ public final class ModelBakeService implements EasyModelBakeService {
         decodedCube.position(),
         decodedCube.dimensions(),
         decodedCube.mirror(),
-        decodedCube.textureIndex());
+        decodedCube.textureIndex(),
+        decodedCube.faceVisibility());
   }
 
   private static BakedModelCube bakeRotatedCube(
@@ -278,7 +302,8 @@ public final class ModelBakeService implements EasyModelBakeService {
         decodedCube.rotatedPosition(),
         decodedCube.dimensions(),
         decodedCube.mirror(),
-        decodedCube.textureIndex());
+        decodedCube.textureIndex(),
+        decodedCube.faceVisibility());
   }
 
   private static ModelBakeResult failure(

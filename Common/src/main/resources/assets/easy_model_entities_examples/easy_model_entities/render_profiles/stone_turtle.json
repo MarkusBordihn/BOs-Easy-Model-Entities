@@ -1,7 +1,7 @@
 {
   "schema_version": "0.1.0",
-  "preset_type": "quadruped_wandering",
-  "version": "demo-stone-turtle-v4",
+  "preset_type": "amphibious_wandering",
+  "version": "demo-stone-turtle-v5",
   "model": "easy_model_entities_examples:easy_model_entities/models/stone_turtle",
   "texture": "easy_model_entities_examples:textures/entity/stone_turtle.png",
   "rendering": {

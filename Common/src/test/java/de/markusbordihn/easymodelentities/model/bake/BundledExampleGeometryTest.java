@@ -47,6 +47,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,12 +77,15 @@ class BundledExampleGeometryTest {
   private static void assertParts(
       List<ExpectedPart> expectedParts, List<BakedModelPart> bakedParts, String path) {
     assertEquals(expectedParts.size(), bakedParts.size(), path + " part count");
-    for (int index = 0; index < expectedParts.size(); index++) {
-      ExpectedPart expectedPart = expectedParts.get(index);
-      BakedModelPart bakedPart = bakedParts.get(index);
+    Map<String, BakedModelPart> bakedByName = new HashMap<>();
+    for (BakedModelPart bakedPart : bakedParts) {
+      bakedByName.put(bakedPart.name(), bakedPart);
+    }
+    for (ExpectedPart expectedPart : expectedParts) {
       String partPath = path + "/" + expectedPart.name();
+      BakedModelPart bakedPart = bakedByName.get(expectedPart.name());
+      assertTrue(bakedPart != null, partPath + " missing baked part");
 
-      assertEquals(expectedPart.name(), bakedPart.name(), partPath + " name");
       assertVec(expectedPart.offset(), bakedPart.offset(), DELTA, partPath + " offset");
       assertVec(expectedPart.rotation(), bakedPart.rotation(), DELTA, partPath + " rotation");
       assertCubes(expectedPart.cubes(), bakedPart.cubes(), partPath);
@@ -155,35 +159,117 @@ class BundledExampleGeometryTest {
       Map<String, RawElement> elementsByUuid,
       RawGroup parentGroup) {
     RawGroup group = groupsByUuid.get(node.get("uuid").getAsString());
-    List<ExpectedCube> cubes = new ArrayList<>();
-    List<ExpectedPart> children = new ArrayList<>();
+    List<ExpectedCube> directCubes = new ArrayList<>();
+    Map<String, List<RawElement>> rotatedGroups = new LinkedHashMap<>();
+    List<ExpectedPart> childParts = new ArrayList<>();
     JsonArray childElements = node.getAsJsonArray("children");
     if (childElements != null) {
       for (JsonElement childElement : childElements) {
         if (childElement.isJsonPrimitive()) {
-          cubes.add(expectedCube(elementsByUuid.get(childElement.getAsString()), group));
+          RawElement element = elementsByUuid.get(childElement.getAsString());
+          if (hasRotation(element.rotation())) {
+            rotatedGroups
+                .computeIfAbsent(rotationKey(element, group), key -> new ArrayList<>())
+                .add(element);
+          } else {
+            directCubes.add(directCube(element, group));
+          }
         } else {
-          children.add(
+          childParts.add(
               expectedPart(childElement.getAsJsonObject(), groupsByUuid, elementsByUuid, group));
         }
       }
     }
 
+    List<ExpectedPart> children = new ArrayList<>();
+    Map<String, Integer> rotatedPartIndices = new HashMap<>();
+    rotatedGroups.values().stream()
+        .sorted(
+            (left, right) ->
+                Float.compare(
+                    rotationOrigin(left.get(0), group)[1], rotationOrigin(right.get(0), group)[1]))
+        .forEach(
+            rotatedCubes -> children.add(rotatedPart(rotatedCubes, group, rotatedPartIndices)));
+    children.addAll(childParts);
+
     return new ExpectedPart(
         group.name(),
         groupOffset(group, parentGroup),
         rotationRadians(group.rotation()),
-        cubes,
+        directCubes,
         children);
   }
 
-  private static ExpectedCube expectedCube(RawElement element, RawGroup group) {
+  private static ExpectedPart rotatedPart(
+      List<RawElement> rotatedCubes, RawGroup group, Map<String, Integer> rotatedPartIndices) {
+    RawElement first = rotatedCubes.get(0);
+    int childIndex = rotatedPartIndices.getOrDefault(first.name(), 0) + 1;
+    rotatedPartIndices.put(first.name(), childIndex);
+    List<ExpectedCube> cubes = new ArrayList<>();
+    for (RawElement element : rotatedCubes) {
+      cubes.add(rotatedCube(element));
+    }
+
+    return new ExpectedPart(
+        first.name() + "_r" + childIndex,
+        rotationOrigin(first, group),
+        elementRotationRadians(first.rotation()),
+        cubes,
+        List.of());
+  }
+
+  private static String rotationKey(RawElement element, RawGroup group) {
+    float[] rotation = element.rotation();
+    float[] origin = rotationOrigin(element, group);
+    return element.name()
+        + "_"
+        + rotation[0]
+        + "_"
+        + rotation[1]
+        + "_"
+        + rotation[2]
+        + "_"
+        + origin[0]
+        + "_"
+        + origin[1]
+        + "_"
+        + origin[2];
+  }
+
+  private static boolean hasRotation(float[] rotation) {
+    return Math.abs(rotation[0]) > DELTA
+        || Math.abs(rotation[1]) > DELTA
+        || Math.abs(rotation[2]) > DELTA;
+  }
+
+  private static ExpectedCube directCube(RawElement element, RawGroup group) {
     float[] from = element.from();
     float[] to = element.to();
     float[] groupOrigin = group.origin();
     return new ExpectedCube(
         new float[] {groupOrigin[0] - to[0], groupOrigin[1] - to[1], from[2] - groupOrigin[2]},
         new float[] {to[0] - from[0], to[1] - from[1], to[2] - from[2]});
+  }
+
+  private static ExpectedCube rotatedCube(RawElement element) {
+    float[] from = element.from();
+    float[] to = element.to();
+    float[] elementOrigin = element.origin();
+    return new ExpectedCube(
+        new float[] {
+          elementOrigin[0] - to[0], elementOrigin[1] - to[1], from[2] - elementOrigin[2]
+        },
+        new float[] {to[0] - from[0], to[1] - from[1], to[2] - from[2]});
+  }
+
+  private static float[] rotationOrigin(RawElement element, RawGroup group) {
+    float[] elementOrigin = element.origin();
+    float[] groupOrigin = group.origin();
+    return new float[] {
+      groupOrigin[0] - elementOrigin[0],
+      groupOrigin[1] - elementOrigin[1],
+      elementOrigin[2] - groupOrigin[2]
+    };
   }
 
   private static float[] groupOffset(RawGroup group, RawGroup parentGroup) {
@@ -201,11 +287,18 @@ class BundledExampleGeometryTest {
   }
 
   private static float[] rotationRadians(float[] rotation) {
+    float yRotation = -(float) Math.toRadians(rotation[1]);
+    if (Math.abs(yRotation + (float) Math.PI) < 0.01f) {
+      yRotation = (float) Math.PI;
+    }
+
     return new float[] {
-      (float) Math.toRadians(rotation[0]),
-      (float) Math.toRadians(rotation[1]),
-      (float) Math.toRadians(rotation[2])
+      -(float) Math.toRadians(rotation[0]), yRotation, (float) Math.toRadians(rotation[2])
     };
+  }
+
+  private static float[] elementRotationRadians(float[] rotation) {
+    return rotationRadians(rotation);
   }
 
   private static Map<String, RawGroup> groups(JsonArray groupsArray) {
@@ -230,7 +323,11 @@ class BundledExampleGeometryTest {
       elements.put(
           cube.get("uuid").getAsString(),
           new RawElement(
-              floatArray(cube.getAsJsonArray("from")), floatArray(cube.getAsJsonArray("to"))));
+              cube.get("name").getAsString(),
+              floatArray(cube.getAsJsonArray("from")),
+              floatArray(cube.getAsJsonArray("to")),
+              optionalFloatArray(cube.getAsJsonArray("origin")),
+              optionalFloatArray(cube.getAsJsonArray("rotation"))));
     }
 
     return elements;
@@ -279,6 +376,8 @@ class BundledExampleGeometryTest {
     assertGeometry("training_dummy", ModelBodyType.STATIC);
     assertGeometry("little_explorer", ModelBodyType.BIPED);
     assertGeometry("stone_turtle", ModelBodyType.QUADRUPED);
+    assertGeometry("disguised_chestling", ModelBodyType.CUBOID);
+    assertGeometry("shrine", ModelBodyType.STATIC);
   }
 
   private record ExpectedModel(List<ExpectedPart> rootParts) {}
@@ -294,5 +393,6 @@ class BundledExampleGeometryTest {
 
   private record RawGroup(String name, float[] origin, float[] rotation) {}
 
-  private record RawElement(float[] from, float[] to) {}
+  private record RawElement(
+      String name, float[] from, float[] to, float[] origin, float[] rotation) {}
 }

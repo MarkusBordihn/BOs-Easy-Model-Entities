@@ -27,4 +27,5 @@ public record EasyModelPartAnimationContext(
     float limbSwing,
     float limbSwingAmount,
     float ageInTicks,
+    float airborneAmount,
     EasyModelPartTransform automaticTransform) {}

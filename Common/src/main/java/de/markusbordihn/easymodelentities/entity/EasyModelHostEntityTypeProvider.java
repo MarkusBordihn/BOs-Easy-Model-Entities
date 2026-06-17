@@ -26,4 +26,8 @@ public interface EasyModelHostEntityTypeProvider {
   EntityType<EasyModelGroundEntity> groundEntityType();
 
   EntityType<EasyModelStaticEntity> staticEntityType();
+
+  EntityType<EasyModelAquaticEntity> aquaticEntityType();
+
+  EntityType<EasyModelAmphibiousEntity> amphibiousEntityType();
 }

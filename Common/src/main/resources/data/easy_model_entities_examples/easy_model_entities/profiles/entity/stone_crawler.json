@@ -1,0 +1,28 @@
+{
+  "schema_version": "0.1.0",
+  "model_type": "entity",
+  "preset_type": "quadruped_wandering",
+  "version": "demo-stone-crawler-v1",
+  "client": {
+    "render_profile": "easy_model_entities_examples:stone_crawler"
+  },
+  "dimensions": {
+    "width": 1.2,
+    "height": 0.85,
+    "eye_height": 0.6
+  },
+  "movement": {
+    "speed": 0.06,
+    "step_height": 0.4,
+    "gravity": true
+  },
+  "behavior": {
+    "mode": "ambient",
+    "look_at_players": true,
+    "random_stroll": true
+  },
+  "attributes": {
+    "max_health": 12.0,
+    "follow_range": 12.0
+  }
+}

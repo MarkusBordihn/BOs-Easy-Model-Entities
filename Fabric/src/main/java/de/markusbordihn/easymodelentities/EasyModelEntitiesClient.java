@@ -40,6 +40,11 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
         FabricEasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     EntityRendererRegistry.register(
         FabricEasyModelEntityTypes.INSTANCE.staticEntityType(), EasyModelHostEntityRenderer::new);
+    EntityRendererRegistry.register(
+        FabricEasyModelEntityTypes.INSTANCE.aquaticEntityType(), EasyModelHostEntityRenderer::new);
+    EntityRendererRegistry.register(
+        FabricEasyModelEntityTypes.INSTANCE.amphibiousEntityType(),
+        EasyModelHostEntityRenderer::new);
     BlockEntityRendererRegistry.register(
         FabricEasyModelBlockEntityTypes.INSTANCE.staticBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);

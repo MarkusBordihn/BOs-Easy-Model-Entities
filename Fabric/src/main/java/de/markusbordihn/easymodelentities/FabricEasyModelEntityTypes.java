@@ -19,10 +19,13 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.entity.EasyModelAmphibiousEntity;
+import de.markusbordihn.easymodelentities.entity.EasyModelAquaticEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelGroundEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityTypeProvider;
 import de.markusbordihn.easymodelentities.entity.EasyModelStaticEntity;
+import de.markusbordihn.easymodelentities.entity.EasyModelWaterHostEntity;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.core.Registry;
@@ -53,11 +56,35 @@ public final class FabricEasyModelEntityTypes implements EasyModelHostEntityType
               .clientTrackingRange(10)
               .build(ModelEntityTypeIds.STATIC_ENTITY.toString()));
 
+  private static final EntityType<EasyModelAquaticEntity> AQUATIC_ENTITY =
+      Registry.register(
+          BuiltInRegistries.ENTITY_TYPE,
+          ModelEntityTypeIds.AQUATIC_ENTITY,
+          EntityType.Builder.<EasyModelAquaticEntity>of(
+                  EasyModelAquaticEntity::new, MobCategory.WATER_CREATURE)
+              .sized(0.7f, 0.4f)
+              .clientTrackingRange(10)
+              .build(ModelEntityTypeIds.AQUATIC_ENTITY.toString()));
+
+  private static final EntityType<EasyModelAmphibiousEntity> AMPHIBIOUS_ENTITY =
+      Registry.register(
+          BuiltInRegistries.ENTITY_TYPE,
+          ModelEntityTypeIds.AMPHIBIOUS_ENTITY,
+          EntityType.Builder.<EasyModelAmphibiousEntity>of(
+                  EasyModelAmphibiousEntity::new, MobCategory.CREATURE)
+              .sized(0.9f, 0.6f)
+              .clientTrackingRange(10)
+              .build(ModelEntityTypeIds.AMPHIBIOUS_ENTITY.toString()));
+
   private FabricEasyModelEntityTypes() {}
 
   public static void register() {
     FabricDefaultAttributeRegistry.register(GROUND_ENTITY, EasyModelHostEntity.createAttributes());
     FabricDefaultAttributeRegistry.register(STATIC_ENTITY, EasyModelHostEntity.createAttributes());
+    FabricDefaultAttributeRegistry.register(
+        AQUATIC_ENTITY, EasyModelWaterHostEntity.createAttributes());
+    FabricDefaultAttributeRegistry.register(
+        AMPHIBIOUS_ENTITY, EasyModelHostEntity.createAttributes());
   }
 
   @Override
@@ -68,5 +95,15 @@ public final class FabricEasyModelEntityTypes implements EasyModelHostEntityType
   @Override
   public EntityType<EasyModelStaticEntity> staticEntityType() {
     return STATIC_ENTITY;
+  }
+
+  @Override
+  public EntityType<EasyModelAquaticEntity> aquaticEntityType() {
+    return AQUATIC_ENTITY;
+  }
+
+  @Override
+  public EntityType<EasyModelAmphibiousEntity> amphibiousEntityType() {
+    return AMPHIBIOUS_ENTITY;
   }
 }

@@ -19,10 +19,13 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.entity.EasyModelAmphibiousEntity;
+import de.markusbordihn.easymodelentities.entity.EasyModelAquaticEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelGroundEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityTypeProvider;
 import de.markusbordihn.easymodelentities.entity.EasyModelStaticEntity;
+import de.markusbordihn.easymodelentities.entity.EasyModelWaterHostEntity;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -59,6 +62,26 @@ public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeP
                   .clientTrackingRange(10)
                   .build(ModelEntityTypeIds.STATIC_ENTITY.toString()));
 
+  private static final RegistryObject<EntityType<EasyModelAquaticEntity>> AQUATIC_ENTITY =
+      ENTITY_TYPES.register(
+          ModelEntityTypeIds.AQUATIC_ENTITY.getPath(),
+          () ->
+              EntityType.Builder.<EasyModelAquaticEntity>of(
+                      EasyModelAquaticEntity::new, MobCategory.WATER_CREATURE)
+                  .sized(0.7f, 0.4f)
+                  .clientTrackingRange(10)
+                  .build(ModelEntityTypeIds.AQUATIC_ENTITY.toString()));
+
+  private static final RegistryObject<EntityType<EasyModelAmphibiousEntity>> AMPHIBIOUS_ENTITY =
+      ENTITY_TYPES.register(
+          ModelEntityTypeIds.AMPHIBIOUS_ENTITY.getPath(),
+          () ->
+              EntityType.Builder.<EasyModelAmphibiousEntity>of(
+                      EasyModelAmphibiousEntity::new, MobCategory.CREATURE)
+                  .sized(0.9f, 0.6f)
+                  .clientTrackingRange(10)
+                  .build(ModelEntityTypeIds.AMPHIBIOUS_ENTITY.toString()));
+
   private ForgeEasyModelEntityTypes() {}
 
   public static void register(IEventBus modEventBus) {
@@ -69,6 +92,8 @@ public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeP
   private static void registerAttributes(EntityAttributeCreationEvent event) {
     event.put(GROUND_ENTITY.get(), EasyModelHostEntity.createAttributes().build());
     event.put(STATIC_ENTITY.get(), EasyModelHostEntity.createAttributes().build());
+    event.put(AQUATIC_ENTITY.get(), EasyModelWaterHostEntity.createAttributes().build());
+    event.put(AMPHIBIOUS_ENTITY.get(), EasyModelHostEntity.createAttributes().build());
   }
 
   @Override
@@ -79,5 +104,15 @@ public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeP
   @Override
   public EntityType<EasyModelStaticEntity> staticEntityType() {
     return STATIC_ENTITY.get();
+  }
+
+  @Override
+  public EntityType<EasyModelAquaticEntity> aquaticEntityType() {
+    return AQUATIC_ENTITY.get();
+  }
+
+  @Override
+  public EntityType<EasyModelAmphibiousEntity> amphibiousEntityType() {
+    return AMPHIBIOUS_ENTITY.get();
   }
 }

@@ -104,6 +104,7 @@ public final class EasyModelBlockEntityRenderBackend {
         0.0f,
         0.0f,
         ageInTicks,
+        0.0f,
         safeOptions.partAnimator(),
         safeOptions.partAnimationMode(),
         poseStack,

@@ -22,15 +22,17 @@ package de.markusbordihn.easymodelentities.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
-import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
+import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 
-public class EasyModelHostEntityRenderer<T extends EasyModelHostEntity> extends EntityRenderer<T> {
+public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
+    extends EntityRenderer<T> {
 
   public EasyModelHostEntityRenderer(EntityRendererProvider.Context context) {
     super(context);

@@ -33,4 +33,8 @@ public record Vec3f(float x, float y, float z) {
   public boolean isZero() {
     return this.x == 0.0f && this.y == 0.0f && this.z == 0.0f;
   }
+
+  public Vec3f add(Vec3f other) {
+    return new Vec3f(this.x + other.x, this.y + other.y, this.z + other.z);
+  }
 }

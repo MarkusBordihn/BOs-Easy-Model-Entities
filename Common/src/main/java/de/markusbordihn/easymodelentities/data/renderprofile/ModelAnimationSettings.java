@@ -22,14 +22,24 @@ package de.markusbordihn.easymodelentities.data.renderprofile;
 import java.util.Objects;
 
 public record ModelAnimationSettings(
-    ModelAnimationMode mode, float swingSpeed, float walkSpeedMultiplier, float idleStrength) {
+    ModelAnimationMode mode,
+    float swingSpeed,
+    float walkSpeedMultiplier,
+    float idleStrength,
+    ModelGaitType gait) {
 
   public ModelAnimationSettings {
     Objects.requireNonNull(mode, "mode");
+    Objects.requireNonNull(gait, "gait");
+  }
+
+  public ModelAnimationSettings(
+      ModelAnimationMode mode, float swingSpeed, float walkSpeedMultiplier, float idleStrength) {
+    this(mode, swingSpeed, walkSpeedMultiplier, idleStrength, ModelGaitType.NATURAL);
   }
 
   public ModelAnimationSettings(
       ModelAnimationMode mode, float swingSpeed, float walkSpeedMultiplier) {
-    this(mode, swingSpeed, walkSpeedMultiplier, 1.0f);
+    this(mode, swingSpeed, walkSpeedMultiplier, 1.0f, ModelGaitType.NATURAL);
   }
 }

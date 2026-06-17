@@ -55,7 +55,8 @@ class BundledDemoProfilesTest {
       List.of(
           new Demo("entity/training_dummy", "training_dummy", ModelBodyType.STATIC),
           new Demo("entity/little_explorer", "little_explorer", ModelBodyType.BIPED),
-          new Demo("entity/stone_turtle", "stone_turtle", ModelBodyType.QUADRUPED),
+          new Demo("entity/stone_crawler", "stone_crawler", ModelBodyType.QUADRUPED),
+          new Demo("entity/stone_turtle", "stone_turtle", ModelBodyType.AMPHIBIOUS),
           new Demo("entity/coral_drifter", "coral_drifter", ModelBodyType.AQUATIC),
           new Demo("entity/dawn_sparrow", "dawn_sparrow", ModelBodyType.WINGED),
           new Demo("entity/skybound_wanderer", "skybound_wanderer", ModelBodyType.WINGED_HUMANOID),

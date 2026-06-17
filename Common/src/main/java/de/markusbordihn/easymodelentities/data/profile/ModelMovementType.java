@@ -24,6 +24,8 @@ import java.util.Optional;
 
 public enum ModelMovementType {
   GROUND,
+  WATER,
+  AMPHIBIOUS,
   STATIC;
 
   private final String serializedName = this.name().toLowerCase(Locale.ROOT);
@@ -51,19 +53,41 @@ public enum ModelMovementType {
     return this == GROUND;
   }
 
+  public boolean isWater() {
+    return this == WATER;
+  }
+
+  public boolean isAmphibious() {
+    return this == AMPHIBIOUS;
+  }
+
   public float defaultSpeed() {
-    return isGround() ? 0.22f : 0.0f;
+    return switch (this) {
+      case GROUND -> 0.22f;
+      case WATER -> 0.1f;
+      case AMPHIBIOUS -> 0.15f;
+      case STATIC -> 0.0f;
+    };
   }
 
   public float defaultStepHeight() {
-    return isGround() ? 0.6f : 0.0f;
+    return switch (this) {
+      case GROUND, AMPHIBIOUS -> 0.6f;
+      case WATER, STATIC -> 0.0f;
+    };
   }
 
   public boolean defaultGravity() {
-    return isGround();
+    return switch (this) {
+      case GROUND, AMPHIBIOUS, WATER -> true;
+      case STATIC -> false;
+    };
   }
 
   public ModelBehaviorMode defaultBehaviorMode() {
-    return isGround() ? ModelBehaviorMode.IDLE_ONLY : ModelBehaviorMode.STATIC;
+    return switch (this) {
+      case GROUND, AMPHIBIOUS -> ModelBehaviorMode.IDLE_ONLY;
+      case WATER, STATIC -> ModelBehaviorMode.STATIC;
+    };
   }
 }

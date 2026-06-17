@@ -1,0 +1,26 @@
+{
+  "meta": {"format_version": "5.0", "model_format": "eme_entity"},
+  "resolution": {"width": 64, "height": 64},
+  "elements": [{
+    "name": "rotated_cube",
+    "uuid": "element_rotated",
+    "type": "cube",
+    "from": [-1, 0, -1], "to": [1, 2, 1], "origin": [0, 1, 0],
+    "rotation": [-180, 0, 0],
+    "faces": {
+      "north": {"uv": [0, 0, 16, 16], "texture": 0},
+      "east": {"uv": [0, 0, 16, 16], "texture": 0},
+      "south": {"uv": [0, 0, 16, 16], "texture": 0},
+      "west": {"uv": [0, 0, 16, 16], "texture": 0},
+      "up": {"uv": [0, 0, 16, 16], "texture": 0},
+      "down": {"uv": [0, 0, 16, 16], "texture": 0}
+    }
+  }],
+  "groups": [{
+    "uuid": "group_root", "name": "root", "origin": [0, 0, 0], "rotation": [0, 0, 0]
+  }],
+  "outliner": [{"uuid": "group_root", "children": ["element_rotated"]}],
+  "textures": [
+    {"name": "tex", "relative_path": "tex.png", "id": "0", "uuid": "tex1"}
+  ]
+}

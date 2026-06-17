@@ -18,6 +18,7 @@
 
 package de.markusbordihn.easymodelentities.data.model.decoder;
 
+import de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import java.util.Objects;
@@ -32,7 +33,8 @@ public record DecodedModelCube(
     Vec3f rotationOrigin,
     Vec3f rotation,
     Vec3f rotatedPosition,
-    int textureIndex) {
+    int textureIndex,
+    CubeFaceVisibility faceVisibility) {
 
   public DecodedModelCube {
     Objects.requireNonNull(name, "name");
@@ -42,6 +44,7 @@ public record DecodedModelCube(
     Objects.requireNonNull(rotationOrigin, "rotationOrigin");
     Objects.requireNonNull(rotation, "rotation");
     Objects.requireNonNull(rotatedPosition, "rotatedPosition");
+    Objects.requireNonNull(faceVisibility, "faceVisibility");
     uvOffset = uvOffset.clone();
   }
 
@@ -57,7 +60,8 @@ public record DecodedModelCube(
         Vec3f.ZERO,
         Vec3f.ZERO,
         position,
-        0);
+        0,
+        CubeFaceVisibility.ALL);
   }
 
   public boolean hasRotation() {

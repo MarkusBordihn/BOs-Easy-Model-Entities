@@ -236,6 +236,31 @@ class ModelRenderProfileParserTest {
   }
 
   @Test
+  void defaultsGaitToNatural() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"quadruped_wandering\"}");
+
+    assertEquals(ModelGaitType.NATURAL, renderProfile.animation().gait());
+  }
+
+  @Test
+  void parsesGait() {
+    EasyModelRenderProfile renderProfile =
+        parse("{\"preset_type\":\"quadruped_wandering\",\"animation\":{\"gait\":\"ungulate\"}}");
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(ModelGaitType.UNGULATE, renderProfile.animation().gait());
+  }
+
+  @Test
+  void rejectsInvalidGait() {
+    EasyModelRenderProfile renderProfile =
+        parse("{\"preset_type\":\"quadruped_wandering\",\"animation\":{\"gait\":\"hover\"}}");
+
+    assertEquals(ModelRenderProfileStatus.INVALID_ANIMATION_MODE, renderProfile.status());
+    assertEquals(ModelGaitType.NATURAL, renderProfile.animation().gait());
+  }
+
+  @Test
   void customRenderProfileRequiresBodyType() {
     EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"custom\"}");
 

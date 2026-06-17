@@ -28,6 +28,8 @@ public enum ModelPresetType {
   STATUE,
   AQUATIC_STILL,
   AQUATIC_SWIMMING,
+  AMPHIBIOUS_STILL,
+  AMPHIBIOUS_WANDERING,
   ARTHROPOD_STILL,
   ARTHROPOD_WANDERING,
   CUBOID_HOPPING,
@@ -72,7 +74,10 @@ public enum ModelPresetType {
   }
 
   public boolean isMoving() {
-    return this.name().endsWith("_WANDERING") || this == AQUATIC_SWIMMING || this == CUBOID_HOPPING;
+    return this.name().endsWith("_WANDERING")
+        || this == AQUATIC_SWIMMING
+        || this == AMPHIBIOUS_WANDERING
+        || this == CUBOID_HOPPING;
   }
 
   public ModelBodyType defaultBodyType() {
@@ -80,6 +85,7 @@ public enum ModelPresetType {
       case HUMANOID_STILL, HUMANOID_WANDERING -> ModelBodyType.BIPED;
       case QUADRUPED_STILL, QUADRUPED_WANDERING -> ModelBodyType.QUADRUPED;
       case AQUATIC_STILL, AQUATIC_SWIMMING -> ModelBodyType.AQUATIC;
+      case AMPHIBIOUS_STILL, AMPHIBIOUS_WANDERING -> ModelBodyType.AMPHIBIOUS;
       case WINGED_STILL, WINGED_WANDERING -> ModelBodyType.WINGED;
       case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING -> ModelBodyType.WINGED_HUMANOID;
       case ARTHROPOD_STILL, ARTHROPOD_WANDERING -> ModelBodyType.ARTHROPOD;

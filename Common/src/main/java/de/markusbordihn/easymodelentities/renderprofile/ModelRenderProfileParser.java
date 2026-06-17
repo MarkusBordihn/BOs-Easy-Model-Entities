@@ -64,6 +64,7 @@ public final class ModelRenderProfileParser {
   private static final String SWING_SPEED_FIELD = "swing_speed";
   private static final String WALK_SPEED_MULTIPLIER_FIELD = "walk_speed_multiplier";
   private static final String IDLE_STRENGTH_FIELD = "idle_strength";
+  private static final String GAIT_FIELD = "gait";
   private static final String RENDERING_SCALE_FIELD = RENDERING_FIELD + "." + SCALE_FIELD;
   private static final String RENDERING_SHADOW_RADIUS_FIELD =
       RENDERING_FIELD + "." + SHADOW_RADIUS_FIELD;
@@ -80,6 +81,7 @@ public final class ModelRenderProfileParser {
       ANIMATION_FIELD + "." + WALK_SPEED_MULTIPLIER_FIELD;
   private static final String ANIMATION_IDLE_STRENGTH_FIELD =
       ANIMATION_FIELD + "." + IDLE_STRENGTH_FIELD;
+  private static final String ANIMATION_GAIT_FIELD = ANIMATION_FIELD + "." + GAIT_FIELD;
   private static final float DEFAULT_SCALE = 1.0f;
   private static final float DEFAULT_SWING_SPEED = 1.0f;
   private static final float DEFAULT_WALK_SPEED_MULTIPLIER = 1.0f;
@@ -243,6 +245,7 @@ public final class ModelRenderProfileParser {
         optionalObject(animationElement, ANIMATION_FIELD, RawAnimation.class, issues);
     ModelAnimationSettings defaults = defaultAnimationSettings(presetType);
     ModelAnimationMode mode = parseAnimationMode(rawAnimation, defaults.mode(), issues);
+    ModelGaitType gait = parseGait(rawAnimation, defaults.gait(), issues);
 
     return new ModelAnimationSettings(
         mode,
@@ -260,7 +263,30 @@ public final class ModelRenderProfileParser {
             rawAnimation == null ? null : rawAnimation.idleStrength,
             defaults.idleStrength(),
             ANIMATION_IDLE_STRENGTH_FIELD,
-            issues));
+            issues),
+        gait);
+  }
+
+  private static ModelGaitType parseGait(
+      RawAnimation rawAnimation,
+      ModelGaitType defaultGait,
+      List<ModelRenderProfileValidationIssue> issues) {
+    String gaitName =
+        optionalString(
+            rawAnimation == null ? null : rawAnimation.gait,
+            defaultGait.getSerializedName(),
+            ANIMATION_GAIT_FIELD,
+            issues);
+    return ModelGaitType.bySerializedName(gaitName)
+        .orElseGet(
+            () -> {
+              addIssue(
+                  issues,
+                  ModelRenderProfileStatus.INVALID_ANIMATION_MODE,
+                  ANIMATION_GAIT_FIELD,
+                  "Unsupported gait " + gaitName + ".");
+              return defaultGait;
+            });
   }
 
   private static String parseSchemaVersion(
@@ -353,7 +379,8 @@ public final class ModelRenderProfileParser {
 
   private static ModelRenderSettings defaultRenderSettings(ModelPresetType presetType) {
     return switch (presetType) {
-      case QUADRUPED_STILL, QUADRUPED_WANDERING -> renderSettings(0.45f);
+      case QUADRUPED_STILL, QUADRUPED_WANDERING, AMPHIBIOUS_STILL, AMPHIBIOUS_WANDERING ->
+          renderSettings(0.45f);
       case AQUATIC_STILL, AQUATIC_SWIMMING -> renderSettings(0.25f);
       case WINGED_STILL, WINGED_WANDERING -> renderSettings(0.25f);
       case WINGED_HUMANOID_STILL, WINGED_HUMANOID_WANDERING -> renderSettings(0.25f);
@@ -609,5 +636,8 @@ public final class ModelRenderProfileParser {
 
     @SerializedName(IDLE_STRENGTH_FIELD)
     JsonElement idleStrength;
+
+    @SerializedName(GAIT_FIELD)
+    JsonElement gait;
   }
 }
