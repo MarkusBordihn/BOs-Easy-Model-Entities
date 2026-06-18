@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "modded_entity"
+  },
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "elements": [
+    {"name": "head_cube", "from": [-4, 0, -4], "to": [4, 8, 4], "origin": [0, 0, 0], "uv_offset": [0, 0], "type": "cube", "uuid": "element_head"},
+    {"name": "body_cube", "from": [-4, 0, -2], "to": [4, 12, 2], "origin": [0, 0, 0], "uv_offset": [16, 16], "type": "cube", "uuid": "element_body"},
+    {"name": "left_arm_cube", "from": [-1, 0, -1], "to": [1, 8, 1], "origin": [0, 0, 0], "uv_offset": [32, 0], "type": "cube", "uuid": "element_left_arm"},
+    {"name": "right_arm_cube", "from": [-1, 0, -1], "to": [1, 8, 1], "origin": [0, 0, 0], "uv_offset": [40, 0], "type": "cube", "uuid": "element_right_arm"},
+    {"name": "left_leg_cube", "from": [-1, 0, -1], "to": [1, 8, 1], "origin": [0, 0, 0], "uv_offset": [0, 16], "type": "cube", "uuid": "element_left_leg"},
+    {"name": "right_leg_cube", "from": [-1, 0, -1], "to": [1, 8, 1], "origin": [0, 0, 0], "uv_offset": [8, 16], "type": "cube", "uuid": "element_right_leg"}
+  ],
+  "groups": [
+    {"uuid": "group_root", "name": "Root", "origin": [0, 0, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_head", "name": "HEAD", "origin": [0, 12, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_body", "name": "Body", "origin": [0, 12, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_left_arm", "name": "Left_Arm", "origin": [-5, 12, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_right_arm", "name": "Right_Arm ", "origin": [5, 12, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_left_leg", "name": "LEFT_LEG", "origin": [-2, 0, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_right_leg", "name": "Right_Leg", "origin": [2, 0, 0], "rotation": [0, 0, 0]}
+  ],
+  "outliner": [
+    {
+      "uuid": "group_root",
+      "children": [
+        {"uuid": "group_head", "children": ["element_head"]},
+        {"uuid": "group_body", "children": ["element_body"]},
+        {"uuid": "group_left_arm", "children": ["element_left_arm"]},
+        {"uuid": "group_right_arm", "children": ["element_right_arm"]},
+        {"uuid": "group_left_leg", "children": ["element_left_leg"]},
+        {"uuid": "group_right_leg", "children": ["element_right_leg"]}
+      ]
+    }
+  ]
+}

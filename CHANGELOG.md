@@ -5,6 +5,15 @@
 This change log includes the summarized changes.
 For the full changelog, please go to the [GitHub History][history] instead.
 
+### 1.2.0 (beta)
+
+- Added read-only profile catalog API (listProfiles, listProfiles by body type, listProfileIds) for
+  mod integrations.
+- Added still and custom example presets covering all body types, plus a fast-moving example.
+- Added case-insensitive bone name matching so `Body`, `body`, and `BODY` all resolve to `body`.
+- Fixed profile attributes max_health and follow_range not being applied to host entities.
+- Removed unused mixins.
+
 ### 1.1.0 (beta)
 
 - Fixed wrong UV mapping for some model parts.

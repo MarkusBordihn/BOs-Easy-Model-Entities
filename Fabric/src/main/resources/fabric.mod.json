@@ -24,9 +24,6 @@
       "de.markusbordihn.easymodelentities.gametest.SmokeTest"
     ]
   },
-  "mixins": [
-    "easymodelentities.mixins.json"
-  ],
   "accessWidener": "easymodelentities.accesswidener",
   "depends": {
     "fabricloader": ">=0.15",

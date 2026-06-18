@@ -64,4 +64,9 @@ public class HostEntityGameTest {
   public void blockEntityCanBePlacedAndInitialized(GameTestHelper helper) {
     HostEntityGameTestCases.blockEntityCanBePlacedAndInitialized(helper);
   }
+
+  @GameTest(template = "gametest.3x3x3")
+  public void attributesAreAppliedFromProfile(GameTestHelper helper) {
+    HostEntityGameTestCases.attributesAreAppliedFromProfile(helper);
+  }
 }

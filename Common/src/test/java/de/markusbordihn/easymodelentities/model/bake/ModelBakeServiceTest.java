@@ -185,6 +185,23 @@ class ModelBakeServiceTest {
   }
 
   @Test
+  void bakesBipedModelWithMixedCaseBoneNames() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.BIPED, "fingerprint"),
+                resourceManager("mixed_case_biped.bbmodel", png(64, 64)));
+
+    assertTrue(result.successful());
+    assertEquals(ModelRenderProfileStatus.ACTIVE, status(result));
+    BakedModelPart root = result.bakedModel().rootParts().get(0);
+    assertEquals("root", root.name());
+    assertEquals("body", part(root, "body").name());
+    assertEquals("left_arm", part(root, "left_arm").name());
+    assertEquals("right_arm", part(root, "right_arm").name());
+  }
+
+  @Test
   void bakesValidQuadrupedModel() throws Exception {
     ModelBakeResult result =
         ModelBakeService.createDefault()

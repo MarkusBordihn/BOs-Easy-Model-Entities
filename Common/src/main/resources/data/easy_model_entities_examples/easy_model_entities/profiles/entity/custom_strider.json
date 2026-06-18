@@ -1,0 +1,33 @@
+{
+  "schema_version": "0.1.0",
+  "model_type": "entity",
+  "preset_type": "custom",
+  "version": "demo-custom-strider-v1",
+  "entity": {
+    "type": "easy_model_entities:ground_entity",
+    "movement_type": "ground",
+    "body_type": "quadruped"
+  },
+  "client": {
+    "render_profile": "easy_model_entities_examples:custom_strider"
+  },
+  "dimensions": {
+    "width": 0.9,
+    "height": 0.7,
+    "eye_height": 0.5
+  },
+  "movement": {
+    "speed": 0.2,
+    "step_height": 0.6,
+    "gravity": true
+  },
+  "behavior": {
+    "mode": "ambient",
+    "look_at_players": true,
+    "random_stroll": true
+  },
+  "attributes": {
+    "max_health": 14.0,
+    "follow_range": 16.0
+  }
+}

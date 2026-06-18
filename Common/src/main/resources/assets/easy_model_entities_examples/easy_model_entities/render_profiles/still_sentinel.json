@@ -1,0 +1,7 @@
+{
+  "schema_version": "0.1.0",
+  "preset_type": "humanoid_still",
+  "version": "demo-still-sentinel-v1",
+  "model": "easy_model_entities_examples:easy_model_entities/models/little_explorer",
+  "texture": "easy_model_entities_examples:textures/entity/little_explorer.png"
+}

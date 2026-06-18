@@ -40,8 +40,6 @@ loom {
       setConfigName("Fabric Client")
       property("fabric.logging.markers", "REGISTRIES")
       property("fabric.log.level", "debug")
-      property("mixin.debug.verbose", "false")
-      property("mixin.debug.export", "false")
       ideConfigGenerated(true)
       runDir("run")
     }

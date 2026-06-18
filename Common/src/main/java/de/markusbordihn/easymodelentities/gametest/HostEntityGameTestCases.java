@@ -42,6 +42,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -56,6 +57,8 @@ public final class HostEntityGameTestCases {
       new ResourceLocation("example", "invalid");
   private static final ResourceLocation BLOCK_PROFILE_ID =
       new ResourceLocation("example", "animated_block");
+  private static final ResourceLocation ATTRIBUTES_PROFILE_ID =
+      new ResourceLocation("example", "attributes");
 
   private HostEntityGameTestCases() {}
 
@@ -203,6 +206,27 @@ public final class HostEntityGameTestCases {
     helper.succeed();
   }
 
+  public static void attributesAreAppliedFromProfile(GameTestHelper helper) {
+    installProfiles();
+    Optional<Entity> entity =
+        EasyModelServices.entityFactory()
+            .createEntity(helper.getLevel(), ATTRIBUTES_PROFILE_ID, Vec3.ZERO);
+    if (entity.isEmpty() || !(entity.get() instanceof EasyModelHostEntity hostEntity)) {
+      helper.fail("Could not create host entity for attribute test.");
+      return;
+    }
+
+    if (hostEntity.getMaxHealth() != 30.0f
+        || hostEntity.getHealth() != 30.0f
+        || hostEntity.getAttributeValue(Attributes.FOLLOW_RANGE) != 32.0
+        || hostEntity.getAttributeValue(Attributes.MOVEMENT_SPEED) != 0.25) {
+      helper.fail("Profile attributes were not applied to the host entity.");
+      return;
+    }
+
+    helper.succeed();
+  }
+
   public static void blockEntityCanBePlacedAndInitialized(GameTestHelper helper) {
     installProfiles();
     Block block = BuiltInRegistries.BLOCK.get(ModelBlockIds.ANIMATED_BLOCK);
@@ -247,6 +271,8 @@ public final class HostEntityGameTestCases {
         parse(STATIC_PROFILE_ID, staticProfileJson()),
         BLOCK_PROFILE_ID,
         parse(BLOCK_PROFILE_ID, blockEntityProfileJson()),
+        ATTRIBUTES_PROFILE_ID,
+        parse(ATTRIBUTES_PROFILE_ID, attributesProfileJson()),
         INVALID_PROFILE_ID,
         parse(INVALID_PROFILE_ID, invalidProfileJson()));
   }
@@ -298,6 +324,33 @@ public final class HostEntityGameTestCases {
             "width": 0.6,
             "height": 1.2,
             "eye_height": 0.8
+          }
+        }
+        """;
+  }
+
+  private static String attributesProfileJson() {
+    return """
+        {
+          "model_type": "entity",
+          "preset_type": "quadruped_wandering",
+          "version": "attributes-v1",
+          "client": {
+            "render_profile": "example:attributes_render"
+          },
+          "dimensions": {
+            "width": 0.7,
+            "height": 0.9,
+            "eye_height": 0.55
+          },
+          "movement": {
+            "speed": 0.25,
+            "step_height": 0.6,
+            "gravity": true
+          },
+          "attributes": {
+            "max_health": 30.0,
+            "follow_range": 32.0
           }
         }
         """;

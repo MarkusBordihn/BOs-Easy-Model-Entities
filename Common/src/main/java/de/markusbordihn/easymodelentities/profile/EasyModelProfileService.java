@@ -45,6 +45,17 @@ public interface EasyModelProfileService {
     return List.of();
   }
 
+  default Collection<EasyModelEntityProfile> getActiveProfiles() {
+    return getProfiles().stream().filter(EasyModelEntityProfile::isActive).toList();
+  }
+
+  default Collection<EasyModelEntityProfile> getActiveProfiles(ModelBodyType bodyType) {
+    return getProfiles().stream()
+        .filter(EasyModelEntityProfile::isActive)
+        .filter(profile -> profile.bodyType() == bodyType)
+        .toList();
+  }
+
   default Collection<ModelProfileValidationIssue> getValidationIssues(ResourceLocation profileId) {
     return getProfile(profileId).map(EasyModelEntityProfile::validationIssues).orElseGet(List::of);
   }

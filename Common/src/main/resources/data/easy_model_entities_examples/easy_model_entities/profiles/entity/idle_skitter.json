@@ -1,0 +1,9 @@
+{
+  "schema_version": "0.1.0",
+  "model_type": "entity",
+  "preset_type": "arthropod_still",
+  "version": "demo-idle-skitter-v1",
+  "client": {
+    "render_profile": "easy_model_entities_examples:idle_skitter"
+  }
+}

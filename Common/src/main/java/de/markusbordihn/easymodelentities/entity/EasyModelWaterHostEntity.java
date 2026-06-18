@@ -25,6 +25,7 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
@@ -43,34 +44,29 @@ import net.minecraft.world.phys.Vec3;
 
 public abstract class EasyModelWaterHostEntity extends WaterAnimal implements EasyModelEntityHost {
 
-  public static final float FALLBACK_WIDTH = EasyModelHostSupport.FALLBACK_WIDTH;
-  public static final float FALLBACK_HEIGHT = EasyModelHostSupport.FALLBACK_HEIGHT;
-  public static final float FALLBACK_EYE_HEIGHT = EasyModelHostSupport.FALLBACK_EYE_HEIGHT;
-  public static final ResourceLocation MISSING_PROFILE_ID = EasyModelHostSupport.MISSING_PROFILE_ID;
-
   private static final EntityDataAccessor<String> PROFILE_ID =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.STRING);
   private static final EntityDataAccessor<String> RENDER_PROFILE_ID =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.STRING);
   private static final EntityDataAccessor<String> VERSION =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.STRING);
   private static final EntityDataAccessor<Float> WIDTH =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
   private static final EntityDataAccessor<Float> HEIGHT =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
   private static final EntityDataAccessor<Float> EYE_HEIGHT =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
   private static final EntityDataAccessor<ModelBodyType> BODY_TYPE =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.BODY_TYPE);
   private static final EntityDataAccessor<EasyModelAnimationState> ANIMATION_STATE =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.ANIMATION_STATE);
 
   private static final EasyModelHostFields FIELDS =

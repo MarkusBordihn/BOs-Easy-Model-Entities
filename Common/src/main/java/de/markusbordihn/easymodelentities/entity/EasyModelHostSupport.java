@@ -148,6 +148,7 @@ public final class EasyModelHostSupport {
     Optional<EasyModelEntityProfile> profile = activeProfile(profileId);
     if (profile.isPresent()) {
       applyProfile(entity, fields, profile.get(), animationState);
+      entity.setHealth(entity.getMaxHealth());
       return;
     }
 
@@ -220,6 +221,12 @@ public final class EasyModelHostSupport {
 
     if (entity.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
       entity.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(profile.movement().speed());
+    }
+    if (entity.getAttribute(Attributes.MAX_HEALTH) != null) {
+      entity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(profile.attributes().maxHealth());
+    }
+    if (entity.getAttribute(Attributes.FOLLOW_RANGE) != null) {
+      entity.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(profile.attributes().followRange());
     }
   }
 

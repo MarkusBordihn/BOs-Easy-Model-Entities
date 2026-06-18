@@ -21,11 +21,8 @@ package de.markusbordihn.easymodelentities.network.syncher;
 
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
-import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.world.entity.Entity;
 
 public final class EasyModelEntityDataSerializers {
 
@@ -39,11 +36,6 @@ public final class EasyModelEntityDataSerializers {
   private static boolean registered = false;
 
   private EasyModelEntityDataSerializers() {}
-
-  public static <T> EntityDataAccessor<T> defineId(
-      Class<? extends Entity> entityClass, EntityDataSerializer<T> serializer) {
-    return SynchedEntityData.defineId(entityClass, serializer);
-  }
 
   public static void register() {
     if (registered) {

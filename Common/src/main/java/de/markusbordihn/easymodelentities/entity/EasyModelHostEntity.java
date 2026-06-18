@@ -25,6 +25,7 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -41,28 +42,22 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
   public static final ResourceLocation MISSING_PROFILE_ID = EasyModelHostSupport.MISSING_PROFILE_ID;
 
   private static final EntityDataAccessor<String> PROFILE_ID =
-      EasyModelEntityDataSerializers.defineId(
-          EasyModelHostEntity.class, EasyModelEntityDataSerializers.STRING);
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EasyModelEntityDataSerializers.STRING);
   private static final EntityDataAccessor<String> RENDER_PROFILE_ID =
-      EasyModelEntityDataSerializers.defineId(
-          EasyModelHostEntity.class, EasyModelEntityDataSerializers.STRING);
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EasyModelEntityDataSerializers.STRING);
   private static final EntityDataAccessor<String> VERSION =
-      EasyModelEntityDataSerializers.defineId(
-          EasyModelHostEntity.class, EasyModelEntityDataSerializers.STRING);
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EasyModelEntityDataSerializers.STRING);
   private static final EntityDataAccessor<Float> WIDTH =
-      EasyModelEntityDataSerializers.defineId(
-          EasyModelHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
   private static final EntityDataAccessor<Float> HEIGHT =
-      EasyModelEntityDataSerializers.defineId(
-          EasyModelHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
   private static final EntityDataAccessor<Float> EYE_HEIGHT =
-      EasyModelEntityDataSerializers.defineId(
-          EasyModelHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
   private static final EntityDataAccessor<ModelBodyType> BODY_TYPE =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelHostEntity.class, EasyModelEntityDataSerializers.BODY_TYPE);
   private static final EntityDataAccessor<EasyModelAnimationState> ANIMATION_STATE =
-      EasyModelEntityDataSerializers.defineId(
+      SynchedEntityData.defineId(
           EasyModelHostEntity.class, EasyModelEntityDataSerializers.ANIMATION_STATE);
 
   private static final EasyModelHostFields FIELDS =

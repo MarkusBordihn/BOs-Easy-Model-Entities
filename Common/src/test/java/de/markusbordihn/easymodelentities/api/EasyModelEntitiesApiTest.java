@@ -161,6 +161,20 @@ class EasyModelEntitiesApiTest {
   }
 
   @Test
+  void listProfilesReturnsOnlyActiveProfilesFilteredByBodyType() {
+    EasyModelServices.setProfileService(
+        profileService(
+            profile(ACTIVE_PROFILE_ID, ModelProfileStatus.ACTIVE),
+            profile(INVALID_PROFILE_ID, ModelProfileStatus.DISABLED)));
+
+    assertEquals(List.of(ACTIVE_PROFILE_ID), EasyModelEntitiesApi.listProfileIds());
+    assertEquals(1, EasyModelEntitiesApi.listProfiles().size());
+    assertEquals(ACTIVE_PROFILE_ID, EasyModelEntitiesApi.listProfiles().get(0).id());
+    assertEquals(1, EasyModelEntitiesApi.listProfiles(ModelBodyType.QUADRUPED).size());
+    assertTrue(EasyModelEntitiesApi.listProfiles(ModelBodyType.BIPED).isEmpty());
+  }
+
+  @Test
   void createEntityDelegatesToRegisteredFactory() {
     Entity entity = mock(Entity.class);
     Level level = mock(Level.class);

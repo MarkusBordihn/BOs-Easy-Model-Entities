@@ -20,8 +20,10 @@
 package de.markusbordihn.easymodelentities.api;
 
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
@@ -41,6 +43,19 @@ public final class EasyModelEntitiesApi {
   public static Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
     return EasyModelServices.profileService()
         .getProfile(Objects.requireNonNull(profileId, "profileId"));
+  }
+
+  public static List<EasyModelEntityProfile> listProfiles() {
+    return List.copyOf(EasyModelServices.profileService().getActiveProfiles());
+  }
+
+  public static List<EasyModelEntityProfile> listProfiles(ModelBodyType bodyType) {
+    Objects.requireNonNull(bodyType, "bodyType");
+    return List.copyOf(EasyModelServices.profileService().getActiveProfiles(bodyType));
+  }
+
+  public static List<ResourceLocation> listProfileIds() {
+    return listProfiles().stream().map(EasyModelEntityProfile::id).toList();
   }
 
   public static Optional<Entity> createEntity(

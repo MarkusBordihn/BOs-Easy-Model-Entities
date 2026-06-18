@@ -12,9 +12,6 @@ displayURL = "https://curseforge.com/minecraft/mc-mods/easy-model-entities"
 authors = "Markus Bordihn"
 description = '''Turn Blockbench models into simple Minecraft entities without writing Java code.'''
 
-[[mixins]]
-config = "easymodelentities.mixins.json"
-
 [[dependencies.easy_model_entities]]
 modId = "forge"
 mandatory = true

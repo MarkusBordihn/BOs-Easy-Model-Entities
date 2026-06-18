@@ -18,40 +18,27 @@
 
 package de.markusbordihn.easymodelentities.data.model.decoder;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import org.junit.jupiter.api.Test;
 
-public record DecodedModelPart(
-    String name,
-    Vec3f offset,
-    Vec3f rotation,
-    List<DecodedModelCube> cubes,
-    List<DecodedModelPart> children) {
+class DecodedModelPartTest {
 
-  public DecodedModelPart {
-    Objects.requireNonNull(name, "name");
-    Objects.requireNonNull(offset, "offset");
-    Objects.requireNonNull(rotation, "rotation");
-    name = normalizeName(name);
-    cubes = List.copyOf(Objects.requireNonNull(cubes, "cubes"));
-    children = List.copyOf(Objects.requireNonNull(children, "children"));
+  private static DecodedModelPart part(String name) {
+    return new DecodedModelPart(name, Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of());
   }
 
-  public static String normalizeName(String name) {
-    return name.trim().toLowerCase(Locale.ROOT);
+  @Test
+  void normalizesNameToLowerCase() {
+    assertEquals("body", part("Body").name());
+    assertEquals("body", part("BODY").name());
+    assertEquals("left_arm", part("Left_Arm").name());
   }
 
-  public int partCount() {
-    return 1 + children.stream().mapToInt(DecodedModelPart::partCount).sum();
-  }
-
-  public int cubeCount() {
-    return cubes.size() + children.stream().mapToInt(DecodedModelPart::cubeCount).sum();
-  }
-
-  public int hierarchyDepth() {
-    return 1 + children.stream().mapToInt(DecodedModelPart::hierarchyDepth).max().orElse(0);
+  @Test
+  void trimsSurroundingWhitespace() {
+    assertEquals("head", part(" Head ").name());
   }
 }
