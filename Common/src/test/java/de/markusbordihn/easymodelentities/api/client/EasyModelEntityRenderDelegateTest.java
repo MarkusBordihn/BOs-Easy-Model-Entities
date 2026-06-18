@@ -77,9 +77,10 @@ import org.mockito.Answers;
 
 class EasyModelEntityRenderDelegateTest {
 
-  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "mimic");
+  private static final ResourceLocation PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "mimic");
   private static final ResourceLocation RENDER_PROFILE_ID =
-      new ResourceLocation("example", "mimic_render");
+      ResourceLocation.fromNamespaceAndPath("example", "mimic_render");
 
   @BeforeAll
   static void bootstrapMinecraft() {
@@ -164,8 +165,8 @@ class EasyModelEntityRenderDelegateTest {
         "0.1.0",
         "client-v1",
         bodyType,
-        new ResourceLocation("example", "easy_model_entities/models/mimic"),
-        new ResourceLocation("example", "textures/entity/mimic.png"),
+        ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/mimic"),
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/mimic.png"),
         new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
         new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
@@ -175,7 +176,7 @@ class EasyModelEntityRenderDelegateTest {
   private static EasyModelRenderState renderState(BakedModel bakedModel) {
     return new EasyModelRenderState(
         bakedModel,
-        new ResourceLocation("example", "textures/entity/mimic.png"),
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/mimic.png"),
         1.0f,
         0.3f,
         ModelBodyType.STATIC,
@@ -210,7 +211,8 @@ class EasyModelEntityRenderDelegateTest {
   void renderBackendUsesDefaultOptionsWhenOptionsAreNull() {
     Entity entity = entity(0.9f, 1.2f, 0.8f);
     BakedModel bakedModel =
-        new BakedModel(new ResourceLocation("example", "empty"), 64, 64, List.of());
+        new BakedModel(
+            ResourceLocation.fromNamespaceAndPath("example", "empty"), 64, 64, List.of());
     MultiBufferSource bufferSource = mock(MultiBufferSource.class);
     VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
     when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);

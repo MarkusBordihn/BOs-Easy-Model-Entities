@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.block;
 
+import com.mojang.serialization.MapCodec;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelAnimatedBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelRandomlyAnimatedBlockEntity;
@@ -55,6 +56,12 @@ public class EasyModelHostBlock extends BaseEntityBlock {
         }
       }
     };
+  }
+
+  @Override
+  public MapCodec<? extends BaseEntityBlock> codec() {
+    throw new UnsupportedOperationException(
+        "EasyModelHostBlock does not support codec serialization");
   }
 
   @Override

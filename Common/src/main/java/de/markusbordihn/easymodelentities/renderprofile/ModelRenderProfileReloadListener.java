@@ -33,7 +33,7 @@ public class ModelRenderProfileReloadListener
     extends SimplePreparableReloadListener<ModelRenderProfileReloadListener.ReloadState> {
 
   public static final ResourceLocation ID =
-      new ResourceLocation(Constants.MOD_ID, "render_profiles");
+      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "render_profiles");
 
   @Override
   protected ReloadState prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {

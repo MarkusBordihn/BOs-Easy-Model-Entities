@@ -33,6 +33,6 @@ class ModelEntityTypeIdsTest {
     assertTrue(ModelEntityTypeIds.isSupportedHostEntityType(ModelEntityTypeIds.STATIC_ENTITY));
     assertFalse(
         ModelEntityTypeIds.isSupportedHostEntityType(
-            new ResourceLocation("easy_model_entities", "hover_entity")));
+            ResourceLocation.fromNamespaceAndPath("easy_model_entities", "hover_entity")));
   }
 }

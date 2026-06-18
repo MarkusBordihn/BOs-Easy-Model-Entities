@@ -65,7 +65,7 @@ class BundledExampleGeometryTest {
   private static void assertGeometry(String fixtureName, ModelBodyType bodyType) throws Exception {
     byte[] modelBytes = fixture(fixtureName);
     ExpectedModel expectedModel = expectedModel(modelBytes);
-    ResourceLocation modelId = new ResourceLocation("example", fixtureName);
+    ResourceLocation modelId = ResourceLocation.fromNamespaceAndPath("example", fixtureName);
     ModelBakeResult bakeResult =
         ModelBakeService.createDefault()
             .bake(renderProfile(modelId, bodyType), resourceManager(modelId, modelBytes));
@@ -118,7 +118,8 @@ class BundledExampleGeometryTest {
         "test-version",
         bodyType,
         modelId,
-        new ResourceLocation("example", "textures/entity/" + modelId.getPath() + ".png"),
+        ResourceLocation.fromNamespaceAndPath(
+            "example", "textures/entity/" + modelId.getPath() + ".png"),
         new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
         new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
@@ -131,7 +132,8 @@ class BundledExampleGeometryTest {
     when(resourceManager.getResource(ModelResourcePaths.modelResourceLocation(modelId)))
         .thenReturn(Optional.of(resource(modelBytes)));
     when(resourceManager.getResource(
-            new ResourceLocation("example", "textures/entity/" + modelId.getPath() + ".png")))
+            ResourceLocation.fromNamespaceAndPath(
+                "example", "textures/entity/" + modelId.getPath() + ".png")))
         .thenReturn(Optional.of(resource(png())));
     return resourceManager;
   }

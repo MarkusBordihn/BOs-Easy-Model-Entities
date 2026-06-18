@@ -50,15 +50,15 @@ import net.minecraft.world.phys.Vec3;
 public final class HostEntityGameTestCases {
 
   private static final ResourceLocation GROUND_PROFILE_ID =
-      new ResourceLocation("example", "ground");
+      ResourceLocation.fromNamespaceAndPath("example", "ground");
   private static final ResourceLocation STATIC_PROFILE_ID =
-      new ResourceLocation("example", "static");
+      ResourceLocation.fromNamespaceAndPath("example", "static");
   private static final ResourceLocation INVALID_PROFILE_ID =
-      new ResourceLocation("example", "invalid");
+      ResourceLocation.fromNamespaceAndPath("example", "invalid");
   private static final ResourceLocation BLOCK_PROFILE_ID =
-      new ResourceLocation("example", "animated_block");
+      ResourceLocation.fromNamespaceAndPath("example", "animated_block");
   private static final ResourceLocation ATTRIBUTES_PROFILE_ID =
-      new ResourceLocation("example", "attributes");
+      ResourceLocation.fromNamespaceAndPath("example", "attributes");
 
   private HostEntityGameTestCases() {}
 
@@ -74,7 +74,8 @@ public final class HostEntityGameTestCases {
 
     EasyModelRuntimeContract contract = groundEntity.getEasyModelRuntimeContract();
     if (!GROUND_PROFILE_ID.equals(contract.profileId())
-        || !new ResourceLocation("example", "ground_render").equals(contract.renderProfileId())
+        || !ResourceLocation.fromNamespaceAndPath("example", "ground_render")
+            .equals(contract.renderProfileId())
         || !"ground-v1".equals(contract.version())
         || contract.bodyType() != ModelBodyType.QUADRUPED
         || contract.width() != 0.7f
@@ -109,7 +110,10 @@ public final class HostEntityGameTestCases {
     installProfiles();
     boolean missingProfileCreated =
         EasyModelServices.entityFactory()
-            .createEntity(helper.getLevel(), new ResourceLocation("example", "missing"), Vec3.ZERO)
+            .createEntity(
+                helper.getLevel(),
+                ResourceLocation.fromNamespaceAndPath("example", "missing"),
+                Vec3.ZERO)
             .isPresent();
     boolean invalidProfileCreated =
         EasyModelServices.entityFactory()
@@ -197,8 +201,8 @@ public final class HostEntityGameTestCases {
       return;
     }
 
-    if (hostEntity.getDimensions(Pose.STANDING).width != 0.7f
-        || hostEntity.getDimensions(Pose.STANDING).height != 0.9f) {
+    if (hostEntity.getDimensions(Pose.STANDING).width() != 0.7f
+        || hostEntity.getDimensions(Pose.STANDING).height() != 0.9f) {
       helper.fail("Host entity dimensions were not refreshed from the active profile.");
       return;
     }
@@ -245,7 +249,7 @@ public final class HostEntityGameTestCases {
     hostBlockEntity.setEasyModelProfileId(BLOCK_PROFILE_ID);
     EasyModelRuntimeContract contract = hostBlockEntity.getEasyModelRuntimeContract();
     if (!BLOCK_PROFILE_ID.equals(contract.profileId())
-        || !new ResourceLocation("example", "animated_block_render")
+        || !ResourceLocation.fromNamespaceAndPath("example", "animated_block_render")
             .equals(contract.renderProfileId())
         || !"block-v1".equals(contract.version())
         || contract.bodyType() != ModelBodyType.STATIC

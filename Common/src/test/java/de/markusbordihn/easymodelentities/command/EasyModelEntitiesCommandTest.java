@@ -67,13 +67,13 @@ import org.junit.jupiter.api.Test;
 class EasyModelEntitiesCommandTest {
 
   private static final ResourceLocation ACTIVE_PROFILE_ID =
-      new ResourceLocation("example", "alpha");
+      ResourceLocation.fromNamespaceAndPath("example", "alpha");
   private static final ResourceLocation INVALID_PROFILE_ID =
-      new ResourceLocation("example", "broken");
+      ResourceLocation.fromNamespaceAndPath("example", "broken");
   private static final ResourceLocation MISSING_PROFILE_ID =
-      new ResourceLocation("example", "missing");
+      ResourceLocation.fromNamespaceAndPath("example", "missing");
   private static final ResourceLocation BLOCK_PROFILE_ID =
-      new ResourceLocation("example", "block_alpha");
+      ResourceLocation.fromNamespaceAndPath("example", "block_alpha");
 
   private static EasyModelProfileService profileService(EasyModelEntityProfile... profiles) {
     Map<ResourceLocation, EasyModelEntityProfile> profilesById = new LinkedHashMap<>();
@@ -188,8 +188,8 @@ class EasyModelEntitiesCommandTest {
         Constants.SCHEMA_VERSION,
         version,
         bodyType,
-        new ResourceLocation("example", "alpha"),
-        new ResourceLocation("example", "alpha"),
+        ResourceLocation.fromNamespaceAndPath("example", "alpha"),
+        ResourceLocation.fromNamespaceAndPath("example", "alpha"),
         new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
         new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.statusForIssues(issues),
@@ -224,7 +224,7 @@ class EasyModelEntitiesCommandTest {
     EasyModelServices.setProfileService(
         profileService(
             invalidProfile(INVALID_PROFILE_ID),
-            activeProfile(new ResourceLocation("example", "zeta")),
+            activeProfile(ResourceLocation.fromNamespaceAndPath("example", "zeta")),
             activeProfile(ACTIVE_PROFILE_ID)));
 
     assertEquals(

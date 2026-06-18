@@ -31,7 +31,8 @@ import net.minecraft.resources.ResourceLocation;
 
 final class RenderProfileTestFixtures {
 
-  static final ResourceLocation RENDER_PROFILE_ID = new ResourceLocation("example", "lizard");
+  static final ResourceLocation RENDER_PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "lizard");
   static final String RESOURCE_PACK_RENDER_PROFILE =
       "assets/example/easy_model_entities/render_profiles/lizard.json";
 

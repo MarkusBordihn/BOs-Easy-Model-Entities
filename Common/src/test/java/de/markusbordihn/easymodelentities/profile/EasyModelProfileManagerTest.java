@@ -33,26 +33,31 @@ class EasyModelProfileManagerTest {
   void derivesEntityProfileIdFromTypedDataPath() {
     Optional<ResourceLocation> profileId =
         EasyModelProfileManager.profileIdFromResourceLocation(
-            new ResourceLocation("example", "easy_model_entities/profiles/entity/lizard.json"));
+            ResourceLocation.fromNamespaceAndPath(
+                "example", "easy_model_entities/profiles/entity/lizard.json"));
 
-    assertEquals(Optional.of(new ResourceLocation("example", "entity/lizard")), profileId);
+    assertEquals(
+        Optional.of(ResourceLocation.fromNamespaceAndPath("example", "entity/lizard")), profileId);
   }
 
   @Test
   void derivesBlockEntityProfileIdFromTypedDataPath() {
     Optional<ResourceLocation> profileId =
         EasyModelProfileManager.profileIdFromResourceLocation(
-            new ResourceLocation(
+            ResourceLocation.fromNamespaceAndPath(
                 "example", "easy_model_entities/profiles/block_entity/lizard.json"));
 
-    assertEquals(Optional.of(new ResourceLocation("example", "block_entity/lizard")), profileId);
+    assertEquals(
+        Optional.of(ResourceLocation.fromNamespaceAndPath("example", "block_entity/lizard")),
+        profileId);
   }
 
   @Test
   void ignoresProfilesOutsideTypedDataPaths() {
     Optional<ResourceLocation> profileId =
         EasyModelProfileManager.profileIdFromResourceLocation(
-            new ResourceLocation("example", "easy_model_entities/profiles/lizard.json"));
+            ResourceLocation.fromNamespaceAndPath(
+                "example", "easy_model_entities/profiles/lizard.json"));
 
     assertTrue(profileId.isEmpty());
   }

@@ -43,7 +43,8 @@ import org.junit.jupiter.api.Test;
 
 class BlockbenchBbModelDecoderTest {
 
-  private static final ResourceLocation MODEL_ID = new ResourceLocation("example", "model");
+  private static final ResourceLocation MODEL_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "model");
   private static final float DELTA = 1e-4f;
 
   private static String singleCubeModel(

@@ -52,11 +52,12 @@ import org.junit.jupiter.api.Test;
 
 class EasyModelRenderStateResolverTest {
 
-  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "model");
+  private static final ResourceLocation PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "model");
   private static final ResourceLocation MODEL_ID =
-      new ResourceLocation("example", "easy_model_entities/models/model");
+      ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/model");
   private static final ResourceLocation TEXTURE_ID =
-      new ResourceLocation("example", "textures/entity/model.png");
+      ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model.png");
 
   private static EasyModelRuntimeContract contract(ModelBodyType bodyType, String version) {
     return new EasyModelRuntimeContract(

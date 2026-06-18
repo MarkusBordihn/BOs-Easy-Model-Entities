@@ -48,13 +48,14 @@ import org.junit.jupiter.api.Test;
 class ModelRenderProfileManagerTest {
 
   private static final ResourceLocation RENDER_PROFILE_ID =
-      new ResourceLocation("example", "lizard");
+      ResourceLocation.fromNamespaceAndPath("example", "lizard");
   private static final ResourceLocation RENDER_PROFILE_RESOURCE =
-      new ResourceLocation("example", "easy_model_entities/render_profiles/lizard.json");
+      ResourceLocation.fromNamespaceAndPath(
+          "example", "easy_model_entities/render_profiles/lizard.json");
   private static final ResourceLocation MODEL_RESOURCE =
-      new ResourceLocation("example", "easy_model_entities/models/lizard.bbmodel");
+      ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/lizard.bbmodel");
   private static final ResourceLocation TEXTURE_RESOURCE =
-      new ResourceLocation("example", "textures/entity/lizard.png");
+      ResourceLocation.fromNamespaceAndPath("example", "textures/entity/lizard.png");
 
   private static ResourceManager resourceManager(boolean hasModel, boolean hasTexture)
       throws IOException {

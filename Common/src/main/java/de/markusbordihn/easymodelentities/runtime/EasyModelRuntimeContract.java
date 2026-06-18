@@ -68,7 +68,9 @@ public record EasyModelRuntimeContract(
   public static EasyModelRuntimeContract fallback(
       ResourceLocation profileId, EasyModelAnimationState animationState) {
     ResourceLocation fallbackProfileId =
-        profileId == null ? new ResourceLocation(Constants.MOD_ID, "missing") : profileId;
+        profileId == null
+            ? ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "missing")
+            : profileId;
     return new EasyModelRuntimeContract(
         fallbackProfileId,
         fallbackProfileId,

@@ -74,7 +74,7 @@ public final class ModelResourcePaths {
 
   public static ResourceLocation modelResourceLocation(ResourceLocation modelId, String extension) {
     Objects.requireNonNull(modelId, "modelId");
-    return new ResourceLocation(
+    return ResourceLocation.fromNamespaceAndPath(
         modelId.getNamespace(), withExtension(modelId.getPath(), extension));
   }
 
@@ -88,13 +88,13 @@ public final class ModelResourcePaths {
 
   public static ResourceLocation defaultModelId(ResourceLocation profileId) {
     Objects.requireNonNull(profileId, "profileId");
-    return new ResourceLocation(
+    return ResourceLocation.fromNamespaceAndPath(
         profileId.getNamespace(), joinPath(MODEL_DIRECTORY, profileId.getPath()));
   }
 
   public static ResourceLocation defaultTextureId(ResourceLocation profileId) {
     Objects.requireNonNull(profileId, "profileId");
-    return new ResourceLocation(
+    return ResourceLocation.fromNamespaceAndPath(
         profileId.getNamespace(),
         joinPath(
             TEXTURE_ENTITY_DIRECTORY,

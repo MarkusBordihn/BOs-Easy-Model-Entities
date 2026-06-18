@@ -110,19 +110,14 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
   }
 
   @Override
-  protected void defineSynchedData() {
-    super.defineSynchedData();
-    EasyModelHostSupport.defineSynchedData(this.entityData, FIELDS);
+  protected void defineSynchedData(SynchedEntityData.Builder builder) {
+    super.defineSynchedData(builder);
+    EasyModelHostSupport.defineSynchedData(builder, FIELDS);
   }
 
   @Override
-  public EntityDimensions getDimensions(Pose pose) {
+  public EntityDimensions getDefaultDimensions(Pose pose) {
     return EasyModelHostSupport.getDimensions(this.entityData, FIELDS);
-  }
-
-  @Override
-  protected float getStandingEyeHeight(Pose pose, EntityDimensions entityDimensions) {
-    return EasyModelHostSupport.getStandingEyeHeight(this.entityData, FIELDS);
   }
 
   @Override

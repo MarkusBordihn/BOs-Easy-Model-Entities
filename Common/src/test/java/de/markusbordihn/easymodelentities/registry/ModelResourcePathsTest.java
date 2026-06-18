@@ -27,7 +27,8 @@ import org.junit.jupiter.api.Test;
 
 class ModelResourcePathsTest {
 
-  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "lizard");
+  private static final ResourceLocation PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "lizard");
 
   @Test
   void resourcePathsMatchSplitArchitecture() {
@@ -39,7 +40,8 @@ class ModelResourcePathsTest {
         ModelResourcePaths.blockEntityServerProfilePath(PROFILE_ID));
     assertEquals(
         "data/example/easy_model_entities/profiles/entity/lizard.json",
-        ModelResourcePaths.serverProfilePath(new ResourceLocation("example", "entity/lizard")));
+        ModelResourcePaths.serverProfilePath(
+            ResourceLocation.fromNamespaceAndPath("example", "entity/lizard")));
     assertEquals(
         "assets/example/easy_model_entities/render_profiles/lizard.json",
         ModelResourcePaths.renderProfilePath(PROFILE_ID));
@@ -54,17 +56,18 @@ class ModelResourcePathsTest {
   @Test
   void defaultAssetIdsUseProfileNamespace() {
     assertEquals(
-        new ResourceLocation("example", "easy_model_entities/models/lizard"),
+        ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/lizard"),
         ModelResourcePaths.defaultModelId(PROFILE_ID));
     assertEquals(
-        new ResourceLocation("example", "textures/entity/lizard.png"),
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/lizard.png"),
         ModelResourcePaths.defaultTextureId(PROFILE_ID));
   }
 
   @Test
   void fileExtensionsAreNotDuplicated() {
     ResourceLocation modelId =
-        new ResourceLocation("example", "easy_model_entities/models/lizard.bbmodel");
+        ResourceLocation.fromNamespaceAndPath(
+            "example", "easy_model_entities/models/lizard.bbmodel");
 
     assertEquals(
         "assets/example/easy_model_entities/models/lizard.bbmodel",
@@ -73,7 +76,8 @@ class ModelResourcePathsTest {
 
   @Test
   void unsafePathSegmentsAreRejected() {
-    ResourceLocation unsafeProfileId = new ResourceLocation("example", "models/../lizard");
+    ResourceLocation unsafeProfileId =
+        ResourceLocation.fromNamespaceAndPath("example", "models/../lizard");
 
     assertThrows(
         IllegalArgumentException.class,

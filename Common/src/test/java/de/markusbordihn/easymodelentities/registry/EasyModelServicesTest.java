@@ -35,7 +35,7 @@ class EasyModelServicesTest {
 
   @Test
   void defaultServicesAreSafe() {
-    ResourceLocation profileId = new ResourceLocation("example", "missing");
+    ResourceLocation profileId = ResourceLocation.fromNamespaceAndPath("example", "missing");
 
     assertFalse(EasyModelServices.profileService().hasProfile(profileId));
     assertFalse(EasyModelServices.profileService().isActive(profileId));

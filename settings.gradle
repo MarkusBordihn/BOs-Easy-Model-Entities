@@ -20,5 +20,5 @@ pluginManagement {
   }
 }
 
-rootProject.name = 'Easy Model Entities 1.20.1'
-include("Common", "Fabric", "Forge")
+rootProject.name = 'Easy Model Entities 1.21.1'
+include("Common", "Fabric", "Forge", "NeoForge")

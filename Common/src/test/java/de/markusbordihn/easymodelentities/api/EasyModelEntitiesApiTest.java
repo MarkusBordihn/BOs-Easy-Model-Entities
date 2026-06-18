@@ -61,11 +61,12 @@ import org.junit.jupiter.api.Test;
 
 class EasyModelEntitiesApiTest {
 
-  private static final ResourceLocation ACTIVE_PROFILE_ID = new ResourceLocation("example", "fox");
+  private static final ResourceLocation ACTIVE_PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "fox");
   private static final ResourceLocation INVALID_PROFILE_ID =
-      new ResourceLocation("example", "invalid");
+      ResourceLocation.fromNamespaceAndPath("example", "invalid");
   private static final ResourceLocation MISSING_PROFILE_ID =
-      new ResourceLocation("example", "missing");
+      ResourceLocation.fromNamespaceAndPath("example", "missing");
 
   @BeforeAll
   static void bootstrapMinecraft() {

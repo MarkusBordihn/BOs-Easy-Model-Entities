@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 class ModelRenderProfileParserTest {
 
   private static final ResourceLocation RENDER_PROFILE_ID =
-      new ResourceLocation("example", "lizard");
+      ResourceLocation.fromNamespaceAndPath("example", "lizard");
 
   private static EasyModelRenderProfile parse(String json) {
     return ModelRenderProfileParser.parse(RENDER_PROFILE_ID, new StringReader(json));
@@ -59,10 +59,11 @@ class ModelRenderProfileParserTest {
     assertEquals("", renderProfile.version());
     assertEquals(ModelBodyType.BIPED, renderProfile.bodyType());
     assertEquals(
-        new ResourceLocation("example", "easy_model_entities/models/lizard"),
+        ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/lizard"),
         renderProfile.model());
     assertEquals(
-        new ResourceLocation("example", "textures/entity/lizard.png"), renderProfile.texture());
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/lizard.png"),
+        renderProfile.texture());
     assertEquals(1.0f, renderProfile.scale());
     assertEquals(0.3f, renderProfile.shadowRadius());
     assertEquals(ModelAnimationMode.AUTOMATIC, renderProfile.animation().mode());
@@ -127,10 +128,10 @@ class ModelRenderProfileParserTest {
 
     assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
     assertEquals(
-        new ResourceLocation("example", "textures/entity/mimic.png"),
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/mimic.png"),
         renderProfile.textures().get(0));
     assertEquals(
-        new ResourceLocation("minecraft", "textures/block/chest.png"),
+        ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/chest.png"),
         renderProfile.textures().get(1));
   }
 

@@ -17,21 +17,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.registry;
+package de.markusbordihn.easymodelentities.gametest;
 
 import de.markusbordihn.easymodelentities.Constants;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-public final class ModelBlockIds {
+@SuppressWarnings("unused")
+@PrefixGameTestTemplate(value = false)
+@GameTestHolder(Constants.MOD_ID)
+public class SmokeTest {
 
-  public static final ResourceLocation STATIC_BLOCK =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "static_block");
-  public static final ResourceLocation TICKING_BLOCK =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "ticking_block");
-  public static final ResourceLocation ANIMATED_BLOCK =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "animated_block");
-  public static final ResourceLocation ANIMATED_RANDOMLY_BLOCK =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "animated_randomly_block");
-
-  private ModelBlockIds() {}
+  @GameTest(template = "gametest.3x3x3")
+  public void testModRegistered(GameTestHelper helper) {
+    GameTestHelpers.assertTrue(
+        helper,
+        "Mod " + Constants.MOD_ID + " is not loaded!",
+        ModList.get().isLoaded(Constants.MOD_ID));
+    helper.succeed();
+  }
 }

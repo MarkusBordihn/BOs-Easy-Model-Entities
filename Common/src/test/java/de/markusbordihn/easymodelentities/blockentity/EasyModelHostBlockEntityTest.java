@@ -51,12 +51,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 class EasyModelHostBlockEntityTest {
 
-  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "lantern");
+  private static final ResourceLocation PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "lantern");
   private static final ResourceLocation RENDER_PROFILE_ID =
-      new ResourceLocation("example", "lantern_render");
+      ResourceLocation.fromNamespaceAndPath("example", "lantern_render");
 
   @BeforeAll
   static void bootstrapMinecraft() {
@@ -93,6 +95,14 @@ class EasyModelHostBlockEntityTest {
     };
   }
 
+  @SuppressWarnings("unchecked")
+  private static <T extends net.minecraft.world.level.block.entity.BlockEntity>
+      BlockEntityType<T> mockValidType() {
+    BlockEntityType<T> type = mock(BlockEntityType.class);
+    Mockito.lenient().when(type.isValid(Mockito.any())).thenReturn(true);
+    return type;
+  }
+
   @AfterEach
   void resetServices() {
     EasyModelServices.reset();
@@ -105,10 +115,10 @@ class EasyModelHostBlockEntityTest {
 
     blockEntity.setEasyModelProfileId(PROFILE_ID);
     blockEntity.setEasyModelAnimationState(EasyModelAnimationState.IDLE);
-    CompoundTag updateTag = blockEntity.getUpdateTag();
+    CompoundTag updateTag = blockEntity.getUpdateTag(null);
 
     TestBlockEntity loadedBlockEntity = new TestBlockEntity();
-    loadedBlockEntity.load(updateTag);
+    loadedBlockEntity.loadAdditional(updateTag, null);
 
     assertEquals(PROFILE_ID, loadedBlockEntity.getEasyModelProfileId());
     assertEquals(RENDER_PROFILE_ID, loadedBlockEntity.getEasyModelRenderProfileId());
@@ -133,23 +143,23 @@ class EasyModelHostBlockEntityTest {
         new EasyModelHostBlockEntityTypeProvider() {
           @Override
           public BlockEntityType<EasyModelStaticBlockEntity> staticBlockEntityType() {
-            return mock(BlockEntityType.class);
+            return mockValidType();
           }
 
           @Override
           public BlockEntityType<EasyModelTickingBlockEntity> tickingBlockEntityType() {
-            return mock(BlockEntityType.class);
+            return mockValidType();
           }
 
           @Override
           public BlockEntityType<EasyModelAnimatedBlockEntity> animatedBlockEntityType() {
-            return mock(BlockEntityType.class);
+            return mockValidType();
           }
 
           @Override
           public BlockEntityType<EasyModelRandomlyAnimatedBlockEntity>
               animatedRandomlyBlockEntityType() {
-            return mock(BlockEntityType.class);
+            return mockValidType();
           }
         });
     RandomlyAnimatedTestBlockEntity blockEntity = new RandomlyAnimatedTestBlockEntity();
@@ -165,7 +175,7 @@ class EasyModelHostBlockEntityTest {
   private static class TestBlockEntity extends EasyModelHostBlockEntity {
 
     TestBlockEntity() {
-      super(mock(BlockEntityType.class), BlockPos.ZERO, mock(BlockState.class));
+      super(mockValidType(), BlockPos.ZERO, mock(BlockState.class));
     }
   }
 

@@ -30,7 +30,8 @@ import org.junit.jupiter.api.Test;
 
 class EasyModelRuntimeContractTest {
 
-  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "lizard");
+  private static final ResourceLocation PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "lizard");
 
   @Test
   void fromProfileUsesServerProfileRuntimeFields() {
@@ -58,7 +59,9 @@ class EasyModelRuntimeContractTest {
         EasyModelRuntimeContract.fromProfile(profile, EasyModelAnimationState.WALK);
 
     assertEquals(PROFILE_ID, contract.profileId());
-    assertEquals(new ResourceLocation("example", "lizard_render"), contract.renderProfileId());
+    assertEquals(
+        ResourceLocation.fromNamespaceAndPath("example", "lizard_render"),
+        contract.renderProfileId());
     assertEquals("v1", contract.version());
     assertEquals(0.6f, contract.width());
     assertEquals(0.8f, contract.height());
@@ -71,8 +74,9 @@ class EasyModelRuntimeContractTest {
   void fallbackUsesSafeValuesForMissingProfile() {
     EasyModelRuntimeContract contract = EasyModelRuntimeContract.fallback("example:missing");
 
-    assertEquals(new ResourceLocation("example", "missing"), contract.profileId());
-    assertEquals(new ResourceLocation("example", "missing"), contract.renderProfileId());
+    assertEquals(ResourceLocation.fromNamespaceAndPath("example", "missing"), contract.profileId());
+    assertEquals(
+        ResourceLocation.fromNamespaceAndPath("example", "missing"), contract.renderProfileId());
     assertEquals("", contract.version());
     assertEquals(0.6f, contract.width());
     assertEquals(1.8f, contract.height());
@@ -85,8 +89,11 @@ class EasyModelRuntimeContractTest {
   void fallbackUsesMissingIdForInvalidProfileIdString() {
     EasyModelRuntimeContract contract = EasyModelRuntimeContract.fallback("bad id");
 
-    assertEquals(new ResourceLocation("easy_model_entities", "missing"), contract.profileId());
     assertEquals(
-        new ResourceLocation("easy_model_entities", "missing"), contract.renderProfileId());
+        ResourceLocation.fromNamespaceAndPath("easy_model_entities", "missing"),
+        contract.profileId());
+    assertEquals(
+        ResourceLocation.fromNamespaceAndPath("easy_model_entities", "missing"),
+        contract.renderProfileId());
   }
 }

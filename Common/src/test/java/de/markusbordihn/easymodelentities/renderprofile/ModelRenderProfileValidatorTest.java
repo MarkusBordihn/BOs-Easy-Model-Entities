@@ -34,9 +34,10 @@ import org.junit.jupiter.api.Test;
 
 class ModelRenderProfileValidatorTest {
 
-  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "lizard");
+  private static final ResourceLocation PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "lizard");
   private static final ResourceLocation RENDER_PROFILE_ID =
-      new ResourceLocation("example", "lizard");
+      ResourceLocation.fromNamespaceAndPath("example", "lizard");
 
   private static EasyModelRenderProfile renderProfile(String version, ModelBodyType bodyType) {
     String json =

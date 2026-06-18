@@ -20,20 +20,23 @@
 package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.command.EasyModelEntitiesCommand;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.AddReloadListenerEvent;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLPaths;
+import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import net.minecraft.network.syncher.EntityDataSerializer;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,26 +45,38 @@ public class EasyModelEntities {
 
   private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
 
-  public EasyModelEntities(FMLJavaModLoadingContext context) {
-    log.info("Initializing {} (Forge) ...", Constants.MOD_NAME);
+  private static final DeferredRegister<EntityDataSerializer<?>> ENTITY_DATA_SERIALIZERS =
+      DeferredRegister.create(NeoForgeRegistries.ENTITY_DATA_SERIALIZERS, Constants.MOD_ID);
 
-    IEventBus modEventBus = context.getModEventBus();
+  @SuppressWarnings("unused")
+  public static final DeferredHolder<EntityDataSerializer<?>, EntityDataSerializer<ModelBodyType>>
+      BODY_TYPE_SERIALIZER =
+          ENTITY_DATA_SERIALIZERS.register(
+              "body_type", () -> EasyModelEntityDataSerializers.BODY_TYPE);
+
+  @SuppressWarnings("unused")
+  public static final DeferredHolder<
+          EntityDataSerializer<?>, EntityDataSerializer<EasyModelAnimationState>>
+      ANIMATION_STATE_SERIALIZER =
+          ENTITY_DATA_SERIALIZERS.register(
+              "animation_state", () -> EasyModelEntityDataSerializers.ANIMATION_STATE);
+
+  public EasyModelEntities(IEventBus modEventBus) {
+    log.info("Initializing {} (NeoForge) ...", Constants.MOD_NAME);
 
     Constants.GAME_DIR = FMLPaths.GAMEDIR.get();
     Constants.CONFIG_DIR = FMLPaths.CONFIGDIR.get();
 
-    EasyModelEntityDataSerializers.register();
-    ForgeEasyModelEntityTypes.register(modEventBus);
-    ForgeEasyModelBlockEntityTypes.register(modEventBus);
+    ENTITY_DATA_SERIALIZERS.register(modEventBus);
+    NeoForgeEasyModelEntityTypes.register(modEventBus);
+    NeoForgeEasyModelBlockEntityTypes.register(modEventBus);
     EasyModelServices.setEntityFactory(
-        new EasyModelHostEntityFactory(ForgeEasyModelEntityTypes.INSTANCE));
-    EasyModelServices.setBlockEntityTypeProvider(ForgeEasyModelBlockEntityTypes.INSTANCE);
+        new EasyModelHostEntityFactory(NeoForgeEasyModelEntityTypes.INSTANCE));
+    EasyModelServices.setBlockEntityTypeProvider(NeoForgeEasyModelBlockEntityTypes.INSTANCE);
     EasyModelServices.setDiagnosticsService(new DefaultEasyModelDiagnosticsService());
 
-    MinecraftForge.EVENT_BUS.addListener(this::addReloadListeners);
-    MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
-
-    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new EasyModelEntitiesClient(modEventBus));
+    NeoForge.EVENT_BUS.addListener(this::addReloadListeners);
+    NeoForge.EVENT_BUS.addListener(this::registerCommands);
   }
 
   private void addReloadListeners(AddReloadListenerEvent event) {

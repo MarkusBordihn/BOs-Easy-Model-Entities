@@ -33,7 +33,8 @@ import org.junit.jupiter.api.Test;
 
 class EasyModelProfileParserTest {
 
-  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "lizard");
+  private static final ResourceLocation PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "lizard");
 
   private static EasyModelEntityProfile parse(String json) {
     return EasyModelProfileParser.parse(PROFILE_ID, new StringReader(json));
@@ -205,7 +206,9 @@ class EasyModelProfileParserTest {
             """);
 
     assertEquals(ModelProfileStatus.ACTIVE, profile.status());
-    assertEquals(new ResourceLocation("example", "custom_render"), profile.renderProfileId());
+    assertEquals(
+        ResourceLocation.fromNamespaceAndPath("example", "custom_render"),
+        profile.renderProfileId());
     assertEquals(1.2f, profile.width());
     assertEquals(0.85f, profile.height());
     assertEquals(0.6f, profile.eyeHeight());

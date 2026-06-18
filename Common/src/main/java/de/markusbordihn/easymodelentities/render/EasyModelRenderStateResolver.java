@@ -41,9 +41,9 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public final class EasyModelRenderStateResolver {
 
   public static final ResourceLocation FALLBACK_TEXTURE =
-      new ResourceLocation("minecraft", "textures/block/pink_wool.png");
+      ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/pink_wool.png");
   private static final ResourceLocation FALLBACK_MODEL =
-      new ResourceLocation(Constants.MOD_ID, "fallback");
+      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "fallback");
   private static final ModelAnimationSettings NO_ANIMATION =
       new ModelAnimationSettings(ModelAnimationMode.NONE, 1.0f, 1.0f);
 

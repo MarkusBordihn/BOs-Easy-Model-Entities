@@ -21,6 +21,8 @@ package de.markusbordihn.easymodelentities.network.syncher;
 
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.network.syncher.EntityDataSerializers;
 
@@ -48,7 +50,10 @@ public final class EasyModelEntityDataSerializers {
   }
 
   private static <T extends Enum<T>> EntityDataSerializer<T> enumSerializer(Class<T> enumClass) {
-    return EntityDataSerializer.simpleEnum(enumClass);
+    return EntityDataSerializer.forValueType(
+        StreamCodec.of(
+            (RegistryFriendlyByteBuf buf, T value) -> buf.writeEnum(value),
+            buf -> buf.readEnum(enumClass)));
   }
 
   private static void registerSerializer(EntityDataSerializer<?> serializer) {

@@ -31,6 +31,7 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
@@ -47,7 +48,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   public static final float FALLBACK_HEIGHT = 1.0f;
   public static final float FALLBACK_EYE_HEIGHT = 0.5f;
   public static final ResourceLocation MISSING_PROFILE_ID =
-      new ResourceLocation(Constants.MOD_ID, "missing");
+      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "missing");
   public static final int RANDOM_IDLE_BURST_LENGTH = 53;
   public static final int RANDOM_IDLE_MIN_GAP = 200;
   public static final int RANDOM_IDLE_GAP_RANGE = 201;
@@ -100,8 +101,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   @Override
-  public void load(CompoundTag compoundTag) {
-    super.load(compoundTag);
+  public void loadAdditional(CompoundTag compoundTag, HolderLookup.Provider registries) {
+    super.loadAdditional(compoundTag, registries);
 
     EasyModelHostPersistence.State state = EasyModelHostPersistence.read(compoundTag);
     ResourceLocation profileId = state.profileId();
@@ -135,8 +136,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   @Override
-  protected void saveAdditional(CompoundTag compoundTag) {
-    super.saveAdditional(compoundTag);
+  protected void saveAdditional(CompoundTag compoundTag, HolderLookup.Provider registries) {
+    super.saveAdditional(compoundTag, registries);
     compoundTag.putString(
         EasyModelHostPersistence.PROFILE_ID_TAG, this.runtimeContract.profileId().toString());
     compoundTag.putString(
@@ -152,9 +153,9 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   @Override
-  public CompoundTag getUpdateTag() {
-    CompoundTag compoundTag = super.getUpdateTag();
-    saveAdditional(compoundTag);
+  public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+    CompoundTag compoundTag = super.getUpdateTag(registries);
+    saveAdditional(compoundTag, registries);
     return compoundTag;
   }
 

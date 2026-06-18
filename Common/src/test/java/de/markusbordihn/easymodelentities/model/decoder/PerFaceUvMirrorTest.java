@@ -50,7 +50,7 @@ class PerFaceUvMirrorTest {
     DecodedModel model =
         new BlockbenchBbModelDecoder()
             .decode(
-                new ResourceLocation("example", modelName),
+                ResourceLocation.fromNamespaceAndPath("example", modelName),
                 resource(fixture("examples/" + fixture)));
     DecodedModelPart root = model.rootParts().get(0);
     return root.cubes().isEmpty() ? root.children().get(0).cubes().get(0) : root.cubes().get(0);

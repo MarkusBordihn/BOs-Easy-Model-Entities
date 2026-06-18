@@ -73,7 +73,7 @@ class TextExampleJavaExportParityTest {
     DecodedModel model =
         new BlockbenchBbModelDecoder()
             .decode(
-                new ResourceLocation("example", "text_example"),
+                ResourceLocation.fromNamespaceAndPath("example", "text_example"),
                 resource(fixture("examples/text_example.bbmodel")));
 
     DecodedModelPart root = model.rootParts().get(0);

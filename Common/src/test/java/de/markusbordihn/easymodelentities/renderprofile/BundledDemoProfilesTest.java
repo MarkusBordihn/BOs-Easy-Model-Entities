@@ -79,9 +79,10 @@ class BundledDemoProfilesTest {
 
   private static void assertDemo(String path, String renderPath, ModelBodyType bodyType)
       throws Exception {
-    ResourceLocation id = new ResourceLocation("easy_model_entities_examples", path);
+    ResourceLocation id =
+        ResourceLocation.fromNamespaceAndPath("easy_model_entities_examples", path);
     ResourceLocation renderProfileId =
-        new ResourceLocation("easy_model_entities_examples", renderPath);
+        ResourceLocation.fromNamespaceAndPath("easy_model_entities_examples", renderPath);
     EasyModelEntityProfile profile = parseProfile(id);
     EasyModelRenderProfile renderProfile = parseRenderProfile(profile.renderProfileId());
     ModelBakeResult bakeResult =

@@ -45,7 +45,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public final class ModelTextureResolver {
 
   public static final ResourceLocation FALLBACK_TEXTURE =
-      new ResourceLocation("minecraft", "textures/block/pink_wool.png");
+      ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/pink_wool.png");
   private static final int MAX_TEXTURE_SIZE = 2048;
   private static final int SOFT_TEXTURE_SIZE = 128;
   private static final String TEXTURE_FOLDER = "textures";

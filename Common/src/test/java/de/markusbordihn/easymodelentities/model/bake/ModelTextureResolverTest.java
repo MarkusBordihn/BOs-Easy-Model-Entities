@@ -52,11 +52,12 @@ import org.junit.jupiter.api.Test;
 
 class ModelTextureResolverTest {
 
-  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "model");
+  private static final ResourceLocation PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "model");
   private static final ResourceLocation MODEL_ID =
-      new ResourceLocation("example", "easy_model_entities/models/model");
+      ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/model");
   private static final ResourceLocation DEFAULT_TEXTURE =
-      new ResourceLocation("example", "textures/entity/model.png");
+      ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model.png");
 
   private static boolean hasMissingTexture(ModelTextureResolver.ResolvedTextures resolved) {
     return resolved.issues().stream()
@@ -131,7 +132,8 @@ class ModelTextureResolverTest {
 
   @Test
   void resolvesProfileMappingAndDerivedTexture() throws IOException {
-    ResourceLocation customTexture = new ResourceLocation("example", "textures/entity/custom.png");
+    ResourceLocation customTexture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/custom.png");
     DecodedModel model =
         decodedModel(new DecodedTexture(1, "minecraft", "block", "chest.png", "chest.png", 16, 16));
     EasyModelRenderProfile profile = profile(Map.of(1, customTexture));
@@ -147,7 +149,8 @@ class ModelTextureResolverTest {
 
   @Test
   void derivesTextureFromBbmodelWhenProfileMappingMissing() throws IOException {
-    ResourceLocation derived = new ResourceLocation("minecraft", "textures/block/chest.png");
+    ResourceLocation derived =
+        ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/chest.png");
     DecodedModel model =
         decodedModel(new DecodedTexture(1, "minecraft", "block", "chest.png", "chest.png", 16, 16));
     EasyModelRenderProfile profile = profile(Map.of());

@@ -38,13 +38,12 @@ final class EasyModelVertexSink {
   void vertex(
       float x, float y, float z, float u, float v, float normalX, float normalY, float normalZ) {
     PoseStack.Pose pose = poseStack.last();
-    vertexConsumer
-        .vertex(pose.pose(), x, y, z)
-        .color(255, 255, 255, 255)
-        .uv(u, v)
-        .overlayCoords(OverlayTexture.NO_OVERLAY)
-        .uv2(packedLight)
-        .normal(pose.normal(), normalX, normalY, normalZ)
-        .endVertex();
+    vertexConsumer.addVertex(pose.pose(), x, y, z);
+    vertexConsumer.setColor(255, 255, 255, 255);
+    vertexConsumer.setUv(u, v);
+    vertexConsumer.setUv1(
+        OverlayTexture.NO_OVERLAY & 0xFFFF, (OverlayTexture.NO_OVERLAY >> 16) & 0xFFFF);
+    vertexConsumer.setUv2(packedLight & 0xFFFF, (packedLight >> 16) & 0xFFFF);
+    vertexConsumer.setNormal(pose, normalX, normalY, normalZ);
   }
 }

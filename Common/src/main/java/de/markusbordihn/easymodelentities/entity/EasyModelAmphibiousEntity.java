@@ -40,11 +40,6 @@ public class EasyModelAmphibiousEntity extends EasyModelHostEntity {
   }
 
   @Override
-  public boolean canBreatheUnderwater() {
-    return true;
-  }
-
-  @Override
   public boolean isPushedByFluid() {
     return false;
   }

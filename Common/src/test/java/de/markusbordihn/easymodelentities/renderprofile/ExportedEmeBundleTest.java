@@ -69,7 +69,8 @@ class ExportedEmeBundleTest {
     when(resourceManager.getResource(renderProfile.texture()))
         .thenReturn(Optional.of(resource(png())));
     when(resourceManager.getResource(
-            new ResourceLocation(NAMESPACE, "textures/entity/disguised_chestling_1.png")))
+            ResourceLocation.fromNamespaceAndPath(
+                NAMESPACE, "textures/entity/disguised_chestling_1.png")))
         .thenReturn(
             Optional.of(
                 resource(
@@ -124,7 +125,8 @@ class ExportedEmeBundleTest {
     byte[] datapack = innerZip(DATAPACK);
     byte[] resourcepack = innerZip(RESOURCEPACK);
 
-    ResourceLocation profileId = new ResourceLocation(NAMESPACE, "entity/disguised_chestling");
+    ResourceLocation profileId =
+        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "entity/disguised_chestling");
     EasyModelEntityProfile profile =
         EasyModelProfileParser.parse(
             profileId,
@@ -149,7 +151,9 @@ class ExportedEmeBundleTest {
     assertTrue(renderProfile.isActive());
     assertTrue(bakeResult.successful());
     assertEquals(profileId, profile.id());
-    assertEquals(new ResourceLocation(NAMESPACE, "disguised_chestling"), profile.renderProfileId());
+    assertEquals(
+        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "disguised_chestling"),
+        profile.renderProfileId());
     assertEquals(profile.renderProfileId(), renderProfile.id());
     assertEquals(ModelBodyType.STATIC, profile.bodyType());
     assertEquals(ModelBodyType.STATIC, renderProfile.bodyType());

@@ -77,9 +77,10 @@ import org.mockito.Answers;
 
 class EasyModelBlockEntityRenderDelegateTest {
 
-  private static final ResourceLocation PROFILE_ID = new ResourceLocation("example", "bell");
+  private static final ResourceLocation PROFILE_ID =
+      ResourceLocation.fromNamespaceAndPath("example", "bell");
   private static final ResourceLocation RENDER_PROFILE_ID =
-      new ResourceLocation("example", "bell_render");
+      ResourceLocation.fromNamespaceAndPath("example", "bell_render");
 
   @BeforeAll
   static void bootstrapMinecraft() {
@@ -158,8 +159,8 @@ class EasyModelBlockEntityRenderDelegateTest {
         "0.1.0",
         "client-v1",
         bodyType,
-        new ResourceLocation("example", "easy_model_entities/models/bell"),
-        new ResourceLocation("example", "textures/block/bell.png"),
+        ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/bell"),
+        ResourceLocation.fromNamespaceAndPath("example", "textures/block/bell.png"),
         new ModelRenderSettings(1.0f, 0.0f, 0.0f, 0.0f, Vec3f.ZERO),
         new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
@@ -169,7 +170,7 @@ class EasyModelBlockEntityRenderDelegateTest {
   private static EasyModelRenderState renderState(BakedModel bakedModel) {
     return new EasyModelRenderState(
         bakedModel,
-        new ResourceLocation("example", "textures/block/bell.png"),
+        ResourceLocation.fromNamespaceAndPath("example", "textures/block/bell.png"),
         1.0f,
         0.0f,
         ModelBodyType.STATIC,
@@ -207,7 +208,8 @@ class EasyModelBlockEntityRenderDelegateTest {
     RenderableBlockEntity blockEntity =
         mock(RenderableBlockEntity.class, Answers.CALLS_REAL_METHODS);
     BakedModel bakedModel =
-        new BakedModel(new ResourceLocation("example", "empty"), 64, 64, List.of());
+        new BakedModel(
+            ResourceLocation.fromNamespaceAndPath("example", "empty"), 64, 64, List.of());
     MultiBufferSource bufferSource = mock(MultiBufferSource.class);
     VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
     when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);

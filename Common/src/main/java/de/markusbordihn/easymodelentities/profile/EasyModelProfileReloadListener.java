@@ -30,7 +30,8 @@ import net.minecraft.util.profiling.ProfilerFiller;
 public class EasyModelProfileReloadListener
     extends SimplePreparableReloadListener<EasyModelProfileManager> {
 
-  public static final ResourceLocation ID = new ResourceLocation(Constants.MOD_ID, "profiles");
+  public static final ResourceLocation ID =
+      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "profiles");
 
   @Override
   protected EasyModelProfileManager prepare(

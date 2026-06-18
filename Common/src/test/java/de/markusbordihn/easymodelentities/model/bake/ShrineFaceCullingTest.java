@@ -71,7 +71,8 @@ class ShrineFaceCullingTest {
         "test-version",
         bodyType,
         modelId,
-        new ResourceLocation("example", "textures/entity/" + modelId.getPath() + ".png"),
+        ResourceLocation.fromNamespaceAndPath(
+            "example", "textures/entity/" + modelId.getPath() + ".png"),
         new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
         new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
@@ -84,7 +85,8 @@ class ShrineFaceCullingTest {
     when(resourceManager.getResource(ModelResourcePaths.modelResourceLocation(modelId)))
         .thenReturn(Optional.of(resource(modelBytes)));
     when(resourceManager.getResource(
-            new ResourceLocation("example", "textures/entity/" + modelId.getPath() + ".png")))
+            ResourceLocation.fromNamespaceAndPath(
+                "example", "textures/entity/" + modelId.getPath() + ".png")))
         .thenReturn(Optional.of(resource(png())));
     return resourceManager;
   }
@@ -115,7 +117,7 @@ class ShrineFaceCullingTest {
 
   @Test
   void shrineLosesHiddenFacesAndEnablesBackfaceCulling() throws Exception {
-    ResourceLocation modelId = new ResourceLocation("example", "shrine");
+    ResourceLocation modelId = ResourceLocation.fromNamespaceAndPath("example", "shrine");
     byte[] modelBytes = fixture("shrine");
     ModelBakeResult bakeResult =
         ModelBakeService.createDefault()
@@ -136,7 +138,7 @@ class ShrineFaceCullingTest {
 
   @Test
   void animatedModelKeepsBackfaceCullingDisabled() throws Exception {
-    ResourceLocation modelId = new ResourceLocation("example", "little_explorer");
+    ResourceLocation modelId = ResourceLocation.fromNamespaceAndPath("example", "little_explorer");
     byte[] modelBytes = fixture("little_explorer");
     ModelBakeResult bakeResult =
         ModelBakeService.createDefault()

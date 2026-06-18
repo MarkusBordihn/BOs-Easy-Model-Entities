@@ -1,4 +1,4 @@
-# Easy Model Entities (1.20.1)
+# Easy Model Entities
 
 ![Easy NPC Versions](http://cf.way2muchnoise.eu/versions/Minecraft_1539533_all.svg)
 

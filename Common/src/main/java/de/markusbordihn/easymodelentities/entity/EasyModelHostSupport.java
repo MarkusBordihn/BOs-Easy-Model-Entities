@@ -44,7 +44,7 @@ public final class EasyModelHostSupport {
   public static final float FALLBACK_HEIGHT = 1.8f;
   public static final float FALLBACK_EYE_HEIGHT = 1.62f;
   public static final ResourceLocation MISSING_PROFILE_ID =
-      new ResourceLocation(Constants.MOD_ID, "missing");
+      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "missing");
 
   private EasyModelHostSupport() {}
 
@@ -62,27 +62,24 @@ public final class EasyModelHostSupport {
         .filter(profile -> profile.modelType() == ModelType.ENTITY);
   }
 
-  public static void defineSynchedData(SynchedEntityData entityData, EasyModelHostFields fields) {
+  public static void defineSynchedData(
+      SynchedEntityData.Builder builder, EasyModelHostFields fields) {
     EasyModelRuntimeContract contract = EasyModelRuntimeContract.fallback(MISSING_PROFILE_ID);
-    entityData.define(fields.profileId(), contract.profileId().toString());
-    entityData.define(fields.renderProfileId(), contract.renderProfileId().toString());
-    entityData.define(fields.version(), contract.version());
-    entityData.define(fields.width(), contract.width());
-    entityData.define(fields.height(), contract.height());
-    entityData.define(fields.eyeHeight(), contract.eyeHeight());
-    entityData.define(fields.bodyType(), contract.bodyType());
-    entityData.define(fields.animationState(), contract.animationState());
+    builder.define(fields.profileId(), contract.profileId().toString());
+    builder.define(fields.renderProfileId(), contract.renderProfileId().toString());
+    builder.define(fields.version(), contract.version());
+    builder.define(fields.width(), contract.width());
+    builder.define(fields.height(), contract.height());
+    builder.define(fields.eyeHeight(), contract.eyeHeight());
+    builder.define(fields.bodyType(), contract.bodyType());
+    builder.define(fields.animationState(), contract.animationState());
   }
 
   public static EntityDimensions getDimensions(
       SynchedEntityData entityData, EasyModelHostFields fields) {
     return EntityDimensions.scalable(
-        entityData.get(fields.width()), entityData.get(fields.height()));
-  }
-
-  public static float getStandingEyeHeight(
-      SynchedEntityData entityData, EasyModelHostFields fields) {
-    return entityData.get(fields.eyeHeight());
+            entityData.get(fields.width()), entityData.get(fields.height()))
+        .withEyeHeight(entityData.get(fields.eyeHeight()));
   }
 
   public static void addAdditionalSaveData(
@@ -217,7 +214,6 @@ public final class EasyModelHostSupport {
     applyRuntimeContract(
         entity, fields, EasyModelRuntimeContract.fromProfile(profile, animationState));
     entity.setNoGravity(!profile.movement().gravity());
-    entity.setMaxUpStep(profile.movement().stepHeight());
 
     if (entity.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
       entity.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(profile.movement().speed());
