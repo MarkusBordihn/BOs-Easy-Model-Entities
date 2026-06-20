@@ -20,7 +20,7 @@
 package de.markusbordihn.easymodelentities.entity;
 
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -29,7 +29,7 @@ public interface EasyModelEntityFactory {
 
   EasyModelEntityFactory EMPTY = new EasyModelEntityFactory() {};
 
-  default Optional<Entity> createEntity(Level level, ResourceLocation profileId, Vec3 position) {
+  default Optional<Entity> createEntity(Level level, Identifier profileId, Vec3 position) {
     return Optional.empty();
   }
 }

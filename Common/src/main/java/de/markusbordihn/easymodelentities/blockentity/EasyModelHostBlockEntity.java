@@ -34,21 +34,23 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public abstract class EasyModelHostBlockEntity extends BlockEntity implements EasyModelRenderable {
 
   public static final float FALLBACK_WIDTH = 1.0f;
   public static final float FALLBACK_HEIGHT = 1.0f;
   public static final float FALLBACK_EYE_HEIGHT = 0.5f;
-  public static final ResourceLocation MISSING_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "missing");
+  public static final Identifier MISSING_PROFILE_ID =
+      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "missing");
   public static final int RANDOM_IDLE_BURST_LENGTH = 53;
   public static final int RANDOM_IDLE_MIN_GAP = 200;
   public static final int RANDOM_IDLE_GAP_RANGE = 201;
@@ -77,8 +79,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
             EasyModelAnimationState.AUTO);
   }
 
-  private static Optional<EasyModelEntityProfile> activeBlockEntityProfile(
-      ResourceLocation profileId) {
+  private static Optional<EasyModelEntityProfile> activeBlockEntityProfile(Identifier profileId) {
     return EasyModelServices.profileService()
         .getProfile(profileId)
         .filter(EasyModelEntityProfile::isActive)
@@ -101,12 +102,12 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   @Override
-  public void loadAdditional(CompoundTag compoundTag, HolderLookup.Provider registries) {
-    super.loadAdditional(compoundTag, registries);
+  public void loadAdditional(ValueInput valueInput) {
+    super.loadAdditional(valueInput);
 
-    EasyModelHostPersistence.State state = EasyModelHostPersistence.read(compoundTag);
-    ResourceLocation profileId = state.profileId();
-    ResourceLocation renderProfileId = state.renderProfileId();
+    EasyModelHostPersistence.State state = EasyModelHostPersistence.read(valueInput);
+    Identifier profileId = state.profileId();
+    Identifier renderProfileId = state.renderProfileId();
     String version = state.version();
     ModelBodyType bodyType = state.bodyType();
     EasyModelAnimationState animationState = state.animationState();
@@ -136,27 +137,15 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   @Override
-  protected void saveAdditional(CompoundTag compoundTag, HolderLookup.Provider registries) {
-    super.saveAdditional(compoundTag, registries);
-    compoundTag.putString(
-        EasyModelHostPersistence.PROFILE_ID_TAG, this.runtimeContract.profileId().toString());
-    compoundTag.putString(
-        EasyModelHostPersistence.RENDER_PROFILE_ID_TAG,
-        this.runtimeContract.renderProfileId().toString());
-    compoundTag.putString(EasyModelHostPersistence.VERSION_TAG, this.runtimeContract.version());
-    compoundTag.putString(
-        EasyModelHostPersistence.BODY_TYPE_TAG,
-        this.runtimeContract.bodyType().getSerializedName());
-    compoundTag.putString(
-        EasyModelHostPersistence.ANIMATION_STATE_TAG,
-        this.runtimeContract.animationState().getSerializedName());
-  }
-
-  @Override
-  public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-    CompoundTag compoundTag = super.getUpdateTag(registries);
-    saveAdditional(compoundTag, registries);
-    return compoundTag;
+  protected void saveAdditional(ValueOutput valueOutput) {
+    super.saveAdditional(valueOutput);
+    EasyModelHostPersistence.write(
+        valueOutput,
+        this.runtimeContract.profileId(),
+        this.runtimeContract.renderProfileId(),
+        this.runtimeContract.version(),
+        this.runtimeContract.bodyType(),
+        this.runtimeContract.animationState());
   }
 
   @Override
@@ -165,12 +154,17 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   @Override
-  public ResourceLocation getEasyModelProfileId() {
+  public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+    return saveCustomOnly(registries);
+  }
+
+  @Override
+  public Identifier getEasyModelProfileId() {
     return EasyModelHostPersistence.parseResourceLocationOrMissing(
         this.runtimeContract.profileId().toString(), MISSING_PROFILE_ID);
   }
 
-  public void setEasyModelProfileId(ResourceLocation profileId) {
+  public void setEasyModelProfileId(Identifier profileId) {
     Objects.requireNonNull(profileId, "profileId");
     Optional<EasyModelEntityProfile> profile = activeBlockEntityProfile(profileId);
     if (profile.isPresent()) {
@@ -183,7 +177,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   @Override
-  public ResourceLocation getEasyModelRenderProfileId() {
+  public Identifier getEasyModelRenderProfileId() {
     return this.runtimeContract.renderProfileId();
   }
 
@@ -226,8 +220,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   protected EasyModelRuntimeContract fallbackRuntimeContract(
-      ResourceLocation profileId, EasyModelAnimationState animationState) {
-    ResourceLocation fallbackProfileId =
+      Identifier profileId, EasyModelAnimationState animationState) {
+    Identifier fallbackProfileId =
         profileId == null ? MISSING_PROFILE_ID : Objects.requireNonNull(profileId, "profileId");
     return new EasyModelRuntimeContract(
         fallbackProfileId,
@@ -254,7 +248,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   protected void syncBlockEntity() {
-    if (this.level != null && !this.level.isClientSide) {
+    if (this.level != null && !this.level.isClientSide()) {
       BlockState blockState = getBlockState();
       this.level.sendBlockUpdated(this.worldPosition, blockState, blockState, Block.UPDATE_CLIENTS);
     }

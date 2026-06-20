@@ -21,13 +21,10 @@ package de.markusbordihn.easymodelentities.data.diagnostics;
 
 import java.util.Objects;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record ModelDiagnostic(
-    ModelDiagnosticSeverity severity,
-    String code,
-    String message,
-    Optional<ResourceLocation> profileId) {
+    ModelDiagnosticSeverity severity, String code, String message, Optional<Identifier> profileId) {
 
   public ModelDiagnostic {
     Objects.requireNonNull(severity, "severity");

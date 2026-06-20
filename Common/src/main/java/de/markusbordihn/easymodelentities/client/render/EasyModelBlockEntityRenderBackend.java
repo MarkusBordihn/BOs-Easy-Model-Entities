@@ -22,7 +22,9 @@ package de.markusbordihn.easymodelentities.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
@@ -38,7 +40,8 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public final class EasyModelBlockEntityRenderBackend {
@@ -68,6 +71,68 @@ public final class EasyModelBlockEntityRenderBackend {
         poseStack,
         bufferSource,
         packedLight);
+  }
+
+  public static void render(
+      EasyModelRenderState renderState,
+      float ageInTicks,
+      float yawDegrees,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    Objects.requireNonNull(renderState, "renderState");
+    Objects.requireNonNull(poseStack, "poseStack");
+    Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
+
+    poseStack.pushPose();
+    poseStack.translate(0.5f, 1.5f, 0.5f);
+    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yawDegrees));
+    poseStack.scale(-renderState.scale(), -renderState.scale(), renderState.scale());
+
+    EasyModelBakedModelRenderer.render(
+        renderState.bakedModel(),
+        renderState,
+        0.0f,
+        0.0f,
+        ageInTicks,
+        0.0f,
+        EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        poseStack,
+        submitNodeCollector,
+        packedLight);
+    poseStack.popPose();
+  }
+
+  public static void render(
+      EasyModelRenderState renderState,
+      float ageInTicks,
+      float yawDegrees,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight) {
+    Objects.requireNonNull(renderState, "renderState");
+    Objects.requireNonNull(poseStack, "poseStack");
+    Objects.requireNonNull(bufferSource, "bufferSource");
+
+    poseStack.pushPose();
+    poseStack.translate(0.5f, 1.5f, 0.5f);
+    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yawDegrees));
+    poseStack.scale(-renderState.scale(), -renderState.scale(), renderState.scale());
+
+    EasyModelBakedModelRenderer.render(
+        renderState.bakedModel(),
+        renderState,
+        0.0f,
+        0.0f,
+        ageInTicks,
+        0.0f,
+        EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        poseStack,
+        bufferSource,
+        packedLight);
+    poseStack.popPose();
   }
 
   public static void render(
@@ -121,8 +186,7 @@ public final class EasyModelBlockEntityRenderBackend {
     Objects.requireNonNull(profileService, "profileService");
     Objects.requireNonNull(renderProfileService, "renderProfileService");
 
-    ResourceLocation profileId =
-        Objects.requireNonNull(renderable.getEasyModelProfileId(), "profileId");
+    Identifier profileId = Objects.requireNonNull(renderable.getEasyModelProfileId(), "profileId");
     EasyModelAnimationState animationState =
         EasyModelAnimationState.byApiState(renderable.getEasyModelAnimationState());
     return profileService
@@ -139,9 +203,9 @@ public final class EasyModelBlockEntityRenderBackend {
   private static EasyModelRuntimeContract fallbackRuntimeContract(
       EasyModelRenderable renderable,
       EasyModelRenderProfileService renderProfileService,
-      ResourceLocation profileId,
+      Identifier profileId,
       EasyModelAnimationState animationState) {
-    ResourceLocation renderProfileId =
+    Identifier renderProfileId =
         Objects.requireNonNullElse(renderable.getEasyModelRenderProfileId(), profileId);
     ModelBodyType bodyType =
         renderProfileService

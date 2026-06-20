@@ -22,11 +22,13 @@ package de.markusbordihn.easymodelentities;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.resources.VanillaClientListeners;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -66,7 +68,10 @@ public class EasyModelEntitiesClient {
         EasyModelHostBlockEntityRenderer::new);
   }
 
-  private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
-    event.registerReloadListener(new ModelRenderProfileReloadListener());
+  private void registerClientReloadListeners(AddClientReloadListenersEvent event) {
+    Identifier listenerId =
+        Identifier.fromNamespaceAndPath(Constants.MOD_ID, "render_profile_reload_listener");
+    event.addListener(listenerId, new ModelRenderProfileReloadListener());
+    event.addDependency(VanillaClientListeners.LAST, listenerId);
   }
 }

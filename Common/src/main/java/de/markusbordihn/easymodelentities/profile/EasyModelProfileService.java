@@ -23,21 +23,21 @@ import de.markusbordihn.easymodelentities.data.profile.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public interface EasyModelProfileService {
 
   EasyModelProfileService EMPTY = new EasyModelProfileService() {};
 
-  default boolean hasProfile(ResourceLocation profileId) {
+  default boolean hasProfile(Identifier profileId) {
     return getProfile(profileId).isPresent();
   }
 
-  default Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
+  default Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
     return Optional.empty();
   }
 
-  default Collection<ResourceLocation> getProfileIds() {
+  default Collection<Identifier> getProfileIds() {
     return getProfiles().stream().map(EasyModelEntityProfile::id).toList();
   }
 
@@ -56,11 +56,11 @@ public interface EasyModelProfileService {
         .toList();
   }
 
-  default Collection<ModelProfileValidationIssue> getValidationIssues(ResourceLocation profileId) {
+  default Collection<ModelProfileValidationIssue> getValidationIssues(Identifier profileId) {
     return getProfile(profileId).map(EasyModelEntityProfile::validationIssues).orElseGet(List::of);
   }
 
-  default boolean isActive(ResourceLocation profileId) {
+  default boolean isActive(Identifier profileId) {
     return getProfile(profileId).map(EasyModelEntityProfile::isActive).orElse(false);
   }
 }

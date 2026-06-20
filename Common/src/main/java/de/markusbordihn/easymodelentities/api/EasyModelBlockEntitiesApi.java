@@ -22,14 +22,14 @@ package de.markusbordihn.easymodelentities.api;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import java.util.Objects;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public final class EasyModelBlockEntitiesApi {
 
   private EasyModelBlockEntitiesApi() {}
 
-  public static Optional<ResourceLocation> getProfileId(BlockEntity blockEntity) {
+  public static Optional<Identifier> getProfileId(BlockEntity blockEntity) {
     Objects.requireNonNull(blockEntity, "blockEntity");
     if (blockEntity instanceof EasyModelHostBlockEntity hostBlockEntity) {
       return Optional.of(hostBlockEntity.getEasyModelProfileId());
@@ -41,7 +41,7 @@ public final class EasyModelBlockEntitiesApi {
     return Optional.empty();
   }
 
-  public static boolean setProfileId(BlockEntity blockEntity, ResourceLocation profileId) {
+  public static boolean setProfileId(BlockEntity blockEntity, Identifier profileId) {
     Objects.requireNonNull(blockEntity, "blockEntity");
     Objects.requireNonNull(profileId, "profileId");
     if (blockEntity instanceof EasyModelHostBlockEntity hostBlockEntity) {

@@ -19,13 +19,13 @@
 
 package de.markusbordihn.easymodelentities.api;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public interface EasyModelRenderable {
 
-  ResourceLocation getEasyModelProfileId();
+  Identifier getEasyModelProfileId();
 
-  default ResourceLocation getEasyModelRenderProfileId() {
+  default Identifier getEasyModelRenderProfileId() {
     return getEasyModelProfileId();
   }
 

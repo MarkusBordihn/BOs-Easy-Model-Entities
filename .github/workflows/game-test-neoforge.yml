@@ -1,4 +1,4 @@
-name: Run game tests on Fabric
+name: Run game tests on NeoForge
 
 on: [ push, pull_request ]
 
@@ -29,5 +29,5 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Run GameTests (Fabric)
-        run: ./gradlew :Fabric:runGameTest --no-daemon
+      - name: Run GameTests (NeoForge)
+        run: ./gradlew :NeoForge:runGameTestServer --no-daemon

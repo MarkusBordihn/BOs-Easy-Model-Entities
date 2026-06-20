@@ -35,15 +35,15 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public final class EasyModelRenderStateResolver {
 
-  public static final ResourceLocation FALLBACK_TEXTURE =
-      ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/pink_wool.png");
-  private static final ResourceLocation FALLBACK_MODEL =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "fallback");
+  public static final Identifier FALLBACK_TEXTURE =
+      Identifier.fromNamespaceAndPath("minecraft", "textures/block/pink_wool.png");
+  private static final Identifier FALLBACK_MODEL =
+      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "fallback");
   private static final ModelAnimationSettings NO_ANIMATION =
       new ModelAnimationSettings(ModelAnimationMode.NONE, 1.0f, 1.0f);
 
@@ -107,8 +107,8 @@ public final class EasyModelRenderStateResolver {
     boolean fallbackTexture =
         bakeResult.validationIssues().stream()
             .anyMatch(issue -> issue.status() == ModelRenderProfileStatus.MISSING_TEXTURE);
-    Map<Integer, ResourceLocation> textures = bakeResult.bakedModel().textures();
-    ResourceLocation texture = textures.getOrDefault(0, FALLBACK_TEXTURE);
+    Map<Integer, Identifier> textures = bakeResult.bakedModel().textures();
+    Identifier texture = textures.getOrDefault(0, FALLBACK_TEXTURE);
     return new EasyModelRenderState(
         bakeResult.bakedModel(),
         texture,

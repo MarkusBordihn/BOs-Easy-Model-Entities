@@ -27,14 +27,19 @@ import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityTypeProvider
 import de.markusbordihn.easymodelentities.entity.EasyModelStaticEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelWaterHostEntity;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.bus.BusGroup;
+import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+@EventBusSubscriber(modid = Constants.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
 public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeProvider {
 
   public static final ForgeEasyModelEntityTypes INSTANCE = new ForgeEasyModelEntityTypes();
@@ -50,7 +55,9 @@ public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeP
                       EasyModelGroundEntity::new, MobCategory.CREATURE)
                   .sized(EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
                   .clientTrackingRange(10)
-                  .build(ModelEntityTypeIds.GROUND_ENTITY.toString()));
+                  .build(
+                      ResourceKey.create(
+                          Registries.ENTITY_TYPE, ModelEntityTypeIds.GROUND_ENTITY)));
 
   private static final RegistryObject<EntityType<EasyModelStaticEntity>> STATIC_ENTITY =
       ENTITY_TYPES.register(
@@ -60,7 +67,9 @@ public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeP
                       EasyModelStaticEntity::new, MobCategory.MISC)
                   .sized(EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
                   .clientTrackingRange(10)
-                  .build(ModelEntityTypeIds.STATIC_ENTITY.toString()));
+                  .build(
+                      ResourceKey.create(
+                          Registries.ENTITY_TYPE, ModelEntityTypeIds.STATIC_ENTITY)));
 
   private static final RegistryObject<EntityType<EasyModelAquaticEntity>> AQUATIC_ENTITY =
       ENTITY_TYPES.register(
@@ -70,7 +79,9 @@ public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeP
                       EasyModelAquaticEntity::new, MobCategory.WATER_CREATURE)
                   .sized(0.7f, 0.4f)
                   .clientTrackingRange(10)
-                  .build(ModelEntityTypeIds.AQUATIC_ENTITY.toString()));
+                  .build(
+                      ResourceKey.create(
+                          Registries.ENTITY_TYPE, ModelEntityTypeIds.AQUATIC_ENTITY)));
 
   private static final RegistryObject<EntityType<EasyModelAmphibiousEntity>> AMPHIBIOUS_ENTITY =
       ENTITY_TYPES.register(
@@ -80,16 +91,18 @@ public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeP
                       EasyModelAmphibiousEntity::new, MobCategory.CREATURE)
                   .sized(0.9f, 0.6f)
                   .clientTrackingRange(10)
-                  .build(ModelEntityTypeIds.AMPHIBIOUS_ENTITY.toString()));
+                  .build(
+                      ResourceKey.create(
+                          Registries.ENTITY_TYPE, ModelEntityTypeIds.AMPHIBIOUS_ENTITY)));
 
   private ForgeEasyModelEntityTypes() {}
 
-  public static void register(IEventBus modEventBus) {
-    ENTITY_TYPES.register(modEventBus);
-    modEventBus.addListener(ForgeEasyModelEntityTypes::registerAttributes);
+  public static void register(BusGroup modBusGroup) {
+    ENTITY_TYPES.register(modBusGroup);
   }
 
-  private static void registerAttributes(EntityAttributeCreationEvent event) {
+  @SubscribeEvent
+  public static void registerAttributes(EntityAttributeCreationEvent event) {
     event.put(GROUND_ENTITY.get(), EasyModelHostEntity.createAttributes().build());
     event.put(STATIC_ENTITY.get(), EasyModelHostEntity.createAttributes().build());
     event.put(AQUATIC_ENTITY.get(), EasyModelWaterHostEntity.createAttributes().build());

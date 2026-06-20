@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class ModelRenderProfileParser {
 
@@ -89,7 +89,7 @@ public final class ModelRenderProfileParser {
 
   private ModelRenderProfileParser() {}
 
-  public static EasyModelRenderProfile parse(ResourceLocation expectedId, Reader reader) {
+  public static EasyModelRenderProfile parse(Identifier expectedId, Reader reader) {
     Objects.requireNonNull(expectedId, "expectedId");
     Objects.requireNonNull(reader, "reader");
 
@@ -116,7 +116,7 @@ public final class ModelRenderProfileParser {
   }
 
   static EasyModelRenderProfile invalidFallback(
-      ResourceLocation expectedId, ModelRenderProfileStatus status, String field, String message) {
+      Identifier expectedId, ModelRenderProfileStatus status, String field, String message) {
     List<ModelRenderProfileValidationIssue> issues =
         List.of(new ModelRenderProfileValidationIssue(status, field, message));
     return new EasyModelRenderProfile(
@@ -132,8 +132,7 @@ public final class ModelRenderProfileParser {
         issues);
   }
 
-  private static EasyModelRenderProfile parseObject(
-      ResourceLocation expectedId, JsonObject jsonObject) {
+  private static EasyModelRenderProfile parseObject(Identifier expectedId, JsonObject jsonObject) {
     List<ModelRenderProfileValidationIssue> issues = new ArrayList<>();
     RawRenderProfile rawProfile = GSON.fromJson(jsonObject, RawRenderProfile.class);
 
@@ -145,16 +144,16 @@ public final class ModelRenderProfileParser {
 
     ModelBodyType bodyType =
         parseBodyType(rawProfile.bodyType, resolvedPresetType.defaultBodyType(), custom, issues);
-    ResourceLocation model =
+    Identifier model =
         parseOptionalResourceLocation(
             rawProfile.model, ModelResourcePaths.defaultModelId(expectedId), MODEL_FIELD, issues);
-    ResourceLocation texture =
+    Identifier texture =
         parseOptionalResourceLocation(
             rawProfile.texture,
             ModelResourcePaths.defaultTextureId(expectedId),
             TEXTURE_FIELD,
             issues);
-    Map<Integer, ResourceLocation> textures = parseTextures(rawProfile.textures, issues);
+    Map<Integer, Identifier> textures = parseTextures(rawProfile.textures, issues);
     ModelRenderSettings renderSettings =
         parseRenderSettings(rawProfile.rendering, resolvedPresetType, issues);
     ModelAnimationSettings animationSettings =
@@ -457,7 +456,7 @@ public final class ModelRenderProfileParser {
         (issueField, message) -> addIssue(issues, status, issueField, message));
   }
 
-  private static Map<Integer, ResourceLocation> parseTextures(
+  private static Map<Integer, Identifier> parseTextures(
       JsonElement value, List<ModelRenderProfileValidationIssue> issues) {
     if (value == null || value.isJsonNull()) {
       return Map.of();
@@ -471,7 +470,7 @@ public final class ModelRenderProfileParser {
       return Map.of();
     }
 
-    Map<Integer, ResourceLocation> textures = new LinkedHashMap<>();
+    Map<Integer, Identifier> textures = new LinkedHashMap<>();
     for (Map.Entry<String, JsonElement> entry : value.getAsJsonObject().entrySet()) {
       String field = TEXTURES_FIELD + "." + entry.getKey();
       int index;
@@ -493,8 +492,7 @@ public final class ModelRenderProfileParser {
             "Texture index " + index + " must not be negative.");
         continue;
       }
-      ResourceLocation texture =
-          parseOptionalResourceLocation(entry.getValue(), null, field, issues);
+      Identifier texture = parseOptionalResourceLocation(entry.getValue(), null, field, issues);
       if (texture != null) {
         textures.put(index, texture);
       }
@@ -503,25 +501,25 @@ public final class ModelRenderProfileParser {
     return textures;
   }
 
-  private static ResourceLocation parseOptionalResourceLocation(
+  private static Identifier parseOptionalResourceLocation(
       JsonElement value,
-      ResourceLocation defaultValue,
+      Identifier defaultValue,
       String field,
       List<ModelRenderProfileValidationIssue> issues) {
     String rawValue = optionalString(value, null, field, issues);
     if (rawValue == null) {
       return defaultValue;
     }
-    ResourceLocation resourceLocation = ResourceLocation.tryParse(rawValue);
-    if (resourceLocation == null) {
+    Identifier identifier = Identifier.tryParse(rawValue);
+    if (identifier == null) {
       addIssue(
           issues,
           ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION,
           field,
-          "Invalid ResourceLocation " + rawValue + ".");
+          "Invalid Identifier " + rawValue + ".");
     }
 
-    return resourceLocation;
+    return identifier;
   }
 
   private static float optionalFloat(

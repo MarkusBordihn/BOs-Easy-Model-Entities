@@ -40,12 +40,14 @@ import java.util.List;
 import java.util.Optional;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -63,18 +65,20 @@ public final class EasyModelEntitiesCommand {
     dispatcher.register(
         Commands.literal(Constants.MOD_COMMAND)
             .then(
-                Commands.literal("list_profiles")
-                    .requires(source -> source.hasPermission(0))
-                    .executes(EasyModelEntitiesCommand::listProfiles))
+                Commands.literal("list_profiles").executes(EasyModelEntitiesCommand::listProfiles))
             .then(
                 Commands.literal("validate_profiles")
-                    .requires(source -> source.hasPermission(2))
+                    .requires(
+                        source ->
+                            source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                     .executes(EasyModelEntitiesCommand::validateProfiles))
             .then(
                 Commands.literal("debug_profile")
-                    .requires(source -> source.hasPermission(2))
+                    .requires(
+                        source ->
+                            source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                     .then(
-                        Commands.argument(PROFILE_ID_ARGUMENT, ResourceLocationArgument.id())
+                        Commands.argument(PROFILE_ID_ARGUMENT, IdentifierArgument.id())
                             .suggests(
                                 (context, builder) -> {
                                   EasyModelServices.profileService()
@@ -85,9 +89,11 @@ public final class EasyModelEntitiesCommand {
                             .executes(EasyModelEntitiesCommand::debugProfile)))
             .then(
                 Commands.literal("summon")
-                    .requires(source -> source.hasPermission(2))
+                    .requires(
+                        source ->
+                            source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                     .then(
-                        Commands.argument(PROFILE_ID_ARGUMENT, ResourceLocationArgument.id())
+                        Commands.argument(PROFILE_ID_ARGUMENT, IdentifierArgument.id())
                             .suggests(
                                 (context, builder) -> {
                                   EasyModelServices.profileService()
@@ -98,9 +104,11 @@ public final class EasyModelEntitiesCommand {
                             .executes(EasyModelEntitiesCommand::summon)))
             .then(
                 Commands.literal("place_block")
-                    .requires(source -> source.hasPermission(2))
+                    .requires(
+                        source ->
+                            source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                     .then(
-                        Commands.argument(PROFILE_ID_ARGUMENT, ResourceLocationArgument.id())
+                        Commands.argument(PROFILE_ID_ARGUMENT, IdentifierArgument.id())
                             .suggests(
                                 (context, builder) -> {
                                   EasyModelServices.profileService()
@@ -155,7 +163,7 @@ public final class EasyModelEntitiesCommand {
     return lines;
   }
 
-  static List<String> debugProfileLines(ResourceLocation profileId) {
+  static List<String> debugProfileLines(Identifier profileId) {
     Optional<EasyModelEntityProfile> profile =
         EasyModelServices.profileService().getProfile(profileId);
     if (profile.isEmpty()) {
@@ -212,7 +220,7 @@ public final class EasyModelEntitiesCommand {
     return lines;
   }
 
-  static Optional<String> summonRejectionMessage(ResourceLocation profileId) {
+  static Optional<String> summonRejectionMessage(Identifier profileId) {
     Optional<EasyModelEntityProfile> profile =
         EasyModelServices.profileService().getProfile(profileId);
     if (profile.isEmpty()) {
@@ -233,7 +241,7 @@ public final class EasyModelEntitiesCommand {
     return Optional.empty();
   }
 
-  static Optional<String> placeBlockRejectionMessage(ResourceLocation profileId) {
+  static Optional<String> placeBlockRejectionMessage(Identifier profileId) {
     Optional<EasyModelEntityProfile> profile =
         EasyModelServices.profileService().getProfile(profileId);
     if (profile.isEmpty()) {
@@ -267,14 +275,14 @@ public final class EasyModelEntitiesCommand {
   }
 
   private static int debugProfile(CommandContext<CommandSourceStack> context) {
-    ResourceLocation profileId = parseProfileId(context);
+    Identifier profileId = parseProfileId(context);
     return sendSuccess(context.getSource(), debugProfileLines(profileId));
   }
 
   private static int summon(CommandContext<CommandSourceStack> context)
       throws CommandSyntaxException {
     CommandSourceStack source = context.getSource();
-    ResourceLocation profileId = parseProfileId(context);
+    Identifier profileId = parseProfileId(context);
     Optional<String> rejectionMessage = summonRejectionMessage(profileId);
     if (rejectionMessage.isPresent()) {
       source.sendFailure(Component.literal(rejectionMessage.get()));
@@ -292,7 +300,7 @@ public final class EasyModelEntitiesCommand {
     }
 
     source.getLevel().addFreshEntity(entity.get());
-    ResourceLocation entityType = BuiltInRegistries.ENTITY_TYPE.getKey(entity.get().getType());
+    Identifier entityType = BuiltInRegistries.ENTITY_TYPE.getKey(entity.get().getType());
     source.sendSuccess(
         () -> Component.literal("Summoned " + entityType + " with profile " + profileId + "."),
         true);
@@ -302,7 +310,7 @@ public final class EasyModelEntitiesCommand {
   private static int placeBlock(CommandContext<CommandSourceStack> context)
       throws CommandSyntaxException {
     CommandSourceStack source = context.getSource();
-    ResourceLocation profileId = parseProfileId(context);
+    Identifier profileId = parseProfileId(context);
     Optional<String> rejectionMessage = placeBlockRejectionMessage(profileId);
     if (rejectionMessage.isPresent()) {
       source.sendFailure(Component.literal(rejectionMessage.get()));
@@ -311,8 +319,8 @@ public final class EasyModelEntitiesCommand {
 
     EasyModelEntityProfile profile =
         EasyModelServices.profileService().getProfile(profileId).orElseThrow();
-    ResourceLocation blockId = blockIdForProfile(profile).orElseThrow();
-    Block block = BuiltInRegistries.BLOCK.get(blockId);
+    Identifier blockId = blockIdForProfile(profile).orElseThrow();
+    Block block = BuiltInRegistries.BLOCK.get(blockId).map(Holder.Reference::value).orElse(null);
     if (block == Blocks.AIR) {
       source.sendFailure(
           Component.literal("Missing Easy Model Entities host block " + blockId + "."));
@@ -341,8 +349,8 @@ public final class EasyModelEntitiesCommand {
     return 1;
   }
 
-  private static ResourceLocation parseProfileId(CommandContext<CommandSourceStack> context) {
-    return ResourceLocationArgument.getId(context, PROFILE_ID_ARGUMENT);
+  private static Identifier parseProfileId(CommandContext<CommandSourceStack> context) {
+    return IdentifierArgument.getId(context, PROFILE_ID_ARGUMENT);
   }
 
   private static BlockPos parseBlockPos(
@@ -354,12 +362,12 @@ public final class EasyModelEntitiesCommand {
         : BlockPos.containing(source.getPosition());
   }
 
-  static Optional<ResourceLocation> blockIdForProfile(EasyModelEntityProfile profile) {
+  static Optional<Identifier> blockIdForProfile(EasyModelEntityProfile profile) {
     if (profile.modelType() != ModelType.BLOCK_ENTITY) {
       return Optional.empty();
     }
 
-    ResourceLocation blockEntityType = profile.hostBlockEntityType();
+    Identifier blockEntityType = profile.hostBlockEntityType();
     if (ModelBlockEntityTypeIds.STATIC_BLOCK_ENTITY.equals(blockEntityType)) {
       return Optional.of(ModelBlockIds.STATIC_BLOCK);
     }

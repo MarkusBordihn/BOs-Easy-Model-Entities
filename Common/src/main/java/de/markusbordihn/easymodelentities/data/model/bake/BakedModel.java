@@ -21,14 +21,14 @@ package de.markusbordihn.easymodelentities.data.model.bake;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record BakedModel(
-    ResourceLocation modelId,
+    Identifier modelId,
     int textureWidth,
     int textureHeight,
     List<BakedModelPart> rootParts,
-    Map<Integer, ResourceLocation> textures,
+    Map<Integer, Identifier> textures,
     boolean cullBackfaces) {
 
   public BakedModel {
@@ -38,10 +38,7 @@ public record BakedModel(
   }
 
   public BakedModel(
-      ResourceLocation modelId,
-      int textureWidth,
-      int textureHeight,
-      List<BakedModelPart> rootParts) {
+      Identifier modelId, int textureWidth, int textureHeight, List<BakedModelPart> rootParts) {
     this(modelId, textureWidth, textureHeight, rootParts, Map.of(), false);
   }
 

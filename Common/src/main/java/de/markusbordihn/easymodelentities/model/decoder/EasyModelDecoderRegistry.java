@@ -21,7 +21,7 @@ package de.markusbordihn.easymodelentities.model.decoder;
 
 import java.util.Optional;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 
 public interface EasyModelDecoderRegistry {
@@ -40,7 +40,7 @@ public interface EasyModelDecoderRegistry {
     return Optional.empty();
   }
 
-  default Optional<EasyModelDecoder> findDecoder(ResourceLocation modelId, Resource resource) {
+  default Optional<EasyModelDecoder> findDecoder(Identifier modelId, Resource resource) {
     return Optional.empty();
   }
 }

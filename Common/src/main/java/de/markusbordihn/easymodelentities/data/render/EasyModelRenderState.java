@@ -27,12 +27,12 @@ import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileV
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record EasyModelRenderState(
     BakedModel bakedModel,
-    ResourceLocation texture,
-    Map<Integer, ResourceLocation> textures,
+    Identifier texture,
+    Map<Integer, Identifier> textures,
     float scale,
     float shadowRadius,
     float visibleBoundsWidth,
@@ -58,7 +58,7 @@ public record EasyModelRenderState(
 
   public EasyModelRenderState(
       BakedModel bakedModel,
-      ResourceLocation texture,
+      Identifier texture,
       float scale,
       float shadowRadius,
       ModelBodyType bodyType,

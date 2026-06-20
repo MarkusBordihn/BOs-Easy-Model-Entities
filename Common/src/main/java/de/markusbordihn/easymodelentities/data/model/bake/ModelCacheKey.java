@@ -19,9 +19,9 @@
 package de.markusbordihn.easymodelentities.data.model.bake;
 
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public record ModelCacheKey(ResourceLocation modelId, String assetFingerprint) {
+public record ModelCacheKey(Identifier modelId, String assetFingerprint) {
 
   public static final String NO_FINGERPRINT = "__no_fingerprint__";
 

@@ -22,7 +22,7 @@ package de.markusbordihn.easymodelentities.registry;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +35,7 @@ class EasyModelServicesTest {
 
   @Test
   void defaultServicesAreSafe() {
-    ResourceLocation profileId = ResourceLocation.fromNamespaceAndPath("example", "missing");
+    Identifier profileId = Identifier.fromNamespaceAndPath("example", "missing");
 
     assertFalse(EasyModelServices.profileService().hasProfile(profileId));
     assertFalse(EasyModelServices.profileService().isActive(profileId));

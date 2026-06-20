@@ -30,21 +30,22 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import java.util.Optional;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public final class EasyModelHostSupport {
 
   public static final float FALLBACK_WIDTH = 0.6f;
   public static final float FALLBACK_HEIGHT = 1.8f;
   public static final float FALLBACK_EYE_HEIGHT = 1.62f;
-  public static final ResourceLocation MISSING_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "missing");
+  public static final Identifier MISSING_PROFILE_ID =
+      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "missing");
 
   private EasyModelHostSupport() {}
 
@@ -55,7 +56,7 @@ public final class EasyModelHostSupport {
         .add(Attributes.FOLLOW_RANGE, 16.0);
   }
 
-  public static Optional<EasyModelEntityProfile> activeProfile(ResourceLocation profileId) {
+  public static Optional<EasyModelEntityProfile> activeProfile(Identifier profileId) {
     return EasyModelServices.profileService()
         .getProfile(profileId)
         .filter(EasyModelEntityProfile::isActive)
@@ -83,25 +84,21 @@ public final class EasyModelHostSupport {
   }
 
   public static void addAdditionalSaveData(
-      CompoundTag compoundTag, SynchedEntityData entityData, EasyModelHostFields fields) {
-    compoundTag.putString(
-        EasyModelHostPersistence.PROFILE_ID_TAG, entityData.get(fields.profileId()));
-    compoundTag.putString(
-        EasyModelHostPersistence.RENDER_PROFILE_ID_TAG, entityData.get(fields.renderProfileId()));
-    compoundTag.putString(EasyModelHostPersistence.VERSION_TAG, entityData.get(fields.version()));
-    compoundTag.putString(
-        EasyModelHostPersistence.BODY_TYPE_TAG,
-        entityData.get(fields.bodyType()).getSerializedName());
-    compoundTag.putString(
-        EasyModelHostPersistence.ANIMATION_STATE_TAG,
-        entityData.get(fields.animationState()).getSerializedName());
+      ValueOutput valueOutput, SynchedEntityData entityData, EasyModelHostFields fields) {
+    EasyModelHostPersistence.write(
+        valueOutput,
+        Identifier.tryParse(entityData.get(fields.profileId())),
+        Identifier.tryParse(entityData.get(fields.renderProfileId())),
+        entityData.get(fields.version()),
+        entityData.get(fields.bodyType()),
+        entityData.get(fields.animationState()));
   }
 
   public static void readAdditionalSaveData(
-      Mob entity, CompoundTag compoundTag, EasyModelHostFields fields) {
-    EasyModelHostPersistence.State state = EasyModelHostPersistence.read(compoundTag);
-    ResourceLocation profileId = state.profileId();
-    ResourceLocation renderProfileId = state.renderProfileId();
+      Mob entity, ValueInput valueInput, EasyModelHostFields fields) {
+    EasyModelHostPersistence.State state = EasyModelHostPersistence.read(valueInput);
+    Identifier profileId = state.profileId();
+    Identifier renderProfileId = state.renderProfileId();
     String version = state.version();
     ModelBodyType bodyType = state.bodyType();
     EasyModelAnimationState animationState = state.animationState();
@@ -132,14 +129,12 @@ public final class EasyModelHostSupport {
             animationState));
   }
 
-  public static ResourceLocation getProfileId(
-      SynchedEntityData entityData, EasyModelHostFields fields) {
+  public static Identifier getProfileId(SynchedEntityData entityData, EasyModelHostFields fields) {
     return EasyModelHostPersistence.parseResourceLocationOrMissing(
         entityData.get(fields.profileId()), MISSING_PROFILE_ID);
   }
 
-  public static void setProfileId(
-      Mob entity, EasyModelHostFields fields, ResourceLocation profileId) {
+  public static void setProfileId(Mob entity, EasyModelHostFields fields, Identifier profileId) {
     Objects.requireNonNull(profileId, "profileId");
     EasyModelAnimationState animationState = entity.getEntityData().get(fields.animationState());
     Optional<EasyModelEntityProfile> profile = activeProfile(profileId);
@@ -153,7 +148,7 @@ public final class EasyModelHostSupport {
         entity, fields, EasyModelRuntimeContract.fallback(profileId, animationState));
   }
 
-  public static ResourceLocation getRenderProfileId(
+  public static Identifier getRenderProfileId(
       SynchedEntityData entityData, EasyModelHostFields fields) {
     return EasyModelHostPersistence.parseResourceLocationOrMissing(
         entityData.get(fields.renderProfileId()), MISSING_PROFILE_ID);

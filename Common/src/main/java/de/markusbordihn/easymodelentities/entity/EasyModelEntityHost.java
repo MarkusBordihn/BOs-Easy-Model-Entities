@@ -21,15 +21,15 @@ package de.markusbordihn.easymodelentities.entity;
 
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public interface EasyModelEntityHost {
 
-  ResourceLocation getEasyModelProfileId();
+  Identifier getEasyModelProfileId();
 
-  void setEasyModelProfileId(ResourceLocation profileId);
+  void setEasyModelProfileId(Identifier profileId);
 
-  ResourceLocation getEasyModelRenderProfileId();
+  Identifier getEasyModelRenderProfileId();
 
   String getEasyModelVersion();
 

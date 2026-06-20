@@ -25,13 +25,12 @@ import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
 import java.io.StringReader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class EasyModelRuntimeContractTest {
 
-  private static final ResourceLocation PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lizard");
+  private static final Identifier PROFILE_ID = Identifier.fromNamespaceAndPath("example", "lizard");
 
   @Test
   void fromProfileUsesServerProfileRuntimeFields() {
@@ -60,8 +59,7 @@ class EasyModelRuntimeContractTest {
 
     assertEquals(PROFILE_ID, contract.profileId());
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("example", "lizard_render"),
-        contract.renderProfileId());
+        Identifier.fromNamespaceAndPath("example", "lizard_render"), contract.renderProfileId());
     assertEquals("v1", contract.version());
     assertEquals(0.6f, contract.width());
     assertEquals(0.8f, contract.height());
@@ -74,9 +72,8 @@ class EasyModelRuntimeContractTest {
   void fallbackUsesSafeValuesForMissingProfile() {
     EasyModelRuntimeContract contract = EasyModelRuntimeContract.fallback("example:missing");
 
-    assertEquals(ResourceLocation.fromNamespaceAndPath("example", "missing"), contract.profileId());
-    assertEquals(
-        ResourceLocation.fromNamespaceAndPath("example", "missing"), contract.renderProfileId());
+    assertEquals(Identifier.fromNamespaceAndPath("example", "missing"), contract.profileId());
+    assertEquals(Identifier.fromNamespaceAndPath("example", "missing"), contract.renderProfileId());
     assertEquals("", contract.version());
     assertEquals(0.6f, contract.width());
     assertEquals(1.8f, contract.height());
@@ -90,10 +87,9 @@ class EasyModelRuntimeContractTest {
     EasyModelRuntimeContract contract = EasyModelRuntimeContract.fallback("bad id");
 
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("easy_model_entities", "missing"),
-        contract.profileId());
+        Identifier.fromNamespaceAndPath("easy_model_entities", "missing"), contract.profileId());
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("easy_model_entities", "missing"),
+        Identifier.fromNamespaceAndPath("easy_model_entities", "missing"),
         contract.renderProfileId());
   }
 }

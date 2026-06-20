@@ -28,13 +28,13 @@ import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import java.io.StringReader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class ModelRenderProfileParserTest {
 
-  private static final ResourceLocation RENDER_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lizard");
+  private static final Identifier RENDER_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "lizard");
 
   private static EasyModelRenderProfile parse(String json) {
     return ModelRenderProfileParser.parse(RENDER_PROFILE_ID, new StringReader(json));
@@ -59,10 +59,10 @@ class ModelRenderProfileParserTest {
     assertEquals("", renderProfile.version());
     assertEquals(ModelBodyType.BIPED, renderProfile.bodyType());
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/lizard"),
+        Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/lizard"),
         renderProfile.model());
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/lizard.png"),
+        Identifier.fromNamespaceAndPath("example", "textures/entity/lizard.png"),
         renderProfile.texture());
     assertEquals(1.0f, renderProfile.scale());
     assertEquals(0.3f, renderProfile.shadowRadius());
@@ -128,10 +128,10 @@ class ModelRenderProfileParserTest {
 
     assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/mimic.png"),
+        Identifier.fromNamespaceAndPath("example", "textures/entity/mimic.png"),
         renderProfile.textures().get(0));
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/chest.png"),
+        Identifier.fromNamespaceAndPath("minecraft", "textures/block/chest.png"),
         renderProfile.textures().get(1));
   }
 

@@ -65,7 +65,7 @@ import java.util.List;
 import java.util.Optional;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -77,10 +77,9 @@ import org.mockito.Answers;
 
 class EasyModelEntityRenderDelegateTest {
 
-  private static final ResourceLocation PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "mimic");
-  private static final ResourceLocation RENDER_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "mimic_render");
+  private static final Identifier PROFILE_ID = Identifier.fromNamespaceAndPath("example", "mimic");
+  private static final Identifier RENDER_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "mimic_render");
 
   @BeforeAll
   static void bootstrapMinecraft() {
@@ -99,12 +98,12 @@ class EasyModelEntityRenderDelegateTest {
   private static EasyModelRenderable renderable(String version, int animationState) {
     return new EasyModelRenderable() {
       @Override
-      public ResourceLocation getEasyModelProfileId() {
+      public Identifier getEasyModelProfileId() {
         return PROFILE_ID;
       }
 
       @Override
-      public ResourceLocation getEasyModelRenderProfileId() {
+      public Identifier getEasyModelRenderProfileId() {
         return RENDER_PROFILE_ID;
       }
 
@@ -123,7 +122,7 @@ class EasyModelEntityRenderDelegateTest {
   private static EasyModelProfileService profileService(EasyModelEntityProfile profile) {
     return new EasyModelProfileService() {
       @Override
-      public Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
+      public Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
         return PROFILE_ID.equals(profileId) ? Optional.of(profile) : Optional.empty();
       }
     };
@@ -133,7 +132,7 @@ class EasyModelEntityRenderDelegateTest {
       EasyModelRenderProfile renderProfile) {
     return new EasyModelRenderProfileService() {
       @Override
-      public Optional<EasyModelRenderProfile> getRenderProfile(ResourceLocation renderProfileId) {
+      public Optional<EasyModelRenderProfile> getRenderProfile(Identifier renderProfileId) {
         return RENDER_PROFILE_ID.equals(renderProfileId)
             ? Optional.of(renderProfile)
             : Optional.empty();
@@ -165,8 +164,8 @@ class EasyModelEntityRenderDelegateTest {
         "0.1.0",
         "client-v1",
         bodyType,
-        ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/mimic"),
-        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/mimic.png"),
+        Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/mimic"),
+        Identifier.fromNamespaceAndPath("example", "textures/entity/mimic.png"),
         new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
         new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
@@ -176,7 +175,7 @@ class EasyModelEntityRenderDelegateTest {
   private static EasyModelRenderState renderState(BakedModel bakedModel) {
     return new EasyModelRenderState(
         bakedModel,
-        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/mimic.png"),
+        Identifier.fromNamespaceAndPath("example", "textures/entity/mimic.png"),
         1.0f,
         0.3f,
         ModelBodyType.STATIC,
@@ -211,8 +210,7 @@ class EasyModelEntityRenderDelegateTest {
   void renderBackendUsesDefaultOptionsWhenOptionsAreNull() {
     Entity entity = entity(0.9f, 1.2f, 0.8f);
     BakedModel bakedModel =
-        new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "empty"), 64, 64, List.of());
+        new BakedModel(Identifier.fromNamespaceAndPath("example", "empty"), 64, 64, List.of());
     MultiBufferSource bufferSource = mock(MultiBufferSource.class);
     VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
     when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);

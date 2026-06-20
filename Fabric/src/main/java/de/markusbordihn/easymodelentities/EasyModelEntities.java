@@ -26,8 +26,10 @@ import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSer
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.object.builder.v1.entity.FabricTrackedDataRegistry;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +45,12 @@ public class EasyModelEntities implements ModInitializer {
     Constants.GAME_DIR = FabricLoader.getInstance().getGameDir();
     Constants.CONFIG_DIR = FabricLoader.getInstance().getConfigDir();
 
-    EasyModelEntityDataSerializers.register();
+    FabricTrackedDataRegistry.register(
+        Identifier.fromNamespaceAndPath(Constants.MOD_ID, "body_type"),
+        EasyModelEntityDataSerializers.BODY_TYPE);
+    FabricTrackedDataRegistry.register(
+        Identifier.fromNamespaceAndPath(Constants.MOD_ID, "animation_state"),
+        EasyModelEntityDataSerializers.ANIMATION_STATE);
     FabricEasyModelEntityTypes.register();
     FabricEasyModelBlockEntityTypes.register();
     EasyModelServices.setEntityFactory(

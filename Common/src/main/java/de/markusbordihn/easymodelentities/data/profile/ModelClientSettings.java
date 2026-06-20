@@ -20,9 +20,9 @@
 package de.markusbordihn.easymodelentities.data.profile;
 
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public record ModelClientSettings(ResourceLocation renderProfile) {
+public record ModelClientSettings(Identifier renderProfile) {
 
   public ModelClientSettings {
     Objects.requireNonNull(renderProfile, "renderProfile");

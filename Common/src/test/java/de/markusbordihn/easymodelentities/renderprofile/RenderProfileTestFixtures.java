@@ -27,12 +27,11 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 final class RenderProfileTestFixtures {
 
-  static final ResourceLocation RENDER_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lizard");
+  static final Identifier RENDER_PROFILE_ID = Identifier.fromNamespaceAndPath("example", "lizard");
   static final String RESOURCE_PACK_RENDER_PROFILE =
       "assets/example/easy_model_entities/render_profiles/lizard.json";
 

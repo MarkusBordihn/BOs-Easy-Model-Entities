@@ -28,20 +28,19 @@ import de.markusbordihn.easymodelentities.data.profile.*;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.io.StringReader;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class EasyModelProfileParserTest {
 
-  private static final ResourceLocation PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lizard");
+  private static final Identifier PROFILE_ID = Identifier.fromNamespaceAndPath("example", "lizard");
 
   private static EasyModelEntityProfile parse(String json) {
     return EasyModelProfileParser.parse(PROFILE_ID, new StringReader(json));
   }
 
   private static void assertPresetDefaults(
-      String presetType, ResourceLocation entityType, ModelBodyType bodyType) {
+      String presetType, Identifier entityType, ModelBodyType bodyType) {
     EasyModelEntityProfile profile =
         parse("{\"model_type\":\"entity\",\"preset_type\":\"" + presetType + "\"}");
 
@@ -207,8 +206,7 @@ class EasyModelProfileParserTest {
 
     assertEquals(ModelProfileStatus.ACTIVE, profile.status());
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("example", "custom_render"),
-        profile.renderProfileId());
+        Identifier.fromNamespaceAndPath("example", "custom_render"), profile.renderProfileId());
     assertEquals(1.2f, profile.width());
     assertEquals(0.85f, profile.height());
     assertEquals(0.6f, profile.eyeHeight());

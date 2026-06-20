@@ -31,16 +31,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public final class EasyModelProfileManager implements EasyModelProfileService {
 
   private static final String JSON_EXTENSION = ".json";
-  private final Map<ResourceLocation, EasyModelEntityProfile> profilesById;
+  private final Map<Identifier, EasyModelEntityProfile> profilesById;
 
-  public EasyModelProfileManager(Map<ResourceLocation, EasyModelEntityProfile> profilesById) {
+  public EasyModelProfileManager(Map<Identifier, EasyModelEntityProfile> profilesById) {
     this.profilesById =
         Collections.unmodifiableMap(
             new LinkedHashMap<>(Objects.requireNonNull(profilesById, "profilesById")));
@@ -48,15 +48,15 @@ public final class EasyModelProfileManager implements EasyModelProfileService {
 
   public static EasyModelProfileManager load(ResourceManager resourceManager) {
     Objects.requireNonNull(resourceManager, "resourceManager");
-    Map<ResourceLocation, EasyModelEntityProfile> profiles = new LinkedHashMap<>();
-    Map<ResourceLocation, Resource> resources =
+    Map<Identifier, EasyModelEntityProfile> profiles = new LinkedHashMap<>();
+    Map<Identifier, Resource> resources =
         resourceManager.listResources(
             ModelResourcePaths.SERVER_PROFILE_DIRECTORY,
-            resourceLocation -> resourceLocation.getPath().endsWith(JSON_EXTENSION));
+            id -> id.getPath().endsWith(JSON_EXTENSION));
 
-    for (Map.Entry<ResourceLocation, Resource> entry : resources.entrySet()) {
-      ResourceLocation resourceLocation = entry.getKey();
-      Optional<ResourceLocation> profileId = profileIdFromResourceLocation(resourceLocation);
+    for (Map.Entry<Identifier, Resource> entry : resources.entrySet()) {
+      Identifier identifier = entry.getKey();
+      Optional<Identifier> profileId = profileIdFromResourceLocation(identifier);
       if (profileId.isEmpty()) {
         continue;
       }
@@ -67,11 +67,10 @@ public final class EasyModelProfileManager implements EasyModelProfileService {
     return new EasyModelProfileManager(profiles);
   }
 
-  public static Optional<ResourceLocation> profileIdFromResourceLocation(
-      ResourceLocation resourceLocation) {
-    Objects.requireNonNull(resourceLocation, "resourceLocation");
+  public static Optional<Identifier> profileIdFromResourceLocation(Identifier identifier) {
+    Objects.requireNonNull(identifier, "identifier");
     String prefix = ModelResourcePaths.SERVER_PROFILE_DIRECTORY + "/";
-    String path = resourceLocation.getPath();
+    String path = identifier.getPath();
     if (!path.startsWith(prefix) || !path.endsWith(JSON_EXTENSION)) {
       return Optional.empty();
     }
@@ -81,13 +80,11 @@ public final class EasyModelProfileManager implements EasyModelProfileService {
       return Optional.empty();
     }
 
-    ResourceLocation profileId =
-        ResourceLocation.tryParse(resourceLocation.getNamespace() + ":" + profilePath);
+    Identifier profileId = Identifier.tryParse(identifier.getNamespace() + ":" + profilePath);
     return Optional.ofNullable(profileId);
   }
 
-  private static EasyModelEntityProfile parseProfile(
-      ResourceLocation profileId, Resource resource) {
+  private static EasyModelEntityProfile parseProfile(Identifier profileId, Resource resource) {
     try (InputStreamReader reader =
         new InputStreamReader(resource.open(), StandardCharsets.UTF_8)) {
       return EasyModelProfileParser.parse(profileId, reader);
@@ -101,17 +98,17 @@ public final class EasyModelProfileManager implements EasyModelProfileService {
   }
 
   @Override
-  public boolean hasProfile(ResourceLocation profileId) {
+  public boolean hasProfile(Identifier profileId) {
     return this.profilesById.containsKey(profileId);
   }
 
   @Override
-  public Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
+  public Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
     return Optional.ofNullable(this.profilesById.get(profileId));
   }
 
   @Override
-  public Collection<ResourceLocation> getProfileIds() {
+  public Collection<Identifier> getProfileIds() {
     return this.profilesById.keySet();
   }
 
@@ -121,12 +118,12 @@ public final class EasyModelProfileManager implements EasyModelProfileService {
   }
 
   @Override
-  public Collection<ModelProfileValidationIssue> getValidationIssues(ResourceLocation profileId) {
+  public Collection<ModelProfileValidationIssue> getValidationIssues(Identifier profileId) {
     return getProfile(profileId).map(EasyModelEntityProfile::validationIssues).orElseGet(List::of);
   }
 
   @Override
-  public boolean isActive(ResourceLocation profileId) {
+  public boolean isActive(Identifier profileId) {
     return getProfile(profileId).map(EasyModelEntityProfile::isActive).orElse(false);
   }
 }

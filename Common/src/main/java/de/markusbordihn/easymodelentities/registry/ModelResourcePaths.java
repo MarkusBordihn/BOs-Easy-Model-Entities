@@ -23,7 +23,7 @@ import de.markusbordihn.easymodelentities.Constants;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class ModelResourcePaths {
 
@@ -39,86 +39,85 @@ public final class ModelResourcePaths {
 
   private ModelResourcePaths() {}
 
-  public static String serverProfilePath(ResourceLocation profileId) {
+  public static String serverProfilePath(Identifier profileId) {
     return dataPath(
         profileId,
         pathWithExtension(SERVER_PROFILE_DIRECTORY, profileId, ResourceFileExtension.JSON));
   }
 
-  public static String entityServerProfilePath(ResourceLocation profileId) {
+  public static String entityServerProfilePath(Identifier profileId) {
     return dataPath(
         profileId,
         pathWithExtension(ENTITY_SERVER_PROFILE_DIRECTORY, profileId, ResourceFileExtension.JSON));
   }
 
-  public static String blockEntityServerProfilePath(ResourceLocation profileId) {
+  public static String blockEntityServerProfilePath(Identifier profileId) {
     return dataPath(
         profileId,
         pathWithExtension(
             BLOCK_ENTITY_SERVER_PROFILE_DIRECTORY, profileId, ResourceFileExtension.JSON));
   }
 
-  public static String renderProfilePath(ResourceLocation renderProfileId) {
+  public static String renderProfilePath(Identifier renderProfileId) {
     return assetPath(
         renderProfileId,
         pathWithExtension(RENDER_PROFILE_DIRECTORY, renderProfileId, ResourceFileExtension.JSON));
   }
 
-  public static String modelPath(ResourceLocation modelId) {
+  public static String modelPath(Identifier modelId) {
     return assetPath(modelId, withExtension(modelId.getPath(), ResourceFileExtension.BBMODEL));
   }
 
-  public static ResourceLocation modelResourceLocation(ResourceLocation modelId) {
+  public static Identifier modelResourceLocation(Identifier modelId) {
     return modelResourceLocation(modelId, ResourceFileExtension.BBMODEL.getExtension());
   }
 
-  public static ResourceLocation modelResourceLocation(ResourceLocation modelId, String extension) {
+  public static Identifier modelResourceLocation(Identifier modelId, String extension) {
     Objects.requireNonNull(modelId, "modelId");
-    return ResourceLocation.fromNamespaceAndPath(
+    return Identifier.fromNamespaceAndPath(
         modelId.getNamespace(), withExtension(modelId.getPath(), extension));
   }
 
-  public static String texturePath(ResourceLocation textureId) {
+  public static String texturePath(Identifier textureId) {
     return assetPath(textureId, textureId.getPath());
   }
 
-  public static ResourceLocation textureResourceLocation(ResourceLocation textureId) {
+  public static Identifier textureResourceLocation(Identifier textureId) {
     return Objects.requireNonNull(textureId, "textureId");
   }
 
-  public static ResourceLocation defaultModelId(ResourceLocation profileId) {
+  public static Identifier defaultModelId(Identifier profileId) {
     Objects.requireNonNull(profileId, "profileId");
-    return ResourceLocation.fromNamespaceAndPath(
+    return Identifier.fromNamespaceAndPath(
         profileId.getNamespace(), joinPath(MODEL_DIRECTORY, profileId.getPath()));
   }
 
-  public static ResourceLocation defaultTextureId(ResourceLocation profileId) {
+  public static Identifier defaultTextureId(Identifier profileId) {
     Objects.requireNonNull(profileId, "profileId");
-    return ResourceLocation.fromNamespaceAndPath(
+    return Identifier.fromNamespaceAndPath(
         profileId.getNamespace(),
         joinPath(
             TEXTURE_ENTITY_DIRECTORY,
             withExtension(profileId.getPath(), ResourceFileExtension.PNG)));
   }
 
-  private static String assetPath(ResourceLocation resourceLocation, String path) {
-    return namespacedPath(ASSETS_ROOT, resourceLocation, path);
+  private static String assetPath(Identifier identifier, String path) {
+    return namespacedPath(ASSETS_ROOT, identifier, path);
   }
 
-  private static String dataPath(ResourceLocation resourceLocation, String path) {
-    return namespacedPath(DATA_ROOT, resourceLocation, path);
+  private static String dataPath(Identifier identifier, String path) {
+    return namespacedPath(DATA_ROOT, identifier, path);
   }
 
-  private static String namespacedPath(
-      String root, ResourceLocation resourceLocation, String path) {
-    Objects.requireNonNull(resourceLocation, "resourceLocation");
-    return joinPath(root, resourceLocation.getNamespace(), path);
+  private static String namespacedPath(String root, Identifier identifier, String path) {
+    Objects.requireNonNull(identifier, "identifier");
+    return joinPath(root, identifier.getNamespace(), path);
   }
 
   private static String pathWithExtension(
-      String directory, ResourceLocation resourceLocation, ResourceFileExtension fileExtension) {
-    Objects.requireNonNull(resourceLocation, "resourceLocation");
-    return joinPath(directory, withExtension(resourceLocation.getPath(), fileExtension));
+      String directory, Identifier identifier, ResourceFileExtension fileExtension) {
+    Objects.requireNonNull(identifier, "identifier");
+    return joinPath(directory, withExtension(identifier.getPath(), fileExtension));
   }
 
   private static String withExtension(String path, ResourceFileExtension fileExtension) {

@@ -39,7 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import javax.imageio.ImageIO;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -47,15 +47,14 @@ import org.junit.jupiter.api.Test;
 
 class ModelRenderProfileManagerTest {
 
-  private static final ResourceLocation RENDER_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lizard");
-  private static final ResourceLocation RENDER_PROFILE_RESOURCE =
-      ResourceLocation.fromNamespaceAndPath(
-          "example", "easy_model_entities/render_profiles/lizard.json");
-  private static final ResourceLocation MODEL_RESOURCE =
-      ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/lizard.bbmodel");
-  private static final ResourceLocation TEXTURE_RESOURCE =
-      ResourceLocation.fromNamespaceAndPath("example", "textures/entity/lizard.png");
+  private static final Identifier RENDER_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "lizard");
+  private static final Identifier RENDER_PROFILE_RESOURCE =
+      Identifier.fromNamespaceAndPath("example", "easy_model_entities/render_profiles/lizard.json");
+  private static final Identifier MODEL_RESOURCE =
+      Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/lizard.bbmodel");
+  private static final Identifier TEXTURE_RESOURCE =
+      Identifier.fromNamespaceAndPath("example", "textures/entity/lizard.png");
 
   private static ResourceManager resourceManager(boolean hasModel, boolean hasTexture)
       throws IOException {
@@ -105,7 +104,7 @@ class ModelRenderProfileManagerTest {
 
   @Test
   void derivesRenderProfileIdFromResourceLocation() {
-    Optional<ResourceLocation> renderProfileId =
+    Optional<Identifier> renderProfileId =
         ModelRenderProfileManager.renderProfileIdFromResourceLocation(RENDER_PROFILE_RESOURCE);
 
     assertEquals(Optional.of(RENDER_PROFILE_ID), renderProfileId);

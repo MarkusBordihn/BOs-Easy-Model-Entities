@@ -38,14 +38,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
 import javax.imageio.ImageIO;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public final class ModelTextureResolver {
 
-  public static final ResourceLocation FALLBACK_TEXTURE =
-      ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/pink_wool.png");
+  public static final Identifier FALLBACK_TEXTURE =
+      Identifier.fromNamespaceAndPath("minecraft", "textures/block/pink_wool.png");
   private static final int MAX_TEXTURE_SIZE = 2048;
   private static final int SOFT_TEXTURE_SIZE = 128;
   private static final String TEXTURE_FOLDER = "textures";
@@ -59,11 +59,10 @@ public final class ModelTextureResolver {
       DecodedModel decodedModel,
       ResourceManager resourceManager) {
     Map<Integer, DecodedTexture> decodedTextures = decodedTexturesByIndex(decodedModel);
-    Map<Integer, ResourceLocation> textures = new LinkedHashMap<>();
+    Map<Integer, Identifier> textures = new LinkedHashMap<>();
     List<ModelRenderProfileValidationIssue> issues = new ArrayList<>();
     for (int index : usedTextureIndices(decodedModel)) {
-      ResourceLocation candidate =
-          candidateTexture(renderProfile, index, decodedTextures.get(index));
+      Identifier candidate = candidateTexture(renderProfile, index, decodedTextures.get(index));
       if (candidate == null) {
         textures.put(index, FALLBACK_TEXTURE);
         issues.add(
@@ -87,9 +86,9 @@ public final class ModelTextureResolver {
     return new ResolvedTextures(textures, issues);
   }
 
-  private static ResourceLocation candidateTexture(
+  private static Identifier candidateTexture(
       EasyModelRenderProfile renderProfile, int index, DecodedTexture decodedTexture) {
-    ResourceLocation profileTexture = renderProfile.textures().get(index);
+    Identifier profileTexture = renderProfile.textures().get(index);
     if (profileTexture != null) {
       return ModelResourcePaths.textureResourceLocation(profileTexture);
     }
@@ -99,7 +98,7 @@ public final class ModelTextureResolver {
     return derivedTexture(decodedTexture);
   }
 
-  private static ResourceLocation derivedTexture(DecodedTexture decodedTexture) {
+  private static Identifier derivedTexture(DecodedTexture decodedTexture) {
     if (decodedTexture == null) {
       return null;
     }
@@ -113,14 +112,14 @@ public final class ModelTextureResolver {
 
     String namespace = decodedTexture.namespace().trim();
     if (namespace.isBlank()) {
-      namespace = ResourceLocation.DEFAULT_NAMESPACE;
+      namespace = Identifier.DEFAULT_NAMESPACE;
     }
     String folder = decodedTexture.folder().trim();
     String path =
         folder.isBlank()
             ? joinPath(TEXTURE_FOLDER, ENTITY_FOLDER, withPngSuffix(relativePath))
             : joinPath(TEXTURE_FOLDER, folder, withPngSuffix(relativePath));
-    return ResourceLocation.tryParse(namespace + ":" + path);
+    return Identifier.tryParse(namespace + ":" + path);
   }
 
   private static String withPngSuffix(String path) {
@@ -132,7 +131,7 @@ public final class ModelTextureResolver {
   }
 
   private static List<ModelRenderProfileValidationIssue> validateTexture(
-      ResourceLocation textureResourceLocation, ResourceManager resourceManager) {
+      Identifier textureResourceLocation, ResourceManager resourceManager) {
     Optional<Resource> textureResource = resourceManager.getResource(textureResourceLocation);
     if (textureResource.isEmpty()) {
       return List.of(
@@ -215,7 +214,7 @@ public final class ModelTextureResolver {
   }
 
   public record ResolvedTextures(
-      Map<Integer, ResourceLocation> textures, List<ModelRenderProfileValidationIssue> issues) {
+      Map<Integer, Identifier> textures, List<ModelRenderProfileValidationIssue> issues) {
 
     public ResolvedTextures {
       textures = Map.copyOf(textures);

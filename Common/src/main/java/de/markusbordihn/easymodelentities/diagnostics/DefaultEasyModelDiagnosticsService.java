@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagnosticsService {
 
@@ -42,7 +42,7 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
   }
 
   @Override
-  public List<ModelDiagnostic> getDiagnostics(ResourceLocation profileId) {
+  public List<ModelDiagnostic> getDiagnostics(Identifier profileId) {
     return EasyModelServices.profileService()
         .getProfile(profileId)
         .map(this::diagnosticsForProfile)

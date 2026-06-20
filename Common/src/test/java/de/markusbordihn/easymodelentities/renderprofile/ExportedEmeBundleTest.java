@@ -42,7 +42,7 @@ import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.imageio.ImageIO;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -69,7 +69,7 @@ class ExportedEmeBundleTest {
     when(resourceManager.getResource(renderProfile.texture()))
         .thenReturn(Optional.of(resource(png())));
     when(resourceManager.getResource(
-            ResourceLocation.fromNamespaceAndPath(
+            Identifier.fromNamespaceAndPath(
                 NAMESPACE, "textures/entity/disguised_chestling_1.png")))
         .thenReturn(
             Optional.of(
@@ -125,8 +125,7 @@ class ExportedEmeBundleTest {
     byte[] datapack = innerZip(DATAPACK);
     byte[] resourcepack = innerZip(RESOURCEPACK);
 
-    ResourceLocation profileId =
-        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "entity/disguised_chestling");
+    Identifier profileId = Identifier.fromNamespaceAndPath(NAMESPACE, "entity/disguised_chestling");
     EasyModelEntityProfile profile =
         EasyModelProfileParser.parse(
             profileId,
@@ -152,7 +151,7 @@ class ExportedEmeBundleTest {
     assertTrue(bakeResult.successful());
     assertEquals(profileId, profile.id());
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "disguised_chestling"),
+        Identifier.fromNamespaceAndPath(NAMESPACE, "disguised_chestling"),
         profile.renderProfileId());
     assertEquals(profile.renderProfileId(), renderProfile.id());
     assertEquals(ModelBodyType.STATIC, profile.bodyType());

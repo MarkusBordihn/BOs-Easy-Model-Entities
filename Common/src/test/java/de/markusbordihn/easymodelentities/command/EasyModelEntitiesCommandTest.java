@@ -60,34 +60,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class EasyModelEntitiesCommandTest {
 
-  private static final ResourceLocation ACTIVE_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "alpha");
-  private static final ResourceLocation INVALID_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "broken");
-  private static final ResourceLocation MISSING_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "missing");
-  private static final ResourceLocation BLOCK_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "block_alpha");
+  private static final Identifier ACTIVE_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "alpha");
+  private static final Identifier INVALID_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "broken");
+  private static final Identifier MISSING_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "missing");
+  private static final Identifier BLOCK_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "block_alpha");
 
   private static EasyModelProfileService profileService(EasyModelEntityProfile... profiles) {
-    Map<ResourceLocation, EasyModelEntityProfile> profilesById = new LinkedHashMap<>();
+    Map<Identifier, EasyModelEntityProfile> profilesById = new LinkedHashMap<>();
     for (EasyModelEntityProfile profile : profiles) {
       profilesById.put(profile.id(), profile);
     }
     return new EasyModelProfileService() {
       @Override
-      public Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
+      public Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
         return Optional.ofNullable(profilesById.get(profileId));
       }
 
       @Override
-      public Collection<ResourceLocation> getProfileIds() {
+      public Collection<Identifier> getProfileIds() {
         return profilesById.keySet();
       }
 
@@ -102,7 +102,7 @@ class EasyModelEntitiesCommandTest {
       EasyModelRenderProfile renderProfile) {
     return new EasyModelRenderProfileService() {
       @Override
-      public Optional<EasyModelRenderProfile> getRenderProfile(ResourceLocation renderProfileId) {
+      public Optional<EasyModelRenderProfile> getRenderProfile(Identifier renderProfileId) {
         return renderProfile.id().equals(renderProfileId)
             ? Optional.of(renderProfile)
             : Optional.empty();
@@ -115,11 +115,11 @@ class EasyModelEntitiesCommandTest {
     };
   }
 
-  private static EasyModelEntityProfile activeProfile(ResourceLocation profileId) {
+  private static EasyModelEntityProfile activeProfile(Identifier profileId) {
     return profile(profileId, ModelProfileStatus.ACTIVE, List.of());
   }
 
-  private static EasyModelEntityProfile blockEntityProfile(ResourceLocation profileId) {
+  private static EasyModelEntityProfile blockEntityProfile(Identifier profileId) {
     return blockEntityProfile(
         profileId,
         ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY,
@@ -127,9 +127,7 @@ class EasyModelEntitiesCommandTest {
   }
 
   private static EasyModelEntityProfile blockEntityProfile(
-      ResourceLocation profileId,
-      ResourceLocation blockEntityType,
-      ModelBlockEntityPresetType presetType) {
+      Identifier profileId, Identifier blockEntityType, ModelBlockEntityPresetType presetType) {
     return new EasyModelEntityProfile(
         profileId,
         Constants.SCHEMA_VERSION,
@@ -146,7 +144,7 @@ class EasyModelEntitiesCommandTest {
         List.of());
   }
 
-  private static EasyModelEntityProfile invalidProfile(ResourceLocation profileId) {
+  private static EasyModelEntityProfile invalidProfile(Identifier profileId) {
     return profile(
         profileId,
         ModelProfileStatus.INVALID_DIMENSIONS,
@@ -158,9 +156,7 @@ class EasyModelEntitiesCommandTest {
   }
 
   private static EasyModelEntityProfile profile(
-      ResourceLocation profileId,
-      ModelProfileStatus status,
-      List<ModelProfileValidationIssue> issues) {
+      Identifier profileId, ModelProfileStatus status, List<ModelProfileValidationIssue> issues) {
     return new EasyModelEntityProfile(
         profileId,
         Constants.SCHEMA_VERSION,
@@ -179,7 +175,7 @@ class EasyModelEntitiesCommandTest {
   }
 
   private static EasyModelRenderProfile renderProfile(
-      ResourceLocation renderProfileId,
+      Identifier renderProfileId,
       ModelBodyType bodyType,
       String version,
       List<ModelRenderProfileValidationIssue> issues) {
@@ -188,8 +184,8 @@ class EasyModelEntitiesCommandTest {
         Constants.SCHEMA_VERSION,
         version,
         bodyType,
-        ResourceLocation.fromNamespaceAndPath("example", "alpha"),
-        ResourceLocation.fromNamespaceAndPath("example", "alpha"),
+        Identifier.fromNamespaceAndPath("example", "alpha"),
+        Identifier.fromNamespaceAndPath("example", "alpha"),
         new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
         new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.statusForIssues(issues),
@@ -224,7 +220,7 @@ class EasyModelEntitiesCommandTest {
     EasyModelServices.setProfileService(
         profileService(
             invalidProfile(INVALID_PROFILE_ID),
-            activeProfile(ResourceLocation.fromNamespaceAndPath("example", "zeta")),
+            activeProfile(Identifier.fromNamespaceAndPath("example", "zeta")),
             activeProfile(ACTIVE_PROFILE_ID)));
 
     assertEquals(

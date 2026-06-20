@@ -23,11 +23,11 @@ import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record EasyModelRuntimeContract(
-    ResourceLocation profileId,
-    ResourceLocation renderProfileId,
+    Identifier profileId,
+    Identifier renderProfileId,
     String version,
     float width,
     float height,
@@ -57,19 +57,19 @@ public record EasyModelRuntimeContract(
         animationState);
   }
 
-  public static EasyModelRuntimeContract fallback(ResourceLocation profileId) {
+  public static EasyModelRuntimeContract fallback(Identifier profileId) {
     return fallback(profileId, EasyModelAnimationState.AUTO);
   }
 
   public static EasyModelRuntimeContract fallback(String profileId) {
-    return fallback(ResourceLocation.tryParse(Objects.requireNonNullElse(profileId, "")));
+    return fallback(Identifier.tryParse(Objects.requireNonNullElse(profileId, "")));
   }
 
   public static EasyModelRuntimeContract fallback(
-      ResourceLocation profileId, EasyModelAnimationState animationState) {
-    ResourceLocation fallbackProfileId =
+      Identifier profileId, EasyModelAnimationState animationState) {
+    Identifier fallbackProfileId =
         profileId == null
-            ? ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "missing")
+            ? Identifier.fromNamespaceAndPath(Constants.MOD_ID, "missing")
             : profileId;
     return new EasyModelRuntimeContract(
         fallbackProfileId,

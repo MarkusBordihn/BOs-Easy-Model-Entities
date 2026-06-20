@@ -21,28 +21,54 @@ package de.markusbordihn.easymodelentities.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
-import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.world.phys.Vec3;
 
 public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity>
-    implements BlockEntityRenderer<T> {
+    implements BlockEntityRenderer<T, EasyModelBlockEntityRenderState> {
 
   public EasyModelHostBlockEntityRenderer(BlockEntityRendererProvider.Context context) {}
 
   @Override
-  public void render(
+  public EasyModelBlockEntityRenderState createRenderState() {
+    return new EasyModelBlockEntityRenderState();
+  }
+
+  @Override
+  public void extractRenderState(
       T blockEntity,
+      EasyModelBlockEntityRenderState renderState,
       float partialTick,
-      PoseStack poseStack,
-      MultiBufferSource bufferSource,
-      int packedLight,
-      int packedOverlay) {
-    EasyModelRenderState renderState =
+      Vec3 cameraPos,
+      ModelFeatureRenderer.CrumblingOverlay crumblingOverlay) {
+    BlockEntityRenderer.super.extractRenderState(
+        blockEntity, renderState, partialTick, cameraPos, crumblingOverlay);
+    renderState.easyModelRenderState =
         EasyModelBlockEntityRenderBackend.resolveRenderState(
             blockEntity.getEasyModelRuntimeContract());
+    renderState.ageInTicks = blockEntity.getEasyModelAnimationTicks(partialTick);
+    renderState.yawDegrees = 0.0f;
+  }
+
+  @Override
+  public void submit(
+      EasyModelBlockEntityRenderState renderState,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      CameraRenderState cameraRenderState) {
+    if (renderState.easyModelRenderState == null) {
+      return;
+    }
     EasyModelBlockEntityRenderBackend.render(
-        blockEntity, renderState, partialTick, poseStack, bufferSource, packedLight);
+        renderState.easyModelRenderState,
+        renderState.ageInTicks,
+        renderState.yawDegrees,
+        poseStack,
+        submitNodeCollector,
+        renderState.lightCoords);
   }
 }

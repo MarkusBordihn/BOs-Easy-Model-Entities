@@ -20,8 +20,9 @@
 package de.markusbordihn.easymodelentities.runtime;
 
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public final class EasyModelHostPersistence {
 
@@ -33,30 +34,46 @@ public final class EasyModelHostPersistence {
 
   private EasyModelHostPersistence() {}
 
-  public static ResourceLocation parseResourceLocation(String resourceLocation) {
-    return resourceLocation == null || resourceLocation.isBlank()
-        ? null
-        : ResourceLocation.tryParse(resourceLocation);
+  public static Identifier parseResourceLocation(String idText) {
+    return idText == null || idText.isBlank() ? null : Identifier.tryParse(idText);
   }
 
-  public static ResourceLocation parseResourceLocationOrMissing(
-      String resourceLocation, ResourceLocation missing) {
-    ResourceLocation parsedResourceLocation = parseResourceLocation(resourceLocation);
-    return parsedResourceLocation == null ? missing : parsedResourceLocation;
+  public static Identifier parseResourceLocationOrMissing(String idText, Identifier missing) {
+    Identifier parsedId = parseResourceLocation(idText);
+    return parsedId == null ? missing : parsedId;
   }
 
-  public static State read(CompoundTag compoundTag) {
+  public static State read(ValueInput valueInput) {
     return new State(
-        parseResourceLocation(compoundTag.getString(PROFILE_ID_TAG)),
-        parseResourceLocation(compoundTag.getString(RENDER_PROFILE_ID_TAG)),
-        compoundTag.getString(VERSION_TAG),
-        ModelBodyType.bySerializedName(compoundTag.getString(BODY_TYPE_TAG)),
-        EasyModelAnimationState.bySerializedName(compoundTag.getString(ANIMATION_STATE_TAG)));
+        parseResourceLocation(valueInput.getStringOr(PROFILE_ID_TAG, null)),
+        parseResourceLocation(valueInput.getStringOr(RENDER_PROFILE_ID_TAG, null)),
+        valueInput.getStringOr(VERSION_TAG, ""),
+        ModelBodyType.bySerializedName(valueInput.getStringOr(BODY_TYPE_TAG, "")),
+        EasyModelAnimationState.bySerializedName(valueInput.getStringOr(ANIMATION_STATE_TAG, "")));
+  }
+
+  public static void write(
+      ValueOutput valueOutput,
+      Identifier profileId,
+      Identifier renderProfileId,
+      String version,
+      ModelBodyType bodyType,
+      EasyModelAnimationState animationState) {
+    if (profileId != null) {
+      valueOutput.putString(PROFILE_ID_TAG, profileId.toString());
+    }
+    if (renderProfileId != null) {
+      valueOutput.putString(RENDER_PROFILE_ID_TAG, renderProfileId.toString());
+    }
+    valueOutput.putString(VERSION_TAG, version != null ? version : "");
+    valueOutput.putString(BODY_TYPE_TAG, bodyType != null ? bodyType.getSerializedName() : "");
+    valueOutput.putString(
+        ANIMATION_STATE_TAG, animationState != null ? animationState.getSerializedName() : "");
   }
 
   public record State(
-      ResourceLocation profileId,
-      ResourceLocation renderProfileId,
+      Identifier profileId,
+      Identifier renderProfileId,
       String version,
       ModelBodyType bodyType,
       EasyModelAnimationState animationState) {}

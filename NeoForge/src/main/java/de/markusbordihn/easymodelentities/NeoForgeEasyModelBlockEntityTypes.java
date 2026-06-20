@@ -50,56 +50,57 @@ public final class NeoForgeEasyModelBlockEntityTypes
   private static final DeferredBlock<Block> STATIC_BLOCK =
       BLOCKS.register(
           ModelBlockIds.STATIC_BLOCK.getPath(),
-          () -> new EasyModelHostBlock(ModelBlockEntityPresetType.STATIC));
+          () ->
+              new EasyModelHostBlock(
+                  ModelBlockEntityPresetType.STATIC, ModelBlockIds.STATIC_BLOCK));
   private static final DeferredHolder<
           BlockEntityType<?>, BlockEntityType<EasyModelStaticBlockEntity>>
       STATIC_BLOCK_ENTITY =
           BLOCK_ENTITY_TYPES.register(
               ModelBlockEntityTypeIds.STATIC_BLOCK_ENTITY.getPath(),
-              () ->
-                  BlockEntityType.Builder.of(EasyModelStaticBlockEntity::new, STATIC_BLOCK.get())
-                      .build(null));
+              () -> new BlockEntityType<>(EasyModelStaticBlockEntity::new, STATIC_BLOCK.get()));
 
   private static final DeferredBlock<Block> TICKING_BLOCK =
       BLOCKS.register(
           ModelBlockIds.TICKING_BLOCK.getPath(),
-          () -> new EasyModelHostBlock(ModelBlockEntityPresetType.TICKING));
+          () ->
+              new EasyModelHostBlock(
+                  ModelBlockEntityPresetType.TICKING, ModelBlockIds.TICKING_BLOCK));
   private static final DeferredHolder<
           BlockEntityType<?>, BlockEntityType<EasyModelTickingBlockEntity>>
       TICKING_BLOCK_ENTITY =
           BLOCK_ENTITY_TYPES.register(
               ModelBlockEntityTypeIds.TICKING_BLOCK_ENTITY.getPath(),
-              () ->
-                  BlockEntityType.Builder.of(EasyModelTickingBlockEntity::new, TICKING_BLOCK.get())
-                      .build(null));
+              () -> new BlockEntityType<>(EasyModelTickingBlockEntity::new, TICKING_BLOCK.get()));
 
   private static final DeferredBlock<Block> ANIMATED_BLOCK =
       BLOCKS.register(
           ModelBlockIds.ANIMATED_BLOCK.getPath(),
-          () -> new EasyModelHostBlock(ModelBlockEntityPresetType.ANIMATED));
+          () ->
+              new EasyModelHostBlock(
+                  ModelBlockEntityPresetType.ANIMATED, ModelBlockIds.ANIMATED_BLOCK));
   private static final DeferredHolder<
           BlockEntityType<?>, BlockEntityType<EasyModelAnimatedBlockEntity>>
       ANIMATED_BLOCK_ENTITY =
           BLOCK_ENTITY_TYPES.register(
               ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY.getPath(),
-              () ->
-                  BlockEntityType.Builder.of(
-                          EasyModelAnimatedBlockEntity::new, ANIMATED_BLOCK.get())
-                      .build(null));
+              () -> new BlockEntityType<>(EasyModelAnimatedBlockEntity::new, ANIMATED_BLOCK.get()));
 
   private static final DeferredBlock<Block> ANIMATED_RANDOMLY_BLOCK =
       BLOCKS.register(
           ModelBlockIds.ANIMATED_RANDOMLY_BLOCK.getPath(),
-          () -> new EasyModelHostBlock(ModelBlockEntityPresetType.ANIMATED_RANDOMLY));
+          () ->
+              new EasyModelHostBlock(
+                  ModelBlockEntityPresetType.ANIMATED_RANDOMLY,
+                  ModelBlockIds.ANIMATED_RANDOMLY_BLOCK));
   private static final DeferredHolder<
           BlockEntityType<?>, BlockEntityType<EasyModelRandomlyAnimatedBlockEntity>>
       ANIMATED_RANDOMLY_BLOCK_ENTITY =
           BLOCK_ENTITY_TYPES.register(
               ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY.getPath(),
               () ->
-                  BlockEntityType.Builder.of(
-                          EasyModelRandomlyAnimatedBlockEntity::new, ANIMATED_RANDOMLY_BLOCK.get())
-                      .build(null));
+                  new BlockEntityType<>(
+                      EasyModelRandomlyAnimatedBlockEntity::new, ANIMATED_RANDOMLY_BLOCK.get()));
 
   private NeoForgeEasyModelBlockEntityTypes() {}
 

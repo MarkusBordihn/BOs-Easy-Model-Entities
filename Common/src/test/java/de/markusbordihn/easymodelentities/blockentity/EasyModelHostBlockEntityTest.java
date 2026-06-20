@@ -43,11 +43,15 @@ import java.util.List;
 import java.util.Optional;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -55,10 +59,10 @@ import org.mockito.Mockito;
 
 class EasyModelHostBlockEntityTest {
 
-  private static final ResourceLocation PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lantern");
-  private static final ResourceLocation RENDER_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lantern_render");
+  private static final Identifier PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "lantern");
+  private static final Identifier RENDER_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "lantern_render");
 
   @BeforeAll
   static void bootstrapMinecraft() {
@@ -89,7 +93,7 @@ class EasyModelHostBlockEntityTest {
   private static EasyModelProfileService profileService(EasyModelEntityProfile profile) {
     return new EasyModelProfileService() {
       @Override
-      public Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
+      public Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
         return PROFILE_ID.equals(profileId) ? Optional.of(profile) : Optional.empty();
       }
     };
@@ -109,16 +113,19 @@ class EasyModelHostBlockEntityTest {
   }
 
   @Test
-  void appliesActiveProfileAndPersistsRuntimeContractToUpdateTag() {
+  void persistsRuntimeContractAcrossSaveAndLoad() {
     EasyModelServices.setProfileService(profileService(profile()));
     TestBlockEntity blockEntity = new TestBlockEntity();
 
     blockEntity.setEasyModelProfileId(PROFILE_ID);
     blockEntity.setEasyModelAnimationState(EasyModelAnimationState.IDLE);
-    CompoundTag updateTag = blockEntity.getUpdateTag(null);
+    TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+    blockEntity.saveAdditional(output);
+    CompoundTag savedTag = output.buildResult();
 
     TestBlockEntity loadedBlockEntity = new TestBlockEntity();
-    loadedBlockEntity.loadAdditional(updateTag, null);
+    loadedBlockEntity.loadAdditional(
+        TagValueInput.create(ProblemReporter.DISCARDING, RegistryAccess.EMPTY, savedTag));
 
     assertEquals(PROFILE_ID, loadedBlockEntity.getEasyModelProfileId());
     assertEquals(RENDER_PROFILE_ID, loadedBlockEntity.getEasyModelRenderProfileId());
@@ -126,6 +133,28 @@ class EasyModelHostBlockEntityTest {
     assertEquals(
         EasyModelAnimationState.IDLE.getApiState(), loadedBlockEntity.getEasyModelAnimationState());
     assertEquals(ModelBodyType.BIPED, loadedBlockEntity.getEasyModelRuntimeContract().bodyType());
+  }
+
+  @Test
+  void syncsRuntimeContractThroughClientUpdateTag() {
+    EasyModelServices.setProfileService(profileService(profile()));
+    TestBlockEntity serverBlockEntity = new TestBlockEntity();
+
+    serverBlockEntity.setEasyModelProfileId(PROFILE_ID);
+    serverBlockEntity.setEasyModelAnimationState(EasyModelAnimationState.IDLE);
+
+    CompoundTag updateTag = serverBlockEntity.getUpdateTag(RegistryAccess.EMPTY);
+
+    TestBlockEntity clientBlockEntity = new TestBlockEntity();
+    clientBlockEntity.loadAdditional(
+        TagValueInput.create(ProblemReporter.DISCARDING, RegistryAccess.EMPTY, updateTag));
+
+    assertEquals(PROFILE_ID, clientBlockEntity.getEasyModelProfileId());
+    assertEquals(RENDER_PROFILE_ID, clientBlockEntity.getEasyModelRenderProfileId());
+    assertEquals("server-v1", clientBlockEntity.getEasyModelVersion());
+    assertEquals(
+        EasyModelAnimationState.IDLE.getApiState(), clientBlockEntity.getEasyModelAnimationState());
+    assertEquals(ModelBodyType.BIPED, clientBlockEntity.getEasyModelRuntimeContract().bodyType());
   }
 
   @Test

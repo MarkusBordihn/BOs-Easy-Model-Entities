@@ -28,6 +28,7 @@ import de.markusbordihn.easymodelentities.blockentity.EasyModelTickingBlockEntit
 import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
@@ -42,47 +43,51 @@ public final class FabricEasyModelBlockEntityTypes implements EasyModelHostBlock
       Registry.register(
           BuiltInRegistries.BLOCK,
           ModelBlockIds.STATIC_BLOCK,
-          new EasyModelHostBlock(ModelBlockEntityPresetType.STATIC));
+          new EasyModelHostBlock(ModelBlockEntityPresetType.STATIC, ModelBlockIds.STATIC_BLOCK));
   public static final Block TICKING_BLOCK =
       Registry.register(
           BuiltInRegistries.BLOCK,
           ModelBlockIds.TICKING_BLOCK,
-          new EasyModelHostBlock(ModelBlockEntityPresetType.TICKING));
+          new EasyModelHostBlock(ModelBlockEntityPresetType.TICKING, ModelBlockIds.TICKING_BLOCK));
   public static final Block ANIMATED_BLOCK =
       Registry.register(
           BuiltInRegistries.BLOCK,
           ModelBlockIds.ANIMATED_BLOCK,
-          new EasyModelHostBlock(ModelBlockEntityPresetType.ANIMATED));
+          new EasyModelHostBlock(
+              ModelBlockEntityPresetType.ANIMATED, ModelBlockIds.ANIMATED_BLOCK));
   public static final Block ANIMATED_RANDOMLY_BLOCK =
       Registry.register(
           BuiltInRegistries.BLOCK,
           ModelBlockIds.ANIMATED_RANDOMLY_BLOCK,
-          new EasyModelHostBlock(ModelBlockEntityPresetType.ANIMATED_RANDOMLY));
+          new EasyModelHostBlock(
+              ModelBlockEntityPresetType.ANIMATED_RANDOMLY, ModelBlockIds.ANIMATED_RANDOMLY_BLOCK));
 
   private static final BlockEntityType<EasyModelStaticBlockEntity> STATIC_BLOCK_ENTITY =
       Registry.register(
           BuiltInRegistries.BLOCK_ENTITY_TYPE,
           ModelBlockEntityTypeIds.STATIC_BLOCK_ENTITY,
-          BlockEntityType.Builder.of(EasyModelStaticBlockEntity::new, STATIC_BLOCK).build(null));
+          FabricBlockEntityTypeBuilder.create(EasyModelStaticBlockEntity::new, STATIC_BLOCK)
+              .build());
   private static final BlockEntityType<EasyModelTickingBlockEntity> TICKING_BLOCK_ENTITY =
       Registry.register(
           BuiltInRegistries.BLOCK_ENTITY_TYPE,
           ModelBlockEntityTypeIds.TICKING_BLOCK_ENTITY,
-          BlockEntityType.Builder.of(EasyModelTickingBlockEntity::new, TICKING_BLOCK).build(null));
+          FabricBlockEntityTypeBuilder.create(EasyModelTickingBlockEntity::new, TICKING_BLOCK)
+              .build());
   private static final BlockEntityType<EasyModelAnimatedBlockEntity> ANIMATED_BLOCK_ENTITY =
       Registry.register(
           BuiltInRegistries.BLOCK_ENTITY_TYPE,
           ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY,
-          BlockEntityType.Builder.of(EasyModelAnimatedBlockEntity::new, ANIMATED_BLOCK)
-              .build(null));
+          FabricBlockEntityTypeBuilder.create(EasyModelAnimatedBlockEntity::new, ANIMATED_BLOCK)
+              .build());
   private static final BlockEntityType<EasyModelRandomlyAnimatedBlockEntity>
       ANIMATED_RANDOMLY_BLOCK_ENTITY =
           Registry.register(
               BuiltInRegistries.BLOCK_ENTITY_TYPE,
               ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY,
-              BlockEntityType.Builder.of(
+              FabricBlockEntityTypeBuilder.create(
                       EasyModelRandomlyAnimatedBlockEntity::new, ANIMATED_RANDOMLY_BLOCK)
-                  .build(null));
+                  .build());
 
   private FabricEasyModelBlockEntityTypes() {}
 

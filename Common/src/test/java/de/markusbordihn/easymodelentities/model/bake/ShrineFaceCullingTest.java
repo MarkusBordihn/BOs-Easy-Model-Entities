@@ -44,7 +44,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
 import javax.imageio.ImageIO;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -63,29 +63,27 @@ class ShrineFaceCullingTest {
     return total;
   }
 
-  private static EasyModelRenderProfile renderProfile(
-      ResourceLocation modelId, ModelBodyType bodyType) {
+  private static EasyModelRenderProfile renderProfile(Identifier modelId, ModelBodyType bodyType) {
     return new EasyModelRenderProfile(
         modelId,
         "0.1.0",
         "test-version",
         bodyType,
         modelId,
-        ResourceLocation.fromNamespaceAndPath(
-            "example", "textures/entity/" + modelId.getPath() + ".png"),
+        Identifier.fromNamespaceAndPath("example", "textures/entity/" + modelId.getPath() + ".png"),
         new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
         new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
         List.of());
   }
 
-  private static ResourceManager resourceManager(ResourceLocation modelId, byte[] modelBytes)
+  private static ResourceManager resourceManager(Identifier modelId, byte[] modelBytes)
       throws IOException {
     ResourceManager resourceManager = mock(ResourceManager.class);
     when(resourceManager.getResource(ModelResourcePaths.modelResourceLocation(modelId)))
         .thenReturn(Optional.of(resource(modelBytes)));
     when(resourceManager.getResource(
-            ResourceLocation.fromNamespaceAndPath(
+            Identifier.fromNamespaceAndPath(
                 "example", "textures/entity/" + modelId.getPath() + ".png")))
         .thenReturn(Optional.of(resource(png())));
     return resourceManager;
@@ -117,7 +115,7 @@ class ShrineFaceCullingTest {
 
   @Test
   void shrineLosesHiddenFacesAndEnablesBackfaceCulling() throws Exception {
-    ResourceLocation modelId = ResourceLocation.fromNamespaceAndPath("example", "shrine");
+    Identifier modelId = Identifier.fromNamespaceAndPath("example", "shrine");
     byte[] modelBytes = fixture("shrine");
     ModelBakeResult bakeResult =
         ModelBakeService.createDefault()
@@ -138,7 +136,7 @@ class ShrineFaceCullingTest {
 
   @Test
   void animatedModelKeepsBackfaceCullingDisabled() throws Exception {
-    ResourceLocation modelId = ResourceLocation.fromNamespaceAndPath("example", "little_explorer");
+    Identifier modelId = Identifier.fromNamespaceAndPath("example", "little_explorer");
     byte[] modelBytes = fixture("little_explorer");
     ModelBakeResult bakeResult =
         ModelBakeService.createDefault()

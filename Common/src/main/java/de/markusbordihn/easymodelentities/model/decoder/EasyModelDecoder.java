@@ -19,12 +19,12 @@
 package de.markusbordihn.easymodelentities.model.decoder;
 
 import de.markusbordihn.easymodelentities.data.model.decoder.*;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 
 public interface EasyModelDecoder {
 
-  boolean supports(ResourceLocation modelId, Resource resource);
+  boolean supports(Identifier modelId, Resource resource);
 
-  DecodedModel decode(ResourceLocation modelId, Resource resource) throws EasyModelDecodeException;
+  DecodedModel decode(Identifier modelId, Resource resource) throws EasyModelDecodeException;
 }

@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.SharedConstants;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
@@ -61,12 +61,12 @@ import org.junit.jupiter.api.Test;
 
 class EasyModelEntitiesApiTest {
 
-  private static final ResourceLocation ACTIVE_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "fox");
-  private static final ResourceLocation INVALID_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "invalid");
-  private static final ResourceLocation MISSING_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "missing");
+  private static final Identifier ACTIVE_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "fox");
+  private static final Identifier INVALID_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "invalid");
+  private static final Identifier MISSING_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "missing");
 
   @BeforeAll
   static void bootstrapMinecraft() {
@@ -75,18 +75,18 @@ class EasyModelEntitiesApiTest {
   }
 
   private static EasyModelProfileService profileService(EasyModelEntityProfile... profiles) {
-    Map<ResourceLocation, EasyModelEntityProfile> profilesById =
+    Map<Identifier, EasyModelEntityProfile> profilesById =
         java.util.Arrays.stream(profiles)
             .collect(
                 java.util.stream.Collectors.toMap(EasyModelEntityProfile::id, profile -> profile));
     return new EasyModelProfileService() {
       @Override
-      public Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
+      public Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
         return Optional.ofNullable(profilesById.get(profileId));
       }
 
       @Override
-      public boolean hasProfile(ResourceLocation profileId) {
+      public boolean hasProfile(Identifier profileId) {
         return profilesById.containsKey(profileId);
       }
 
@@ -100,7 +100,7 @@ class EasyModelEntitiesApiTest {
   private static EasyModelEntityFactory activeOnlyFactory(Entity entity) {
     return new EasyModelEntityFactory() {
       @Override
-      public Optional<Entity> createEntity(Level level, ResourceLocation profileId, Vec3 position) {
+      public Optional<Entity> createEntity(Level level, Identifier profileId, Vec3 position) {
         return EasyModelServices.profileService()
             .getProfile(profileId)
             .filter(EasyModelEntityProfile::isActive)
@@ -109,8 +109,7 @@ class EasyModelEntitiesApiTest {
     };
   }
 
-  private static EasyModelEntityProfile profile(
-      ResourceLocation profileId, ModelProfileStatus status) {
+  private static EasyModelEntityProfile profile(Identifier profileId, ModelProfileStatus status) {
     return new EasyModelEntityProfile(
         profileId,
         "0.1.0",
@@ -184,7 +183,7 @@ class EasyModelEntitiesApiTest {
         new EasyModelEntityFactory() {
           @Override
           public Optional<Entity> createEntity(
-              Level factoryLevel, ResourceLocation profileId, Vec3 factoryPosition) {
+              Level factoryLevel, Identifier profileId, Vec3 factoryPosition) {
             assertSame(level, factoryLevel);
             assertEquals(ACTIVE_PROFILE_ID, profileId);
             assertSame(position, factoryPosition);

@@ -29,15 +29,14 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.io.StringReader;
 import java.util.List;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class ModelRenderProfileValidatorTest {
 
-  private static final ResourceLocation PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lizard");
-  private static final ResourceLocation RENDER_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lizard");
+  private static final Identifier PROFILE_ID = Identifier.fromNamespaceAndPath("example", "lizard");
+  private static final Identifier RENDER_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "lizard");
 
   private static EasyModelRenderProfile renderProfile(String version, ModelBodyType bodyType) {
     String json =

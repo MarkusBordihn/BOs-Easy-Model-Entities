@@ -21,10 +21,10 @@ package de.markusbordihn.easymodelentities.data.profile;
 
 import java.util.List;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record EasyModelEntityProfile(
-    ResourceLocation id,
+    Identifier id,
     String schemaVersion,
     String version,
     ModelType modelType,
@@ -62,11 +62,11 @@ public record EasyModelEntityProfile(
     return this.status == ModelProfileStatus.ACTIVE;
   }
 
-  public ResourceLocation hostEntityType() {
+  public Identifier hostEntityType() {
     return this.entity.type();
   }
 
-  public ResourceLocation hostBlockEntityType() {
+  public Identifier hostBlockEntityType() {
     return this.blockEntity.type();
   }
 
@@ -84,7 +84,7 @@ public record EasyModelEntityProfile(
         : this.entity.bodyType();
   }
 
-  public ResourceLocation renderProfileId() {
+  public Identifier renderProfileId() {
     return this.client.renderProfile();
   }
 

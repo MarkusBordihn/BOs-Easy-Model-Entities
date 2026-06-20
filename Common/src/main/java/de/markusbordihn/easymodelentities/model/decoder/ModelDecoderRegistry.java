@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 
 public final class ModelDecoderRegistry implements EasyModelDecoderRegistry {
@@ -57,7 +57,7 @@ public final class ModelDecoderRegistry implements EasyModelDecoderRegistry {
   }
 
   @Override
-  public Optional<EasyModelDecoder> findDecoder(ResourceLocation modelId, Resource resource) {
+  public Optional<EasyModelDecoder> findDecoder(Identifier modelId, Resource resource) {
     for (EasyModelDecoder decoder : this.decodersByFormat.values()) {
       if (decoder.supports(modelId, resource)) {
         return Optional.of(decoder);

@@ -22,7 +22,9 @@ package de.markusbordihn.easymodelentities.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
@@ -38,7 +40,8 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -56,6 +59,47 @@ public final class EasyModelEntityRenderBackend {
         EasyModelServices.renderProfileService(),
         EasyModelServices.bakeService(),
         Minecraft.getInstance().getResourceManager());
+  }
+
+  public static void render(
+      EasyModelEntityRenderState renderState,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    Objects.requireNonNull(renderState, "renderState");
+    Objects.requireNonNull(renderState.easyModelRenderState, "easyModelRenderState");
+    Objects.requireNonNull(poseStack, "poseStack");
+    Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
+
+    EasyModelRenderState easyModelRenderState = renderState.easyModelRenderState;
+    poseStack.pushPose();
+    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.entityYaw));
+    poseStack.scale(
+        -easyModelRenderState.scale(), -easyModelRenderState.scale(), easyModelRenderState.scale());
+    poseStack.translate(0.0f, -1.501f, 0.0f);
+
+    EasyModelBakedModelRenderer.render(
+        easyModelRenderState.bakedModel(),
+        easyModelRenderState,
+        renderState.limbSwing,
+        renderState.limbSwingAmount,
+        renderState.ageInTicks,
+        renderState.airborneAmount,
+        EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        poseStack,
+        submitNodeCollector,
+        packedLight);
+    poseStack.popPose();
+  }
+
+  public static float airborneAmount(Entity entity) {
+    if (!(entity instanceof LivingEntity livingEntity) || livingEntity.onGround()) {
+      return 0.0f;
+    }
+    float verticalMotion = (float) Math.abs(livingEntity.getDeltaMovement().y);
+    float motionFactor = Mth.clamp(verticalMotion / AIRBORNE_MOTION_RANGE, 0.0f, 1.0f);
+    return AIRBORNE_BASE + (1.0f - AIRBORNE_BASE) * motionFactor;
   }
 
   public static void render(
@@ -128,8 +172,7 @@ public final class EasyModelEntityRenderBackend {
     Objects.requireNonNull(profileService, "profileService");
     Objects.requireNonNull(renderProfileService, "renderProfileService");
 
-    ResourceLocation profileId =
-        Objects.requireNonNull(renderable.getEasyModelProfileId(), "profileId");
+    Identifier profileId = Objects.requireNonNull(renderable.getEasyModelProfileId(), "profileId");
     EasyModelAnimationState animationState =
         EasyModelAnimationState.byApiState(renderable.getEasyModelAnimationState());
     return profileService
@@ -147,9 +190,9 @@ public final class EasyModelEntityRenderBackend {
       Entity entity,
       EasyModelRenderable renderable,
       EasyModelRenderProfileService renderProfileService,
-      ResourceLocation profileId,
+      Identifier profileId,
       EasyModelAnimationState animationState) {
-    ResourceLocation renderProfileId =
+    Identifier renderProfileId =
         Objects.requireNonNullElse(renderable.getEasyModelRenderProfileId(), profileId);
     ModelBodyType bodyType =
         renderProfileService
@@ -180,15 +223,6 @@ public final class EasyModelEntityRenderBackend {
     return entity instanceof LivingEntity livingEntity
         ? Math.min(livingEntity.walkAnimation.speed(partialTick), 1.0f)
         : 0.0f;
-  }
-
-  private static float airborneAmount(Entity entity) {
-    if (!(entity instanceof LivingEntity livingEntity) || livingEntity.onGround()) {
-      return 0.0f;
-    }
-    float verticalMotion = (float) Math.abs(livingEntity.getDeltaMovement().y);
-    float motionFactor = Mth.clamp(verticalMotion / AIRBORNE_MOTION_RANGE, 0.0f, 1.0f);
-    return AIRBORNE_BASE + (1.0f - AIRBORNE_BASE) * motionFactor;
   }
 
   private static float width(Entity entity) {

@@ -28,15 +28,17 @@ import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import net.minecraft.network.syncher.EntityDataSerializer;
+import net.minecraft.resources.Identifier;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.resource.VanillaServerListeners;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -79,8 +81,11 @@ public class EasyModelEntities {
     NeoForge.EVENT_BUS.addListener(this::registerCommands);
   }
 
-  private void addReloadListeners(AddReloadListenerEvent event) {
-    event.addListener(new EasyModelProfileReloadListener());
+  private void addReloadListeners(AddServerReloadListenersEvent event) {
+    Identifier listenerId =
+        Identifier.fromNamespaceAndPath(Constants.MOD_ID, "profile_reload_listener");
+    event.addListener(listenerId, new EasyModelProfileReloadListener());
+    event.addDependency(VanillaServerListeners.LAST, listenerId);
   }
 
   private void registerCommands(RegisterCommandsEvent event) {

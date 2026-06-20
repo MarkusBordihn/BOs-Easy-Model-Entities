@@ -32,6 +32,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.resources.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -96,10 +97,7 @@ public final class ModelRenderProfileValidator {
   }
 
   private static ModelDiagnostic diagnostic(
-      ModelDiagnosticSeverity severity,
-      String code,
-      String message,
-      net.minecraft.resources.ResourceLocation renderProfileId) {
+      ModelDiagnosticSeverity severity, String code, String message, Identifier renderProfileId) {
     return new ModelDiagnostic(severity, code, message, Optional.of(renderProfileId));
   }
 

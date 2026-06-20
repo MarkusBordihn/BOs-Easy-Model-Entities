@@ -24,40 +24,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.data.profile.*;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class EasyModelProfileManagerTest {
 
   @Test
   void derivesEntityProfileIdFromTypedDataPath() {
-    Optional<ResourceLocation> profileId =
+    Optional<Identifier> profileId =
         EasyModelProfileManager.profileIdFromResourceLocation(
-            ResourceLocation.fromNamespaceAndPath(
+            Identifier.fromNamespaceAndPath(
                 "example", "easy_model_entities/profiles/entity/lizard.json"));
 
     assertEquals(
-        Optional.of(ResourceLocation.fromNamespaceAndPath("example", "entity/lizard")), profileId);
+        Optional.of(Identifier.fromNamespaceAndPath("example", "entity/lizard")), profileId);
   }
 
   @Test
   void derivesBlockEntityProfileIdFromTypedDataPath() {
-    Optional<ResourceLocation> profileId =
+    Optional<Identifier> profileId =
         EasyModelProfileManager.profileIdFromResourceLocation(
-            ResourceLocation.fromNamespaceAndPath(
+            Identifier.fromNamespaceAndPath(
                 "example", "easy_model_entities/profiles/block_entity/lizard.json"));
 
     assertEquals(
-        Optional.of(ResourceLocation.fromNamespaceAndPath("example", "block_entity/lizard")),
-        profileId);
+        Optional.of(Identifier.fromNamespaceAndPath("example", "block_entity/lizard")), profileId);
   }
 
   @Test
   void ignoresProfilesOutsideTypedDataPaths() {
-    Optional<ResourceLocation> profileId =
+    Optional<Identifier> profileId =
         EasyModelProfileManager.profileIdFromResourceLocation(
-            ResourceLocation.fromNamespaceAndPath(
-                "example", "easy_model_entities/profiles/lizard.json"));
+            Identifier.fromNamespaceAndPath("example", "easy_model_entities/profiles/lizard.json"));
 
     assertTrue(profileId.isEmpty());
   }

@@ -44,7 +44,7 @@ import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -52,12 +52,11 @@ import org.junit.jupiter.api.Test;
 
 class EasyModelRenderStateResolverTest {
 
-  private static final ResourceLocation PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "model");
-  private static final ResourceLocation MODEL_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/model");
-  private static final ResourceLocation TEXTURE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model.png");
+  private static final Identifier PROFILE_ID = Identifier.fromNamespaceAndPath("example", "model");
+  private static final Identifier MODEL_ID =
+      Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/model");
+  private static final Identifier TEXTURE_ID =
+      Identifier.fromNamespaceAndPath("example", "textures/entity/model.png");
 
   private static EasyModelRuntimeContract contract(ModelBodyType bodyType, String version) {
     return new EasyModelRuntimeContract(
@@ -82,7 +81,7 @@ class EasyModelRenderStateResolverTest {
       EasyModelRenderProfile renderProfile) {
     return new EasyModelRenderProfileService() {
       @Override
-      public Optional<EasyModelRenderProfile> getRenderProfile(ResourceLocation renderProfileId) {
+      public Optional<EasyModelRenderProfile> getRenderProfile(Identifier renderProfileId) {
         return PROFILE_ID.equals(renderProfileId) ? Optional.of(renderProfile) : Optional.empty();
       }
 

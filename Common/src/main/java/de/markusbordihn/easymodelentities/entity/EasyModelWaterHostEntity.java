@@ -23,10 +23,9 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityDimensions;
@@ -38,8 +37,10 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.navigation.WaterBoundPathNavigation;
-import net.minecraft.world.entity.animal.WaterAnimal;
+import net.minecraft.world.entity.animal.fish.WaterAnimal;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 public abstract class EasyModelWaterHostEntity extends WaterAnimal implements EasyModelEntityHost {
@@ -121,29 +122,29 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
   }
 
   @Override
-  public void addAdditionalSaveData(CompoundTag compoundTag) {
-    super.addAdditionalSaveData(compoundTag);
-    EasyModelHostSupport.addAdditionalSaveData(compoundTag, this.entityData, FIELDS);
+  public void addAdditionalSaveData(ValueOutput output) {
+    super.addAdditionalSaveData(output);
+    EasyModelHostSupport.addAdditionalSaveData(output, this.entityData, FIELDS);
   }
 
   @Override
-  public void readAdditionalSaveData(CompoundTag compoundTag) {
-    super.readAdditionalSaveData(compoundTag);
-    EasyModelHostSupport.readAdditionalSaveData(this, compoundTag, FIELDS);
+  public void readAdditionalSaveData(ValueInput input) {
+    super.readAdditionalSaveData(input);
+    EasyModelHostSupport.readAdditionalSaveData(this, input, FIELDS);
   }
 
   @Override
-  public ResourceLocation getEasyModelProfileId() {
+  public Identifier getEasyModelProfileId() {
     return EasyModelHostSupport.getProfileId(this.entityData, FIELDS);
   }
 
   @Override
-  public void setEasyModelProfileId(ResourceLocation profileId) {
+  public void setEasyModelProfileId(Identifier profileId) {
     EasyModelHostSupport.setProfileId(this, FIELDS, profileId);
   }
 
   @Override
-  public ResourceLocation getEasyModelRenderProfileId() {
+  public Identifier getEasyModelRenderProfileId() {
     return EasyModelHostSupport.getRenderProfileId(this.entityData, FIELDS);
   }
 

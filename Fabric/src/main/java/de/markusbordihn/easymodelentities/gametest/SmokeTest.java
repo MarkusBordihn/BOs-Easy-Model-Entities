@@ -20,14 +20,14 @@
 package de.markusbordihn.easymodelentities.gametest;
 
 import de.markusbordihn.easymodelentities.Constants;
+import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 
 @SuppressWarnings("unused")
 public class SmokeTest {
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void testModRegistered(GameTestHelper helper) {
     GameTestHelpers.assertTrue(
         helper,

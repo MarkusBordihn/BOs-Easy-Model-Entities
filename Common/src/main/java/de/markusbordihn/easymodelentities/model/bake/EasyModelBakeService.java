@@ -22,7 +22,7 @@ package de.markusbordihn.easymodelentities.model.bake;
 import de.markusbordihn.easymodelentities.data.model.bake.*;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public interface EasyModelBakeService {
@@ -38,11 +38,11 @@ public interface EasyModelBakeService {
         renderProfile.validationIssues());
   }
 
-  default Optional<ModelBakeResult> getCached(ResourceLocation modelId, String assetFingerprint) {
+  default Optional<ModelBakeResult> getCached(Identifier modelId, String assetFingerprint) {
     return Optional.empty();
   }
 
-  default ModelCacheKey cacheKey(ResourceLocation modelId, String assetFingerprint) {
+  default ModelCacheKey cacheKey(Identifier modelId, String assetFingerprint) {
     return new ModelCacheKey(modelId, assetFingerprint);
   }
 

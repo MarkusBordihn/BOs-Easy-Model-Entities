@@ -21,7 +21,7 @@ package de.markusbordihn.easymodelentities.model.decoder;
 import com.google.gson.JsonObject;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 
 public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
@@ -38,12 +38,12 @@ public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
   private final AbstractBbModelParser emeEntityParser = new EmeEntityBbModelParser();
 
   @Override
-  public boolean supports(ResourceLocation modelId, Resource resource) {
+  public boolean supports(Identifier modelId, Resource resource) {
     return modelId != null && resource != null;
   }
 
   @Override
-  public DecodedModel decode(ResourceLocation modelId, Resource resource)
+  public DecodedModel decode(Identifier modelId, Resource resource)
       throws EasyModelDecodeException {
     Objects.requireNonNull(modelId, "modelId");
     Objects.requireNonNull(resource, "resource");

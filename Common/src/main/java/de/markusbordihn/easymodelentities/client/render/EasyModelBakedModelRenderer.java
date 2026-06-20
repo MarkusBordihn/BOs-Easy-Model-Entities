@@ -39,10 +39,14 @@ import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelGaitType;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.IntFunction;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 public final class EasyModelBakedModelRenderer {
@@ -188,6 +192,50 @@ public final class EasyModelBakedModelRenderer {
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode,
       PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    Objects.requireNonNull(renderState, "renderState");
+    Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
+    boolean cullBackfaces = bakedModel.cullBackfaces();
+    for (int textureIndex : textureIndices(bakedModel)) {
+      Identifier texture = textureFor(renderState, textureIndex);
+      RenderType renderType =
+          cullBackfaces
+              ? RenderTypes.entityCutout(texture)
+              : RenderTypes.entityCutoutNoCull(texture);
+      submitNodeCollector.submitCustomGeometry(
+          poseStack,
+          renderType,
+          (pose, vertexConsumer) -> {
+            PoseStack innerStack = new PoseStack();
+            innerStack.last().pose().set(pose.pose());
+            innerStack.last().normal().set(pose.normal());
+            render(
+                bakedModel,
+                renderState,
+                limbSwing,
+                limbSwingAmount,
+                ageInTicks,
+                airborneAmount,
+                innerStack,
+                renderTextureIndex -> renderTextureIndex == textureIndex ? vertexConsumer : null,
+                packedLight,
+                partAnimator,
+                partAnimationMode);
+          });
+    }
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      float airborneAmount,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
     Objects.requireNonNull(renderState, "renderState");
@@ -195,11 +243,11 @@ public final class EasyModelBakedModelRenderer {
     boolean cullBackfaces = bakedModel.cullBackfaces();
     IntFunction<VertexConsumer> bufferProvider =
         textureIndex -> {
-          ResourceLocation texture = textureFor(renderState, textureIndex);
+          Identifier texture = textureFor(renderState, textureIndex);
           return bufferSource.getBuffer(
               cullBackfaces
-                  ? RenderType.entityCutout(texture)
-                  : RenderType.entityCutoutNoCull(texture));
+                  ? RenderTypes.entityCutout(texture)
+                  : RenderTypes.entityCutoutNoCull(texture));
         };
     render(
         bakedModel,
@@ -215,8 +263,28 @@ public final class EasyModelBakedModelRenderer {
         partAnimationMode);
   }
 
-  private static ResourceLocation textureFor(EasyModelRenderState renderState, int textureIndex) {
+  private static Identifier textureFor(EasyModelRenderState renderState, int textureIndex) {
     return renderState.textures().getOrDefault(textureIndex, renderState.texture());
+  }
+
+  private static Set<Integer> textureIndices(BakedModel bakedModel) {
+    Set<Integer> indices = new TreeSet<>();
+    for (BakedModelPart part : bakedModel.rootParts()) {
+      collectTextureIndices(part, indices);
+    }
+    if (indices.isEmpty()) {
+      indices.add(0);
+    }
+    return indices;
+  }
+
+  private static void collectTextureIndices(BakedModelPart part, Set<Integer> indices) {
+    for (BakedModelCube cube : part.cubes()) {
+      indices.add(cube.textureIndex());
+    }
+    for (BakedModelPart child : part.children()) {
+      collectTextureIndices(child, indices);
+    }
   }
 
   private static void render(

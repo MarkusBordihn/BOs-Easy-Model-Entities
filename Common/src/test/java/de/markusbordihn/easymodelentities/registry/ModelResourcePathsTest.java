@@ -22,13 +22,12 @@ package de.markusbordihn.easymodelentities.registry;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class ModelResourcePathsTest {
 
-  private static final ResourceLocation PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "lizard");
+  private static final Identifier PROFILE_ID = Identifier.fromNamespaceAndPath("example", "lizard");
 
   @Test
   void resourcePathsMatchSplitArchitecture() {
@@ -41,7 +40,7 @@ class ModelResourcePathsTest {
     assertEquals(
         "data/example/easy_model_entities/profiles/entity/lizard.json",
         ModelResourcePaths.serverProfilePath(
-            ResourceLocation.fromNamespaceAndPath("example", "entity/lizard")));
+            Identifier.fromNamespaceAndPath("example", "entity/lizard")));
     assertEquals(
         "assets/example/easy_model_entities/render_profiles/lizard.json",
         ModelResourcePaths.renderProfilePath(PROFILE_ID));
@@ -56,18 +55,17 @@ class ModelResourcePathsTest {
   @Test
   void defaultAssetIdsUseProfileNamespace() {
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/lizard"),
+        Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/lizard"),
         ModelResourcePaths.defaultModelId(PROFILE_ID));
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/lizard.png"),
+        Identifier.fromNamespaceAndPath("example", "textures/entity/lizard.png"),
         ModelResourcePaths.defaultTextureId(PROFILE_ID));
   }
 
   @Test
   void fileExtensionsAreNotDuplicated() {
-    ResourceLocation modelId =
-        ResourceLocation.fromNamespaceAndPath(
-            "example", "easy_model_entities/models/lizard.bbmodel");
+    Identifier modelId =
+        Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/lizard.bbmodel");
 
     assertEquals(
         "assets/example/easy_model_entities/models/lizard.bbmodel",
@@ -76,8 +74,7 @@ class ModelResourcePathsTest {
 
   @Test
   void unsafePathSegmentsAreRejected() {
-    ResourceLocation unsafeProfileId =
-        ResourceLocation.fromNamespaceAndPath("example", "models/../lizard");
+    Identifier unsafeProfileId = Identifier.fromNamespaceAndPath("example", "models/../lizard");
 
     assertThrows(
         IllegalArgumentException.class,

@@ -21,19 +21,19 @@ package de.markusbordihn.easymodelentities.registry;
 
 import de.markusbordihn.easymodelentities.Constants;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class ModelBlockEntityTypeIds {
 
-  public static final ResourceLocation STATIC_BLOCK_ENTITY =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "static_block_entity");
-  public static final ResourceLocation TICKING_BLOCK_ENTITY =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "ticking_block_entity");
-  public static final ResourceLocation ANIMATED_BLOCK_ENTITY =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "animated_block_entity");
-  public static final ResourceLocation ANIMATED_RANDOMLY_BLOCK_ENTITY =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "animated_randomly_block_entity");
-  public static final Set<ResourceLocation> SUPPORTED_HOST_BLOCK_ENTITY_TYPES =
+  public static final Identifier STATIC_BLOCK_ENTITY =
+      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "static_block_entity");
+  public static final Identifier TICKING_BLOCK_ENTITY =
+      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "ticking_block_entity");
+  public static final Identifier ANIMATED_BLOCK_ENTITY =
+      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "animated_block_entity");
+  public static final Identifier ANIMATED_RANDOMLY_BLOCK_ENTITY =
+      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "animated_randomly_block_entity");
+  public static final Set<Identifier> SUPPORTED_HOST_BLOCK_ENTITY_TYPES =
       Set.of(
           STATIC_BLOCK_ENTITY,
           TICKING_BLOCK_ENTITY,
@@ -42,7 +42,7 @@ public final class ModelBlockEntityTypeIds {
 
   private ModelBlockEntityTypeIds() {}
 
-  public static boolean isSupportedHostBlockEntityType(ResourceLocation blockEntityTypeId) {
+  public static boolean isSupportedHostBlockEntityType(Identifier blockEntityTypeId) {
     return SUPPORTED_HOST_BLOCK_ENTITY_TYPES.contains(blockEntityTypeId);
   }
 }

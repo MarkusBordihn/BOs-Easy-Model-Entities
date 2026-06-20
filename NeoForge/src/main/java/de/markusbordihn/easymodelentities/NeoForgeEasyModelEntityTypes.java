@@ -28,6 +28,7 @@ import de.markusbordihn.easymodelentities.entity.EasyModelStaticEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelWaterHostEntity;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.bus.api.IEventBus;
@@ -52,7 +53,9 @@ public final class NeoForgeEasyModelEntityTypes implements EasyModelHostEntityTy
                       .sized(
                           EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
                       .clientTrackingRange(10)
-                      .build(ModelEntityTypeIds.GROUND_ENTITY.toString()));
+                      .build(
+                          ResourceKey.create(
+                              Registries.ENTITY_TYPE, ModelEntityTypeIds.GROUND_ENTITY)));
 
   private static final DeferredHolder<EntityType<?>, EntityType<EasyModelStaticEntity>>
       STATIC_ENTITY =
@@ -64,7 +67,9 @@ public final class NeoForgeEasyModelEntityTypes implements EasyModelHostEntityTy
                       .sized(
                           EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
                       .clientTrackingRange(10)
-                      .build(ModelEntityTypeIds.STATIC_ENTITY.toString()));
+                      .build(
+                          ResourceKey.create(
+                              Registries.ENTITY_TYPE, ModelEntityTypeIds.STATIC_ENTITY)));
 
   private static final DeferredHolder<EntityType<?>, EntityType<EasyModelAquaticEntity>>
       AQUATIC_ENTITY =
@@ -75,7 +80,9 @@ public final class NeoForgeEasyModelEntityTypes implements EasyModelHostEntityTy
                           EasyModelAquaticEntity::new, MobCategory.WATER_CREATURE)
                       .sized(0.7f, 0.4f)
                       .clientTrackingRange(10)
-                      .build(ModelEntityTypeIds.AQUATIC_ENTITY.toString()));
+                      .build(
+                          ResourceKey.create(
+                              Registries.ENTITY_TYPE, ModelEntityTypeIds.AQUATIC_ENTITY)));
 
   private static final DeferredHolder<EntityType<?>, EntityType<EasyModelAmphibiousEntity>>
       AMPHIBIOUS_ENTITY =
@@ -86,7 +93,9 @@ public final class NeoForgeEasyModelEntityTypes implements EasyModelHostEntityTy
                           EasyModelAmphibiousEntity::new, MobCategory.CREATURE)
                       .sized(0.9f, 0.6f)
                       .clientTrackingRange(10)
-                      .build(ModelEntityTypeIds.AMPHIBIOUS_ENTITY.toString()));
+                      .build(
+                          ResourceKey.create(
+                              Registries.ENTITY_TYPE, ModelEntityTypeIds.AMPHIBIOUS_ENTITY)));
 
   private NeoForgeEasyModelEntityTypes() {}
 

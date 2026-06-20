@@ -45,15 +45,28 @@ import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelGaitType;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.SharedConstants;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.Bootstrap;
 import org.joml.Matrix4f;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 
 class EasyModelBakedModelRendererTest {
+
+  @BeforeAll
+  static void bootstrapMinecraft() {
+    SharedConstants.tryDetectVersion();
+    Bootstrap.bootStrap();
+  }
 
   private static ModelCubeFaceUvs faceUvs() {
     return new ModelCubeFaceUvs(
@@ -81,7 +94,7 @@ class EasyModelBakedModelRendererTest {
       float idleStrength) {
     return new EasyModelRenderState(
         bakedModel,
-        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png"),
+        Identifier.fromNamespaceAndPath("example", "textures/entity/uv_model.png"),
         1.0f,
         0.3f,
         bodyType,
@@ -94,7 +107,7 @@ class EasyModelBakedModelRendererTest {
   private static EasyModelPartTransform captureCuboidHeadIdle(float idleStrength) {
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "chestling"),
+            Identifier.fromNamespaceAndPath("example", "chestling"),
             64,
             64,
             List.of(new BakedModelPart("head", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())));
@@ -128,14 +141,14 @@ class EasyModelBakedModelRendererTest {
       float airborneAmount) {
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "capture"),
+            Identifier.fromNamespaceAndPath("example", "capture"),
             64,
             64,
             List.of(new BakedModelPart(partName, Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())));
     EasyModelRenderState renderState =
         new EasyModelRenderState(
             bakedModel,
-            ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png"),
+            Identifier.fromNamespaceAndPath("example", "textures/entity/uv_model.png"),
             1.0f,
             0.3f,
             bodyType,
@@ -271,7 +284,7 @@ class EasyModelBakedModelRendererTest {
         CubeFaceVisibility.ALL.without(ModelCubeFace.NORTH).without(ModelCubeFace.DOWN);
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "culled"),
+            Identifier.fromNamespaceAndPath("example", "culled"),
             64,
             64,
             List.of(
@@ -302,7 +315,7 @@ class EasyModelBakedModelRendererTest {
   void fullyCulledCubeEmitsNothing() {
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "empty"),
+            Identifier.fromNamespaceAndPath("example", "empty"),
             64,
             64,
             List.of(
@@ -333,7 +346,7 @@ class EasyModelBakedModelRendererTest {
   void rendersDistinctFaceUvs() {
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "uv_model"),
+            Identifier.fromNamespaceAndPath("example", "uv_model"),
             64,
             64,
             List.of(
@@ -398,7 +411,7 @@ class EasyModelBakedModelRendererTest {
   void upAndDownFacesMapWestEdgeToMaxU() {
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "uv_model"),
+            Identifier.fromNamespaceAndPath("example", "uv_model"),
             64,
             64,
             List.of(
@@ -447,7 +460,7 @@ class EasyModelBakedModelRendererTest {
   void forwardsPartsToCustomAnimator() {
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "animated_part"),
+            Identifier.fromNamespaceAndPath("example", "animated_part"),
             64,
             64,
             List.of(new BakedModelPart("crystal", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())));
@@ -476,7 +489,7 @@ class EasyModelBakedModelRendererTest {
   void forwardsAutomaticTransformToCustomAnimator() {
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "animated_leg"),
+            Identifier.fromNamespaceAndPath("example", "animated_leg"),
             64,
             64,
             List.of(new BakedModelPart("left_leg", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())));
@@ -515,7 +528,7 @@ class EasyModelBakedModelRendererTest {
   void replacePartAnimationModeSuppressesAutomaticTransform() {
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "replace_animation"),
+            Identifier.fromNamespaceAndPath("example", "replace_animation"),
             64,
             64,
             List.of(
@@ -581,7 +594,7 @@ class EasyModelBakedModelRendererTest {
             CubeFaceVisibility.ALL);
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "multi_cube"),
+            Identifier.fromNamespaceAndPath("example", "multi_cube"),
             64,
             64,
             List.of(
@@ -650,7 +663,7 @@ class EasyModelBakedModelRendererTest {
                 new BakedModelPart("Base_r1", Vec3f.ZERO, Vec3f.ZERO, List.of(cube0), List.of())));
     BakedModel bakedModel =
         new BakedModel(
-            ResourceLocation.fromNamespaceAndPath("example", "chestling"),
+            Identifier.fromNamespaceAndPath("example", "chestling"),
             64,
             64,
             List.of(
@@ -673,6 +686,86 @@ class EasyModelBakedModelRendererTest {
 
     assertEquals(0, bufferProvider.droppedVertices, "no vertices may be written to a stale buffer");
     assertEquals(4 * 24, bufferProvider.recordedVertices, "all four cubes must be rendered");
+  }
+
+  @Test
+  void submitNodeCollectorRendersEachTextureIndexAsSeparateGeometry() {
+    BakedModelCube chestCube =
+        new BakedModelCube(
+            new int[] {0, 0},
+            faceUvs(),
+            Vec3f.ZERO,
+            new Vec3f(1.0f, 1.0f, 1.0f),
+            false,
+            0,
+            CubeFaceVisibility.ALL);
+    BakedModelCube eyesCube =
+        new BakedModelCube(
+            new int[] {0, 0},
+            faceUvs(),
+            Vec3f.ZERO,
+            new Vec3f(1.0f, 1.0f, 1.0f),
+            false,
+            1,
+            CubeFaceVisibility.ALL);
+    BakedModel bakedModel =
+        new BakedModel(
+            Identifier.fromNamespaceAndPath("example", "disguised_chestling"),
+            64,
+            64,
+            List.of(
+                new BakedModelPart("body", Vec3f.ZERO, Vec3f.ZERO, List.of(chestCube), List.of()),
+                new BakedModelPart("eyes", Vec3f.ZERO, Vec3f.ZERO, List.of(eyesCube), List.of())));
+    EasyModelRenderState renderState =
+        new EasyModelRenderState(
+            bakedModel,
+            Identifier.fromNamespaceAndPath("minecraft", "textures/entity/chest/normal.png"),
+            Map.of(
+                1,
+                Identifier.fromNamespaceAndPath("example", "textures/entity/chestling_eyes.png")),
+            1.0f,
+            0.3f,
+            0.0f,
+            0.0f,
+            Vec3f.ZERO,
+            ModelBodyType.CUBOID,
+            new ModelAnimationSettings(ModelAnimationMode.NONE, 1.0f, 1.0f),
+            false,
+            false,
+            List.of());
+
+    SubmitNodeCollector submitNodeCollector = mock(SubmitNodeCollector.class);
+    ArgumentCaptor<RenderType> renderTypeCaptor = ArgumentCaptor.forClass(RenderType.class);
+    ArgumentCaptor<SubmitNodeCollector.CustomGeometryRenderer> rendererCaptor =
+        ArgumentCaptor.forClass(SubmitNodeCollector.CustomGeometryRenderer.class);
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState,
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        new PoseStack(),
+        submitNodeCollector,
+        0);
+
+    verify(submitNodeCollector, times(2))
+        .submitCustomGeometry(any(), renderTypeCaptor.capture(), rendererCaptor.capture());
+    assertEquals(
+        2,
+        Set.copyOf(renderTypeCaptor.getAllValues()).size(),
+        "each texture index must submit with its own render type");
+
+    PoseStack.Pose pose = new PoseStack().last();
+    for (SubmitNodeCollector.CustomGeometryRenderer renderer : rendererCaptor.getAllValues()) {
+      VertexConsumer recordingConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+      renderer.render(pose, recordingConsumer);
+      verify(recordingConsumer, times(24))
+          .addVertex((Matrix4f) any(), anyFloat(), anyFloat(), anyFloat());
+    }
   }
 
   private static final class SharedBuilderBufferProvider
@@ -710,6 +803,16 @@ class EasyModelBakedModelRendererTest {
 
       @Override
       public VertexConsumer setColor(int red, int green, int blue, int alpha) {
+        return this;
+      }
+
+      @Override
+      public VertexConsumer setColor(int packedColor) {
+        return this;
+      }
+
+      @Override
+      public VertexConsumer setLineWidth(float lineWidth) {
         return this;
       }
 

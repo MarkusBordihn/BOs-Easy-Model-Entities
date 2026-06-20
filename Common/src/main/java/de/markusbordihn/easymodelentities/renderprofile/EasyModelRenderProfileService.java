@@ -23,17 +23,17 @@ import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public interface EasyModelRenderProfileService {
 
   EasyModelRenderProfileService EMPTY = new EasyModelRenderProfileService() {};
 
-  default boolean hasRenderProfile(ResourceLocation renderProfileId) {
+  default boolean hasRenderProfile(Identifier renderProfileId) {
     return getRenderProfile(renderProfileId).isPresent();
   }
 
-  default Optional<EasyModelRenderProfile> getRenderProfile(ResourceLocation renderProfileId) {
+  default Optional<EasyModelRenderProfile> getRenderProfile(Identifier renderProfileId) {
     return Optional.empty();
   }
 
@@ -41,16 +41,16 @@ public interface EasyModelRenderProfileService {
     return List.of();
   }
 
-  default Collection<ResourceLocation> getRenderProfileIds() {
+  default Collection<Identifier> getRenderProfileIds() {
     return List.of();
   }
 
   default Collection<ModelRenderProfileValidationIssue> getValidationIssues(
-      ResourceLocation renderProfileId) {
+      Identifier renderProfileId) {
     return List.of();
   }
 
-  default boolean isActive(ResourceLocation renderProfileId) {
+  default boolean isActive(Identifier renderProfileId) {
     return getRenderProfile(renderProfileId).map(EasyModelRenderProfile::isActive).orElse(false);
   }
 }

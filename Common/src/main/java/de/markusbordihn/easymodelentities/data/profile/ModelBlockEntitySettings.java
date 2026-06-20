@@ -20,10 +20,10 @@
 package de.markusbordihn.easymodelentities.data.profile;
 
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record ModelBlockEntitySettings(
-    ResourceLocation type, ModelBlockEntityPresetType presetType, ModelBodyType bodyType) {
+    Identifier type, ModelBlockEntityPresetType presetType, ModelBodyType bodyType) {
 
   public ModelBlockEntitySettings {
     Objects.requireNonNull(type, "type");

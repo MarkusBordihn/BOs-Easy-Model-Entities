@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.apache.logging.log4j.LogManager;
@@ -161,7 +161,7 @@ public final class ModelBakeService implements EasyModelBakeService {
   }
 
   private static BakedModel bakeDecoded(
-      ModelBodyType bodyType, DecodedModel decodedModel, Map<Integer, ResourceLocation> textures) {
+      ModelBodyType bodyType, DecodedModel decodedModel, Map<Integer, Identifier> textures) {
     float textureWidth = decodedModel.textureWidth();
     float textureHeight = decodedModel.textureHeight();
     List<BakedModelPart> rootParts =
@@ -315,7 +315,7 @@ public final class ModelBakeService implements EasyModelBakeService {
   }
 
   private ModelResourceLookup findModelResource(
-      ResourceLocation modelId, ResourceManager resourceManager) {
+      Identifier modelId, ResourceManager resourceManager) {
     boolean foundModelResource = false;
     for (String format : this.decoderRegistry.getDecoderFormats()) {
       Optional<EasyModelDecoder> decoder = this.decoderRegistry.getDecoder(format);
@@ -323,8 +323,7 @@ public final class ModelBakeService implements EasyModelBakeService {
         continue;
       }
 
-      ResourceLocation modelResourceLocation =
-          ModelResourcePaths.modelResourceLocation(modelId, format);
+      Identifier modelResourceLocation = ModelResourcePaths.modelResourceLocation(modelId, format);
       Optional<Resource> modelResource = resourceManager.getResource(modelResourceLocation);
       if (modelResource.isEmpty()) {
         continue;
@@ -360,7 +359,7 @@ public final class ModelBakeService implements EasyModelBakeService {
   }
 
   @Override
-  public Optional<ModelBakeResult> getCached(ResourceLocation modelId, String assetFingerprint) {
+  public Optional<ModelBakeResult> getCached(Identifier modelId, String assetFingerprint) {
     return this.cache.get(cacheKey(modelId, assetFingerprint));
   }
 
@@ -419,15 +418,12 @@ public final class ModelBakeService implements EasyModelBakeService {
           cacheKey,
           ModelRenderProfileStatus.MODEL_DECODE_FAILED,
           "model",
-          "Could not decode model "
-              + modelResource.resourceLocation()
-              + ": "
-              + exception.getMessage());
+          "Could not decode model " + modelResource.identifier() + ": " + exception.getMessage());
     }
   }
 
   private record ModelResourceCandidate(
-      ResourceLocation resourceLocation, EasyModelDecoder decoder, Resource resource) {}
+      Identifier identifier, EasyModelDecoder decoder, Resource resource) {}
 
   private record ModelResourceLookup(
       Optional<ModelResourceCandidate> candidate, boolean foundModelResource) {}

@@ -17,28 +17,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.registry;
+package de.markusbordihn.easymodelentities.client.render;
 
-import de.markusbordihn.easymodelentities.Constants;
-import java.util.Set;
-import net.minecraft.resources.Identifier;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 
-public final class ModelEntityTypeIds {
-
-  public static final Identifier GROUND_ENTITY =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "ground_entity");
-  public static final Identifier STATIC_ENTITY =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "static_entity");
-  public static final Identifier AQUATIC_ENTITY =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "aquatic_entity");
-  public static final Identifier AMPHIBIOUS_ENTITY =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "amphibious_entity");
-  public static final Set<Identifier> SUPPORTED_HOST_ENTITY_TYPES =
-      Set.of(GROUND_ENTITY, STATIC_ENTITY, AQUATIC_ENTITY, AMPHIBIOUS_ENTITY);
-
-  private ModelEntityTypeIds() {}
-
-  public static boolean isSupportedHostEntityType(Identifier entityTypeId) {
-    return SUPPORTED_HOST_ENTITY_TYPES.contains(entityTypeId);
-  }
+@SuppressWarnings("java:S1104")
+public class EasyModelEntityRenderState extends EntityRenderState {
+  public EasyModelRenderState easyModelRenderState;
+  public float entityYaw;
+  public float limbSwing;
+  public float limbSwingAmount;
+  public float airborneAmount;
 }

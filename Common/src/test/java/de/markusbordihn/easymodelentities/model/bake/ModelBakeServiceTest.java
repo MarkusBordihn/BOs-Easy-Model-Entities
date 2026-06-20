@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.imageio.ImageIO;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -59,12 +59,11 @@ import org.junit.jupiter.api.Test;
 
 class ModelBakeServiceTest {
 
-  private static final ResourceLocation PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "model");
-  private static final ResourceLocation MODEL_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/model");
-  private static final ResourceLocation TEXTURE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model.png");
+  private static final Identifier PROFILE_ID = Identifier.fromNamespaceAndPath("example", "model");
+  private static final Identifier MODEL_ID =
+      Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/model");
+  private static final Identifier TEXTURE_ID =
+      Identifier.fromNamespaceAndPath("example", "textures/entity/model.png");
 
   private static ModelRenderProfileStatus status(ModelBakeResult result) {
     return ModelRenderProfileStatus.statusForIssues(result.validationIssues());
@@ -277,8 +276,7 @@ class ModelBakeServiceTest {
 
   @Test
   void resolvesModelResourceThroughDecoderFormats() throws Exception {
-    ResourceLocation customModelResource =
-        ModelResourcePaths.modelResourceLocation(MODEL_ID, "custom");
+    Identifier customModelResource = ModelResourcePaths.modelResourceLocation(MODEL_ID, "custom");
     ResourceManager resourceManager = mock(ResourceManager.class);
     when(resourceManager.getResource(customModelResource))
         .thenReturn(Optional.of(resource(new byte[] {1})));
@@ -408,12 +406,12 @@ class ModelBakeServiceTest {
   private static final class StaticModelDecoder implements EasyModelDecoder {
 
     @Override
-    public boolean supports(ResourceLocation modelId, Resource resource) {
+    public boolean supports(Identifier modelId, Resource resource) {
       return true;
     }
 
     @Override
-    public DecodedModel decode(ResourceLocation modelId, Resource resource)
+    public DecodedModel decode(Identifier modelId, Resource resource)
         throws EasyModelDecodeException {
       return new DecodedModel(
           modelId,

@@ -26,7 +26,7 @@ import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -35,12 +35,12 @@ public final class EasyModelEntitiesApi {
 
   private EasyModelEntitiesApi() {}
 
-  public static boolean hasProfile(ResourceLocation profileId) {
+  public static boolean hasProfile(Identifier profileId) {
     return EasyModelServices.profileService()
         .hasProfile(Objects.requireNonNull(profileId, "profileId"));
   }
 
-  public static Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
+  public static Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
     return EasyModelServices.profileService()
         .getProfile(Objects.requireNonNull(profileId, "profileId"));
   }
@@ -54,19 +54,18 @@ public final class EasyModelEntitiesApi {
     return List.copyOf(EasyModelServices.profileService().getActiveProfiles(bodyType));
   }
 
-  public static List<ResourceLocation> listProfileIds() {
+  public static List<Identifier> listProfileIds() {
     return listProfiles().stream().map(EasyModelEntityProfile::id).toList();
   }
 
-  public static Optional<Entity> createEntity(
-      Level level, ResourceLocation profileId, Vec3 position) {
+  public static Optional<Entity> createEntity(Level level, Identifier profileId, Vec3 position) {
     Objects.requireNonNull(level, "level");
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(position, "position");
     return EasyModelServices.entityFactory().createEntity(level, profileId, position);
   }
 
-  public static Optional<ResourceLocation> getProfileId(Entity entity) {
+  public static Optional<Identifier> getProfileId(Entity entity) {
     Objects.requireNonNull(entity, "entity");
     if (entity instanceof EasyModelHostEntity hostEntity) {
       return Optional.of(hostEntity.getEasyModelProfileId());

@@ -22,7 +22,7 @@ package de.markusbordihn.easymodelentities.registry;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.junit.jupiter.api.Test;
 
 class ModelEntityTypeIdsTest {
@@ -33,6 +33,6 @@ class ModelEntityTypeIdsTest {
     assertTrue(ModelEntityTypeIds.isSupportedHostEntityType(ModelEntityTypeIds.STATIC_ENTITY));
     assertFalse(
         ModelEntityTypeIds.isSupportedHostEntityType(
-            ResourceLocation.fromNamespaceAndPath("easy_model_entities", "hover_entity")));
+            Identifier.fromNamespaceAndPath("easy_model_entities", "hover_entity")));
   }
 }

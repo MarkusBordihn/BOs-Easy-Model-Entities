@@ -25,19 +25,20 @@ import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.eventbus.api.bus.BusGroup;
+import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @Mod(Constants.MOD_ID)
+@EventBusSubscriber(modid = Constants.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
 public class EasyModelEntities {
 
   private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
@@ -45,30 +46,31 @@ public class EasyModelEntities {
   public EasyModelEntities(FMLJavaModLoadingContext context) {
     log.info("Initializing {} (Forge) ...", Constants.MOD_NAME);
 
-    IEventBus modEventBus = context.getModEventBus();
+    BusGroup modBusGroup = context.getModBusGroup();
 
     Constants.GAME_DIR = FMLPaths.GAMEDIR.get();
     Constants.CONFIG_DIR = FMLPaths.CONFIGDIR.get();
 
     EasyModelEntityDataSerializers.register();
-    ForgeEasyModelEntityTypes.register(modEventBus);
-    ForgeEasyModelBlockEntityTypes.register(modEventBus);
+    ForgeEasyModelEntityTypes.register(modBusGroup);
+    ForgeEasyModelBlockEntityTypes.register(modBusGroup);
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(ForgeEasyModelEntityTypes.INSTANCE));
     EasyModelServices.setBlockEntityTypeProvider(ForgeEasyModelBlockEntityTypes.INSTANCE);
     EasyModelServices.setDiagnosticsService(new DefaultEasyModelDiagnosticsService());
 
-    MinecraftForge.EVENT_BUS.addListener(this::addReloadListeners);
-    MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
-
-    DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new EasyModelEntitiesClient(modEventBus));
+    if (FMLEnvironment.dist.isClient()) {
+      new EasyModelEntitiesClient();
+    }
   }
 
-  private void addReloadListeners(AddReloadListenerEvent event) {
+  @SubscribeEvent
+  public static void addReloadListeners(AddReloadListenerEvent event) {
     event.addListener(new EasyModelProfileReloadListener());
   }
 
-  private void registerCommands(RegisterCommandsEvent event) {
+  @SubscribeEvent
+  public static void registerCommands(RegisterCommandsEvent event) {
     EasyModelEntitiesCommand.register(event.getDispatcher());
   }
 }

@@ -37,6 +37,9 @@ final class EasyModelVertexSink {
 
   void vertex(
       float x, float y, float z, float u, float v, float normalX, float normalY, float normalZ) {
+    if (this.vertexConsumer == null) {
+      return;
+    }
     PoseStack.Pose pose = poseStack.last();
     vertexConsumer.addVertex(pose.pose(), x, y, z);
     vertexConsumer.setColor(255, 255, 255, 255);

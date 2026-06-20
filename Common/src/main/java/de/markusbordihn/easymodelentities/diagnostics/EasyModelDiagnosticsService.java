@@ -21,13 +21,13 @@ package de.markusbordihn.easymodelentities.diagnostics;
 
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
 import java.util.List;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public interface EasyModelDiagnosticsService {
 
   EasyModelDiagnosticsService EMPTY = new EasyModelDiagnosticsService() {};
 
-  default List<ModelDiagnostic> getDiagnostics(ResourceLocation profileId) {
+  default List<ModelDiagnostic> getDiagnostics(Identifier profileId) {
     return List.of();
   }
 

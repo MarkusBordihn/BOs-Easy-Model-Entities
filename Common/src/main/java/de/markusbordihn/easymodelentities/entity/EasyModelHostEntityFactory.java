@@ -25,8 +25,9 @@ import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import java.util.Objects;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -40,7 +41,7 @@ public class EasyModelHostEntityFactory implements EasyModelEntityFactory {
   }
 
   @Override
-  public Optional<Entity> createEntity(Level level, ResourceLocation profileId, Vec3 position) {
+  public Optional<Entity> createEntity(Level level, Identifier profileId, Vec3 position) {
     Objects.requireNonNull(level, "level");
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(position, "position");
@@ -54,7 +55,7 @@ public class EasyModelHostEntityFactory implements EasyModelEntityFactory {
       return Optional.empty();
     }
 
-    ResourceLocation hostEntityTypeId = profile.get().hostEntityType();
+    Identifier hostEntityTypeId = profile.get().hostEntityType();
 
     if (ModelEntityTypeIds.AQUATIC_ENTITY.equals(hostEntityTypeId)) {
       return createAquaticEntity(level, profileId, position);
@@ -65,16 +66,16 @@ public class EasyModelHostEntityFactory implements EasyModelEntityFactory {
       return Optional.empty();
     }
 
-    Entity entity = entityType.create(level);
+    Entity entity = entityType.create(level, EntitySpawnReason.COMMAND);
     if (entity instanceof EasyModelEntityHost hostEntity) {
-      entity.setPos(position);
+      entity.setPos(position.x, position.y, position.z);
       hostEntity.setEasyModelProfileId(profileId);
       return Optional.of(entity);
     }
     return Optional.empty();
   }
 
-  private EntityType<?> entityType(ResourceLocation entityTypeId) {
+  private EntityType<?> entityType(Identifier entityTypeId) {
     if (ModelEntityTypeIds.GROUND_ENTITY.equals(entityTypeId)) {
       return this.entityTypeProvider.groundEntityType();
     }
@@ -88,14 +89,13 @@ public class EasyModelHostEntityFactory implements EasyModelEntityFactory {
     return null;
   }
 
-  private Optional<Entity> createAquaticEntity(
-      Level level, ResourceLocation profileId, Vec3 position) {
+  private Optional<Entity> createAquaticEntity(Level level, Identifier profileId, Vec3 position) {
     EntityType<EasyModelAquaticEntity> aquaticType = this.entityTypeProvider.aquaticEntityType();
-    EasyModelAquaticEntity entity = aquaticType.create(level);
+    EasyModelAquaticEntity entity = aquaticType.create(level, EntitySpawnReason.COMMAND);
     if (entity == null) {
       return Optional.empty();
     }
-    entity.setPos(position);
+    entity.setPos(position.x, position.y, position.z);
     entity.setEasyModelProfileId(profileId);
     return Optional.of(entity);
   }

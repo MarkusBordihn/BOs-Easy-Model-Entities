@@ -22,7 +22,7 @@ package de.markusbordihn.easymodelentities.profile;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.profile.*;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -30,8 +30,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 public class EasyModelProfileReloadListener
     extends SimplePreparableReloadListener<EasyModelProfileManager> {
 
-  public static final ResourceLocation ID =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "profiles");
+  public static final Identifier ID = Identifier.fromNamespaceAndPath(Constants.MOD_ID, "profiles");
 
   @Override
   protected EasyModelProfileManager prepare(

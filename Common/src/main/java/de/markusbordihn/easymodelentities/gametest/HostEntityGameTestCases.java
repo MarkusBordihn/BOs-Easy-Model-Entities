@@ -36,29 +36,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 public final class HostEntityGameTestCases {
 
-  private static final ResourceLocation GROUND_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "ground");
-  private static final ResourceLocation STATIC_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "static");
-  private static final ResourceLocation INVALID_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "invalid");
-  private static final ResourceLocation BLOCK_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "animated_block");
-  private static final ResourceLocation ATTRIBUTES_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "attributes");
+  private static final Identifier GROUND_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "ground");
+  private static final Identifier STATIC_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "static");
+  private static final Identifier INVALID_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "invalid");
+  private static final Identifier BLOCK_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "animated_block");
+  private static final Identifier ATTRIBUTES_PROFILE_ID =
+      Identifier.fromNamespaceAndPath("example", "attributes");
 
   private HostEntityGameTestCases() {}
 
@@ -74,7 +79,7 @@ public final class HostEntityGameTestCases {
 
     EasyModelRuntimeContract contract = groundEntity.getEasyModelRuntimeContract();
     if (!GROUND_PROFILE_ID.equals(contract.profileId())
-        || !ResourceLocation.fromNamespaceAndPath("example", "ground_render")
+        || !Identifier.fromNamespaceAndPath("example", "ground_render")
             .equals(contract.renderProfileId())
         || !"ground-v1".equals(contract.version())
         || contract.bodyType() != ModelBodyType.QUADRUPED
@@ -111,9 +116,7 @@ public final class HostEntityGameTestCases {
     boolean missingProfileCreated =
         EasyModelServices.entityFactory()
             .createEntity(
-                helper.getLevel(),
-                ResourceLocation.fromNamespaceAndPath("example", "missing"),
-                Vec3.ZERO)
+                helper.getLevel(), Identifier.fromNamespaceAndPath("example", "missing"), Vec3.ZERO)
             .isPresent();
     boolean invalidProfileCreated =
         EasyModelServices.entityFactory()
@@ -138,8 +141,9 @@ public final class HostEntityGameTestCases {
     }
 
     hostEntity.setEasyModelAnimationState(EasyModelAnimationState.RUN);
-    CompoundTag compoundTag = new CompoundTag();
-    hostEntity.addAdditionalSaveData(compoundTag);
+    TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+    hostEntity.addAdditionalSaveData(output);
+    CompoundTag compoundTag = output.buildResult();
 
     Optional<Entity> loadedEntity =
         EasyModelServices.entityFactory()
@@ -150,7 +154,9 @@ public final class HostEntityGameTestCases {
       return;
     }
 
-    loadedHostEntity.readAdditionalSaveData(compoundTag);
+    loadedHostEntity.readAdditionalSaveData(
+        TagValueInput.create(
+            ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), compoundTag));
     EasyModelRuntimeContract contract = loadedHostEntity.getEasyModelRuntimeContract();
     if (!GROUND_PROFILE_ID.equals(contract.profileId())
         || contract.animationState() != EasyModelAnimationState.RUN
@@ -178,13 +184,15 @@ public final class HostEntityGameTestCases {
     compoundTag.putString("Version", "stale");
     compoundTag.putString("BodyType", "unknown");
     compoundTag.putString("AnimationState", "unknown");
-    hostEntity.readAdditionalSaveData(compoundTag);
+    hostEntity.readAdditionalSaveData(
+        TagValueInput.create(
+            ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), compoundTag));
 
     EasyModelRuntimeContract contract = hostEntity.getEasyModelRuntimeContract();
     if (!EasyModelHostEntity.MISSING_PROFILE_ID.equals(contract.profileId())
         || contract.bodyType() != ModelBodyType.STATIC
         || contract.animationState() != EasyModelAnimationState.AUTO) {
-      helper.fail("Invalid NBT ResourceLocation values did not fall back safely.");
+      helper.fail("Invalid NBT Identifier values did not fall back safely.");
       return;
     }
 
@@ -233,15 +241,20 @@ public final class HostEntityGameTestCases {
 
   public static void blockEntityCanBePlacedAndInitialized(GameTestHelper helper) {
     installProfiles();
-    Block block = BuiltInRegistries.BLOCK.get(ModelBlockIds.ANIMATED_BLOCK);
-    if (block == Blocks.AIR) {
+    Block block =
+        BuiltInRegistries.BLOCK
+            .get(ModelBlockIds.ANIMATED_BLOCK)
+            .map(Holder.Reference::value)
+            .orElse(null);
+    if (block == null || block == Blocks.AIR) {
       helper.fail("Animated host block was not registered.");
       return;
     }
 
     BlockPos blockPos = new BlockPos(1, 1, 1);
     helper.setBlock(blockPos, block.defaultBlockState());
-    if (!(helper.getBlockEntity(blockPos) instanceof EasyModelHostBlockEntity hostBlockEntity)) {
+    if (!(helper.getBlockEntity(blockPos, BlockEntity.class)
+        instanceof EasyModelHostBlockEntity hostBlockEntity)) {
       helper.fail("Placed host block did not create an EasyModelHostBlockEntity.");
       return;
     }
@@ -249,7 +262,7 @@ public final class HostEntityGameTestCases {
     hostBlockEntity.setEasyModelProfileId(BLOCK_PROFILE_ID);
     EasyModelRuntimeContract contract = hostBlockEntity.getEasyModelRuntimeContract();
     if (!BLOCK_PROFILE_ID.equals(contract.profileId())
-        || !ResourceLocation.fromNamespaceAndPath("example", "animated_block_render")
+        || !Identifier.fromNamespaceAndPath("example", "animated_block_render")
             .equals(contract.renderProfileId())
         || !"block-v1".equals(contract.version())
         || contract.bodyType() != ModelBodyType.STATIC
@@ -267,7 +280,7 @@ public final class HostEntityGameTestCases {
     EasyModelServices.setProfileService(new StaticProfileService(activeProfiles()));
   }
 
-  private static Map<ResourceLocation, EasyModelEntityProfile> activeProfiles() {
+  private static Map<Identifier, EasyModelEntityProfile> activeProfiles() {
     return Map.of(
         GROUND_PROFILE_ID,
         parse(GROUND_PROFILE_ID, groundProfileJson()),
@@ -281,7 +294,7 @@ public final class HostEntityGameTestCases {
         parse(INVALID_PROFILE_ID, invalidProfileJson()));
   }
 
-  private static EasyModelEntityProfile parse(ResourceLocation profileId, String json) {
+  private static EasyModelEntityProfile parse(Identifier profileId, String json) {
     return EasyModelProfileParser.parse(profileId, new StringReader(json));
   }
 
@@ -388,11 +401,11 @@ public final class HostEntityGameTestCases {
         """;
   }
 
-  private record StaticProfileService(Map<ResourceLocation, EasyModelEntityProfile> profiles)
+  private record StaticProfileService(Map<Identifier, EasyModelEntityProfile> profiles)
       implements EasyModelProfileService {
 
     @Override
-    public Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
+    public Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
       return Optional.ofNullable(this.profiles.get(profileId));
     }
 

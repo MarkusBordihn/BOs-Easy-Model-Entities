@@ -30,7 +30,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import org.junit.jupiter.api.Test;
@@ -73,7 +73,7 @@ class TextExampleJavaExportParityTest {
     DecodedModel model =
         new BlockbenchBbModelDecoder()
             .decode(
-                ResourceLocation.fromNamespaceAndPath("example", "text_example"),
+                Identifier.fromNamespaceAndPath("example", "text_example"),
                 resource(fixture("examples/text_example.bbmodel")));
 
     DecodedModelPart root = model.rootParts().get(0);

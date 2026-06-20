@@ -34,17 +34,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 public final class ModelRenderProfileManager implements EasyModelRenderProfileService {
 
   private static final String JSON_EXTENSION = ".json";
-  private final Map<ResourceLocation, EasyModelRenderProfile> renderProfilesById;
+  private final Map<Identifier, EasyModelRenderProfile> renderProfilesById;
 
-  public ModelRenderProfileManager(
-      Map<ResourceLocation, EasyModelRenderProfile> renderProfilesById) {
+  public ModelRenderProfileManager(Map<Identifier, EasyModelRenderProfile> renderProfilesById) {
     this.renderProfilesById =
         Collections.unmodifiableMap(
             new LinkedHashMap<>(Objects.requireNonNull(renderProfilesById, "renderProfilesById")));
@@ -57,16 +56,15 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
   public static ModelRenderProfileManager load(
       ResourceManager resourceManager, EasyModelBakeService bakeService) {
     Objects.requireNonNull(resourceManager, "resourceManager");
-    Map<ResourceLocation, EasyModelRenderProfile> renderProfiles = new LinkedHashMap<>();
-    Map<ResourceLocation, Resource> resources =
+    Map<Identifier, EasyModelRenderProfile> renderProfiles = new LinkedHashMap<>();
+    Map<Identifier, Resource> resources =
         resourceManager.listResources(
             ModelResourcePaths.RENDER_PROFILE_DIRECTORY,
-            resourceLocation -> resourceLocation.getPath().endsWith(JSON_EXTENSION));
+            id -> id.getPath().endsWith(JSON_EXTENSION));
 
-    for (Map.Entry<ResourceLocation, Resource> entry : resources.entrySet()) {
-      ResourceLocation resourceLocation = entry.getKey();
-      Optional<ResourceLocation> renderProfileId =
-          renderProfileIdFromResourceLocation(resourceLocation);
+    for (Map.Entry<Identifier, Resource> entry : resources.entrySet()) {
+      Identifier identifier = entry.getKey();
+      Optional<Identifier> renderProfileId = renderProfileIdFromResourceLocation(identifier);
       if (renderProfileId.isEmpty()) {
         continue;
       }
@@ -85,24 +83,23 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
     return new ModelRenderProfileManager(renderProfiles);
   }
 
-  public static Optional<ResourceLocation> renderProfileIdFromResourceLocation(
-      ResourceLocation resourceLocation) {
-    Objects.requireNonNull(resourceLocation, "resourceLocation");
+  public static Optional<Identifier> renderProfileIdFromResourceLocation(Identifier identifier) {
+    Objects.requireNonNull(identifier, "identifier");
     String prefix = ModelResourcePaths.RENDER_PROFILE_DIRECTORY + "/";
-    String path = resourceLocation.getPath();
+    String path = identifier.getPath();
     if (!path.startsWith(prefix) || !path.endsWith(JSON_EXTENSION)) {
       return Optional.empty();
     }
 
     String renderProfilePath =
         path.substring(prefix.length(), path.length() - JSON_EXTENSION.length());
-    ResourceLocation renderProfileId =
-        ResourceLocation.tryParse(resourceLocation.getNamespace() + ":" + renderProfilePath);
+    Identifier renderProfileId =
+        Identifier.tryParse(identifier.getNamespace() + ":" + renderProfilePath);
     return Optional.ofNullable(renderProfileId);
   }
 
   private static EasyModelRenderProfile parseRenderProfile(
-      ResourceLocation renderProfileId, Resource resource) {
+      Identifier renderProfileId, Resource resource) {
     try (InputStreamReader reader =
         new InputStreamReader(resource.open(), StandardCharsets.UTF_8)) {
       return ModelRenderProfileParser.parse(renderProfileId, reader);
@@ -126,7 +123,7 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
     List<ModelRenderProfileValidationIssue> issues =
         new ArrayList<>(renderProfile.validationIssues());
     if (validateModelResource) {
-      ResourceLocation modelResourceLocation =
+      Identifier modelResourceLocation =
           ModelResourcePaths.modelResourceLocation(renderProfile.model());
       if (resourceManager.getResource(modelResourceLocation).isEmpty()) {
         issues.add(
@@ -136,7 +133,7 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
                 "Missing model asset " + modelResourceLocation + "."));
       }
     }
-    ResourceLocation textureResourceLocation =
+    Identifier textureResourceLocation =
         ModelResourcePaths.textureResourceLocation(renderProfile.texture());
     if (resourceManager.getResource(textureResourceLocation).isEmpty()) {
       issues.add(
@@ -169,12 +166,12 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
   }
 
   @Override
-  public boolean hasRenderProfile(ResourceLocation renderProfileId) {
+  public boolean hasRenderProfile(Identifier renderProfileId) {
     return this.renderProfilesById.containsKey(renderProfileId);
   }
 
   @Override
-  public Optional<EasyModelRenderProfile> getRenderProfile(ResourceLocation renderProfileId) {
+  public Optional<EasyModelRenderProfile> getRenderProfile(Identifier renderProfileId) {
     return Optional.ofNullable(this.renderProfilesById.get(renderProfileId));
   }
 
@@ -184,20 +181,20 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
   }
 
   @Override
-  public Collection<ResourceLocation> getRenderProfileIds() {
+  public Collection<Identifier> getRenderProfileIds() {
     return this.renderProfilesById.keySet();
   }
 
   @Override
   public Collection<ModelRenderProfileValidationIssue> getValidationIssues(
-      ResourceLocation renderProfileId) {
+      Identifier renderProfileId) {
     return getRenderProfile(renderProfileId)
         .map(EasyModelRenderProfile::validationIssues)
         .orElseGet(List::of);
   }
 
   @Override
-  public boolean isActive(ResourceLocation renderProfileId) {
+  public boolean isActive(Identifier renderProfileId) {
     return getRenderProfile(renderProfileId).map(EasyModelRenderProfile::isActive).orElse(false);
   }
 }

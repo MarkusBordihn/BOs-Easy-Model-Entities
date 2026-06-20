@@ -23,23 +23,24 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public abstract class EasyModelHostEntity extends PathfinderMob implements EasyModelEntityHost {
 
   public static final float FALLBACK_WIDTH = EasyModelHostSupport.FALLBACK_WIDTH;
   public static final float FALLBACK_HEIGHT = EasyModelHostSupport.FALLBACK_HEIGHT;
   public static final float FALLBACK_EYE_HEIGHT = EasyModelHostSupport.FALLBACK_EYE_HEIGHT;
-  public static final ResourceLocation MISSING_PROFILE_ID = EasyModelHostSupport.MISSING_PROFILE_ID;
+  public static final Identifier MISSING_PROFILE_ID = EasyModelHostSupport.MISSING_PROFILE_ID;
 
   private static final EntityDataAccessor<String> PROFILE_ID =
       SynchedEntityData.defineId(EasyModelHostEntity.class, EasyModelEntityDataSerializers.STRING);
@@ -92,29 +93,29 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
   }
 
   @Override
-  public void addAdditionalSaveData(CompoundTag compoundTag) {
-    super.addAdditionalSaveData(compoundTag);
-    EasyModelHostSupport.addAdditionalSaveData(compoundTag, this.entityData, FIELDS);
+  public void addAdditionalSaveData(ValueOutput output) {
+    super.addAdditionalSaveData(output);
+    EasyModelHostSupport.addAdditionalSaveData(output, this.entityData, FIELDS);
   }
 
   @Override
-  public void readAdditionalSaveData(CompoundTag compoundTag) {
-    super.readAdditionalSaveData(compoundTag);
-    EasyModelHostSupport.readAdditionalSaveData(this, compoundTag, FIELDS);
+  public void readAdditionalSaveData(ValueInput input) {
+    super.readAdditionalSaveData(input);
+    EasyModelHostSupport.readAdditionalSaveData(this, input, FIELDS);
   }
 
   @Override
-  public ResourceLocation getEasyModelProfileId() {
+  public Identifier getEasyModelProfileId() {
     return EasyModelHostSupport.getProfileId(this.entityData, FIELDS);
   }
 
   @Override
-  public void setEasyModelProfileId(ResourceLocation profileId) {
+  public void setEasyModelProfileId(Identifier profileId) {
     EasyModelHostSupport.setProfileId(this, FIELDS, profileId);
   }
 
   @Override
-  public ResourceLocation getEasyModelRenderProfileId() {
+  public Identifier getEasyModelRenderProfileId() {
     return EasyModelHostSupport.getRenderProfileId(this.entityData, FIELDS);
   }
 

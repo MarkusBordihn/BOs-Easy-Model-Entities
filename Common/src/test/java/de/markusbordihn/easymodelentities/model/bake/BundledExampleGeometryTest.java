@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.imageio.ImageIO;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -65,7 +65,7 @@ class BundledExampleGeometryTest {
   private static void assertGeometry(String fixtureName, ModelBodyType bodyType) throws Exception {
     byte[] modelBytes = fixture(fixtureName);
     ExpectedModel expectedModel = expectedModel(modelBytes);
-    ResourceLocation modelId = ResourceLocation.fromNamespaceAndPath("example", fixtureName);
+    Identifier modelId = Identifier.fromNamespaceAndPath("example", fixtureName);
     ModelBakeResult bakeResult =
         ModelBakeService.createDefault()
             .bake(renderProfile(modelId, bodyType), resourceManager(modelId, modelBytes));
@@ -110,29 +110,27 @@ class BundledExampleGeometryTest {
     assertArrayEquals(expected, new float[] {actual.x(), actual.y(), actual.z()}, delta, message);
   }
 
-  private static EasyModelRenderProfile renderProfile(
-      ResourceLocation modelId, ModelBodyType bodyType) {
+  private static EasyModelRenderProfile renderProfile(Identifier modelId, ModelBodyType bodyType) {
     return new EasyModelRenderProfile(
         modelId,
         "0.1.0",
         "test-version",
         bodyType,
         modelId,
-        ResourceLocation.fromNamespaceAndPath(
-            "example", "textures/entity/" + modelId.getPath() + ".png"),
+        Identifier.fromNamespaceAndPath("example", "textures/entity/" + modelId.getPath() + ".png"),
         new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
         new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
         ModelRenderProfileStatus.ACTIVE,
         List.of());
   }
 
-  private static ResourceManager resourceManager(ResourceLocation modelId, byte[] modelBytes)
+  private static ResourceManager resourceManager(Identifier modelId, byte[] modelBytes)
       throws IOException {
     ResourceManager resourceManager = mock(ResourceManager.class);
     when(resourceManager.getResource(ModelResourcePaths.modelResourceLocation(modelId)))
         .thenReturn(Optional.of(resource(modelBytes)));
     when(resourceManager.getResource(
-            ResourceLocation.fromNamespaceAndPath(
+            Identifier.fromNamespaceAndPath(
                 "example", "textures/entity/" + modelId.getPath() + ".png")))
         .thenReturn(Optional.of(resource(png())));
     return resourceManager;

@@ -44,7 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.imageio.ImageIO;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -52,12 +52,11 @@ import org.junit.jupiter.api.Test;
 
 class ModelTextureResolverTest {
 
-  private static final ResourceLocation PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "model");
-  private static final ResourceLocation MODEL_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/model");
-  private static final ResourceLocation DEFAULT_TEXTURE =
-      ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model.png");
+  private static final Identifier PROFILE_ID = Identifier.fromNamespaceAndPath("example", "model");
+  private static final Identifier MODEL_ID =
+      Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/model");
+  private static final Identifier DEFAULT_TEXTURE =
+      Identifier.fromNamespaceAndPath("example", "textures/entity/model.png");
 
   private static boolean hasMissingTexture(ModelTextureResolver.ResolvedTextures resolved) {
     return resolved.issues().stream()
@@ -95,7 +94,7 @@ class ModelTextureResolverTest {
         de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility.ALL);
   }
 
-  private static EasyModelRenderProfile profile(Map<Integer, ResourceLocation> textures) {
+  private static EasyModelRenderProfile profile(Map<Integer, Identifier> textures) {
     return new EasyModelRenderProfile(
         PROFILE_ID,
         "1.0",
@@ -110,9 +109,9 @@ class ModelTextureResolverTest {
         List.of());
   }
 
-  private static ResourceManager resourceManager(ResourceLocation... existing) throws IOException {
+  private static ResourceManager resourceManager(Identifier... existing) throws IOException {
     ResourceManager resourceManager = mock(ResourceManager.class);
-    for (ResourceLocation location : existing) {
+    for (Identifier location : existing) {
       when(resourceManager.getResource(location)).thenReturn(Optional.of(resource(png())));
     }
     return resourceManager;
@@ -132,8 +131,8 @@ class ModelTextureResolverTest {
 
   @Test
   void resolvesProfileMappingAndDerivedTexture() throws IOException {
-    ResourceLocation customTexture =
-        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/custom.png");
+    Identifier customTexture =
+        Identifier.fromNamespaceAndPath("example", "textures/entity/custom.png");
     DecodedModel model =
         decodedModel(new DecodedTexture(1, "minecraft", "block", "chest.png", "chest.png", 16, 16));
     EasyModelRenderProfile profile = profile(Map.of(1, customTexture));
@@ -149,8 +148,7 @@ class ModelTextureResolverTest {
 
   @Test
   void derivesTextureFromBbmodelWhenProfileMappingMissing() throws IOException {
-    ResourceLocation derived =
-        ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/chest.png");
+    Identifier derived = Identifier.fromNamespaceAndPath("minecraft", "textures/block/chest.png");
     DecodedModel model =
         decodedModel(new DecodedTexture(1, "minecraft", "block", "chest.png", "chest.png", 16, 16));
     EasyModelRenderProfile profile = profile(Map.of());

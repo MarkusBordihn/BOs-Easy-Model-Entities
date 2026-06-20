@@ -21,10 +21,10 @@ package de.markusbordihn.easymodelentities.data.model.decoder;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import java.util.List;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record DecodedModel(
-    ResourceLocation modelId,
+    Identifier modelId,
     int textureWidth,
     int textureHeight,
     List<DecodedModelPart> rootParts,
@@ -39,7 +39,7 @@ public record DecodedModel(
   }
 
   public DecodedModel(
-      ResourceLocation modelId,
+      Identifier modelId,
       int textureWidth,
       int textureHeight,
       List<DecodedModelPart> rootParts,

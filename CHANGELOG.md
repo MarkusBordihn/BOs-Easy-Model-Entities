@@ -1,4 +1,4 @@
-# Changelog for Easy Model Entities 1.21.1
+# Changelog for Easy Model Entities 1.21.11
 
 ## Note
 

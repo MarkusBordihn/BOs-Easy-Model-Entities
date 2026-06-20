@@ -27,6 +27,9 @@ import de.markusbordihn.easymodelentities.blockentity.EasyModelStaticBlockEntity
 import de.markusbordihn.easymodelentities.blockentity.EasyModelTickingBlockEntity;
 import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
@@ -40,8 +43,12 @@ public class EasyModelHostBlock extends BaseEntityBlock {
 
   private final ModelBlockEntityPresetType presetType;
 
-  public EasyModelHostBlock(ModelBlockEntityPresetType presetType) {
-    super(BlockBehaviour.Properties.of().strength(1.5f).noOcclusion());
+  public EasyModelHostBlock(ModelBlockEntityPresetType presetType, Identifier blockId) {
+    super(
+        BlockBehaviour.Properties.of()
+            .setId(ResourceKey.create(Registries.BLOCK, blockId))
+            .strength(1.5f)
+            .noOcclusion());
     this.presetType = presetType;
   }
 
@@ -49,7 +56,7 @@ public class EasyModelHostBlock extends BaseEntityBlock {
   private static <T extends BlockEntity> BlockEntityTicker<T> ticker() {
     return (level, blockPos, blockState, blockEntity) -> {
       if (blockEntity instanceof EasyModelHostBlockEntity hostBlockEntity) {
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
           hostBlockEntity.clientTick(level, blockPos, blockState);
         } else {
           hostBlockEntity.serverTick(level, blockPos, blockState);
@@ -83,7 +90,7 @@ public class EasyModelHostBlock extends BaseEntityBlock {
   public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
       Level level, BlockState blockState, BlockEntityType<T> blockEntityType) {
     boolean enabled =
-        level.isClientSide ? this.presetType.hasClientTick() : this.presetType.hasServerTick();
+        level.isClientSide() ? this.presetType.hasClientTick() : this.presetType.hasServerTick();
     return enabled ? ticker() : null;
   }
 }

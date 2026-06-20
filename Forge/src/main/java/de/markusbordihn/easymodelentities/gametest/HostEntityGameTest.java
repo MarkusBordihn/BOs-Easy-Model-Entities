@@ -20,50 +20,48 @@
 package de.markusbordihn.easymodelentities.gametest;
 
 import de.markusbordihn.easymodelentities.Constants;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.GameTest;
 
 @SuppressWarnings("unused")
-@GameTestHolder(Constants.MOD_ID)
 public class HostEntityGameTest {
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void groundEntityCanBeCreated(GameTestHelper helper) {
     HostEntityGameTestCases.groundEntityCanBeCreated(helper);
   }
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void staticEntityCanBeCreated(GameTestHelper helper) {
     HostEntityGameTestCases.staticEntityCanBeCreated(helper);
   }
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void missingAndInvalidProfilesReturnEmpty(GameTestHelper helper) {
     HostEntityGameTestCases.missingAndInvalidProfilesReturnEmpty(helper);
   }
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void nbtPreservesRuntimeContractData(GameTestHelper helper) {
     HostEntityGameTestCases.nbtPreservesRuntimeContractData(helper);
   }
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void invalidNbtResourceLocationsFallBackSafely(GameTestHelper helper) {
     HostEntityGameTestCases.invalidNbtResourceLocationsFallBackSafely(helper);
   }
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void dimensionRefreshUsesProfileDimensions(GameTestHelper helper) {
     HostEntityGameTestCases.dimensionRefreshUsesProfileDimensions(helper);
   }
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void blockEntityCanBePlacedAndInitialized(GameTestHelper helper) {
     HostEntityGameTestCases.blockEntityCanBePlacedAndInitialized(helper);
   }
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void attributesAreAppliedFromProfile(GameTestHelper helper) {
     HostEntityGameTestCases.attributesAreAppliedFromProfile(helper);
   }

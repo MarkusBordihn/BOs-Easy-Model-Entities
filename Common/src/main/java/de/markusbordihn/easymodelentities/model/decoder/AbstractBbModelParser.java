@@ -42,7 +42,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 
 public abstract class AbstractBbModelParser {
@@ -81,7 +81,7 @@ public abstract class AbstractBbModelParser {
     }
   }
 
-  protected static JsonObject parseRoot(ResourceLocation modelId, byte[] modelBytes)
+  protected static JsonObject parseRoot(Identifier modelId, byte[] modelBytes)
       throws EasyModelDecodeException {
     try {
       JsonElement jsonElement =
@@ -568,7 +568,7 @@ public abstract class AbstractBbModelParser {
   protected abstract List<DecodedTexture> parseTextures(JsonObject root)
       throws EasyModelDecodeException;
 
-  public final DecodedModel parse(ResourceLocation modelId, JsonObject root, int modelByteLength)
+  public final DecodedModel parse(Identifier modelId, JsonObject root, int modelByteLength)
       throws EasyModelDecodeException {
     List<ModelRenderProfileValidationIssue> issues = new ArrayList<>();
     if (modelByteLength > SOFT_MODEL_FILE_SIZE_BYTES) {

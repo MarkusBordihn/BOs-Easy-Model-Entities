@@ -21,13 +21,13 @@ package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class FabricModelRenderProfileReloadListener extends ModelRenderProfileReloadListener
     implements IdentifiableResourceReloadListener {
 
   @Override
-  public ResourceLocation getFabricId() {
+  public Identifier getFabricId() {
     return ID;
   }
 }

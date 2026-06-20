@@ -19,53 +19,39 @@
 
 package de.markusbordihn.easymodelentities.gametest;
 
-import de.markusbordihn.easymodelentities.Constants;
-import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 @SuppressWarnings("unused")
-@PrefixGameTestTemplate(value = false)
-@GameTestHolder(Constants.MOD_ID)
 public class HostEntityGameTest {
 
-  @GameTest(template = "gametest.3x3x3")
   public void groundEntityCanBeCreated(GameTestHelper helper) {
     HostEntityGameTestCases.groundEntityCanBeCreated(helper);
   }
 
-  @GameTest(template = "gametest.3x3x3")
   public void staticEntityCanBeCreated(GameTestHelper helper) {
     HostEntityGameTestCases.staticEntityCanBeCreated(helper);
   }
 
-  @GameTest(template = "gametest.3x3x3")
   public void missingAndInvalidProfilesReturnEmpty(GameTestHelper helper) {
     HostEntityGameTestCases.missingAndInvalidProfilesReturnEmpty(helper);
   }
 
-  @GameTest(template = "gametest.3x3x3")
   public void nbtPreservesRuntimeContractData(GameTestHelper helper) {
     HostEntityGameTestCases.nbtPreservesRuntimeContractData(helper);
   }
 
-  @GameTest(template = "gametest.3x3x3")
   public void invalidNbtResourceLocationsFallBackSafely(GameTestHelper helper) {
     HostEntityGameTestCases.invalidNbtResourceLocationsFallBackSafely(helper);
   }
 
-  @GameTest(template = "gametest.3x3x3")
   public void dimensionRefreshUsesProfileDimensions(GameTestHelper helper) {
     HostEntityGameTestCases.dimensionRefreshUsesProfileDimensions(helper);
   }
 
-  @GameTest(template = "gametest.3x3x3")
   public void blockEntityCanBePlacedAndInitialized(GameTestHelper helper) {
     HostEntityGameTestCases.blockEntityCanBePlacedAndInitialized(helper);
   }
 
-  @GameTest(template = "gametest.3x3x3")
   public void attributesAreAppliedFromProfile(GameTestHelper helper) {
     HostEntityGameTestCases.attributesAreAppliedFromProfile(helper);
   }

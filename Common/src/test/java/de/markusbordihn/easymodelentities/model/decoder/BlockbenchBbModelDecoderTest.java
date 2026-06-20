@@ -36,15 +36,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import org.junit.jupiter.api.Test;
 
 class BlockbenchBbModelDecoderTest {
 
-  private static final ResourceLocation MODEL_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "model");
+  private static final Identifier MODEL_ID = Identifier.fromNamespaceAndPath("example", "model");
   private static final float DELTA = 1e-4f;
 
   private static String singleCubeModel(

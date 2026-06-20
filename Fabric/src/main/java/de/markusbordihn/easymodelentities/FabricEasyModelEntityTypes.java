@@ -30,6 +30,8 @@ import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 
@@ -45,7 +47,7 @@ public final class FabricEasyModelEntityTypes implements EasyModelHostEntityType
                   EasyModelGroundEntity::new, MobCategory.CREATURE)
               .sized(EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
               .clientTrackingRange(10)
-              .build(ModelEntityTypeIds.GROUND_ENTITY.toString()));
+              .build(ResourceKey.create(Registries.ENTITY_TYPE, ModelEntityTypeIds.GROUND_ENTITY)));
 
   private static final EntityType<EasyModelStaticEntity> STATIC_ENTITY =
       Registry.register(
@@ -54,7 +56,7 @@ public final class FabricEasyModelEntityTypes implements EasyModelHostEntityType
           EntityType.Builder.<EasyModelStaticEntity>of(EasyModelStaticEntity::new, MobCategory.MISC)
               .sized(EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
               .clientTrackingRange(10)
-              .build(ModelEntityTypeIds.STATIC_ENTITY.toString()));
+              .build(ResourceKey.create(Registries.ENTITY_TYPE, ModelEntityTypeIds.STATIC_ENTITY)));
 
   private static final EntityType<EasyModelAquaticEntity> AQUATIC_ENTITY =
       Registry.register(
@@ -64,7 +66,8 @@ public final class FabricEasyModelEntityTypes implements EasyModelHostEntityType
                   EasyModelAquaticEntity::new, MobCategory.WATER_CREATURE)
               .sized(0.7f, 0.4f)
               .clientTrackingRange(10)
-              .build(ModelEntityTypeIds.AQUATIC_ENTITY.toString()));
+              .build(
+                  ResourceKey.create(Registries.ENTITY_TYPE, ModelEntityTypeIds.AQUATIC_ENTITY)));
 
   private static final EntityType<EasyModelAmphibiousEntity> AMPHIBIOUS_ENTITY =
       Registry.register(
@@ -74,7 +77,9 @@ public final class FabricEasyModelEntityTypes implements EasyModelHostEntityType
                   EasyModelAmphibiousEntity::new, MobCategory.CREATURE)
               .sized(0.9f, 0.6f)
               .clientTrackingRange(10)
-              .build(ModelEntityTypeIds.AMPHIBIOUS_ENTITY.toString()));
+              .build(
+                  ResourceKey.create(
+                      Registries.ENTITY_TYPE, ModelEntityTypeIds.AMPHIBIOUS_ENTITY)));
 
   private FabricEasyModelEntityTypes() {}
 

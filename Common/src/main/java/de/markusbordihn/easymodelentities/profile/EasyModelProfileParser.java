@@ -37,7 +37,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class EasyModelProfileParser {
 
@@ -102,7 +102,7 @@ public final class EasyModelProfileParser {
 
   private EasyModelProfileParser() {}
 
-  public static EasyModelEntityProfile parse(ResourceLocation expectedId, Reader reader) {
+  public static EasyModelEntityProfile parse(Identifier expectedId, Reader reader) {
     Objects.requireNonNull(expectedId, "expectedId");
     Objects.requireNonNull(reader, "reader");
 
@@ -128,8 +128,7 @@ public final class EasyModelProfileParser {
     return parseObject(expectedId, jsonElement.getAsJsonObject());
   }
 
-  private static EasyModelEntityProfile parseObject(
-      ResourceLocation expectedId, JsonObject jsonObject) {
+  private static EasyModelEntityProfile parseObject(Identifier expectedId, JsonObject jsonObject) {
     List<ModelProfileValidationIssue> issues = new ArrayList<>();
     RawProfile rawProfile = GSON.fromJson(jsonObject, RawProfile.class);
     String schemaVersion = parseSchemaVersion(rawProfile.schemaVersion, issues);
@@ -169,7 +168,7 @@ public final class EasyModelProfileParser {
             : null;
 
     RawClient rawClient = optionalObject(rawProfile.client, CLIENT_FIELD, RawClient.class, issues);
-    ResourceLocation renderProfile =
+    Identifier renderProfile =
         parseOptionalResourceLocation(
             rawClient == null ? null : rawClient.renderProfile,
             expectedId,
@@ -227,7 +226,7 @@ public final class EasyModelProfileParser {
       boolean required,
       List<ModelProfileValidationIssue> issues) {
     ModelEntitySettings defaults = defaultEntity(presetType);
-    ResourceLocation entityType =
+    Identifier entityType =
         required
             ? parseRequiredResourceLocation(
                 rawEntity == null ? null : rawEntity.type, ENTITY_TYPE_FIELD, issues)
@@ -268,8 +267,8 @@ public final class EasyModelProfileParser {
       RawBlockEntity rawBlockEntity,
       ModelBlockEntityPresetType presetType,
       List<ModelProfileValidationIssue> issues) {
-    ResourceLocation defaultType = defaultBlockEntityType(presetType);
-    ResourceLocation blockEntityType =
+    Identifier defaultType = defaultBlockEntityType(presetType);
+    Identifier blockEntityType =
         parseOptionalResourceLocation(
             rawBlockEntity == null ? null : rawBlockEntity.type,
             defaultType,
@@ -633,7 +632,7 @@ public final class EasyModelProfileParser {
   }
 
   private static ModelEntitySettings defaultEntity(ModelPresetType presetType) {
-    ResourceLocation entityType =
+    Identifier entityType =
         switch (presetType) {
           case AQUATIC_STILL, AQUATIC_SWIMMING -> ModelEntityTypeIds.AQUATIC_ENTITY;
           case AMPHIBIOUS_STILL, AMPHIBIOUS_WANDERING -> ModelEntityTypeIds.AMPHIBIOUS_ENTITY;
@@ -651,7 +650,7 @@ public final class EasyModelProfileParser {
     return new ModelEntitySettings(entityType, movementType, presetType.defaultBodyType());
   }
 
-  private static ResourceLocation defaultBlockEntityType(ModelBlockEntityPresetType presetType) {
+  private static Identifier defaultBlockEntityType(ModelBlockEntityPresetType presetType) {
     return switch (presetType) {
       case STATIC -> ModelBlockEntityTypeIds.STATIC_BLOCK_ENTITY;
       case TICKING -> ModelBlockEntityTypeIds.TICKING_BLOCK_ENTITY;
@@ -782,7 +781,7 @@ public final class EasyModelProfileParser {
         (field, message) -> addIssue(issues, status, field, message));
   }
 
-  private static ResourceLocation parseRequiredResourceLocation(
+  private static Identifier parseRequiredResourceLocation(
       JsonElement value, String issueField, List<ModelProfileValidationIssue> issues) {
     String rawValue = requiredString(value, issueField, issues);
     if (rawValue == null) {
@@ -792,27 +791,27 @@ public final class EasyModelProfileParser {
     return parseResourceLocation(rawValue, issueField, issues);
   }
 
-  private static ResourceLocation parseOptionalResourceLocation(
+  private static Identifier parseOptionalResourceLocation(
       JsonElement value,
-      ResourceLocation defaultValue,
+      Identifier defaultValue,
       String issueField,
       List<ModelProfileValidationIssue> issues) {
     String rawValue = optionalString(value, null, issueField, issues);
     return rawValue == null ? defaultValue : parseResourceLocation(rawValue, issueField, issues);
   }
 
-  private static ResourceLocation parseResourceLocation(
+  private static Identifier parseResourceLocation(
       String rawValue, String issueField, List<ModelProfileValidationIssue> issues) {
-    ResourceLocation resourceLocation = ResourceLocation.tryParse(rawValue);
-    if (resourceLocation == null) {
+    Identifier identifier = Identifier.tryParse(rawValue);
+    if (identifier == null) {
       addIssue(
           issues,
           ModelProfileStatus.INVALID_RESOURCE_LOCATION,
           issueField,
-          "Invalid ResourceLocation " + rawValue + ".");
+          "Invalid Identifier " + rawValue + ".");
     }
 
-    return resourceLocation;
+    return identifier;
   }
 
   private static Float requiredFloat(
@@ -880,7 +879,7 @@ public final class EasyModelProfileParser {
   }
 
   static EasyModelEntityProfile invalidFallback(
-      ResourceLocation expectedId, ModelProfileStatus status, String field, String message) {
+      Identifier expectedId, ModelProfileStatus status, String field, String message) {
     List<ModelProfileValidationIssue> issues =
         List.of(new ModelProfileValidationIssue(status, field, message));
     return new EasyModelEntityProfile(

@@ -28,7 +28,7 @@ import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelCube;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelPart;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ class PerFaceUvMirrorTest {
     DecodedModel model =
         new BlockbenchBbModelDecoder()
             .decode(
-                ResourceLocation.fromNamespaceAndPath("example", modelName),
+                Identifier.fromNamespaceAndPath("example", modelName),
                 resource(fixture("examples/" + fixture)));
     DecodedModelPart root = model.rootParts().get(0);
     return root.cubes().isEmpty() ? root.children().get(0).cubes().get(0) : root.cubes().get(0);

@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.imageio.ImageIO;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -79,10 +79,9 @@ class BundledDemoProfilesTest {
 
   private static void assertDemo(String path, String renderPath, ModelBodyType bodyType)
       throws Exception {
-    ResourceLocation id =
-        ResourceLocation.fromNamespaceAndPath("easy_model_entities_examples", path);
-    ResourceLocation renderProfileId =
-        ResourceLocation.fromNamespaceAndPath("easy_model_entities_examples", renderPath);
+    Identifier id = Identifier.fromNamespaceAndPath("easy_model_entities_examples", path);
+    Identifier renderProfileId =
+        Identifier.fromNamespaceAndPath("easy_model_entities_examples", renderPath);
     EasyModelEntityProfile profile = parseProfile(id);
     EasyModelRenderProfile renderProfile = parseRenderProfile(profile.renderProfileId());
     ModelBakeResult bakeResult =
@@ -99,7 +98,7 @@ class BundledDemoProfilesTest {
     assertEquals(profile.version(), renderProfile.version());
   }
 
-  private static EasyModelEntityProfile parseProfile(ResourceLocation id) throws IOException {
+  private static EasyModelEntityProfile parseProfile(Identifier id) throws IOException {
     try (InputStream inputStream =
             resourceStream(
                 "data/"
@@ -112,7 +111,7 @@ class BundledDemoProfilesTest {
     }
   }
 
-  private static EasyModelRenderProfile parseRenderProfile(ResourceLocation id) throws IOException {
+  private static EasyModelRenderProfile parseRenderProfile(Identifier id) throws IOException {
     try (InputStream inputStream =
             resourceStream(
                 "assets/"
@@ -128,7 +127,7 @@ class BundledDemoProfilesTest {
   private static ResourceManager resourceManager(EasyModelRenderProfile renderProfile)
       throws IOException {
     ResourceManager resourceManager = mock(ResourceManager.class);
-    ResourceLocation modelResourceLocation =
+    Identifier modelResourceLocation =
         ModelResourcePaths.modelResourceLocation(renderProfile.model());
     when(resourceManager.getResource(modelResourceLocation))
         .thenReturn(

@@ -29,7 +29,7 @@ import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 
 public final class EasyModelEntityRenderDelegate<T extends Entity & EasyModelRenderable> {
@@ -67,7 +67,7 @@ public final class EasyModelEntityRenderDelegate<T extends Entity & EasyModelRen
         entity, renderState, entityYaw, partialTick, options, poseStack, bufferSource, packedLight);
   }
 
-  public ResourceLocation getTextureLocation(T entity) {
+  public Identifier getTextureLocation(T entity) {
     return EasyModelEntityRenderBackend.resolveRenderState(contract(entity)).texture();
   }
 

@@ -24,7 +24,6 @@ import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRende
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,13 +31,13 @@ public class EasyModelEntitiesClient {
 
   private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
 
-  public EasyModelEntitiesClient(final IEventBus modEventBus) {
+  public EasyModelEntitiesClient() {
     log.info("Initializing {} (Forge Client) ...", Constants.MOD_NAME);
-    modEventBus.addListener(this::registerEntityRenderers);
-    modEventBus.addListener(this::registerClientReloadListeners);
+    EntityRenderersEvent.RegisterRenderers.BUS.addListener(this::registerEntityRenderers);
+    RegisterClientReloadListenersEvent.BUS.addListener(this::registerClientReloadListeners);
   }
 
-  private void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+  public void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
     event.registerEntityRenderer(
         ForgeEasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     event.registerEntityRenderer(
@@ -62,7 +61,7 @@ public class EasyModelEntitiesClient {
         EasyModelHostBlockEntityRenderer::new);
   }
 
-  private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
+  public void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
     event.registerReloadListener(new ModelRenderProfileReloadListener());
   }
 }

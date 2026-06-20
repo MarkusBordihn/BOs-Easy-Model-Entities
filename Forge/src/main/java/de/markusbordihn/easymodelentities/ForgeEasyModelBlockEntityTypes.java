@@ -28,9 +28,10 @@ import de.markusbordihn.easymodelentities.blockentity.EasyModelTickingBlockEntit
 import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
+import java.util.Set;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.bus.BusGroup;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -48,55 +49,63 @@ public final class ForgeEasyModelBlockEntityTypes implements EasyModelHostBlockE
   private static final RegistryObject<Block> STATIC_BLOCK =
       BLOCKS.register(
           ModelBlockIds.STATIC_BLOCK.getPath(),
-          () -> new EasyModelHostBlock(ModelBlockEntityPresetType.STATIC));
+          () ->
+              new EasyModelHostBlock(
+                  ModelBlockEntityPresetType.STATIC, ModelBlockIds.STATIC_BLOCK));
   private static final RegistryObject<BlockEntityType<EasyModelStaticBlockEntity>>
       STATIC_BLOCK_ENTITY =
           BLOCK_ENTITY_TYPES.register(
               ModelBlockEntityTypeIds.STATIC_BLOCK_ENTITY.getPath(),
               () ->
-                  BlockEntityType.Builder.of(EasyModelStaticBlockEntity::new, STATIC_BLOCK.get())
-                      .build(null));
+                  new BlockEntityType<>(
+                      EasyModelStaticBlockEntity::new, Set.of(STATIC_BLOCK.get())));
   private static final RegistryObject<Block> TICKING_BLOCK =
       BLOCKS.register(
           ModelBlockIds.TICKING_BLOCK.getPath(),
-          () -> new EasyModelHostBlock(ModelBlockEntityPresetType.TICKING));
+          () ->
+              new EasyModelHostBlock(
+                  ModelBlockEntityPresetType.TICKING, ModelBlockIds.TICKING_BLOCK));
   private static final RegistryObject<BlockEntityType<EasyModelTickingBlockEntity>>
       TICKING_BLOCK_ENTITY =
           BLOCK_ENTITY_TYPES.register(
               ModelBlockEntityTypeIds.TICKING_BLOCK_ENTITY.getPath(),
               () ->
-                  BlockEntityType.Builder.of(EasyModelTickingBlockEntity::new, TICKING_BLOCK.get())
-                      .build(null));
+                  new BlockEntityType<>(
+                      EasyModelTickingBlockEntity::new, Set.of(TICKING_BLOCK.get())));
   private static final RegistryObject<Block> ANIMATED_BLOCK =
       BLOCKS.register(
           ModelBlockIds.ANIMATED_BLOCK.getPath(),
-          () -> new EasyModelHostBlock(ModelBlockEntityPresetType.ANIMATED));
+          () ->
+              new EasyModelHostBlock(
+                  ModelBlockEntityPresetType.ANIMATED, ModelBlockIds.ANIMATED_BLOCK));
   private static final RegistryObject<BlockEntityType<EasyModelAnimatedBlockEntity>>
       ANIMATED_BLOCK_ENTITY =
           BLOCK_ENTITY_TYPES.register(
               ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY.getPath(),
               () ->
-                  BlockEntityType.Builder.of(
-                          EasyModelAnimatedBlockEntity::new, ANIMATED_BLOCK.get())
-                      .build(null));
+                  new BlockEntityType<>(
+                      EasyModelAnimatedBlockEntity::new, Set.of(ANIMATED_BLOCK.get())));
   private static final RegistryObject<Block> ANIMATED_RANDOMLY_BLOCK =
       BLOCKS.register(
           ModelBlockIds.ANIMATED_RANDOMLY_BLOCK.getPath(),
-          () -> new EasyModelHostBlock(ModelBlockEntityPresetType.ANIMATED_RANDOMLY));
+          () ->
+              new EasyModelHostBlock(
+                  ModelBlockEntityPresetType.ANIMATED_RANDOMLY,
+                  ModelBlockIds.ANIMATED_RANDOMLY_BLOCK));
   private static final RegistryObject<BlockEntityType<EasyModelRandomlyAnimatedBlockEntity>>
       ANIMATED_RANDOMLY_BLOCK_ENTITY =
           BLOCK_ENTITY_TYPES.register(
               ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY.getPath(),
               () ->
-                  BlockEntityType.Builder.of(
-                          EasyModelRandomlyAnimatedBlockEntity::new, ANIMATED_RANDOMLY_BLOCK.get())
-                      .build(null));
+                  new BlockEntityType<>(
+                      EasyModelRandomlyAnimatedBlockEntity::new,
+                      Set.of(ANIMATED_RANDOMLY_BLOCK.get())));
 
   private ForgeEasyModelBlockEntityTypes() {}
 
-  public static void register(IEventBus modEventBus) {
-    BLOCKS.register(modEventBus);
-    BLOCK_ENTITY_TYPES.register(modEventBus);
+  public static void register(BusGroup modBusGroup) {
+    BLOCKS.register(modBusGroup);
+    BLOCK_ENTITY_TYPES.register(modBusGroup);
   }
 
   @Override

@@ -24,16 +24,16 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record EasyModelRenderProfile(
-    ResourceLocation id,
+    Identifier id,
     String schemaVersion,
     String version,
     ModelBodyType bodyType,
-    ResourceLocation model,
-    ResourceLocation texture,
-    Map<Integer, ResourceLocation> textures,
+    Identifier model,
+    Identifier texture,
+    Map<Integer, Identifier> textures,
     ModelRenderSettings rendering,
     ModelAnimationSettings animation,
     ModelRenderProfileStatus status,
@@ -54,12 +54,12 @@ public record EasyModelRenderProfile(
   }
 
   public EasyModelRenderProfile(
-      ResourceLocation id,
+      Identifier id,
       String schemaVersion,
       String version,
       ModelBodyType bodyType,
-      ResourceLocation model,
-      ResourceLocation texture,
+      Identifier model,
+      Identifier texture,
       ModelRenderSettings rendering,
       ModelAnimationSettings animation,
       ModelRenderProfileStatus status,

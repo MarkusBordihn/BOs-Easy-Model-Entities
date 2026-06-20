@@ -20,10 +20,10 @@
 package de.markusbordihn.easymodelentities.data.profile;
 
 import java.util.Objects;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record ModelEntitySettings(
-    ResourceLocation type, ModelMovementType movementType, ModelBodyType bodyType) {
+    Identifier type, ModelMovementType movementType, ModelBodyType bodyType) {
 
   public ModelEntitySettings {
     Objects.requireNonNull(type, "type");

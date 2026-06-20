@@ -21,18 +21,18 @@ package de.markusbordihn.easymodelentities.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
-import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.state.CameraRenderState;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 
 public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
-    extends EntityRenderer<T> {
+    extends EntityRenderer<T, EasyModelEntityRenderState> {
 
   public EasyModelHostEntityRenderer(EntityRendererProvider.Context context) {
     super(context);
@@ -40,54 +40,71 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
   }
 
   @Override
-  public void render(
-      T entity,
-      float entityYaw,
-      float partialTick,
+  public EasyModelEntityRenderState createRenderState() {
+    return new EasyModelEntityRenderState();
+  }
+
+  @Override
+  public void extractRenderState(
+      T entity, EasyModelEntityRenderState renderState, float partialTick) {
+    super.extractRenderState(entity, renderState, partialTick);
+    renderState.easyModelRenderState =
+        EasyModelEntityRenderBackend.resolveRenderState(entity.getEasyModelRuntimeContract());
+    renderState.entityYaw = entity.getYHeadRot();
+    renderState.limbSwing =
+        entity instanceof LivingEntity le ? le.walkAnimation.position(partialTick) : 0.0f;
+    renderState.limbSwingAmount =
+        entity instanceof LivingEntity le
+            ? Math.min(le.walkAnimation.speed(partialTick), 1.0f)
+            : 0.0f;
+    renderState.airborneAmount = EasyModelEntityRenderBackend.airborneAmount(entity);
+  }
+
+  protected float getShadowRadius(EasyModelEntityRenderState renderState) {
+    return renderState.easyModelRenderState != null
+        ? renderState.easyModelRenderState.shadowRadius()
+        : this.shadowRadius;
+  }
+
+  @Override
+  public void submit(
+      EasyModelEntityRenderState renderState,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
-      int packedLight) {
-    EasyModelRenderState renderState = resolveRenderState(entity);
-    this.shadowRadius = renderState.shadowRadius();
+      SubmitNodeCollector submitNodeCollector,
+      CameraRenderState cameraRenderState) {
+    if (renderState.easyModelRenderState == null) {
+      return;
+    }
     EasyModelEntityRenderBackend.render(
-        entity, renderState, entityYaw, partialTick, poseStack, bufferSource, packedLight);
-    super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        renderState, poseStack, submitNodeCollector, renderState.lightCoords);
   }
 
   @Override
   public boolean shouldRender(T entity, Frustum frustum, double camX, double camY, double camZ) {
-    EasyModelRenderState renderState = resolveRenderState(entity);
-    if (!renderState.hasVisibleBounds()) {
+    var easyModelRenderState =
+        EasyModelEntityRenderBackend.resolveRenderState(entity.getEasyModelRuntimeContract());
+    if (!easyModelRenderState.hasVisibleBounds()) {
       return super.shouldRender(entity, frustum, camX, camY, camZ);
     }
     if (!entity.shouldRender(camX, camY, camZ)) {
       return false;
     }
-    return entity.noCulling || frustum.isVisible(visibleBounds(entity, renderState));
-  }
-
-  private AABB visibleBounds(T entity, EasyModelRenderState renderState) {
-    Vec3f offset = renderState.visibleBoundsOffset();
-    double halfWidth = renderState.visibleBoundsWidth() / 2.0;
-    double height = renderState.visibleBoundsHeight();
+    if (!affectedByCulling(entity)) {
+      return true;
+    }
+    Vec3f offset = easyModelRenderState.visibleBoundsOffset();
+    double halfWidth = easyModelRenderState.visibleBoundsWidth() / 2.0;
+    double height = easyModelRenderState.visibleBoundsHeight();
     double centerX = entity.getX() + offset.x();
     double centerZ = entity.getZ() + offset.z();
     double baseY = entity.getY() + offset.y();
-    return new AABB(
-        centerX - halfWidth,
-        baseY,
-        centerZ - halfWidth,
-        centerX + halfWidth,
-        baseY + height,
-        centerZ + halfWidth);
-  }
-
-  @Override
-  public ResourceLocation getTextureLocation(T entity) {
-    return resolveRenderState(entity).texture();
-  }
-
-  private EasyModelRenderState resolveRenderState(T entity) {
-    return EasyModelEntityRenderBackend.resolveRenderState(entity.getEasyModelRuntimeContract());
+    return frustum.isVisible(
+        new AABB(
+            centerX - halfWidth,
+            baseY,
+            centerZ - halfWidth,
+            centerX + halfWidth,
+            baseY + height,
+            centerZ + halfWidth));
   }
 }
