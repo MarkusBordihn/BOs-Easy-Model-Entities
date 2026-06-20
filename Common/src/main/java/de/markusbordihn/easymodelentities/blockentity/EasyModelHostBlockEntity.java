@@ -94,7 +94,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
 
   public void clientTick(Level level, BlockPos blockPos, BlockState blockState) {
     if (this instanceof EasyModelRandomlyAnimatedBlockEntity) {
-      randomIdleTick(level == null ? RandomSource.create() : level.random);
+      randomIdleTick(level == null ? RandomSource.create() : level.getRandom());
       return;
     }
 

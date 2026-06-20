@@ -32,6 +32,7 @@ public class SmokeTest {
     GameTestHelpers.assertTrue(
         helper,
         "Mod " + Constants.MOD_ID + " is not loaded!",
-        ModList.get().isLoaded(Constants.MOD_ID));
+        ModList.isLoaded(Constants.MOD_ID));
+    helper.succeed();
   }
 }

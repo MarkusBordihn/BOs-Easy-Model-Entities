@@ -118,7 +118,7 @@ public final class EasyModelBlockEntityRenderDelegate<T extends BlockEntity & Ea
     return this.randomIdleStates
         .computeIfAbsent(blockEntity, key -> new RandomIdleState())
         .animationTicks(
-            blockEntity.getLevel().getGameTime(), blockEntity.getLevel().random, partialTick);
+            blockEntity.getLevel().getGameTime(), blockEntity.getLevel().getRandom(), partialTick);
   }
 
   private static class RandomIdleState {

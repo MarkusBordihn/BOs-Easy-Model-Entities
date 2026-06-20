@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[4,)"
+loaderVersion = "[5,)"
 license = "MIT"
 issueTrackerURL = "https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/issues"
 
@@ -14,13 +14,13 @@ description = '''Turn Blockbench models into simple Minecraft entities without w
 [[dependencies.easy_model_entities]]
 modId = "neoforge"
 type = "required"
-versionRange = "[21.11.0,)"
+versionRange = "${neoforge_version_range}"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.easy_model_entities]]
 modId = "minecraft"
 type = "required"
-versionRange = "[1.21.11,1.22)"
+versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"

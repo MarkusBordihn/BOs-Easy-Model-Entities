@@ -201,8 +201,8 @@ public final class EasyModelBakedModelRenderer {
       Identifier texture = textureFor(renderState, textureIndex);
       RenderType renderType =
           cullBackfaces
-              ? RenderTypes.entityCutout(texture)
-              : RenderTypes.entityCutoutNoCull(texture);
+              ? RenderTypes.entityCutoutCull(texture)
+              : RenderTypes.entityCutout(texture);
       submitNodeCollector.submitCustomGeometry(
           poseStack,
           renderType,
@@ -246,8 +246,8 @@ public final class EasyModelBakedModelRenderer {
           Identifier texture = textureFor(renderState, textureIndex);
           return bufferSource.getBuffer(
               cullBackfaces
-                  ? RenderTypes.entityCutout(texture)
-                  : RenderTypes.entityCutoutNoCull(texture));
+                  ? RenderTypes.entityCutoutCull(texture)
+                  : RenderTypes.entityCutout(texture));
         };
     render(
         bakedModel,
