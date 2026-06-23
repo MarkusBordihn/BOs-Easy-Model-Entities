@@ -109,16 +109,17 @@ class EasyModelHostBlockEntityTest {
   }
 
   @Test
-  void appliesActiveProfileAndPersistsRuntimeContractToUpdateTag() {
+  void persistsRuntimeContractAcrossSaveAndLoad() {
     EasyModelServices.setProfileService(profileService(profile()));
     TestBlockEntity blockEntity = new TestBlockEntity();
 
     blockEntity.setEasyModelProfileId(PROFILE_ID);
     blockEntity.setEasyModelAnimationState(EasyModelAnimationState.IDLE);
-    CompoundTag updateTag = blockEntity.getUpdateTag(null);
+    CompoundTag savedTag = new CompoundTag();
+    blockEntity.saveAdditional(savedTag, null);
 
     TestBlockEntity loadedBlockEntity = new TestBlockEntity();
-    loadedBlockEntity.loadAdditional(updateTag, null);
+    loadedBlockEntity.loadAdditional(savedTag, null);
 
     assertEquals(PROFILE_ID, loadedBlockEntity.getEasyModelProfileId());
     assertEquals(RENDER_PROFILE_ID, loadedBlockEntity.getEasyModelRenderProfileId());
@@ -126,6 +127,27 @@ class EasyModelHostBlockEntityTest {
     assertEquals(
         EasyModelAnimationState.IDLE.getApiState(), loadedBlockEntity.getEasyModelAnimationState());
     assertEquals(ModelBodyType.BIPED, loadedBlockEntity.getEasyModelRuntimeContract().bodyType());
+  }
+
+  @Test
+  void syncsRuntimeContractThroughClientUpdateTag() {
+    EasyModelServices.setProfileService(profileService(profile()));
+    TestBlockEntity serverBlockEntity = new TestBlockEntity();
+
+    serverBlockEntity.setEasyModelProfileId(PROFILE_ID);
+    serverBlockEntity.setEasyModelAnimationState(EasyModelAnimationState.IDLE);
+
+    CompoundTag updateTag = serverBlockEntity.getUpdateTag(null);
+
+    TestBlockEntity clientBlockEntity = new TestBlockEntity();
+    clientBlockEntity.loadAdditional(updateTag, null);
+
+    assertEquals(PROFILE_ID, clientBlockEntity.getEasyModelProfileId());
+    assertEquals(RENDER_PROFILE_ID, clientBlockEntity.getEasyModelRenderProfileId());
+    assertEquals("server-v1", clientBlockEntity.getEasyModelVersion());
+    assertEquals(
+        EasyModelAnimationState.IDLE.getApiState(), clientBlockEntity.getEasyModelAnimationState());
+    assertEquals(ModelBodyType.BIPED, clientBlockEntity.getEasyModelRuntimeContract().bodyType());
   }
 
   @Test

@@ -31,12 +31,15 @@ import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.json.JsonValues;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
+import de.markusbordihn.easymodelentities.schema.SchemaMigrations;
+import de.markusbordihn.easymodelentities.schema.SchemaVersions;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 
 public final class EasyModelProfileParser {
@@ -103,8 +106,14 @@ public final class EasyModelProfileParser {
   private EasyModelProfileParser() {}
 
   public static EasyModelEntityProfile parse(ResourceLocation expectedId, Reader reader) {
+    return parse(expectedId, reader, SchemaMigrations.DEFAULT);
+  }
+
+  public static EasyModelEntityProfile parse(
+      ResourceLocation expectedId, Reader reader, SchemaMigrations migrations) {
     Objects.requireNonNull(expectedId, "expectedId");
     Objects.requireNonNull(reader, "reader");
+    Objects.requireNonNull(migrations, "migrations");
 
     JsonElement jsonElement;
     try {
@@ -125,14 +134,22 @@ public final class EasyModelProfileParser {
           "Server profile JSON must be an object.");
     }
 
-    return parseObject(expectedId, jsonElement.getAsJsonObject());
+    return parseObject(expectedId, jsonElement.getAsJsonObject(), migrations);
   }
 
   private static EasyModelEntityProfile parseObject(
-      ResourceLocation expectedId, JsonObject jsonObject) {
+      ResourceLocation expectedId, JsonObject jsonObject, SchemaMigrations migrations) {
     List<ModelProfileValidationIssue> issues = new ArrayList<>();
-    RawProfile rawProfile = GSON.fromJson(jsonObject, RawProfile.class);
-    String schemaVersion = parseSchemaVersion(rawProfile.schemaVersion, issues);
+    String schemaVersion =
+        optionalString(
+            jsonObject.get(SCHEMA_VERSION_FIELD),
+            Constants.SCHEMA_VERSION,
+            SCHEMA_VERSION_FIELD,
+            issues,
+            ModelProfileStatus.INVALID_SCHEMA_VERSION);
+    JsonObject effectiveObject =
+        applySchemaMigrations(jsonObject, schemaVersion, migrations, issues);
+    RawProfile rawProfile = GSON.fromJson(effectiveObject, RawProfile.class);
     String version = optionalString(rawProfile.version, EMPTY_VALUE, VERSION_FIELD, issues);
     ModelType modelType = parseModelType(rawProfile.modelType, issues);
     ModelType resolvedModelType = modelType == null ? ModelType.ENTITY : modelType;
@@ -482,24 +499,30 @@ public final class EasyModelProfileParser {
     return new ModelAttributes(maxHealth, movementSpeed, followRange);
   }
 
-  private static String parseSchemaVersion(
-      JsonElement schemaVersionElement, List<ModelProfileValidationIssue> issues) {
-    String schemaVersion =
-        optionalString(
-            schemaVersionElement,
-            Constants.SCHEMA_VERSION,
-            SCHEMA_VERSION_FIELD,
-            issues,
-            ModelProfileStatus.INVALID_SCHEMA_VERSION);
-    if (!Constants.SCHEMA_VERSION.equals(schemaVersion)) {
-      addIssue(
-          issues,
-          ModelProfileStatus.INVALID_SCHEMA_VERSION,
-          SCHEMA_VERSION_FIELD,
-          "Unsupported schema_version " + schemaVersion + ".");
+  private static JsonObject applySchemaMigrations(
+      JsonObject jsonObject,
+      String schemaVersion,
+      SchemaMigrations migrations,
+      List<ModelProfileValidationIssue> issues) {
+    SchemaVersions.Classification classification =
+        SchemaVersions.classify(schemaVersion, Constants.SCHEMA_VERSION);
+    if (classification == SchemaVersions.Classification.CURRENT) {
+      return jsonObject;
+    }
+    if (classification == SchemaVersions.Classification.OLDER) {
+      Optional<JsonObject> migrated =
+          migrations.migrate(jsonObject, schemaVersion, Constants.SCHEMA_VERSION);
+      if (migrated.isPresent()) {
+        return migrated.get();
+      }
     }
 
-    return schemaVersion;
+    addIssue(
+        issues,
+        ModelProfileStatus.INVALID_SCHEMA_VERSION,
+        SCHEMA_VERSION_FIELD,
+        "Unsupported schema_version " + schemaVersion + ".");
+    return jsonObject;
   }
 
   private static ModelType parseModelType(
@@ -944,9 +967,6 @@ public final class EasyModelProfileParser {
   }
 
   private static class RawProfile {
-    @SerializedName(SCHEMA_VERSION_FIELD)
-    JsonElement schemaVersion;
-
     @SerializedName(MODEL_TYPE_FIELD)
     JsonElement modelType;
 

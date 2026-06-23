@@ -84,6 +84,23 @@ class ModelBakeServiceTest {
         List.of());
   }
 
+  private static EasyModelRenderProfile renderProfile(
+      ModelBodyType bodyType, String version, String assetFingerprint) {
+    return new EasyModelRenderProfile(
+        PROFILE_ID,
+        "1.0",
+        version,
+        bodyType,
+        MODEL_ID,
+        TEXTURE_ID,
+        Map.of(),
+        new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
+        new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
+        ModelRenderProfileStatus.ACTIVE,
+        List.of(),
+        assetFingerprint);
+  }
+
   private static ResourceManager resourceManager(String modelFixture, byte[] textureBytes)
       throws IOException {
     return resourceManager(fixture(modelFixture), textureBytes);
@@ -381,6 +398,45 @@ class ModelBakeServiceTest {
     assertEquals(new FaceUv(0.25f, 0.125f, 0.375f, 0.25f), headCube.faceUvs().west());
     assertEquals(new FaceUv(0.25f, 0.125f, 0.125f, 0.0f), headCube.faceUvs().up());
     assertEquals(new FaceUv(0.375f, 0.0f, 0.25f, 0.125f), headCube.faceUvs().down());
+  }
+
+  @Test
+  void assetFingerprintIsUsedAsCacheDiscriminator() throws Exception {
+    ModelBakeService bakeService = ModelBakeService.createDefault();
+
+    ModelBakeResult result =
+        bakeService.bake(
+            renderProfile(ModelBodyType.STATIC, "v1", "fp1"),
+            resourceManager("static_explicit_root.bbmodel", png(64, 64)));
+
+    assertTrue(result.successful());
+    assertTrue(bakeService.getCached(MODEL_ID, "fp1").isPresent());
+    assertTrue(bakeService.getCached(MODEL_ID, "v1").isEmpty());
+  }
+
+  @Test
+  void differentFingerprintsProduceSeparateCacheEntries() throws Exception {
+    ModelBakeService bakeService = ModelBakeService.createDefault();
+
+    bakeService.bake(
+        renderProfile(ModelBodyType.STATIC, "v1", "fp1"),
+        resourceManager("static_explicit_root.bbmodel", png(64, 64)));
+    bakeService.bake(
+        renderProfile(ModelBodyType.STATIC, "v1", "fp2"),
+        resourceManager("static_explicit_root.bbmodel", png(64, 64)));
+
+    assertEquals(2, bakeService.cachedResultCount());
+  }
+
+  @Test
+  void blankFingerprintFallsBackToVersionDiscriminator() throws Exception {
+    ModelBakeService bakeService = ModelBakeService.createDefault();
+
+    bakeService.bake(
+        renderProfile(ModelBodyType.STATIC, "v1", ""),
+        resourceManager("static_explicit_root.bbmodel", png(64, 64)));
+
+    assertTrue(bakeService.getCached(MODEL_ID, "v1").isPresent());
   }
 
   @Test

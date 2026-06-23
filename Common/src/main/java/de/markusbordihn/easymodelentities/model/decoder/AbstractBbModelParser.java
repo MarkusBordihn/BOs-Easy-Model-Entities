@@ -18,6 +18,18 @@
 
 package de.markusbordihn.easymodelentities.model.decoder;
 
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_ANIMATION_COUNT;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_BONE_COUNT;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_CUBE_COUNT;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_HIERARCHY_DEPTH;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_MODEL_FILE_SIZE_BYTES;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_TEXTURE_SIZE;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_BONE_COUNT;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_CUBE_COUNT;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_HIERARCHY_DEPTH;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_MODEL_FILE_SIZE_BYTES;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_TEXTURE_SIZE;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -47,17 +59,6 @@ import net.minecraft.server.packs.resources.Resource;
 
 public abstract class AbstractBbModelParser {
 
-  public static final int MAX_MODEL_FILE_SIZE_BYTES = 2 * 1024 * 1024;
-  public static final int SOFT_MODEL_FILE_SIZE_BYTES = 1024 * 1024;
-  public static final int MAX_TEXTURE_SIZE = 2048;
-  public static final int SOFT_TEXTURE_SIZE = 128;
-  public static final int MAX_BONE_COUNT = 128;
-  public static final int SOFT_BONE_COUNT = 96;
-  public static final int MAX_CUBE_COUNT = 512;
-  public static final int SOFT_CUBE_COUNT = 384;
-  public static final int MAX_HIERARCHY_DEPTH = 32;
-  public static final int SOFT_HIERARCHY_DEPTH = 24;
-  public static final int MAX_ANIMATION_COUNT = 16;
   private static final float MAX_ABSOLUTE_MODEL_VALUE = 100_000.0f;
   private static final int BUFFER_SIZE = 8192;
 

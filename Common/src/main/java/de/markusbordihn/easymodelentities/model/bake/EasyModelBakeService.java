@@ -31,7 +31,7 @@ public interface EasyModelBakeService {
 
   default ModelBakeResult bake(
       EasyModelRenderProfile renderProfile, ResourceManager resourceManager) {
-    ModelCacheKey cacheKey = cacheKey(renderProfile.model(), renderProfile.version());
+    ModelCacheKey cacheKey = cacheKey(renderProfile.model(), cacheDiscriminator(renderProfile));
     return ModelBakeResult.failure(
         cacheKey,
         ModelFallbackFactory.createFallback(cacheKey.modelId()),
@@ -44,6 +44,12 @@ public interface EasyModelBakeService {
 
   default ModelCacheKey cacheKey(ResourceLocation modelId, String assetFingerprint) {
     return new ModelCacheKey(modelId, assetFingerprint);
+  }
+
+  default String cacheDiscriminator(EasyModelRenderProfile renderProfile) {
+    return renderProfile.assetFingerprint().isBlank()
+        ? renderProfile.version()
+        : renderProfile.assetFingerprint();
   }
 
   default void clearCache() {}
