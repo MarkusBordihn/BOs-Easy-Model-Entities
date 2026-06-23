@@ -348,7 +348,7 @@ public final class ModelBakeService implements EasyModelBakeService {
       EasyModelRenderProfile renderProfile, ResourceManager resourceManager) {
     Objects.requireNonNull(renderProfile, "renderProfile");
     Objects.requireNonNull(resourceManager, "resourceManager");
-    ModelCacheKey cacheKey = cacheKey(renderProfile.model(), renderProfile.version());
+    ModelCacheKey cacheKey = cacheKey(renderProfile.model(), cacheDiscriminator(renderProfile));
     Optional<ModelBakeResult> cachedResult = this.cache.get(cacheKey);
     if (cachedResult.isPresent()) {
       return cachedResult.get();

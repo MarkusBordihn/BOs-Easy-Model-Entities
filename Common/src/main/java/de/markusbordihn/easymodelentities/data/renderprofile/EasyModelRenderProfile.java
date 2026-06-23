@@ -37,7 +37,8 @@ public record EasyModelRenderProfile(
     ModelRenderSettings rendering,
     ModelAnimationSettings animation,
     ModelRenderProfileStatus status,
-    List<ModelRenderProfileValidationIssue> validationIssues) {
+    List<ModelRenderProfileValidationIssue> validationIssues,
+    String assetFingerprint) {
 
   public EasyModelRenderProfile {
     Objects.requireNonNull(id, "id");
@@ -51,6 +52,34 @@ public record EasyModelRenderProfile(
     Objects.requireNonNull(status, "status");
     textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
     validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
+    assetFingerprint = assetFingerprint == null ? "" : assetFingerprint;
+  }
+
+  public EasyModelRenderProfile(
+      ResourceLocation id,
+      String schemaVersion,
+      String version,
+      ModelBodyType bodyType,
+      ResourceLocation model,
+      ResourceLocation texture,
+      Map<Integer, ResourceLocation> textures,
+      ModelRenderSettings rendering,
+      ModelAnimationSettings animation,
+      ModelRenderProfileStatus status,
+      List<ModelRenderProfileValidationIssue> validationIssues) {
+    this(
+        id,
+        schemaVersion,
+        version,
+        bodyType,
+        model,
+        texture,
+        textures,
+        rendering,
+        animation,
+        status,
+        validationIssues,
+        "");
   }
 
   public EasyModelRenderProfile(
@@ -75,7 +104,8 @@ public record EasyModelRenderProfile(
         rendering,
         animation,
         status,
-        validationIssues);
+        validationIssues,
+        "");
   }
 
   public boolean isActive() {
@@ -128,6 +158,7 @@ public record EasyModelRenderProfile(
         this.rendering,
         this.animation,
         ModelRenderProfileStatus.statusForIssues(validationIssues),
-        validationIssues);
+        validationIssues,
+        this.assetFingerprint);
   }
 }

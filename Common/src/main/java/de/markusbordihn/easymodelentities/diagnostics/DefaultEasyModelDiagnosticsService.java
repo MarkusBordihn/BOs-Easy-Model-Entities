@@ -27,6 +27,7 @@ import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProf
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
+import de.markusbordihn.easymodelentities.runtime.AssetPairing;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -95,7 +96,7 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
                   + ".",
               Optional.of(profile.id())));
     }
-    if (!profile.version().equals(renderProfileValue.version())) {
+    if (!AssetPairing.matches(profile.version(), renderProfileValue.version())) {
       diagnostics.add(
           new ModelDiagnostic(
               ModelDiagnosticSeverity.WARNING,

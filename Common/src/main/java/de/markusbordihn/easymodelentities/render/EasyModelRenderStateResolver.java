@@ -31,6 +31,7 @@ import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileV
 import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
 import de.markusbordihn.easymodelentities.model.bake.ModelFallbackFactory;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
+import de.markusbordihn.easymodelentities.runtime.AssetPairing;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
 import java.util.Map;
@@ -91,10 +92,7 @@ public final class EasyModelRenderStateResolver {
                   + "."));
     }
 
-    boolean hasContractVersion = !contract.version().isBlank();
-    boolean hasRenderVersion = !renderProfile.version().isBlank();
-    if ((hasContractVersion || hasRenderVersion)
-        && !contract.version().equals(renderProfile.version())) {
+    if (!AssetPairing.matches(contract.version(), renderProfile.version())) {
       return fallback(
           contract,
           new ModelRenderProfileValidationIssue(

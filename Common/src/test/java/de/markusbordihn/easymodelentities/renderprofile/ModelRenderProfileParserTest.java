@@ -69,6 +69,22 @@ class ModelRenderProfileParserTest {
   }
 
   @Test
+  void parsesAssetFingerprint() {
+    EasyModelRenderProfile renderProfile =
+        parse("{\"preset_type\":\"static\",\"asset_fingerprint\":\"abc123\"}");
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals("abc123", renderProfile.assetFingerprint());
+  }
+
+  @Test
+  void defaultsAssetFingerprintToEmpty() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"static\"}");
+
+    assertEquals("", renderProfile.assetFingerprint());
+  }
+
+  @Test
   void defaultsToNoVisibleBounds() {
     EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"static\"}");
 

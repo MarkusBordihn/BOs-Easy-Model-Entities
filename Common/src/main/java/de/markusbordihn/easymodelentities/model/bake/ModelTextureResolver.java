@@ -18,6 +18,7 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
+import de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelCube;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelPart;
@@ -46,8 +47,8 @@ public final class ModelTextureResolver {
 
   public static final ResourceLocation FALLBACK_TEXTURE =
       new ResourceLocation("minecraft", "textures/block/pink_wool.png");
-  private static final int MAX_TEXTURE_SIZE = 2048;
-  private static final int SOFT_TEXTURE_SIZE = 128;
+  private static final int MAX_TEXTURE_SIZE = ModelAssetBudgets.MAX_TEXTURE_SIZE;
+  private static final int SOFT_TEXTURE_SIZE = ModelAssetBudgets.SOFT_TEXTURE_SIZE;
   private static final String TEXTURE_FOLDER = "textures";
   private static final String ENTITY_FOLDER = "entity";
   private static final String PNG_SUFFIX = ".png";
