@@ -200,9 +200,7 @@ public final class EasyModelBakedModelRenderer {
     for (int textureIndex : textureIndices(bakedModel)) {
       Identifier texture = textureFor(renderState, textureIndex);
       RenderType renderType =
-          cullBackfaces
-              ? RenderTypes.entityCutoutCull(texture)
-              : RenderTypes.entityCutout(texture);
+          cullBackfaces ? RenderTypes.entityCutoutCull(texture) : RenderTypes.entityCutout(texture);
       submitNodeCollector.submitCustomGeometry(
           poseStack,
           renderType,

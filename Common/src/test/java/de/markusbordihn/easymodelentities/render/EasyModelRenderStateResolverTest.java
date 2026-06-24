@@ -166,6 +166,54 @@ class EasyModelRenderStateResolverTest {
   }
 
   @Test
+  void emptyServerAndClientVersionsPair() throws Exception {
+    EasyModelRenderState renderState =
+        EasyModelRenderStateResolver.resolve(
+            contract(ModelBodyType.STATIC, ""),
+            renderProfileService(renderProfile(ModelBodyType.STATIC, "")),
+            ModelBakeService.createDefault(),
+            resourceManager(false));
+
+    assertFalse(renderState.fallbackModel());
+  }
+
+  @Test
+  void emptyServerVersionPairsWithClientVersion() throws Exception {
+    EasyModelRenderState renderState =
+        EasyModelRenderStateResolver.resolve(
+            contract(ModelBodyType.STATIC, ""),
+            renderProfileService(renderProfile(ModelBodyType.STATIC, "client-version")),
+            ModelBakeService.createDefault(),
+            resourceManager(false));
+
+    assertFalse(renderState.fallbackModel());
+  }
+
+  @Test
+  void serverVersionPairsWithEmptyClientVersion() throws Exception {
+    EasyModelRenderState renderState =
+        EasyModelRenderStateResolver.resolve(
+            contract(ModelBodyType.STATIC, "server-version"),
+            renderProfileService(renderProfile(ModelBodyType.STATIC, "")),
+            ModelBakeService.createDefault(),
+            resourceManager(false));
+
+    assertFalse(renderState.fallbackModel());
+  }
+
+  @Test
+  void equalVersionsPair() throws Exception {
+    EasyModelRenderState renderState =
+        EasyModelRenderStateResolver.resolve(
+            contract(ModelBodyType.STATIC, "shared-version"),
+            renderProfileService(renderProfile(ModelBodyType.STATIC, "shared-version")),
+            ModelBakeService.createDefault(),
+            resourceManager(false));
+
+    assertFalse(renderState.fallbackModel());
+  }
+
+  @Test
   void missingTextureKeepsBakedModelAndUsesFallbackTexture() throws Exception {
     EasyModelRenderState renderState =
         EasyModelRenderStateResolver.resolve(

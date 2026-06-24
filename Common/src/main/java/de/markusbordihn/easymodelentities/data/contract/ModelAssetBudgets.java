@@ -17,20 +17,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.gametest;
+package de.markusbordihn.easymodelentities.data.contract;
 
-import de.markusbordihn.easymodelentities.Constants;
-import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.gametest.GameTest;
+public final class ModelAssetBudgets {
 
-@SuppressWarnings("unused")
-public class SmokeTest {
+  public static final int MAX_MODEL_FILE_SIZE_BYTES = 2 * 1024 * 1024;
+  public static final int SOFT_MODEL_FILE_SIZE_BYTES = 1024 * 1024;
+  public static final int MAX_TEXTURE_SIZE = 2048;
+  public static final int SOFT_TEXTURE_SIZE = 128;
+  public static final int MAX_BONE_COUNT = 128;
+  public static final int SOFT_BONE_COUNT = 96;
+  public static final int MAX_CUBE_COUNT = 512;
+  public static final int SOFT_CUBE_COUNT = 384;
+  public static final int MAX_HIERARCHY_DEPTH = 32;
+  public static final int SOFT_HIERARCHY_DEPTH = 24;
+  public static final int MAX_ANIMATION_COUNT = 16;
 
-  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
-  public void testModRegistered(GameTestHelper helper) {
-    GameTestHelpers.assertTrue(
-        helper, "Mod " + Constants.MOD_ID + " is not loaded!", ModList.isLoaded(Constants.MOD_ID));
-    helper.succeed();
-  }
+  private ModelAssetBudgets() {}
 }

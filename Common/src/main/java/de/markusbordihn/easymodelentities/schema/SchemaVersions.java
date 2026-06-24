@@ -17,20 +17,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.gametest;
+package de.markusbordihn.easymodelentities.schema;
 
-import de.markusbordihn.easymodelentities.Constants;
-import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.gametest.GameTest;
+import java.util.Optional;
 
-@SuppressWarnings("unused")
-public class SmokeTest {
+public final class SchemaVersions {
 
-  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
-  public void testModRegistered(GameTestHelper helper) {
-    GameTestHelpers.assertTrue(
-        helper, "Mod " + Constants.MOD_ID + " is not loaded!", ModList.isLoaded(Constants.MOD_ID));
-    helper.succeed();
+  private SchemaVersions() {}
+
+  public static Classification classify(String declared, String current) {
+    if (declared != null && declared.equals(current)) {
+      return Classification.CURRENT;
+    }
+    Optional<SemanticSchemaVersion> declaredVersion = SemanticSchemaVersion.parse(declared);
+    Optional<SemanticSchemaVersion> currentVersion = SemanticSchemaVersion.parse(current);
+    if (declaredVersion.isEmpty() || currentVersion.isEmpty()) {
+      return Classification.UNPARSEABLE;
+    }
+    int comparison = declaredVersion.get().compareTo(currentVersion.get());
+    if (comparison == 0) {
+      return Classification.CURRENT;
+    }
+
+    return comparison < 0 ? Classification.OLDER : Classification.NEWER;
+  }
+
+  public enum Classification {
+    CURRENT,
+    OLDER,
+    NEWER,
+    UNPARSEABLE
   }
 }

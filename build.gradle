@@ -64,6 +64,12 @@ tasks.register('allGameTests') {
   dependsOn ':Fabric:runGameTest', ':Forge:runGameTestServer', ':NeoForge:runGameTestServer'
 }
 
+tasks.register('fullCheck') {
+  group = 'verification'
+  description = 'Runs the standard checks and Fabric and Forge game tests.'
+  dependsOn ':Common:check', ':Fabric:check', ':Forge:check', ':NeoForge:check', 'allGameTests'
+}
+
 tasks.register('publishModrinth') {
   group = 'publishing'
   description = 'Publishes Forge, Fabric and NeoForge to Modrinth.'

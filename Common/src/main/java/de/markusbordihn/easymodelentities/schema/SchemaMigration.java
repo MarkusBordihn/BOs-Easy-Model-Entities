@@ -17,20 +17,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.gametest;
+package de.markusbordihn.easymodelentities.schema;
 
-import de.markusbordihn.easymodelentities.Constants;
-import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.gametest.GameTest;
+import com.google.gson.JsonObject;
 
-@SuppressWarnings("unused")
-public class SmokeTest {
+public interface SchemaMigration {
 
-  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
-  public void testModRegistered(GameTestHelper helper) {
-    GameTestHelpers.assertTrue(
-        helper, "Mod " + Constants.MOD_ID + " is not loaded!", ModList.isLoaded(Constants.MOD_ID));
-    helper.succeed();
-  }
+  String from();
+
+  String to();
+
+  JsonObject apply(JsonObject input);
 }

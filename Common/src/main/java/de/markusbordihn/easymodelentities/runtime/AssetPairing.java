@@ -17,20 +17,20 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.gametest;
+package de.markusbordihn.easymodelentities.runtime;
 
-import de.markusbordihn.easymodelentities.Constants;
-import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.gametest.GameTest;
+public final class AssetPairing {
 
-@SuppressWarnings("unused")
-public class SmokeTest {
+  private AssetPairing() {}
 
-  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
-  public void testModRegistered(GameTestHelper helper) {
-    GameTestHelpers.assertTrue(
-        helper, "Mod " + Constants.MOD_ID + " is not loaded!", ModList.isLoaded(Constants.MOD_ID));
-    helper.succeed();
+  public static boolean matches(String serverValue, String clientValue) {
+    if (serverValue == null || serverValue.isBlank()) {
+      return true;
+    }
+    if (clientValue == null || clientValue.isBlank()) {
+      return true;
+    }
+
+    return serverValue.equals(clientValue);
   }
 }
