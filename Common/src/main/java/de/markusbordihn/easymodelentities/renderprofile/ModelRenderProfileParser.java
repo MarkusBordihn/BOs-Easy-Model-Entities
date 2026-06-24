@@ -32,6 +32,8 @@ import de.markusbordihn.easymodelentities.data.profile.ModelPresetType;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import de.markusbordihn.easymodelentities.json.JsonValues;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
+import de.markusbordihn.easymodelentities.schema.SchemaMigrations;
+import de.markusbordihn.easymodelentities.schema.SchemaVersions;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import net.minecraft.resources.Identifier;
 
 public final class ModelRenderProfileParser {
@@ -49,6 +52,7 @@ public final class ModelRenderProfileParser {
   private static final String SCHEMA_VERSION_FIELD = "schema_version";
   private static final String PRESET_TYPE_FIELD = "preset_type";
   private static final String VERSION_FIELD = "version";
+  private static final String ASSET_FINGERPRINT_FIELD = "asset_fingerprint";
   private static final String BODY_TYPE_FIELD = "body_type";
   private static final String MODEL_FIELD = "model";
   private static final String TEXTURE_FIELD = "texture";
@@ -90,8 +94,14 @@ public final class ModelRenderProfileParser {
   private ModelRenderProfileParser() {}
 
   public static EasyModelRenderProfile parse(Identifier expectedId, Reader reader) {
+    return parse(expectedId, reader, SchemaMigrations.DEFAULT);
+  }
+
+  public static EasyModelRenderProfile parse(
+      Identifier expectedId, Reader reader, SchemaMigrations migrations) {
     Objects.requireNonNull(expectedId, "expectedId");
     Objects.requireNonNull(reader, "reader");
+    Objects.requireNonNull(migrations, "migrations");
 
     JsonElement jsonElement;
     try {
@@ -112,7 +122,7 @@ public final class ModelRenderProfileParser {
           "Render profile JSON must be an object.");
     }
 
-    return parseObject(expectedId, jsonElement.getAsJsonObject());
+    return parseObject(expectedId, jsonElement.getAsJsonObject(), migrations);
   }
 
   static EasyModelRenderProfile invalidFallback(
@@ -132,12 +142,23 @@ public final class ModelRenderProfileParser {
         issues);
   }
 
-  private static EasyModelRenderProfile parseObject(Identifier expectedId, JsonObject jsonObject) {
+  private static EasyModelRenderProfile parseObject(
+      Identifier expectedId, JsonObject jsonObject, SchemaMigrations migrations) {
     List<ModelRenderProfileValidationIssue> issues = new ArrayList<>();
-    RawRenderProfile rawProfile = GSON.fromJson(jsonObject, RawRenderProfile.class);
+    String schemaVersion =
+        optionalString(
+            jsonObject.get(SCHEMA_VERSION_FIELD),
+            Constants.SCHEMA_VERSION,
+            SCHEMA_VERSION_FIELD,
+            issues,
+            ModelRenderProfileStatus.INVALID_SCHEMA_VERSION);
+    JsonObject effectiveObject =
+        applySchemaMigrations(jsonObject, schemaVersion, migrations, issues);
+    RawRenderProfile rawProfile = GSON.fromJson(effectiveObject, RawRenderProfile.class);
 
-    String schemaVersion = parseSchemaVersion(rawProfile.schemaVersion, issues);
     String version = optionalString(rawProfile.version, EMPTY_VALUE, VERSION_FIELD, issues);
+    String assetFingerprint =
+        optionalString(rawProfile.assetFingerprint, EMPTY_VALUE, ASSET_FINGERPRINT_FIELD, issues);
     ModelPresetType presetType = parsePresetType(rawProfile.presetType, issues);
     ModelPresetType resolvedPresetType = presetType == null ? ModelPresetType.STATUE : presetType;
     boolean custom = resolvedPresetType.isCustom();
@@ -170,7 +191,8 @@ public final class ModelRenderProfileParser {
         renderSettings,
         animationSettings,
         ModelRenderProfileStatus.statusForIssues(issues),
-        issues);
+        issues,
+        assetFingerprint);
   }
 
   private static ModelRenderSettings parseRenderSettings(
@@ -288,24 +310,30 @@ public final class ModelRenderProfileParser {
             });
   }
 
-  private static String parseSchemaVersion(
-      JsonElement schemaVersionElement, List<ModelRenderProfileValidationIssue> issues) {
-    String schemaVersion =
-        optionalString(
-            schemaVersionElement,
-            Constants.SCHEMA_VERSION,
-            SCHEMA_VERSION_FIELD,
-            issues,
-            ModelRenderProfileStatus.INVALID_SCHEMA_VERSION);
-    if (!Constants.SCHEMA_VERSION.equals(schemaVersion)) {
-      addIssue(
-          issues,
-          ModelRenderProfileStatus.INVALID_SCHEMA_VERSION,
-          SCHEMA_VERSION_FIELD,
-          "Unsupported schema_version " + schemaVersion + ".");
+  private static JsonObject applySchemaMigrations(
+      JsonObject jsonObject,
+      String schemaVersion,
+      SchemaMigrations migrations,
+      List<ModelRenderProfileValidationIssue> issues) {
+    SchemaVersions.Classification classification =
+        SchemaVersions.classify(schemaVersion, Constants.SCHEMA_VERSION);
+    if (classification == SchemaVersions.Classification.CURRENT) {
+      return jsonObject;
+    }
+    if (classification == SchemaVersions.Classification.OLDER) {
+      Optional<JsonObject> migrated =
+          migrations.migrate(jsonObject, schemaVersion, Constants.SCHEMA_VERSION);
+      if (migrated.isPresent()) {
+        return migrated.get();
+      }
     }
 
-    return schemaVersion;
+    addIssue(
+        issues,
+        ModelRenderProfileStatus.INVALID_SCHEMA_VERSION,
+        SCHEMA_VERSION_FIELD,
+        "Unsupported schema_version " + schemaVersion + ".");
+    return jsonObject;
   }
 
   private static ModelPresetType parsePresetType(
@@ -577,14 +605,14 @@ public final class ModelRenderProfileParser {
   }
 
   private static class RawRenderProfile {
-    @SerializedName(SCHEMA_VERSION_FIELD)
-    JsonElement schemaVersion;
-
     @SerializedName(PRESET_TYPE_FIELD)
     JsonElement presetType;
 
     @SerializedName(VERSION_FIELD)
     JsonElement version;
+
+    @SerializedName(ASSET_FINGERPRINT_FIELD)
+    JsonElement assetFingerprint;
 
     @SerializedName(BODY_TYPE_FIELD)
     JsonElement bodyType;

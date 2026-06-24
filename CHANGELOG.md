@@ -5,6 +5,16 @@
 This change log includes the summarized changes.
 For the full changelog, please go to the [GitHub History][history] instead.
 
+### 1.3.0 (beta)
+
+- Added a stable API for mod integrations that lists all limits, types, and status codes.
+- Added a generated JSON file that documents these limits, types, and status codes per version.
+- Added a test that fails if the documented values and the actual code values no longer match.
+- Added an optional `asset_fingerprint` so resource packs can ship alternate model styles.
+- Added a migration hook to handle profiles from older `schema_version`s.
+- Improved server and client `version` matching to only report a mismatch when both sides are set
+  and differ.
+
 ### 1.2.0 (beta)
 
 - Added read-only profile catalog API (listProfiles, listProfiles by body type, listProfileIds) for

@@ -19,6 +19,7 @@
 package de.markusbordihn.easymodelentities.model.decoder;
 
 import com.google.gson.JsonObject;
+import de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
 import java.util.Objects;
 import net.minecraft.resources.Identifier;
@@ -27,12 +28,11 @@ import net.minecraft.server.packs.resources.Resource;
 public final class BlockbenchBbModelDecoder implements EasyModelDecoder {
 
   public static final String FORMAT = "bbmodel";
-  public static final int MAX_MODEL_FILE_SIZE_BYTES =
-      AbstractBbModelParser.MAX_MODEL_FILE_SIZE_BYTES;
-  public static final int MAX_TEXTURE_SIZE = AbstractBbModelParser.MAX_TEXTURE_SIZE;
-  public static final int MAX_BONE_COUNT = AbstractBbModelParser.MAX_BONE_COUNT;
-  public static final int MAX_CUBE_COUNT = AbstractBbModelParser.MAX_CUBE_COUNT;
-  public static final int MAX_HIERARCHY_DEPTH = AbstractBbModelParser.MAX_HIERARCHY_DEPTH;
+  public static final int MAX_MODEL_FILE_SIZE_BYTES = ModelAssetBudgets.MAX_MODEL_FILE_SIZE_BYTES;
+  public static final int MAX_TEXTURE_SIZE = ModelAssetBudgets.MAX_TEXTURE_SIZE;
+  public static final int MAX_BONE_COUNT = ModelAssetBudgets.MAX_BONE_COUNT;
+  public static final int MAX_CUBE_COUNT = ModelAssetBudgets.MAX_CUBE_COUNT;
+  public static final int MAX_HIERARCHY_DEPTH = ModelAssetBudgets.MAX_HIERARCHY_DEPTH;
 
   private final AbstractBbModelParser moddedEntityParser = new ModdedEntityBbModelParser();
   private final AbstractBbModelParser emeEntityParser = new EmeEntityBbModelParser();
