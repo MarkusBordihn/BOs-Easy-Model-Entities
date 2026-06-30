@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.profile;
 
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.profile.*;
+import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -44,5 +45,6 @@ public class EasyModelProfileReloadListener
       ResourceManager resourceManager,
       ProfilerFiller profilerFiller) {
     EasyModelServices.setProfileService(profileManager);
+    EasyModelReloadDispatcher.fireProfileReload();
   }
 }

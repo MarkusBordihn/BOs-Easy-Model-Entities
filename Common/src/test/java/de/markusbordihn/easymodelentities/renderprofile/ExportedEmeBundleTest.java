@@ -24,10 +24,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.ModelBakeResult;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
 import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
@@ -56,7 +58,8 @@ class ExportedEmeBundleTest {
   private static final String RESOURCEPACK = "disguised_chestling_resourcepack.zip";
 
   private static ResourceManager resourceManager(
-      byte[] resourcepack, EasyModelRenderProfile renderProfile) throws IOException {
+      byte[] resourcepack, EasyModelRenderProfile renderProfile, boolean provideOverrideTextures)
+      throws IOException {
     ResourceManager resourceManager = mock(ResourceManager.class);
     when(resourceManager.getResource(
             ModelResourcePaths.modelResourceLocation(renderProfile.model())))
@@ -68,14 +71,11 @@ class ExportedEmeBundleTest {
                         "assets/example_org/easy_model_entities/models/disguised_chestling.bbmodel"))));
     when(resourceManager.getResource(renderProfile.texture()))
         .thenReturn(Optional.of(resource(png())));
-    when(resourceManager.getResource(
-            new ResourceLocation(NAMESPACE, "textures/entity/disguised_chestling_1.png")))
-        .thenReturn(
-            Optional.of(
-                resource(
-                    zipEntry(
-                        resourcepack,
-                        "assets/example_org/textures/entity/disguised_chestling_1.png"))));
+    if (provideOverrideTextures) {
+      for (ResourceLocation texture : renderProfile.textures().values()) {
+        when(resourceManager.getResource(texture)).thenReturn(Optional.of(resource(png())));
+      }
+    }
     return resourceManager;
   }
 
@@ -119,31 +119,39 @@ class ExportedEmeBundleTest {
     return outputStream.toByteArray();
   }
 
+  private static EasyModelEntityProfile parseProfile(byte[] datapack, ResourceLocation profileId)
+      throws IOException {
+    return EasyModelProfileParser.parse(
+        profileId,
+        reader(
+            zipEntry(
+                datapack,
+                "data/example_org/easy_model_entities/profiles/entity/disguised_chestling.json")));
+  }
+
+  private static EasyModelRenderProfile parseRenderProfile(
+      byte[] resourcepack, ResourceLocation renderProfileId) throws IOException {
+    return ModelRenderProfileParser.parse(
+        renderProfileId,
+        reader(
+            zipEntry(
+                resourcepack,
+                "assets/example_org/easy_model_entities/render_profiles/disguised_chestling.json")));
+  }
+
   @Test
   void exportedBundleParsesAndBakes() throws Exception {
     byte[] datapack = innerZip(DATAPACK);
     byte[] resourcepack = innerZip(RESOURCEPACK);
 
     ResourceLocation profileId = new ResourceLocation(NAMESPACE, "entity/disguised_chestling");
-    EasyModelEntityProfile profile =
-        EasyModelProfileParser.parse(
-            profileId,
-            reader(
-                zipEntry(
-                    datapack,
-                    "data/example_org/easy_model_entities/profiles/entity/disguised_chestling.json")));
-
+    EasyModelEntityProfile profile = parseProfile(datapack, profileId);
     EasyModelRenderProfile renderProfile =
-        ModelRenderProfileParser.parse(
-            profile.renderProfileId(),
-            reader(
-                zipEntry(
-                    resourcepack,
-                    "assets/example_org/easy_model_entities/render_profiles/disguised_chestling.json")));
+        parseRenderProfile(resourcepack, profile.renderProfileId());
 
     ModelBakeResult bakeResult =
         ModelBakeService.createDefault()
-            .bake(renderProfile, resourceManager(resourcepack, renderProfile));
+            .bake(renderProfile, resourceManager(resourcepack, renderProfile, true));
 
     assertTrue(profile.isActive());
     assertTrue(renderProfile.isActive());
@@ -154,5 +162,35 @@ class ExportedEmeBundleTest {
     assertEquals(ModelBodyType.STATIC, profile.bodyType());
     assertEquals(ModelBodyType.STATIC, renderProfile.bodyType());
     assertEquals(profile.version(), renderProfile.version());
+
+    assertTrue(renderProfile.hasVisibleBounds());
+    assertEquals(0.969f, renderProfile.visibleBoundsWidth(), 1.0e-6f);
+    assertEquals(0.938f, renderProfile.visibleBoundsHeight(), 1.0e-6f);
+    assertEquals(new Vec3f(0.0f, 0.0f, -0.047f), renderProfile.visibleBoundsOffset());
+    assertEquals(
+        new ResourceLocation(NAMESPACE, "textures/entity/disguised_chestling_1.png"),
+        renderProfile.textures().get(1));
+  }
+
+  @Test
+  void exportedBundleFallsBackOnMissingTexture() throws Exception {
+    byte[] datapack = innerZip(DATAPACK);
+    byte[] resourcepack = innerZip(RESOURCEPACK);
+
+    ResourceLocation profileId = new ResourceLocation(NAMESPACE, "entity/disguised_chestling");
+    EasyModelEntityProfile profile = parseProfile(datapack, profileId);
+    EasyModelRenderProfile renderProfile =
+        parseRenderProfile(resourcepack, profile.renderProfileId());
+
+    ModelBakeResult bakeResult =
+        ModelBakeService.createDefault()
+            .bake(renderProfile, resourceManager(resourcepack, renderProfile, false));
+
+    assertTrue(renderProfile.isActive());
+    assertTrue(bakeResult.successful());
+    assertTrue(
+        bakeResult.validationIssues().stream()
+            .anyMatch(issue -> issue.status() == ModelRenderProfileStatus.MISSING_TEXTURE),
+        "Expected a MISSING_TEXTURE issue when the override texture is unavailable.");
   }
 }

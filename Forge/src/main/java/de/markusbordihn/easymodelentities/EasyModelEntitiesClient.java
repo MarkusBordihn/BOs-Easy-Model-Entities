@@ -40,25 +40,24 @@ public class EasyModelEntitiesClient {
 
   private void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
     event.registerEntityRenderer(
-        ForgeEasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
+        EasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     event.registerEntityRenderer(
-        ForgeEasyModelEntityTypes.INSTANCE.staticEntityType(), EasyModelHostEntityRenderer::new);
+        EasyModelEntityTypes.INSTANCE.staticEntityType(), EasyModelHostEntityRenderer::new);
     event.registerEntityRenderer(
-        ForgeEasyModelEntityTypes.INSTANCE.aquaticEntityType(), EasyModelHostEntityRenderer::new);
+        EasyModelEntityTypes.INSTANCE.aquaticEntityType(), EasyModelHostEntityRenderer::new);
     event.registerEntityRenderer(
-        ForgeEasyModelEntityTypes.INSTANCE.amphibiousEntityType(),
-        EasyModelHostEntityRenderer::new);
+        EasyModelEntityTypes.INSTANCE.amphibiousEntityType(), EasyModelHostEntityRenderer::new);
     event.registerBlockEntityRenderer(
-        ForgeEasyModelBlockEntityTypes.INSTANCE.staticBlockEntityType(),
+        EasyModelBlockEntityTypes.INSTANCE.staticBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
     event.registerBlockEntityRenderer(
-        ForgeEasyModelBlockEntityTypes.INSTANCE.tickingBlockEntityType(),
+        EasyModelBlockEntityTypes.INSTANCE.tickingBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
     event.registerBlockEntityRenderer(
-        ForgeEasyModelBlockEntityTypes.INSTANCE.animatedBlockEntityType(),
+        EasyModelBlockEntityTypes.INSTANCE.animatedBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
     event.registerBlockEntityRenderer(
-        ForgeEasyModelBlockEntityTypes.INSTANCE.animatedRandomlyBlockEntityType(),
+        EasyModelBlockEntityTypes.INSTANCE.animatedRandomlyBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
   }
 

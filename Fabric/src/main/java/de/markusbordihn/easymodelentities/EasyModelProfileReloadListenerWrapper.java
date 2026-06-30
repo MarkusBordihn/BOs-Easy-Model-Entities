@@ -23,7 +23,7 @@ import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener
 import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.resources.ResourceLocation;
 
-public class FabricEasyModelProfileReloadListener extends EasyModelProfileReloadListener
+public class EasyModelProfileReloadListenerWrapper extends EasyModelProfileReloadListener
     implements IdentifiableResourceReloadListener {
 
   @Override

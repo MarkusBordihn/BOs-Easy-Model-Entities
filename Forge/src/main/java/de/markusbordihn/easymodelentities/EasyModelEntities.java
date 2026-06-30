@@ -51,11 +51,13 @@ public class EasyModelEntities {
     Constants.CONFIG_DIR = FMLPaths.CONFIGDIR.get();
 
     EasyModelEntityDataSerializers.register();
-    ForgeEasyModelEntityTypes.register(modEventBus);
-    ForgeEasyModelBlockEntityTypes.register(modEventBus);
+    EasyModelEntityTypes.register(modEventBus);
+    EasyModelBlockEntityTypes.register(modEventBus);
+    EasyModelItems.register(modEventBus);
+    EasyModelCreativeModeTabs.register(modEventBus);
     EasyModelServices.setEntityFactory(
-        new EasyModelHostEntityFactory(ForgeEasyModelEntityTypes.INSTANCE));
-    EasyModelServices.setBlockEntityTypeProvider(ForgeEasyModelBlockEntityTypes.INSTANCE);
+        new EasyModelHostEntityFactory(EasyModelEntityTypes.INSTANCE));
+    EasyModelServices.setBlockEntityTypeProvider(EasyModelBlockEntityTypes.INSTANCE);
     EasyModelServices.setDiagnosticsService(new DefaultEasyModelDiagnosticsService());
 
     MinecraftForge.EVENT_BUS.addListener(this::addReloadListeners);
