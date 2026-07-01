@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
+import de.markusbordihn.easymodelentities.client.render.EasyModelSpawnItemSpecialRendererUnbaked;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
@@ -28,6 +29,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
 import net.neoforged.neoforge.client.resources.VanillaClientListeners;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,6 +43,7 @@ public class EasyModelEntitiesClient {
     log.info("Initializing {} (NeoForge Client) ...", Constants.MOD_NAME);
     modEventBus.addListener(this::registerEntityRenderers);
     modEventBus.addListener(this::registerClientReloadListeners);
+    modEventBus.addListener(this::registerSpecialModelRenderer);
   }
 
   private void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -73,5 +76,11 @@ public class EasyModelEntitiesClient {
         Identifier.fromNamespaceAndPath(Constants.MOD_ID, "render_profile_reload_listener");
     event.addListener(listenerId, new ModelRenderProfileReloadListener());
     event.addDependency(VanillaClientListeners.LAST, listenerId);
+  }
+
+  private void registerSpecialModelRenderer(RegisterSpecialModelRendererEvent event) {
+    event.register(
+        EasyModelSpawnItemSpecialRendererUnbaked.ID,
+        EasyModelSpawnItemSpecialRendererUnbaked.MAP_CODEC);
   }
 }

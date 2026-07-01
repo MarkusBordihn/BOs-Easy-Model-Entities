@@ -19,7 +19,18 @@
 
 package de.markusbordihn.easymodelentities.api.client;
 
+import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.client.render.EasyModelEntityRenderBackend;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
+import de.markusbordihn.easymodelentities.data.model.bake.ModelBounds;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
+import java.util.Objects;
+import java.util.Optional;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -35,5 +46,15 @@ public final class EasyModelEntitiesClientApi {
   public static <T extends BlockEntity & EasyModelRenderable>
       EasyModelBlockEntityRenderDelegate<T> createBlockEntityRenderDelegate() {
     return new EasyModelBlockEntityRenderDelegate<>();
+  }
+
+  public static Optional<ModelBounds> getModelBounds(Identifier profileId) {
+    Objects.requireNonNull(profileId, "profileId");
+    return EasyModelEntitiesApi.getProfile(profileId)
+        .filter(EasyModelEntityProfile::isActive)
+        .map(profile -> EasyModelRuntimeContract.fromProfile(profile, EasyModelAnimationState.AUTO))
+        .map(EasyModelEntityRenderBackend::resolveRenderState)
+        .map(EasyModelRenderState::bakedModel)
+        .map(BakedModel::bounds);
   }
 }

@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "easy_model_entities:item/easy_model_block_entities_icon"
+  }
+}

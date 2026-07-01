@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "easy_model_entities:item/easy_model_block_spawn",
+    "model": {
+      "type": "easy_model_entities:spawn_item_renderer"
+    }
+  }
+}

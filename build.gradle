@@ -58,10 +58,16 @@ subprojects {
   }
 }
 
-tasks.register('allGameTests') {
+tasks.register('gameTests') {
   group = 'verification'
   description = 'Runs Fabric, Forge and NeoForge game tests.'
   dependsOn ':Fabric:runGameTest', ':Forge:runGameTestServer', ':NeoForge:runGameTestServer'
+}
+
+tasks.register('fullCheck') {
+  group = 'verification'
+  description = 'Runs the standard checks and Fabric, Forge and NeoForge game tests.'
+  dependsOn ':Common:check', ':Fabric:check', ':Forge:check', ':NeoForge:check', 'gameTests'
 }
 
 tasks.register('publishModrinth') {

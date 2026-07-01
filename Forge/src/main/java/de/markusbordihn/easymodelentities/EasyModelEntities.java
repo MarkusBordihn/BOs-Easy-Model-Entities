@@ -52,11 +52,13 @@ public class EasyModelEntities {
     Constants.CONFIG_DIR = FMLPaths.CONFIGDIR.get();
 
     EasyModelEntityDataSerializers.register();
-    ForgeEasyModelEntityTypes.register(modBusGroup);
-    ForgeEasyModelBlockEntityTypes.register(modBusGroup);
+    EasyModelEntityTypes.register(modBusGroup);
+    EasyModelBlockEntityTypes.register(modBusGroup);
+    EasyModelItems.register(modBusGroup);
+    EasyModelCreativeModeTabs.register(modBusGroup);
     EasyModelServices.setEntityFactory(
-        new EasyModelHostEntityFactory(ForgeEasyModelEntityTypes.INSTANCE));
-    EasyModelServices.setBlockEntityTypeProvider(ForgeEasyModelBlockEntityTypes.INSTANCE);
+        new EasyModelHostEntityFactory(EasyModelEntityTypes.INSTANCE));
+    EasyModelServices.setBlockEntityTypeProvider(EasyModelBlockEntityTypes.INSTANCE);
     EasyModelServices.setDiagnosticsService(new DefaultEasyModelDiagnosticsService());
 
     if (FMLEnvironment.dist.isClient()) {

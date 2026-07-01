@@ -10,10 +10,11 @@
  * The above copyright notice and this permission notice shall be included in all copies or
  * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package de.markusbordihn.easymodelentities.data.model.bake;
@@ -29,12 +30,31 @@ public record BakedModel(
     int textureHeight,
     List<BakedModelPart> rootParts,
     Map<Integer, Identifier> textures,
-    boolean cullBackfaces) {
+    boolean cullBackfaces,
+    ModelBounds bounds) {
 
   public BakedModel {
     Objects.requireNonNull(modelId, "modelId");
     rootParts = List.copyOf(Objects.requireNonNull(rootParts, "rootParts"));
     textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
+    bounds = bounds == null ? ModelBounds.EMPTY : bounds;
+  }
+
+  public BakedModel(
+      Identifier modelId,
+      int textureWidth,
+      int textureHeight,
+      List<BakedModelPart> rootParts,
+      Map<Integer, Identifier> textures,
+      boolean cullBackfaces) {
+    this(
+        modelId,
+        textureWidth,
+        textureHeight,
+        rootParts,
+        textures,
+        cullBackfaces,
+        ModelBounds.EMPTY);
   }
 
   public BakedModel(
