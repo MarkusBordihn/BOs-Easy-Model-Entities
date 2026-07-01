@@ -32,8 +32,7 @@ import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProf
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
-import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
+import de.markusbordihn.easymodelentities.spawn.EasyModelSpawnSupport;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -213,49 +212,11 @@ public final class EasyModelEntitiesCommand {
   }
 
   static Optional<String> summonRejectionMessage(ResourceLocation profileId) {
-    Optional<EasyModelEntityProfile> profile =
-        EasyModelServices.profileService().getProfile(profileId);
-    if (profile.isEmpty()) {
-      return Optional.of("Unknown Easy Model Entities profile: " + profileId);
-    }
-    if (!profile.get().isActive()) {
-      return Optional.of(
-          "Cannot summon invalid Easy Model Entities profile "
-              + profileId
-              + ": "
-              + profile.get().status().name()
-              + ".");
-    }
-    if (profile.get().modelType() != ModelType.ENTITY) {
-      return Optional.of("Cannot summon non-entity Easy Model Entities profile " + profileId + ".");
-    }
-
-    return Optional.empty();
+    return EasyModelSpawnSupport.entitySpawnRejection(profileId);
   }
 
   static Optional<String> placeBlockRejectionMessage(ResourceLocation profileId) {
-    Optional<EasyModelEntityProfile> profile =
-        EasyModelServices.profileService().getProfile(profileId);
-    if (profile.isEmpty()) {
-      return Optional.of("Unknown Easy Model Entities profile: " + profileId);
-    }
-    if (!profile.get().isActive()) {
-      return Optional.of(
-          "Cannot place invalid Easy Model Entities profile "
-              + profileId
-              + ": "
-              + profile.get().status().name()
-              + ".");
-    }
-    if (profile.get().modelType() != ModelType.BLOCK_ENTITY) {
-      return Optional.of(
-          "Cannot place non-block-entity Easy Model Entities profile " + profileId + ".");
-    }
-    if (blockIdForProfile(profile.get()).isEmpty()) {
-      return Optional.of("Could not resolve Easy Model Entities host block for " + profileId + ".");
-    }
-
-    return Optional.empty();
+    return EasyModelSpawnSupport.blockPlacementRejection(profileId);
   }
 
   private static int listProfiles(CommandContext<CommandSourceStack> context) {
@@ -355,25 +316,7 @@ public final class EasyModelEntitiesCommand {
   }
 
   static Optional<ResourceLocation> blockIdForProfile(EasyModelEntityProfile profile) {
-    if (profile.modelType() != ModelType.BLOCK_ENTITY) {
-      return Optional.empty();
-    }
-
-    ResourceLocation blockEntityType = profile.hostBlockEntityType();
-    if (ModelBlockEntityTypeIds.STATIC_BLOCK_ENTITY.equals(blockEntityType)) {
-      return Optional.of(ModelBlockIds.STATIC_BLOCK);
-    }
-    if (ModelBlockEntityTypeIds.TICKING_BLOCK_ENTITY.equals(blockEntityType)) {
-      return Optional.of(ModelBlockIds.TICKING_BLOCK);
-    }
-    if (ModelBlockEntityTypeIds.ANIMATED_BLOCK_ENTITY.equals(blockEntityType)) {
-      return Optional.of(ModelBlockIds.ANIMATED_BLOCK);
-    }
-    if (ModelBlockEntityTypeIds.ANIMATED_RANDOMLY_BLOCK_ENTITY.equals(blockEntityType)) {
-      return Optional.of(ModelBlockIds.ANIMATED_RANDOMLY_BLOCK);
-    }
-
-    return Optional.empty();
+    return EasyModelSpawnSupport.hostBlockId(profile);
   }
 
   private static List<EasyModelEntityProfile> sortedProfiles() {

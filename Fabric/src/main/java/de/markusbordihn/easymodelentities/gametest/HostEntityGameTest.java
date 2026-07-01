@@ -65,4 +65,14 @@ public class HostEntityGameTest {
   public void attributesAreAppliedFromProfile(GameTestHelper helper) {
     HostEntityGameTestCases.attributesAreAppliedFromProfile(helper);
   }
+
+  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  public void entitySpawnItemSpawnsHostEntity(GameTestHelper helper) {
+    HostEntityGameTestCases.entitySpawnItemSpawnsHostEntity(helper);
+  }
+
+  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  public void blockSpawnItemPlacesHostBlock(GameTestHelper helper) {
+    HostEntityGameTestCases.blockSpawnItemPlacesHostBlock(helper);
+  }
 }

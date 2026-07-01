@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.renderprofile;
 
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
+import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
 import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
@@ -49,6 +50,7 @@ public class ModelRenderProfileReloadListener
     EasyModelServices.setDecoderRegistry(reloadState.decoderRegistry());
     EasyModelServices.setBakeService(reloadState.bakeService());
     EasyModelServices.setRenderProfileService(reloadState.renderProfileManager());
+    EasyModelReloadDispatcher.fireRenderProfileReload();
   }
 
   record ReloadState(

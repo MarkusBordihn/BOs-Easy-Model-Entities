@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.client.EasyModelClientItemExtensions;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
@@ -27,6 +28,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,6 +41,7 @@ public class EasyModelEntitiesClient {
     log.info("Initializing {} (NeoForge Client) ...", Constants.MOD_NAME);
     modEventBus.addListener(this::registerEntityRenderers);
     modEventBus.addListener(this::registerClientReloadListeners);
+    modEventBus.addListener(this::registerClientItemExtensions);
   }
 
   private void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -68,5 +71,12 @@ public class EasyModelEntitiesClient {
 
   private void registerClientReloadListeners(RegisterClientReloadListenersEvent event) {
     event.registerReloadListener(new ModelRenderProfileReloadListener());
+  }
+
+  private void registerClientItemExtensions(RegisterClientExtensionsEvent event) {
+    event.registerItem(
+        EasyModelClientItemExtensions.INSTANCE,
+        EasyModelItems.ENTITY_SPAWN.get(),
+        EasyModelItems.BLOCK_SPAWN.get());
   }
 }

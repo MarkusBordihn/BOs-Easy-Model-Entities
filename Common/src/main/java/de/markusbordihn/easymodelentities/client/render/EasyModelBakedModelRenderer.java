@@ -301,42 +301,54 @@ public final class EasyModelBakedModelRenderer {
               : automaticTransform;
     } else {
       EasyModelPartTransform animatorTransform =
-          partAnimator.animate(
-              new EasyModelPartAnimationContext(
-                  part.name(),
-                  renderState.bodyType(),
-                  limbSwing,
-                  limbSwingAmount,
-                  ageInTicks,
-                  airborneAmount,
-                  automaticTransform));
+          sanitize(
+              partAnimator.animate(
+                  new EasyModelPartAnimationContext(
+                      part.name(),
+                      renderState.bodyType(),
+                      limbSwing,
+                      limbSwingAmount,
+                      ageInTicks,
+                      airborneAmount,
+                      automaticTransform)));
       animationTransform =
           partAnimationMode == EasyModelPartAnimationMode.REPLACE
               ? animatorTransform
               : automaticTransform.add(animatorTransform);
     }
-    poseStack.translate(offset.x() * PIXEL, offset.y() * PIXEL, offset.z() * PIXEL);
+    poseStack.translate(
+        (offset.x() + animationTransform.offsetX()) * PIXEL,
+        (offset.y() + animationTransform.offsetY()) * PIXEL,
+        (offset.z() + animationTransform.offsetZ()) * PIXEL);
     rotate(
         poseStack,
         rotation.x() + animationTransform.xRotation(),
         rotation.y() + animationTransform.yRotation(),
         rotation.z() + animationTransform.zRotation());
-
-    for (BakedModelCube cube : part.cubes()) {
-      renderCube(cube, sinks);
+    if (animationTransform.scaleX() != 1.0f
+        || animationTransform.scaleY() != 1.0f
+        || animationTransform.scaleZ() != 1.0f) {
+      poseStack.scale(
+          animationTransform.scaleX(), animationTransform.scaleY(), animationTransform.scaleZ());
     }
-    for (BakedModelPart child : part.children()) {
-      renderPart(
-          child,
-          renderState,
-          limbSwing,
-          limbSwingAmount,
-          ageInTicks,
-          airborneAmount,
-          poseStack,
-          sinks,
-          partAnimator,
-          partAnimationMode);
+
+    if (animationTransform.visible()) {
+      for (BakedModelCube cube : part.cubes()) {
+        renderCube(cube, sinks);
+      }
+      for (BakedModelPart child : part.children()) {
+        renderPart(
+            child,
+            renderState,
+            limbSwing,
+            limbSwingAmount,
+            ageInTicks,
+            airborneAmount,
+            poseStack,
+            sinks,
+            partAnimator,
+            partAnimationMode);
+      }
     }
 
     poseStack.popPose();
@@ -535,6 +547,35 @@ public final class EasyModelBakedModelRenderer {
 
   private static EasyModelPartTransform noRotation() {
     return EasyModelPartTransform.NONE;
+  }
+
+  private static EasyModelPartTransform sanitize(EasyModelPartTransform transform) {
+    if (Float.isFinite(transform.xRotation())
+        && Float.isFinite(transform.yRotation())
+        && Float.isFinite(transform.zRotation())
+        && Float.isFinite(transform.offsetX())
+        && Float.isFinite(transform.offsetY())
+        && Float.isFinite(transform.offsetZ())
+        && Float.isFinite(transform.scaleX())
+        && Float.isFinite(transform.scaleY())
+        && Float.isFinite(transform.scaleZ())) {
+      return transform;
+    }
+    return new EasyModelPartTransform(
+        finiteOr(transform.xRotation(), 0.0f),
+        finiteOr(transform.yRotation(), 0.0f),
+        finiteOr(transform.zRotation(), 0.0f),
+        finiteOr(transform.offsetX(), 0.0f),
+        finiteOr(transform.offsetY(), 0.0f),
+        finiteOr(transform.offsetZ(), 0.0f),
+        finiteOr(transform.scaleX(), 1.0f),
+        finiteOr(transform.scaleY(), 1.0f),
+        finiteOr(transform.scaleZ(), 1.0f),
+        transform.visible());
+  }
+
+  private static float finiteOr(float value, float fallback) {
+    return Float.isFinite(value) ? value : fallback;
   }
 
   private static void rotate(

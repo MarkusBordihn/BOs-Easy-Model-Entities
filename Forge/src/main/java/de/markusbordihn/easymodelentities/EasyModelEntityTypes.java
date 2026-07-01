@@ -35,9 +35,9 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeProvider {
+public final class EasyModelEntityTypes implements EasyModelHostEntityTypeProvider {
 
-  public static final ForgeEasyModelEntityTypes INSTANCE = new ForgeEasyModelEntityTypes();
+  public static final EasyModelEntityTypes INSTANCE = new EasyModelEntityTypes();
 
   private static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
       DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Constants.MOD_ID);
@@ -82,11 +82,11 @@ public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeP
                   .clientTrackingRange(10)
                   .build(ModelEntityTypeIds.AMPHIBIOUS_ENTITY.toString()));
 
-  private ForgeEasyModelEntityTypes() {}
+  private EasyModelEntityTypes() {}
 
   public static void register(IEventBus modEventBus) {
     ENTITY_TYPES.register(modEventBus);
-    modEventBus.addListener(ForgeEasyModelEntityTypes::registerAttributes);
+    modEventBus.addListener(EasyModelEntityTypes::registerAttributes);
   }
 
   private static void registerAttributes(EntityAttributeCreationEvent event) {

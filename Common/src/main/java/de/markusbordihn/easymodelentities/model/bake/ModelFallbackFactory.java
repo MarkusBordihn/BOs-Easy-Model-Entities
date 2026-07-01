@@ -10,10 +10,11 @@
  * The above copyright notice and this permission notice shall be included in all copies or
  * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package de.markusbordihn.easymodelentities.model.bake;
@@ -23,6 +24,7 @@ import de.markusbordihn.easymodelentities.data.model.ModelPartType;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.*;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 
 public final class ModelFallbackFactory {
@@ -40,10 +42,7 @@ public final class ModelFallbackFactory {
     ModelCubeFaceUvs faceUvs =
         ModelCubeFaceUvs.fromBoxUv(uvOffset, new float[] {cubeWidth, cubeHeight, cubeWidth})
             .scale(16.0f, 16.0f);
-    return new BakedModel(
-        modelId,
-        16,
-        16,
+    List<BakedModelPart> rootParts =
         List.of(
             new BakedModelPart(
                 ModelPartType.ROOT.getTagName(),
@@ -56,6 +55,8 @@ public final class ModelFallbackFactory {
                         new Vec3f(-cubeWidth / 2.0f, -cubeHeight, -cubeWidth / 2.0f),
                         new Vec3f(cubeWidth, cubeHeight, cubeWidth),
                         false)),
-                List.of())));
+                List.of()));
+    return new BakedModel(
+        modelId, 16, 16, rootParts, Map.of(), false, ModelBoundsCalculator.compute(rootParts));
   }
 }

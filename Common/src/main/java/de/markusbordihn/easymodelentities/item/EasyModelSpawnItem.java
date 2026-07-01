@@ -17,17 +17,37 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.item;
 
-import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.resources.ResourceLocation;
+import java.util.List;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 
-public class FabricModelRenderProfileReloadListener extends ModelRenderProfileReloadListener
-    implements IdentifiableResourceReloadListener {
+public abstract class EasyModelSpawnItem extends Item {
+
+  protected EasyModelSpawnItem(Properties properties) {
+    super(properties);
+  }
+
+  protected static void notifyPlayer(Player player, String message) {
+    if (player != null) {
+      player.sendSystemMessage(Component.literal(message));
+    }
+  }
 
   @Override
-  public ResourceLocation getFabricId() {
-    return ID;
+  public Component getName(ItemStack stack) {
+    return EasyModelEntitiesItems.profileId(stack)
+        .<Component>map(id -> Component.literal(EasyModelEntitiesItems.displayName(id)))
+        .orElseGet(() -> super.getName(stack));
+  }
+
+  @Override
+  public void appendHoverText(
+      ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+    EasyModelItemTooltip.append(stack, tooltip);
   }
 }

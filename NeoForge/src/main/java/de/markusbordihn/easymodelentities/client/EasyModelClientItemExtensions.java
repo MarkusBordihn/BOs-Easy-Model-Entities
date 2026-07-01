@@ -17,17 +17,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities;
+package de.markusbordihn.easymodelentities.client;
 
-import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
-public class FabricEasyModelProfileReloadListener extends EasyModelProfileReloadListener
-    implements IdentifiableResourceReloadListener {
+public final class EasyModelClientItemExtensions implements IClientItemExtensions {
+
+  public static final EasyModelClientItemExtensions INSTANCE = new EasyModelClientItemExtensions();
+
+  private BlockEntityWithoutLevelRenderer renderer;
+
+  private EasyModelClientItemExtensions() {}
 
   @Override
-  public ResourceLocation getFabricId() {
-    return ID;
+  public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+    if (this.renderer == null) {
+      this.renderer = new EasyModelItemRenderer();
+    }
+    return this.renderer;
   }
 }

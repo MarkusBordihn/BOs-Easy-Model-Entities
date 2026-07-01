@@ -25,6 +25,7 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.entity.EasyModelGroundEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelStaticEntity;
+import de.markusbordihn.easymodelentities.item.EasyModelEntitiesItems;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
@@ -36,15 +37,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 public final class HostEntityGameTestCases {
@@ -257,6 +265,70 @@ public final class HostEntityGameTestCases {
         || contract.height() != 1.0f
         || contract.eyeHeight() != 0.5f) {
       helper.fail("BlockEntity runtime contract was not initialized from the active profile.");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  public static void entitySpawnItemSpawnsHostEntity(GameTestHelper helper) {
+    installProfiles();
+    Item item = EasyModelEntitiesItems.entitySpawnItem();
+    if (item == null) {
+      helper.fail("Entity spawn item was not registered.");
+      return;
+    }
+
+    BlockPos floor = new BlockPos(1, 1, 1);
+    helper.setBlock(floor, Blocks.STONE);
+    BlockPos absoluteFloor = helper.absolutePos(floor);
+    BlockHitResult hit =
+        new BlockHitResult(
+            Vec3.atCenterOf(absoluteFloor).add(0.0, 0.5, 0.0), Direction.UP, absoluteFloor, false);
+    ItemStack stack = EasyModelEntitiesItems.forProfile(item, GROUND_PROFILE_ID);
+    item.useOn(new UseOnContext(helper.getLevel(), null, InteractionHand.MAIN_HAND, stack, hit) {});
+
+    BlockPos expected = absoluteFloor.above();
+    List<EasyModelGroundEntity> spawned =
+        helper
+            .getLevel()
+            .getEntitiesOfClass(EasyModelGroundEntity.class, new AABB(expected).inflate(1.0));
+    if (spawned.isEmpty()) {
+      helper.fail("Entity spawn item did not spawn a host entity.");
+      return;
+    }
+    if (!GROUND_PROFILE_ID.equals(spawned.get(0).getEasyModelProfileId())) {
+      helper.fail("Spawned host entity did not carry the item profile id.");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  public static void blockSpawnItemPlacesHostBlock(GameTestHelper helper) {
+    installProfiles();
+    Item item = EasyModelEntitiesItems.blockSpawnItem();
+    if (item == null) {
+      helper.fail("Block spawn item was not registered.");
+      return;
+    }
+
+    BlockPos floor = new BlockPos(1, 1, 1);
+    helper.setBlock(floor, Blocks.STONE);
+    BlockPos absoluteFloor = helper.absolutePos(floor);
+    BlockHitResult hit =
+        new BlockHitResult(
+            Vec3.atCenterOf(absoluteFloor).add(0.0, 0.5, 0.0), Direction.UP, absoluteFloor, false);
+    ItemStack stack = EasyModelEntitiesItems.forProfile(item, BLOCK_PROFILE_ID);
+    item.useOn(new UseOnContext(helper.getLevel(), null, InteractionHand.MAIN_HAND, stack, hit) {});
+
+    if (!(helper.getBlockEntity(floor.above())
+        instanceof EasyModelHostBlockEntity hostBlockEntity)) {
+      helper.fail("Block spawn item did not place an EasyModelHostBlockEntity.");
+      return;
+    }
+    if (!BLOCK_PROFILE_ID.equals(hostBlockEntity.getEasyModelProfileId())) {
+      helper.fail("Placed host block did not carry the item profile id.");
       return;
     }
 

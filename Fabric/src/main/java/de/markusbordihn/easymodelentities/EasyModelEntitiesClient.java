@@ -21,8 +21,10 @@ package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
+import de.markusbordihn.easymodelentities.client.render.EasyModelItemModelRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.server.packs.PackType;
@@ -37,27 +39,34 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
   public void onInitializeClient() {
     log.info("Initializing {} (Fabric Client) ...", Constants.MOD_NAME);
     EntityRendererRegistry.register(
-        FabricEasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
+        EasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     EntityRendererRegistry.register(
-        FabricEasyModelEntityTypes.INSTANCE.staticEntityType(), EasyModelHostEntityRenderer::new);
+        EasyModelEntityTypes.INSTANCE.staticEntityType(), EasyModelHostEntityRenderer::new);
     EntityRendererRegistry.register(
-        FabricEasyModelEntityTypes.INSTANCE.aquaticEntityType(), EasyModelHostEntityRenderer::new);
+        EasyModelEntityTypes.INSTANCE.aquaticEntityType(), EasyModelHostEntityRenderer::new);
     EntityRendererRegistry.register(
-        FabricEasyModelEntityTypes.INSTANCE.amphibiousEntityType(),
-        EasyModelHostEntityRenderer::new);
+        EasyModelEntityTypes.INSTANCE.amphibiousEntityType(), EasyModelHostEntityRenderer::new);
     BlockEntityRendererRegistry.register(
-        FabricEasyModelBlockEntityTypes.INSTANCE.staticBlockEntityType(),
+        EasyModelBlockEntityTypes.INSTANCE.staticBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
     BlockEntityRendererRegistry.register(
-        FabricEasyModelBlockEntityTypes.INSTANCE.tickingBlockEntityType(),
+        EasyModelBlockEntityTypes.INSTANCE.tickingBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
     BlockEntityRendererRegistry.register(
-        FabricEasyModelBlockEntityTypes.INSTANCE.animatedBlockEntityType(),
+        EasyModelBlockEntityTypes.INSTANCE.animatedBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
     BlockEntityRendererRegistry.register(
-        FabricEasyModelBlockEntityTypes.INSTANCE.animatedRandomlyBlockEntityType(),
+        EasyModelBlockEntityTypes.INSTANCE.animatedRandomlyBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
+    BuiltinItemRendererRegistry.INSTANCE.register(
+        EasyModelItems.ENTITY_SPAWN,
+        (stack, mode, poseStack, bufferSource, light, overlay) ->
+            EasyModelItemModelRenderer.render(stack, poseStack, bufferSource, light, overlay));
+    BuiltinItemRendererRegistry.INSTANCE.register(
+        EasyModelItems.BLOCK_SPAWN,
+        (stack, mode, poseStack, bufferSource, light, overlay) ->
+            EasyModelItemModelRenderer.render(stack, poseStack, bufferSource, light, overlay));
     ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
-        .registerReloadListener(new FabricModelRenderProfileReloadListener());
+        .registerReloadListener(new ModelRenderProfileReloadListenerWrapper());
   }
 }

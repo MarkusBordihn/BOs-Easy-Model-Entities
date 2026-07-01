@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "easy_model_entities:item/easy_model_entities_icon"
+  }
+}
