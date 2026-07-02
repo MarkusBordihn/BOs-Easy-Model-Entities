@@ -20,11 +20,13 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 
 @SuppressWarnings("java:S1104")
 public class EasyModelEntityRenderState extends EntityRenderState {
   public EasyModelRenderState easyModelRenderState;
+  public EasyModelAnimationState animationState = EasyModelAnimationState.AUTO;
   public float entityYaw;
   public float limbSwing;
   public float limbSwingAmount;

@@ -64,6 +64,7 @@ public final class ContractApiDocument {
     enums.add("preset_types", toArray(EasyModelApiContract.presetTypes()));
     enums.add("block_entity_preset_types", toArray(EasyModelApiContract.blockEntityPresetTypes()));
     enums.add("animation_modes", toArray(EasyModelApiContract.animationModes()));
+    enums.add("animation_clips", toArray(EasyModelApiContract.animationClips()));
     enums.add("gaits", toArray(EasyModelApiContract.gaits()));
     root.add("enums", enums);
 

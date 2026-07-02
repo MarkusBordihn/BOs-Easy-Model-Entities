@@ -46,6 +46,7 @@ import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelGaitType;
+import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -732,6 +733,7 @@ class EasyModelBakedModelRendererTest {
         0.0f,
         0.0f,
         0.0f,
+        EasyModelAnimationState.AUTO,
         new PoseStack(),
         textureIndex -> {
           fetches.incrementAndGet();
@@ -800,6 +802,7 @@ class EasyModelBakedModelRendererTest {
         0.0f,
         0.0f,
         0.0f,
+        EasyModelAnimationState.AUTO,
         new PoseStack(),
         bufferProvider,
         0,

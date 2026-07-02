@@ -17,18 +17,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.api;
+package de.markusbordihn.easymodelentities.data.model;
 
-public final class EasyModelAnimationStates {
+import java.util.Map;
+import java.util.Objects;
+import net.minecraft.util.Mth;
 
-  public static final int AUTO = 0;
-  public static final int IDLE = 1;
-  public static final int WALK = 2;
-  public static final int RUN = 3;
-  public static final int HURT = 4;
-  public static final int DEATH = 5;
-  public static final int SWIM = 6;
-  public static final int FLY = 7;
+public record ModelAnimationClip(
+    String name, float length, boolean loop, Map<String, ModelAnimationBoneTrack> boneTracks) {
 
-  private EasyModelAnimationStates() {}
+  private static final float TICKS_PER_SECOND = 20.0f;
+
+  public ModelAnimationClip {
+    Objects.requireNonNull(name, "name");
+    boneTracks = Map.copyOf(Objects.requireNonNull(boneTracks, "boneTracks"));
+  }
+
+  public ModelAnimationBoneTrack track(String partName) {
+    return partName == null ? null : boneTracks.get(partName);
+  }
+
+  public float clipTime(float ageInTicks) {
+    if (length <= 0.0f) {
+      return 0.0f;
+    }
+    float seconds = ageInTicks / TICKS_PER_SECOND;
+    return loop ? Mth.positiveModulo(seconds, length) : Math.min(seconds, length);
+  }
 }

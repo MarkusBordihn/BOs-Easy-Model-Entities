@@ -17,18 +17,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.api;
+package de.markusbordihn.easymodelentities.data.model;
 
-public final class EasyModelAnimationStates {
+import java.util.Objects;
 
-  public static final int AUTO = 0;
-  public static final int IDLE = 1;
-  public static final int WALK = 2;
-  public static final int RUN = 3;
-  public static final int HURT = 4;
-  public static final int DEATH = 5;
-  public static final int SWIM = 6;
-  public static final int FLY = 7;
+public record ModelAnimationKeyframe(float time, Vec3f value, boolean step) {
 
-  private EasyModelAnimationStates() {}
+  public ModelAnimationKeyframe {
+    Objects.requireNonNull(value, "value");
+  }
 }

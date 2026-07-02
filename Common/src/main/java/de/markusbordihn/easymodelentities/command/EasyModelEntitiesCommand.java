@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.markusbordihn.easymodelentities.Constants;
@@ -31,14 +32,19 @@ import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
+import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
+import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.spawn.EasyModelSpawnSupport;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
@@ -57,6 +63,8 @@ public final class EasyModelEntitiesCommand {
 
   private static final String PROFILE_ID_ARGUMENT = "profile_id";
   private static final String POSITION_ARGUMENT = "pos";
+  private static final String TARGETS_ARGUMENT = "targets";
+  private static final String ANIMATION_STATE_ARGUMENT = "state";
 
   private EasyModelEntitiesCommand() {}
 
@@ -101,6 +109,25 @@ public final class EasyModelEntitiesCommand {
                                   return builder.buildFuture();
                                 })
                             .executes(EasyModelEntitiesCommand::summon)))
+            .then(
+                Commands.literal("set_animation")
+                    .requires(
+                        source ->
+                            source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
+                    .then(
+                        Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
+                            .then(
+                                Commands.argument(
+                                        ANIMATION_STATE_ARGUMENT, StringArgumentType.word())
+                                    .suggests(
+                                        (context, builder) -> {
+                                          for (EasyModelAnimationState state :
+                                              EasyModelAnimationState.values()) {
+                                            builder.suggest(state.getSerializedName());
+                                          }
+                                          return builder.buildFuture();
+                                        })
+                                    .executes(EasyModelEntitiesCommand::setAnimation))))
             .then(
                 Commands.literal("place_block")
                     .requires(
@@ -266,6 +293,50 @@ public final class EasyModelEntitiesCommand {
         () -> Component.literal("Summoned " + entityType + " with profile " + profileId + "."),
         true);
     return 1;
+  }
+
+  static Optional<EasyModelAnimationState> parseAnimationState(String stateName) {
+    return Arrays.stream(EasyModelAnimationState.values())
+        .filter(state -> state.getSerializedName().equalsIgnoreCase(stateName))
+        .findFirst();
+  }
+
+  private static int setAnimation(CommandContext<CommandSourceStack> context)
+      throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    String stateName = StringArgumentType.getString(context, ANIMATION_STATE_ARGUMENT);
+    Optional<EasyModelAnimationState> animationState = parseAnimationState(stateName);
+    if (animationState.isEmpty()) {
+      source.sendFailure(Component.literal("Unknown animation state " + stateName + "."));
+      return 0;
+    }
+
+    Collection<? extends Entity> targets = EntityArgument.getEntities(context, TARGETS_ARGUMENT);
+    int updatedEntities = 0;
+    for (Entity target : targets) {
+      if (target instanceof EasyModelEntityHost hostEntity) {
+        hostEntity.setEasyModelAnimationState(animationState.get());
+        updatedEntities++;
+      }
+    }
+
+    if (updatedEntities == 0) {
+      source.sendFailure(
+          Component.literal("No Easy Model Entities host entities in the selection."));
+      return 0;
+    }
+
+    int updateCount = updatedEntities;
+    source.sendSuccess(
+        () ->
+            Component.literal(
+                "Set animation state "
+                    + animationState.get().getSerializedName()
+                    + " for "
+                    + updateCount
+                    + (updateCount == 1 ? " entity." : " entities.")),
+        true);
+    return updatedEntities;
   }
 
   private static int placeBlock(CommandContext<CommandSourceStack> context)
