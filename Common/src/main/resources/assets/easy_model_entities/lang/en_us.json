@@ -6,6 +6,8 @@
   "item.easy_model_entities.easy_model_entities_icon": "Easy Model Entities",
   "item.easy_model_entities.easy_model_block_entities_icon": "Easy Model Block Entities",
   "tooltip.easy_model_entities.type": "Type: %s / %s",
+  "tooltip.easy_model_entities.preset": "Preset: %s",
+  "tooltip.easy_model_entities.behavior": "Behavior: %s / %s",
   "tooltip.easy_model_entities.size": "Size: %s × %s",
   "tooltip.easy_model_entities.version": "Version: %s"
 }

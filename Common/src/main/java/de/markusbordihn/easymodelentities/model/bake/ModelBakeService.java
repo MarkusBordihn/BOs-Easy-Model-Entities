@@ -205,6 +205,7 @@ public final class ModelBakeService implements EasyModelBakeService {
         rootParts,
         textures,
         cullBackfaces,
+        decodedModel.animations(),
         ModelBoundsCalculator.compute(rootParts));
   }
 

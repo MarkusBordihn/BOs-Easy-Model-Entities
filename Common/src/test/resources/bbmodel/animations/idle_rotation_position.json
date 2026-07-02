@@ -1,0 +1,28 @@
+[
+  {
+    "uuid": "a-idle",
+    "name": "idle",
+    "loop": "loop",
+    "length": 2.0,
+    "animators": {
+      "g": {
+        "name": "Body",
+        "type": "bone",
+        "keyframes": [
+          {
+            "channel": "rotation",
+            "data_points": [{"x": 90, "y": "-45", "z": 30}],
+            "time": 0,
+            "interpolation": "linear"
+          },
+          {
+            "channel": "position",
+            "data_points": [{"x": 2, "y": 4, "z": -6}],
+            "time": 1,
+            "interpolation": "linear"
+          }
+        ]
+      }
+    }
+  }
+]

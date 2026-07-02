@@ -54,6 +54,7 @@ import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
+import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -206,6 +207,23 @@ class EasyModelEntitiesCommandTest {
     assertEquals("easy_model_entities", Constants.MOD_COMMAND);
     assertNotNull(dispatcher.getRoot().getChild("easy_model_entities"));
     assertNotNull(dispatcher.getRoot().getChild("easy_model_entities").getChild("place_block"));
+    assertNotNull(dispatcher.getRoot().getChild("easy_model_entities").getChild("set_animation"));
+  }
+
+  @Test
+  void parseAnimationStateAcceptsSerializedNamesOnly() {
+    assertEquals(
+        Optional.of(EasyModelAnimationState.WALK),
+        EasyModelEntitiesCommand.parseAnimationState("walk"));
+    assertEquals(
+        Optional.of(EasyModelAnimationState.SWIM),
+        EasyModelEntitiesCommand.parseAnimationState("SWIM"));
+    assertEquals(
+        Optional.of(EasyModelAnimationState.AUTO),
+        EasyModelEntitiesCommand.parseAnimationState("auto"));
+    assertEquals(Optional.empty(), EasyModelEntitiesCommand.parseAnimationState("unknown"));
+    assertEquals(Optional.empty(), EasyModelEntitiesCommand.parseAnimationState(""));
+    assertEquals(Optional.empty(), EasyModelEntitiesCommand.parseAnimationState(null));
   }
 
   @Test

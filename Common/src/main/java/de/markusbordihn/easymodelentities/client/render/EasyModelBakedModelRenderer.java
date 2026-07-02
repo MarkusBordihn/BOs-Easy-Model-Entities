@@ -28,6 +28,9 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimation
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
 import de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility;
 import de.markusbordihn.easymodelentities.data.model.FaceUv;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationBoneTrack;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
 import de.markusbordihn.easymodelentities.data.model.ModelPartType;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
@@ -38,6 +41,8 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelGaitType;
+import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -194,6 +199,34 @@ public final class EasyModelBakedModelRenderer {
       PoseStack poseStack,
       SubmitNodeCollector submitNodeCollector,
       int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        airborneAmount,
+        EasyModelAnimationState.AUTO,
+        partAnimator,
+        partAnimationMode,
+        poseStack,
+        submitNodeCollector,
+        packedLight);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      float airborneAmount,
+      EasyModelAnimationState animationState,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
     boolean cullBackfaces = bakedModel.cullBackfaces();
@@ -217,6 +250,7 @@ public final class EasyModelBakedModelRenderer {
                 limbSwingAmount,
                 ageInTicks,
                 airborneAmount,
+                animationState,
                 innerStack,
                 renderTextureIndex -> renderTextureIndex == textureIndex ? vertexConsumer : null,
                 packedLight,
@@ -233,6 +267,34 @@ public final class EasyModelBakedModelRenderer {
       float limbSwingAmount,
       float ageInTicks,
       float airborneAmount,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        airborneAmount,
+        EasyModelAnimationState.AUTO,
+        partAnimator,
+        partAnimationMode,
+        poseStack,
+        bufferSource,
+        packedLight);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      float airborneAmount,
+      EasyModelAnimationState animationState,
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode,
       PoseStack poseStack,
@@ -256,6 +318,7 @@ public final class EasyModelBakedModelRenderer {
         limbSwingAmount,
         ageInTicks,
         airborneAmount,
+        animationState,
         poseStack,
         bufferProvider,
         packedLight,
@@ -306,6 +369,7 @@ public final class EasyModelBakedModelRenderer {
         limbSwingAmount,
         ageInTicks,
         airborneAmount,
+        EasyModelAnimationState.AUTO,
         poseStack,
         textureIndex -> vertexConsumer,
         packedLight,
@@ -320,14 +384,19 @@ public final class EasyModelBakedModelRenderer {
       float limbSwingAmount,
       float ageInTicks,
       float airborneAmount,
+      EasyModelAnimationState animationState,
       PoseStack poseStack,
       IntFunction<VertexConsumer> bufferProvider,
       int packedLight,
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode) {
     Objects.requireNonNull(bakedModel, "bakedModel");
+    Objects.requireNonNull(animationState, "animationState");
     Objects.requireNonNull(partAnimator, "partAnimator");
     Objects.requireNonNull(partAnimationMode, "partAnimationMode");
+    ModelAnimationClip clip =
+        selectClip(bakedModel, renderState, animationState, limbSwingAmount, airborneAmount);
+    float clipTime = clip == null ? 0.0f : clipTime(clip, renderState, limbSwing, ageInTicks);
     VertexSinks sinks = new VertexSinks(bufferProvider, poseStack, packedLight);
     for (BakedModelPart part : bakedModel.rootParts()) {
       renderPart(
@@ -337,6 +406,8 @@ public final class EasyModelBakedModelRenderer {
           limbSwingAmount,
           ageInTicks,
           airborneAmount,
+          clip,
+          clipTime,
           poseStack,
           sinks,
           partAnimator,
@@ -351,6 +422,8 @@ public final class EasyModelBakedModelRenderer {
       float limbSwingAmount,
       float ageInTicks,
       float airborneAmount,
+      ModelAnimationClip clip,
+      float clipTime,
       PoseStack poseStack,
       VertexSinks sinks,
       EasyModelPartAnimator partAnimator,
@@ -360,7 +433,14 @@ public final class EasyModelBakedModelRenderer {
     Vec3f rotation = part.rotation();
     EasyModelPartTransform automaticTransform =
         animationRotation(
-            part.name(), renderState, limbSwing, limbSwingAmount, ageInTicks, airborneAmount);
+            part.name(),
+            renderState,
+            limbSwing,
+            limbSwingAmount,
+            ageInTicks,
+            airborneAmount,
+            clip,
+            clipTime);
     EasyModelPartTransform animationTransform;
     if (partAnimator == EasyModelPartAnimator.NONE) {
       animationTransform =
@@ -412,6 +492,8 @@ public final class EasyModelBakedModelRenderer {
             limbSwingAmount,
             ageInTicks,
             airborneAmount,
+            clip,
+            clipTime,
             poseStack,
             sinks,
             partAnimator,
@@ -428,11 +510,20 @@ public final class EasyModelBakedModelRenderer {
       float limbSwing,
       float limbSwingAmount,
       float ageInTicks,
-      float airborneAmount) {
+      float airborneAmount,
+      ModelAnimationClip clip,
+      float clipTime) {
     if (renderState.fallbackModel()
         || renderState.animation().mode() == ModelAnimationMode.NONE
         || renderState.bodyType() == ModelBodyType.STATIC) {
       return noRotation();
+    }
+
+    if (clip != null) {
+      ModelAnimationBoneTrack track = clip.track(partName);
+      if (track != null) {
+        return keyframeTransform(track, clipTime);
+      }
     }
 
     ModelPartType part = ModelPartType.get(partName);
@@ -447,6 +538,85 @@ public final class EasyModelBakedModelRenderer {
         ageInTicks,
         airborneAmount,
         renderState.animation().idleStrength());
+  }
+
+  private static ModelAnimationClip selectClip(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      EasyModelAnimationState animationState,
+      float limbSwingAmount,
+      float airborneAmount) {
+    Map<String, ModelAnimationClip> clips = bakedModel.animations();
+    if (clips.isEmpty()) {
+      return null;
+    }
+    ModelAnimationClip forcedClip = forcedClip(clips, animationState);
+    if (forcedClip != null) {
+      return forcedClip;
+    }
+    if (airborneAmount > 0.5f) {
+      ModelAnimationClip flyClip = clips.get(ModelAnimationClips.FLY);
+      if (flyClip != null) {
+        return flyClip;
+      }
+    }
+    if (limbSwingAmount > 0.01f) {
+      ModelBodyType bodyType = renderState.bodyType();
+      if (bodyType == ModelBodyType.AQUATIC || bodyType == ModelBodyType.AMPHIBIOUS) {
+        ModelAnimationClip swimClip = clips.get(ModelAnimationClips.SWIM);
+        if (swimClip != null) {
+          return swimClip;
+        }
+      }
+      return clips.get(ModelAnimationClips.WALK);
+    }
+    return clips.get(ModelAnimationClips.IDLE);
+  }
+
+  private static float clipTime(
+      ModelAnimationClip clip,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float ageInTicks) {
+    if (isMovementClip(clip) && clip.length() > 0.0f) {
+      float cycles =
+          limbSwing * WALK_SWING_FREQUENCY * renderState.animation().swingSpeed() / Mth.TWO_PI;
+      return Mth.positiveModulo(cycles, 1.0f) * clip.length();
+    }
+    return clip.clipTime(ageInTicks);
+  }
+
+  private static boolean isMovementClip(ModelAnimationClip clip) {
+    return ModelAnimationClips.WALK.equals(clip.name())
+        || ModelAnimationClips.SWIM.equals(clip.name());
+  }
+
+  private static ModelAnimationClip forcedClip(
+      Map<String, ModelAnimationClip> clips, EasyModelAnimationState animationState) {
+    return switch (animationState) {
+      case IDLE -> clips.get(ModelAnimationClips.IDLE);
+      case WALK, RUN -> clips.get(ModelAnimationClips.WALK);
+      case SWIM -> clips.get(ModelAnimationClips.SWIM);
+      case FLY -> clips.get(ModelAnimationClips.FLY);
+      case AUTO, HURT, DEATH -> null;
+    };
+  }
+
+  private static EasyModelPartTransform keyframeTransform(
+      ModelAnimationBoneTrack track, float clipTime) {
+    Vec3f clipRotation = track.rotationAt(clipTime);
+    Vec3f clipPosition = track.positionAt(clipTime);
+    return new EasyModelPartTransform(
+        clipRotation.x(),
+        clipRotation.y(),
+        clipRotation.z(),
+        clipPosition.x(),
+        clipPosition.y(),
+        clipPosition.z(),
+        1.0f,
+        1.0f,
+        1.0f,
+        true);
   }
 
   private static EasyModelPartTransform walkRotation(
