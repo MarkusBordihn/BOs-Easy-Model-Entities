@@ -28,15 +28,13 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
-import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.render.EasyModelRenderStateResolver;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -51,11 +49,7 @@ public final class EasyModelEntityRenderBackend {
   private EasyModelEntityRenderBackend() {}
 
   public static EasyModelRenderState resolveRenderState(EasyModelRuntimeContract contract) {
-    return EasyModelRenderStateResolver.resolve(
-        contract,
-        EasyModelServices.renderProfileService(),
-        EasyModelServices.bakeService(),
-        Minecraft.getInstance().getResourceManager());
+    return EasyModelRenderStateCache.resolve(contract);
   }
 
   public static void render(
@@ -110,12 +104,23 @@ public final class EasyModelEntityRenderBackend {
         limbSwingAmount(entity, partialTick),
         ageInTicks,
         airborneAmount(entity),
+        animationState(entity),
         safeOptions.partAnimator(),
         safeOptions.partAnimationMode(),
         poseStack,
         bufferSource,
         packedLight);
     poseStack.popPose();
+  }
+
+  private static EasyModelAnimationState animationState(Entity entity) {
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      return hostEntity.getEasyModelAnimationState();
+    }
+    if (entity instanceof EasyModelRenderable renderable) {
+      return EasyModelAnimationState.byApiState(renderable.getEasyModelAnimationState());
+    }
+    return EasyModelAnimationState.AUTO;
   }
 
   public static EasyModelRuntimeContract runtimeContract(

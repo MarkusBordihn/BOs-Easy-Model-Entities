@@ -7,8 +7,19 @@ For the full changelog, please go to the [GitHub History][history] instead.
 
 ### 1.4.0 (beta)
 
+- Fixed choppy body rotation of walking host entities by using the interpolated body rotation.
+- Added playback of standard Blockbench keyframe animations (`idle`, `walk`, `swim`, `fly`) with
+  linear interpolation and automatic clip selection.
+- Added `set_animation` command to force an animation state on host entities for testing and
+  command block setups.
+- Added `swim` and `fly` animation states to the API.
+- Added standard `idle`/`walk`/`swim`/`fly` animations to the little explorer, stone turtle,
+  dawn sparrow, and coral drifter examples.
 - Added entity and block entity spawn items for all example profiles.
-- Added offset, rotation, and scale to the `ModelPart` definition to allow complex model definitions.
+- Added offset, rotation, and scale to the `ModelPart` definition to allow complex model
+  definitions.
+- Improved spawn item tooltips to show the behavior mode and movement type of entities.
+- Improved render performance by caching resolved render states and fallback models per profile.
 - Improved api support for mod integrations.
 - Code refactoring and cleanup to improve maintainability and readability.
 

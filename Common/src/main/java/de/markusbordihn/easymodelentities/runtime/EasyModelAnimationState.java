@@ -23,14 +23,23 @@ import de.markusbordihn.easymodelentities.api.EasyModelAnimationStates;
 import java.util.Locale;
 
 public enum EasyModelAnimationState {
-  AUTO,
-  IDLE,
-  WALK,
-  RUN,
-  HURT,
-  DEATH;
+  AUTO(EasyModelAnimationStates.AUTO),
+  IDLE(EasyModelAnimationStates.IDLE),
+  WALK(EasyModelAnimationStates.WALK),
+  RUN(EasyModelAnimationStates.RUN),
+  HURT(EasyModelAnimationStates.HURT),
+  DEATH(EasyModelAnimationStates.DEATH),
+  SWIM(EasyModelAnimationStates.SWIM),
+  FLY(EasyModelAnimationStates.FLY);
+
+  private static final EasyModelAnimationState[] VALUES = values();
 
   private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+  private final int apiState;
+
+  EasyModelAnimationState(int apiState) {
+    this.apiState = apiState;
+  }
 
   public static EasyModelAnimationState bySerializedName(String serializedName) {
     if (serializedName == null) {
@@ -38,7 +47,7 @@ public enum EasyModelAnimationState {
     }
 
     String normalizedName = serializedName.toLowerCase(Locale.ROOT);
-    for (EasyModelAnimationState animationState : values()) {
+    for (EasyModelAnimationState animationState : VALUES) {
       if (animationState.getSerializedName().equals(normalizedName)) {
         return animationState;
       }
@@ -48,14 +57,13 @@ public enum EasyModelAnimationState {
   }
 
   public static EasyModelAnimationState byApiState(int animationState) {
-    return switch (animationState) {
-      case EasyModelAnimationStates.IDLE -> IDLE;
-      case EasyModelAnimationStates.WALK -> WALK;
-      case EasyModelAnimationStates.RUN -> RUN;
-      case EasyModelAnimationStates.HURT -> HURT;
-      case EasyModelAnimationStates.DEATH -> DEATH;
-      default -> AUTO;
-    };
+    for (EasyModelAnimationState state : VALUES) {
+      if (state.apiState == animationState) {
+        return state;
+      }
+    }
+
+    return AUTO;
   }
 
   public String getSerializedName() {
@@ -63,13 +71,6 @@ public enum EasyModelAnimationState {
   }
 
   public int getApiState() {
-    return switch (this) {
-      case IDLE -> EasyModelAnimationStates.IDLE;
-      case WALK -> EasyModelAnimationStates.WALK;
-      case RUN -> EasyModelAnimationStates.RUN;
-      case HURT -> EasyModelAnimationStates.HURT;
-      case DEATH -> EasyModelAnimationStates.DEATH;
-      case AUTO -> EasyModelAnimationStates.AUTO;
-    };
+    return this.apiState;
   }
 }

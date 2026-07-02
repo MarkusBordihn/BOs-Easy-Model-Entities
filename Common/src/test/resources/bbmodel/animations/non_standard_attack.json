@@ -1,0 +1,22 @@
+[
+  {
+    "uuid": "a-attack",
+    "name": "attack",
+    "loop": "loop",
+    "length": 1.0,
+    "animators": {
+      "g": {
+        "name": "Body",
+        "type": "bone",
+        "keyframes": [
+          {
+            "channel": "rotation",
+            "data_points": [{ "x": 10, "y": 0, "z": 0 }],
+            "time": 0,
+            "interpolation": "linear"
+          }
+        ]
+      }
+    }
+  }
+]

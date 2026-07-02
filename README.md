@@ -43,6 +43,9 @@ or mod-integrated renderable objects with much less boilerplate.
   movement, behavior, rendering, texture, and animation from JSON.
 - **Automatic animation**: Basic idle, walk, wing, tail, and random-idle
   behavior is available out of the box.
+- **Standard keyframe clips**: Blockbench animations named `idle`, `walk`,
+  `swim`, or `fly` are played automatically; other clips are ignored to keep
+  the runtime simple (no state machines, no Molang).
 - **Developer API**: Mods can use render delegates, custom part animators, and
   runtime profile data without depending on internal renderer classes.
 - **Diagnostics and demo profiles**: Commands help list, validate, debug, spawn,
@@ -72,6 +75,7 @@ Useful diagnostic commands:
 /easy_model_entities list_profiles
 /easy_model_entities validate_profiles
 /easy_model_entities debug_profile easy_model_entities_examples:entity/little_explorer
+/easy_model_entities set_animation @e[distance=..8] walk
 ```
 
 More demo commands and explanations are available in the
