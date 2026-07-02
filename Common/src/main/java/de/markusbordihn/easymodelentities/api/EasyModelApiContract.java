@@ -22,6 +22,7 @@ package de.markusbordihn.easymodelentities.api;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnosticSeverity;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
 import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
@@ -121,6 +122,10 @@ public final class EasyModelApiContract {
     return Arrays.stream(ModelAnimationMode.values())
         .map(ModelAnimationMode::getSerializedName)
         .toList();
+  }
+
+  public static List<String> animationClips() {
+    return ModelAnimationClips.STANDARD;
   }
 
   public static List<String> gaits() {

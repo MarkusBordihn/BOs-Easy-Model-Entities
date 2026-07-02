@@ -34,6 +34,8 @@ class EasyModelAnimationStateTest {
     assertEquals("run", EasyModelAnimationState.RUN.getSerializedName());
     assertEquals("hurt", EasyModelAnimationState.HURT.getSerializedName());
     assertEquals("death", EasyModelAnimationState.DEATH.getSerializedName());
+    assertEquals("swim", EasyModelAnimationState.SWIM.getSerializedName());
+    assertEquals("fly", EasyModelAnimationState.FLY.getSerializedName());
   }
 
   @Test
@@ -64,6 +66,14 @@ class EasyModelAnimationStateTest {
     assertEquals(
         EasyModelAnimationState.DEATH,
         EasyModelAnimationState.byApiState(EasyModelAnimationStates.DEATH));
+    assertEquals(
+        EasyModelAnimationState.SWIM,
+        EasyModelAnimationState.byApiState(EasyModelAnimationStates.SWIM));
+    assertEquals(
+        EasyModelAnimationState.FLY,
+        EasyModelAnimationState.byApiState(EasyModelAnimationStates.FLY));
     assertEquals(EasyModelAnimationStates.WALK, EasyModelAnimationState.WALK.getApiState());
+    assertEquals(EasyModelAnimationStates.SWIM, EasyModelAnimationState.SWIM.getApiState());
+    assertEquals(EasyModelAnimationStates.FLY, EasyModelAnimationState.FLY.getApiState());
   }
 }

@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.item;
 
 import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -53,6 +54,20 @@ public final class EasyModelItemTooltip {
                 value.modelType().getSerializedName(),
                 value.bodyType().getSerializedName())
             .withStyle(ChatFormatting.GRAY));
+    if (value.modelType() == ModelType.BLOCK_ENTITY) {
+      tooltip.add(
+          Component.translatable(
+                  "tooltip.easy_model_entities.preset",
+                  value.blockEntityPresetType().getSerializedName())
+              .withStyle(ChatFormatting.GRAY));
+    } else {
+      tooltip.add(
+          Component.translatable(
+                  "tooltip.easy_model_entities.behavior",
+                  value.behavior().mode().getSerializedName(),
+                  value.movementType().getSerializedName())
+              .withStyle(ChatFormatting.GRAY));
+    }
     tooltip.add(
         Component.translatable(
                 "tooltip.easy_model_entities.size", format(value.width()), format(value.height()))

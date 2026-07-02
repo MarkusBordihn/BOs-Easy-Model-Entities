@@ -19,8 +19,10 @@
 
 package de.markusbordihn.easymodelentities.data.model.decoder;
 
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
@@ -30,12 +32,14 @@ public record DecodedModel(
     int textureHeight,
     List<DecodedModelPart> rootParts,
     List<DecodedTexture> textures,
+    Map<String, ModelAnimationClip> animations,
     List<ModelRenderProfileValidationIssue> validationIssues) {
 
   public DecodedModel {
     Objects.requireNonNull(modelId, "modelId");
     rootParts = List.copyOf(Objects.requireNonNull(rootParts, "rootParts"));
     textures = List.copyOf(Objects.requireNonNull(textures, "textures"));
+    animations = Map.copyOf(Objects.requireNonNull(animations, "animations"));
     validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
   }
 
@@ -44,8 +48,18 @@ public record DecodedModel(
       int textureWidth,
       int textureHeight,
       List<DecodedModelPart> rootParts,
+      List<DecodedTexture> textures,
       List<ModelRenderProfileValidationIssue> validationIssues) {
-    this(modelId, textureWidth, textureHeight, rootParts, List.of(), validationIssues);
+    this(modelId, textureWidth, textureHeight, rootParts, textures, Map.of(), validationIssues);
+  }
+
+  public DecodedModel(
+      ResourceLocation modelId,
+      int textureWidth,
+      int textureHeight,
+      List<DecodedModelPart> rootParts,
+      List<ModelRenderProfileValidationIssue> validationIssues) {
+    this(modelId, textureWidth, textureHeight, rootParts, List.of(), Map.of(), validationIssues);
   }
 
   public int boneCount() {

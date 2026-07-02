@@ -36,8 +36,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility;
 import de.markusbordihn.easymodelentities.data.model.FaceUv;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationBoneTrack;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationKeyframe;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
@@ -128,6 +133,208 @@ public abstract class AbstractBbModelParser {
       throw new EasyModelDecodeException(
           "Animation count exceeds the reserved limit of " + MAX_ANIMATION_COUNT + ".");
     }
+  }
+
+  private static Map<String, ModelAnimationClip> parseAnimations(
+      JsonObject root,
+      Map<String, RawGroup> groupsByUuid,
+      List<ModelRenderProfileValidationIssue> issues) {
+    JsonElement animationsElement = root.get("animations");
+    if (animationsElement == null || !animationsElement.isJsonArray()) {
+      return Map.of();
+    }
+
+    Map<String, ModelAnimationClip> clips = new LinkedHashMap<>();
+    List<String> ignoredNames = new ArrayList<>();
+    for (JsonElement animationElement : animationsElement.getAsJsonArray()) {
+      if (!animationElement.isJsonObject()) {
+        continue;
+      }
+      JsonObject animationObject = animationElement.getAsJsonObject();
+      String clipName;
+      try {
+        clipName = ModelAnimationClips.normalize(optionalString(animationObject, "name", ""));
+      } catch (EasyModelDecodeException exception) {
+        continue;
+      }
+      if (clipName.isEmpty()) {
+        continue;
+      }
+      if (!ModelAnimationClips.STANDARD_NAMES.contains(clipName)) {
+        ignoredNames.add(clipName);
+        continue;
+      }
+      try {
+        ModelAnimationClip clip = parseAnimationClip(clipName, animationObject, groupsByUuid);
+        if (clip != null) {
+          clips.put(clipName, clip);
+        }
+      } catch (EasyModelDecodeException exception) {
+        issues.add(
+            warning(
+                "animations",
+                "Ignoring animation clip " + clipName + ": " + exception.getMessage()));
+      }
+    }
+
+    if (!ignoredNames.isEmpty()) {
+      issues.add(
+          warning(
+              "animations",
+              "Ignoring keyframe animation(s) "
+                  + String.join(", ", ignoredNames)
+                  + ": only the standard clips "
+                  + String.join(", ", ModelAnimationClips.STANDARD)
+                  + " are played."));
+    }
+
+    return clips;
+  }
+
+  private static ModelAnimationClip parseAnimationClip(
+      String clipName, JsonObject animationObject, Map<String, RawGroup> groupsByUuid)
+      throws EasyModelDecodeException {
+    boolean loop = "loop".equals(optionalString(animationObject, "loop", "once"));
+    float length = optionalNonNegativeFloat(animationObject, "length", 0.0f);
+    JsonElement animatorsElement = animationObject.get("animators");
+    if (animatorsElement == null || !animatorsElement.isJsonObject()) {
+      return null;
+    }
+
+    Map<String, ModelAnimationBoneTrack> boneTracks = new LinkedHashMap<>();
+    for (Map.Entry<String, JsonElement> animatorEntry :
+        animatorsElement.getAsJsonObject().entrySet()) {
+      if (!animatorEntry.getValue().isJsonObject()) {
+        continue;
+      }
+      JsonObject animatorObject = animatorEntry.getValue().getAsJsonObject();
+      if (!"bone".equals(optionalString(animatorObject, "type", "bone"))) {
+        continue;
+      }
+      RawGroup group = groupsByUuid.get(animatorEntry.getKey());
+      String boneName =
+          ModelAnimationClips.normalize(
+              group != null ? group.name() : optionalString(animatorObject, "name", ""));
+      if (boneName.isEmpty()) {
+        continue;
+      }
+      ModelAnimationBoneTrack boneTrack = parseBoneTrack(animatorObject);
+      if (boneTrack != null && !boneTrack.isEmpty()) {
+        boneTracks.put(boneName, boneTrack);
+      }
+    }
+
+    if (boneTracks.isEmpty()) {
+      return null;
+    }
+    if (length <= 0.0f) {
+      length =
+          boneTracks.values().stream()
+              .map(ModelAnimationBoneTrack::lastKeyframeTime)
+              .reduce(0.0f, Math::max);
+    }
+    return new ModelAnimationClip(clipName, length, loop, boneTracks);
+  }
+
+  private static ModelAnimationBoneTrack parseBoneTrack(JsonObject animatorObject)
+      throws EasyModelDecodeException {
+    JsonElement keyframesElement = animatorObject.get("keyframes");
+    if (keyframesElement == null || !keyframesElement.isJsonArray()) {
+      return null;
+    }
+
+    List<ModelAnimationKeyframe> rotationKeyframes = new ArrayList<>();
+    List<ModelAnimationKeyframe> positionKeyframes = new ArrayList<>();
+    for (JsonElement keyframeElement : keyframesElement.getAsJsonArray()) {
+      JsonObject keyframeObject = requireObjectElement(keyframeElement, "keyframes");
+      String channel = optionalString(keyframeObject, "channel", "");
+      boolean rotationChannel = "rotation".equals(channel);
+      if (!rotationChannel && !"position".equals(channel)) {
+        continue;
+      }
+      float time = optionalNonNegativeFloat(keyframeObject, "time", 0.0f);
+      boolean step = "step".equals(optionalString(keyframeObject, "interpolation", "linear"));
+      Vec3f value = keyframeDataPoint(keyframeObject, rotationChannel);
+      (rotationChannel ? rotationKeyframes : positionKeyframes)
+          .add(new ModelAnimationKeyframe(time, value, step));
+    }
+
+    return new ModelAnimationBoneTrack(
+        sortedKeyframes(rotationKeyframes), sortedKeyframes(positionKeyframes));
+  }
+
+  private static List<ModelAnimationKeyframe> sortedKeyframes(
+      List<ModelAnimationKeyframe> keyframes) {
+    keyframes.sort((left, right) -> Float.compare(left.time(), right.time()));
+    return keyframes;
+  }
+
+  private static Vec3f keyframeDataPoint(JsonObject keyframeObject, boolean rotationChannel)
+      throws EasyModelDecodeException {
+    JsonElement dataPointsElement = keyframeObject.get("data_points");
+    if (dataPointsElement == null
+        || !dataPointsElement.isJsonArray()
+        || dataPointsElement.getAsJsonArray().isEmpty()) {
+      throw new EasyModelDecodeException("Keyframe is missing data_points.");
+    }
+    JsonElement dataPointElement = dataPointsElement.getAsJsonArray().get(0);
+    if (!dataPointElement.isJsonObject()) {
+      throw new EasyModelDecodeException("Keyframe data_points must contain objects.");
+    }
+    JsonObject dataPoint = dataPointElement.getAsJsonObject();
+    float x = keyframeAxisValue(dataPoint, "x");
+    float y = keyframeAxisValue(dataPoint, "y");
+    float z = keyframeAxisValue(dataPoint, "z");
+    if (rotationChannel) {
+      return new Vec3f(
+          -(float) Math.toRadians(x), -(float) Math.toRadians(y), (float) Math.toRadians(z));
+    }
+    return new Vec3f(-x, -y, z);
+  }
+
+  private static float keyframeAxisValue(JsonObject dataPoint, String axis)
+      throws EasyModelDecodeException {
+    JsonElement value = dataPoint.get(axis);
+    if (value == null || value.isJsonNull()) {
+      return 0.0f;
+    }
+    if (value.isJsonPrimitive()) {
+      JsonPrimitive primitive = value.getAsJsonPrimitive();
+      if (primitive.isNumber()) {
+        float floatValue = primitive.getAsFloat();
+        validateModelNumber(floatValue, "data_points." + axis);
+        return floatValue;
+      }
+      if (primitive.isString()) {
+        String stringValue = primitive.getAsString().trim();
+        if (stringValue.isEmpty()) {
+          return 0.0f;
+        }
+        try {
+          float floatValue = Float.parseFloat(stringValue);
+          validateModelNumber(floatValue, "data_points." + axis);
+          return floatValue;
+        } catch (NumberFormatException exception) {
+          throw new EasyModelDecodeException(
+              "Keyframe expression \"" + stringValue + "\" is not supported.");
+        }
+      }
+    }
+    throw new EasyModelDecodeException("Keyframe axis " + axis + " must be a number.");
+  }
+
+  private static float optionalNonNegativeFloat(
+      JsonObject jsonObject, String field, float defaultValue) throws EasyModelDecodeException {
+    JsonElement value = jsonObject.get(field);
+    if (value == null || value.isJsonNull()) {
+      return defaultValue;
+    }
+    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
+      throw new EasyModelDecodeException("Field " + field + " must be a number.");
+    }
+    float floatValue = value.getAsFloat();
+    validateModelNumber(floatValue, field);
+    return Math.max(floatValue, 0.0f);
   }
 
   private static void validateSourceBudgets(int boneCount, int cubeCount)
@@ -355,33 +562,37 @@ public abstract class AbstractBbModelParser {
   }
 
   private static void addSoftBudgetWarnings(
-      DecodedModel decodedModel, List<ModelRenderProfileValidationIssue> issues) {
-    if (decodedModel.boneCount() > SOFT_BONE_COUNT) {
+      List<DecodedModelPart> rootParts, List<ModelRenderProfileValidationIssue> issues) {
+    int boneCount = rootParts.stream().mapToInt(DecodedModelPart::partCount).sum();
+    if (boneCount > SOFT_BONE_COUNT) {
       issues.add(
           warning(
               "model",
               "Bone count "
-                  + decodedModel.boneCount()
+                  + boneCount
                   + " is above the recommended limit of "
                   + SOFT_BONE_COUNT
                   + "."));
     }
-    if (decodedModel.cubeCount() > SOFT_CUBE_COUNT) {
+    int cubeCount = rootParts.stream().mapToInt(DecodedModelPart::cubeCount).sum();
+    if (cubeCount > SOFT_CUBE_COUNT) {
       issues.add(
           warning(
               "model",
               "Cube count "
-                  + decodedModel.cubeCount()
+                  + cubeCount
                   + " is above the recommended limit of "
                   + SOFT_CUBE_COUNT
                   + "."));
     }
-    if (decodedModel.hierarchyDepth() > SOFT_HIERARCHY_DEPTH) {
+    int hierarchyDepth =
+        rootParts.stream().mapToInt(DecodedModelPart::hierarchyDepth).max().orElse(0);
+    if (hierarchyDepth > SOFT_HIERARCHY_DEPTH) {
       issues.add(
           warning(
               "model",
               "Hierarchy depth "
-                  + decodedModel.hierarchyDepth()
+                  + hierarchyDepth
                   + " is above the recommended limit of "
                   + SOFT_HIERARCHY_DEPTH
                   + "."));
@@ -614,6 +825,7 @@ public abstract class AbstractBbModelParser {
 
     Map<String, RawElement> elementsByUuid = parseElements(elementsArray, issues);
     Map<String, RawGroup> groupsByUuid = parseGroups(groupsArray);
+    Map<String, ModelAnimationClip> animations = parseAnimations(root, groupsByUuid, issues);
     List<DecodedModelPart> rootParts = new ArrayList<>();
     for (JsonElement outlinerElement : outlinerArray) {
       if (!outlinerElement.isJsonObject()) {
@@ -630,10 +842,9 @@ public abstract class AbstractBbModelParser {
     }
 
     List<DecodedTexture> textures = parseTextures(root);
-    DecodedModel decodedModel =
-        new DecodedModel(modelId, resolution[0], resolution[1], rootParts, textures, issues);
-    addSoftBudgetWarnings(decodedModel, issues);
-    return new DecodedModel(modelId, resolution[0], resolution[1], rootParts, textures, issues);
+    addSoftBudgetWarnings(rootParts, issues);
+    return new DecodedModel(
+        modelId, resolution[0], resolution[1], rootParts, textures, animations, issues);
   }
 
   private Map<String, RawElement> parseElements(

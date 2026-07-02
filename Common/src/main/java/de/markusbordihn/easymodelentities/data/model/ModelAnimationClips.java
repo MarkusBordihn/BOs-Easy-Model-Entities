@@ -17,18 +17,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.api;
+package de.markusbordihn.easymodelentities.data.model;
 
-public final class EasyModelAnimationStates {
+import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelPart;
+import java.util.List;
+import java.util.Set;
 
-  public static final int AUTO = 0;
-  public static final int IDLE = 1;
-  public static final int WALK = 2;
-  public static final int RUN = 3;
-  public static final int HURT = 4;
-  public static final int DEATH = 5;
-  public static final int SWIM = 6;
-  public static final int FLY = 7;
+public final class ModelAnimationClips {
 
-  private EasyModelAnimationStates() {}
+  public static final String IDLE = "idle";
+  public static final String WALK = "walk";
+  public static final String SWIM = "swim";
+  public static final String FLY = "fly";
+
+  public static final List<String> STANDARD = List.of(IDLE, WALK, SWIM, FLY);
+  public static final Set<String> STANDARD_NAMES = Set.copyOf(STANDARD);
+
+  private ModelAnimationClips() {}
+
+  public static String normalize(String name) {
+    return name == null ? "" : DecodedModelPart.normalizeName(name);
+  }
 }

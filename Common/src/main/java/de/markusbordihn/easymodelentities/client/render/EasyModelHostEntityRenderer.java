@@ -28,7 +28,9 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 
 public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
@@ -37,6 +39,12 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
   public EasyModelHostEntityRenderer(EntityRendererProvider.Context context) {
     super(context);
     this.shadowRadius = 0.3f;
+  }
+
+  private static float bodyYaw(Entity entity, float entityYaw, float partialTick) {
+    return entity instanceof LivingEntity livingEntity
+        ? Mth.rotLerp(partialTick, livingEntity.yBodyRotO, livingEntity.yBodyRot)
+        : Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot());
   }
 
   @Override
@@ -50,7 +58,13 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
     EasyModelRenderState renderState = resolveRenderState(entity);
     this.shadowRadius = renderState.shadowRadius();
     EasyModelEntityRenderBackend.render(
-        entity, renderState, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        entity,
+        renderState,
+        bodyYaw(entity, entityYaw, partialTick),
+        partialTick,
+        poseStack,
+        bufferSource,
+        packedLight);
     super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
   }
 
