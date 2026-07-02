@@ -35,9 +35,9 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 
-public final class FabricEasyModelEntityTypes implements EasyModelHostEntityTypeProvider {
+public final class EasyModelEntityTypes implements EasyModelHostEntityTypeProvider {
 
-  public static final FabricEasyModelEntityTypes INSTANCE = new FabricEasyModelEntityTypes();
+  public static final EasyModelEntityTypes INSTANCE = new EasyModelEntityTypes();
 
   private static final EntityType<EasyModelGroundEntity> GROUND_ENTITY =
       Registry.register(
@@ -81,7 +81,7 @@ public final class FabricEasyModelEntityTypes implements EasyModelHostEntityType
                   ResourceKey.create(
                       Registries.ENTITY_TYPE, ModelEntityTypeIds.AMPHIBIOUS_ENTITY)));
 
-  private FabricEasyModelEntityTypes() {}
+  private EasyModelEntityTypes() {}
 
   public static void register() {
     FabricDefaultAttributeRegistry.register(GROUND_ENTITY, EasyModelHostEntity.createAttributes());

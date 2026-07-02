@@ -10,10 +10,11 @@
  * The above copyright notice and this permission notice shall be included in all copies or
  * substantial portions of the Software.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+ * NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package de.markusbordihn.easymodelentities.client.render;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -195,6 +197,26 @@ class EasyModelBakedModelRendererTest {
     assertEquals(expectedX, xValues.get(index), 0.0001f);
     assertEquals(expectedY, yValues.get(index), 0.0001f);
     assertEquals(expectedZ, zValues.get(index), 0.0001f);
+  }
+
+  private static BakedModel singleCubeModel() {
+    return new BakedModel(
+        Identifier.fromNamespaceAndPath("example", "transform_part"),
+        64,
+        64,
+        List.of(
+            new BakedModelPart(
+                "root",
+                Vec3f.ZERO,
+                Vec3f.ZERO,
+                List.of(
+                    new BakedModelCube(
+                        new int[] {0, 0},
+                        faceUvs(),
+                        Vec3f.ZERO,
+                        new Vec3f(1.0f, 1.0f, 1.0f),
+                        false)),
+                List.of())));
   }
 
   @Test
@@ -579,6 +601,106 @@ class EasyModelBakedModelRendererTest {
         .addVertex(replacePoseCaptor.capture(), anyFloat(), anyFloat(), anyFloat());
     assertEquals(Math.cos(1.65f), addPoseCaptor.getAllValues().get(0).m11(), 0.0001f);
     assertEquals(Math.cos(0.25f), replacePoseCaptor.getValue().m11(), 0.0001f);
+  }
+
+  @Test
+  void animatorOffsetTranslatesPart() {
+    BakedModel bakedModel = singleCubeModel();
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    ArgumentCaptor<Matrix4f> poseCaptor = ArgumentCaptor.forClass(Matrix4f.class);
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        0.0f,
+        context -> EasyModelPartTransform.NONE.withOffset(16.0f, 32.0f, 48.0f),
+        EasyModelPartAnimationMode.ADD,
+        new PoseStack(),
+        vertexConsumer,
+        0);
+
+    verify(vertexConsumer, times(24))
+        .addVertex(poseCaptor.capture(), anyFloat(), anyFloat(), anyFloat());
+    Matrix4f pose = poseCaptor.getAllValues().get(0);
+    assertEquals(1.0f, pose.m30(), 0.0001f);
+    assertEquals(2.0f, pose.m31(), 0.0001f);
+    assertEquals(3.0f, pose.m32(), 0.0001f);
+  }
+
+  @Test
+  void animatorScaleScalesPart() {
+    BakedModel bakedModel = singleCubeModel();
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    ArgumentCaptor<Matrix4f> poseCaptor = ArgumentCaptor.forClass(Matrix4f.class);
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        0.0f,
+        context -> EasyModelPartTransform.NONE.withScale(2.0f),
+        EasyModelPartAnimationMode.ADD,
+        new PoseStack(),
+        vertexConsumer,
+        0);
+
+    verify(vertexConsumer, times(24))
+        .addVertex(poseCaptor.capture(), anyFloat(), anyFloat(), anyFloat());
+    Matrix4f pose = poseCaptor.getAllValues().get(0);
+    assertEquals(2.0f, pose.m00(), 0.0001f);
+    assertEquals(2.0f, pose.m11(), 0.0001f);
+    assertEquals(2.0f, pose.m22(), 0.0001f);
+  }
+
+  @Test
+  void nonFiniteAnimatorValuesAreIgnored() {
+    BakedModel bakedModel = singleCubeModel();
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    ArgumentCaptor<Matrix4f> poseCaptor = ArgumentCaptor.forClass(Matrix4f.class);
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        0.0f,
+        context ->
+            EasyModelPartTransform.NONE
+                .withScale(Float.NaN)
+                .withOffset(Float.POSITIVE_INFINITY, 0.0f, 0.0f),
+        EasyModelPartAnimationMode.ADD,
+        new PoseStack(),
+        vertexConsumer,
+        0);
+
+    verify(vertexConsumer, times(24))
+        .addVertex(poseCaptor.capture(), anyFloat(), anyFloat(), anyFloat());
+    Matrix4f pose = poseCaptor.getAllValues().get(0);
+    assertEquals(1.0f, pose.m00(), 0.0001f);
+    assertEquals(0.0f, pose.m30(), 0.0001f);
+  }
+
+  @Test
+  void invisibleAnimatorSuppressesPart() {
+    BakedModel bakedModel = singleCubeModel();
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        0.0f,
+        context -> EasyModelPartTransform.NONE.withVisible(false),
+        EasyModelPartAnimationMode.ADD,
+        new PoseStack(),
+        vertexConsumer,
+        0);
+
+    verify(vertexConsumer, never()).addVertex((Matrix4f) any(), anyFloat(), anyFloat(), anyFloat());
   }
 
   @Test

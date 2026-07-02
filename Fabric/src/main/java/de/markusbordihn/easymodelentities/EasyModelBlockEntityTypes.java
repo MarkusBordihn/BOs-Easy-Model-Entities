@@ -34,10 +34,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
-public final class FabricEasyModelBlockEntityTypes implements EasyModelHostBlockEntityTypeProvider {
+public final class EasyModelBlockEntityTypes implements EasyModelHostBlockEntityTypeProvider {
 
-  public static final FabricEasyModelBlockEntityTypes INSTANCE =
-      new FabricEasyModelBlockEntityTypes();
+  public static final EasyModelBlockEntityTypes INSTANCE = new EasyModelBlockEntityTypes();
 
   public static final Block STATIC_BLOCK =
       Registry.register(
@@ -89,7 +88,7 @@ public final class FabricEasyModelBlockEntityTypes implements EasyModelHostBlock
                       EasyModelRandomlyAnimatedBlockEntity::new, ANIMATED_RANDOMLY_BLOCK)
                   .build());
 
-  private FabricEasyModelBlockEntityTypes() {}
+  private EasyModelBlockEntityTypes() {}
 
   public static void register() {}
 

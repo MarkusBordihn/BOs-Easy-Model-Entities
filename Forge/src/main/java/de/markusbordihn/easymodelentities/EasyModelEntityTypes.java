@@ -40,9 +40,9 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 @EventBusSubscriber(modid = Constants.MOD_ID, bus = EventBusSubscriber.Bus.FORGE)
-public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeProvider {
+public final class EasyModelEntityTypes implements EasyModelHostEntityTypeProvider {
 
-  public static final ForgeEasyModelEntityTypes INSTANCE = new ForgeEasyModelEntityTypes();
+  public static final EasyModelEntityTypes INSTANCE = new EasyModelEntityTypes();
 
   private static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
       DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, Constants.MOD_ID);
@@ -95,7 +95,7 @@ public final class ForgeEasyModelEntityTypes implements EasyModelHostEntityTypeP
                       ResourceKey.create(
                           Registries.ENTITY_TYPE, ModelEntityTypeIds.AMPHIBIOUS_ENTITY)));
 
-  private ForgeEasyModelEntityTypes() {}
+  private EasyModelEntityTypes() {}
 
   public static void register(BusGroup modBusGroup) {
     ENTITY_TYPES.register(modBusGroup);

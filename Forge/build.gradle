@@ -18,6 +18,8 @@ println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getPro
 minecraft {
   mappings channel: 'official', version: "${project.minecraft_version}"
 
+  accessTransformers.from files("src/main/resources/META-INF/accesstransformer.cfg")
+
   // Run configurations
   runs {
 

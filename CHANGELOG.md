@@ -5,6 +5,14 @@
 This change log includes the summarized changes.
 For the full changelog, please go to the [GitHub History][history] instead.
 
+### 1.4.0 (beta)
+
+- Added entity and block entity spawn items for all example profiles.
+- Added offset, rotation, and scale to the `ModelPart` definition to allow complex model
+  definitions.
+- Improved api support for mod integrations.
+- Code refactoring and cleanup to improve maintainability and readability.
+
 ### 1.3.0 (beta)
 
 - Added a stable API for mod integrations that lists all limits, types, and status codes.

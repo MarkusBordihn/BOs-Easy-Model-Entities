@@ -72,6 +72,8 @@ public class EasyModelEntities {
     ENTITY_DATA_SERIALIZERS.register(modEventBus);
     NeoForgeEasyModelEntityTypes.register(modEventBus);
     NeoForgeEasyModelBlockEntityTypes.register(modEventBus);
+    EasyModelItems.register(modEventBus);
+    EasyModelCreativeModeTabs.register(modEventBus);
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(NeoForgeEasyModelEntityTypes.INSTANCE));
     EasyModelServices.setBlockEntityTypeProvider(NeoForgeEasyModelBlockEntityTypes.INSTANCE);

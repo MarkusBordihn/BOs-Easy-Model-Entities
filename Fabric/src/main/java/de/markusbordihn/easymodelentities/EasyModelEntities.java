@@ -51,15 +51,17 @@ public class EasyModelEntities implements ModInitializer {
     FabricEntityDataRegistry.register(
         Identifier.fromNamespaceAndPath(Constants.MOD_ID, "animation_state"),
         EasyModelEntityDataSerializers.ANIMATION_STATE);
-    FabricEasyModelEntityTypes.register();
-    FabricEasyModelBlockEntityTypes.register();
+    EasyModelEntityTypes.register();
+    EasyModelBlockEntityTypes.register();
+    EasyModelItems.register();
+    EasyModelCreativeModeTabs.register();
     EasyModelServices.setEntityFactory(
-        new EasyModelHostEntityFactory(FabricEasyModelEntityTypes.INSTANCE));
-    EasyModelServices.setBlockEntityTypeProvider(FabricEasyModelBlockEntityTypes.INSTANCE);
+        new EasyModelHostEntityFactory(EasyModelEntityTypes.INSTANCE));
+    EasyModelServices.setBlockEntityTypeProvider(EasyModelBlockEntityTypes.INSTANCE);
     EasyModelServices.setDiagnosticsService(new DefaultEasyModelDiagnosticsService());
 
     ResourceManagerHelper.get(PackType.SERVER_DATA)
-        .registerReloadListener(new FabricEasyModelProfileReloadListener());
+        .registerReloadListener(new EasyModelProfileReloadListenerWrapper());
     CommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess, environment) -> EasyModelEntitiesCommand.register(dispatcher));
   }

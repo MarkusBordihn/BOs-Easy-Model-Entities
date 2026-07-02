@@ -1,1 +1,5 @@
 accessWidener	v2	official
+
+# Opens the private special-model-renderer type registry so mods can register custom
+# SpecialModelRenderer.Unbaked types (Fabric API does not expose one for this yet).
+accessible field net/minecraft/client/renderer/special/SpecialModelRenderers ID_MAPPER Lnet/minecraft/util/ExtraCodecs$LateBoundIdMapper;

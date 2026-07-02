@@ -55,4 +55,12 @@ public class HostEntityGameTest {
   public void attributesAreAppliedFromProfile(GameTestHelper helper) {
     HostEntityGameTestCases.attributesAreAppliedFromProfile(helper);
   }
+
+  public void entitySpawnItemSpawnsHostEntity(GameTestHelper helper) {
+    HostEntityGameTestCases.entitySpawnItemSpawnsHostEntity(helper);
+  }
+
+  public void blockSpawnItemPlacesHostBlock(GameTestHelper helper) {
+    HostEntityGameTestCases.blockSpawnItemPlacesHostBlock(helper);
+  }
 }
