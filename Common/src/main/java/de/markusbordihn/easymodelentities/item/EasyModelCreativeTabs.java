@@ -20,9 +20,9 @@
 package de.markusbordihn.easymodelentities.item;
 
 import de.markusbordihn.easymodelentities.Constants;
-import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
-import de.markusbordihn.easymodelentities.spawn.EasyModelSpawnSupport;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.resources.ResourceLocation;
@@ -39,27 +39,23 @@ public final class EasyModelCreativeTabs {
   private EasyModelCreativeTabs() {}
 
   public static List<ItemStack> entityTabStacks() {
-    Item item = EasyModelEntitiesItems.entitySpawnItem();
-    if (item == null) {
-      return List.of();
-    }
-    return EasyModelEntitiesApi.listProfiles().stream()
-        .filter(profile -> profile.modelType() == ModelType.ENTITY)
-        .sorted(Comparator.comparing(profile -> profile.id().toString()))
-        .map(profile -> EasyModelEntitiesItems.forProfile(item, profile.id()))
-        .toList();
+    return spawnStacks(EasyModelEntitiesItems.entitySpawnItem(), ModelType.ENTITY);
   }
 
   public static List<ItemStack> blockTabStacks() {
-    Item item = EasyModelEntitiesItems.blockSpawnItem();
+    return spawnStacks(EasyModelEntitiesItems.blockSpawnItem(), ModelType.BLOCK_ENTITY);
+  }
+
+  private static List<ItemStack> spawnStacks(Item item, ModelType modelType) {
     if (item == null) {
       return List.of();
     }
-    return EasyModelEntitiesApi.listProfiles().stream()
-        .filter(profile -> profile.modelType() == ModelType.BLOCK_ENTITY)
-        .filter(profile -> EasyModelSpawnSupport.hostBlockId(profile).isPresent())
-        .sorted(Comparator.comparing(profile -> profile.id().toString()))
-        .map(profile -> EasyModelEntitiesItems.forProfile(item, profile.id()))
+    return EasyModelServices.renderProfileService().getRenderProfiles().stream()
+        .filter(EasyModelRenderProfile::isActive)
+        .map(EasyModelRenderProfile::id)
+        .filter(id -> ModelType.fromProfileId(id) == modelType)
+        .sorted(Comparator.comparing(ResourceLocation::toString))
+        .map(id -> EasyModelEntitiesItems.forProfile(item, id))
         .toList();
   }
 }

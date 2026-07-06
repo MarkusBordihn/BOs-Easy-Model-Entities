@@ -11,13 +11,13 @@
         "keyframes": [
           {
             "channel": "rotation",
-            "data_points": [{ "x": 0, "y": 0, "z": 0 }],
+            "data_points": [{"x": 0, "y": 0, "z": 0}],
             "time": 0,
             "interpolation": "linear"
           },
           {
             "channel": "rotation",
-            "data_points": [{ "x": 10, "y": 0, "z": 0 }],
+            "data_points": [{"x": 10, "y": 0, "z": 0}],
             "time": 1.5,
             "interpolation": "linear"
           }

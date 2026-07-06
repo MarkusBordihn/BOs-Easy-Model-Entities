@@ -5,6 +5,22 @@
 This change log includes the summarized changes.
 For the full changelog, please go to the [GitHub History][history] instead.
 
+### 1.5.0
+
+- Fixed the entity and block-entity creative tabs being empty on dedicated clients by building them
+  from the client render profiles instead of the server-only profile registry.
+- Fixed the spawn item icons rendering nothing on dedicated clients by falling back to the client
+  render profile when no server profile is available.
+- Added a stateless render-by-profile-id API with `scale`, displayed bounds, and body type lookups
+  for mod integrations.
+- Added `EasyModelEntitiesClientApi.listRenderableProfileIds()` so integrations such as Easy NPC can
+  list and preview available models on a dedicated client without server profiles.
+- Changed the example render profiles to align their IDs with the server profile IDs
+  (`render_profiles/entity/<id>` and `render_profiles/block_entity/<id>`), so the model type is
+  derived from the profile ID prefix on the client.
+- Bumped `schema_version` to `0.2.0` and removed the server profile `client.render_profile`.
+- Code refactoring and cleanup to improve maintainability and readability.
+
 ### 1.4.0 (beta)
 
 - Fixed choppy body rotation of walking host entities by using the interpolated body rotation.

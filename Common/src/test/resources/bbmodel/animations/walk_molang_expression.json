@@ -11,7 +11,7 @@
         "keyframes": [
           {
             "channel": "rotation",
-            "data_points": [{ "x": "math.sin(query.anim_time)", "y": 0, "z": 0 }],
+            "data_points": [{"x": "math.sin(query.anim_time)", "y": 0, "z": 0}],
             "time": 0,
             "interpolation": "linear"
           }

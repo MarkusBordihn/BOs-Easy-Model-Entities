@@ -53,35 +53,33 @@ class BundledDemoProfilesTest {
 
   private static final List<Demo> DEMOS =
       List.of(
-          new Demo("entity/training_dummy", "training_dummy", ModelBodyType.STATIC),
-          new Demo("entity/little_explorer", "little_explorer", ModelBodyType.BIPED),
-          new Demo("entity/stone_crawler", "stone_crawler", ModelBodyType.QUADRUPED),
-          new Demo("entity/stone_turtle", "stone_turtle", ModelBodyType.AMPHIBIOUS),
-          new Demo("entity/coral_drifter", "coral_drifter", ModelBodyType.AQUATIC),
-          new Demo("entity/dawn_sparrow", "dawn_sparrow", ModelBodyType.WINGED),
-          new Demo("entity/skybound_wanderer", "skybound_wanderer", ModelBodyType.WINGED_HUMANOID),
-          new Demo("entity/dust_skitter", "dust_skitter", ModelBodyType.ARTHROPOD),
-          new Demo("entity/rune_cube", "rune_cube", ModelBodyType.CUBOID),
-          new Demo("entity/wisp_lantern", "wisp_lantern", ModelBodyType.FLOATING),
-          new Demo("entity/orientation_test", "orientation_test", ModelBodyType.STATIC),
-          new Demo("entity/disguised_chestling", "disguised_chestling", ModelBodyType.CUBOID),
-          new Demo("entity/still_sentinel", "still_sentinel", ModelBodyType.BIPED),
-          new Demo("entity/perched_sparrow", "perched_sparrow", ModelBodyType.WINGED),
-          new Demo("entity/still_crawler", "still_crawler", ModelBodyType.QUADRUPED),
-          new Demo("entity/idle_skitter", "idle_skitter", ModelBodyType.ARTHROPOD),
-          new Demo("entity/reef_idol", "reef_idol", ModelBodyType.AQUATIC),
-          new Demo("entity/still_cube", "still_cube", ModelBodyType.CUBOID),
-          new Demo("entity/swift_crawler", "swift_crawler", ModelBodyType.QUADRUPED),
-          new Demo("entity/still_turtle", "still_turtle", ModelBodyType.AMPHIBIOUS),
-          new Demo("entity/perched_wanderer", "perched_wanderer", ModelBodyType.WINGED_HUMANOID),
-          new Demo("entity/custom_strider", "custom_strider", ModelBodyType.QUADRUPED),
-          new Demo("block_entity/shrine", "shrine", ModelBodyType.STATIC));
+          new Demo("entity/training_dummy", ModelBodyType.STATIC),
+          new Demo("entity/little_explorer", ModelBodyType.BIPED),
+          new Demo("entity/stone_crawler", ModelBodyType.QUADRUPED),
+          new Demo("entity/stone_turtle", ModelBodyType.AMPHIBIOUS),
+          new Demo("entity/coral_drifter", ModelBodyType.AQUATIC),
+          new Demo("entity/dawn_sparrow", ModelBodyType.WINGED),
+          new Demo("entity/skybound_wanderer", ModelBodyType.WINGED_HUMANOID),
+          new Demo("entity/dust_skitter", ModelBodyType.ARTHROPOD),
+          new Demo("entity/rune_cube", ModelBodyType.CUBOID),
+          new Demo("entity/wisp_lantern", ModelBodyType.FLOATING),
+          new Demo("entity/orientation_test", ModelBodyType.STATIC),
+          new Demo("entity/disguised_chestling", ModelBodyType.CUBOID),
+          new Demo("entity/still_sentinel", ModelBodyType.BIPED),
+          new Demo("entity/perched_sparrow", ModelBodyType.WINGED),
+          new Demo("entity/still_crawler", ModelBodyType.QUADRUPED),
+          new Demo("entity/idle_skitter", ModelBodyType.ARTHROPOD),
+          new Demo("entity/reef_idol", ModelBodyType.AQUATIC),
+          new Demo("entity/still_cube", ModelBodyType.CUBOID),
+          new Demo("entity/swift_crawler", ModelBodyType.QUADRUPED),
+          new Demo("entity/still_turtle", ModelBodyType.AMPHIBIOUS),
+          new Demo("entity/perched_wanderer", ModelBodyType.WINGED_HUMANOID),
+          new Demo("entity/custom_strider", ModelBodyType.QUADRUPED),
+          new Demo("block_entity/shrine", ModelBodyType.STATIC));
 
-  private static void assertDemo(String path, String renderPath, ModelBodyType bodyType)
-      throws Exception {
+  private static void assertDemo(String path, ModelBodyType bodyType) throws Exception {
     ResourceLocation id = new ResourceLocation("easy_model_entities_examples", path);
-    ResourceLocation renderProfileId =
-        new ResourceLocation("easy_model_entities_examples", renderPath);
+    ResourceLocation renderProfileId = new ResourceLocation("easy_model_entities_examples", path);
     EasyModelEntityProfile profile = parseProfile(id);
     EasyModelRenderProfile renderProfile = parseRenderProfile(profile.renderProfileId());
     ModelBakeResult bakeResult =
@@ -174,7 +172,7 @@ class BundledDemoProfilesTest {
   @Test
   void bundledDemoProfilesParseAndBake() throws Exception {
     for (Demo demo : DEMOS) {
-      assertDemo(demo.path(), demo.renderPath(), demo.bodyType());
+      assertDemo(demo.path(), demo.bodyType());
     }
   }
 
@@ -188,5 +186,5 @@ class BundledDemoProfilesTest {
     assertEquals(EnumSet.allOf(ModelBodyType.class), coveredBodyTypes);
   }
 
-  private record Demo(String path, String renderPath, ModelBodyType bodyType) {}
+  private record Demo(String path, ModelBodyType bodyType) {}
 }

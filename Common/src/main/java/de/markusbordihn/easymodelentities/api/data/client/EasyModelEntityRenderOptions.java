@@ -22,16 +22,24 @@ package de.markusbordihn.easymodelentities.api.data.client;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 
 public record EasyModelEntityRenderOptions(
+    Float scale,
     Float animationTicks,
     EasyModelPartAnimator partAnimator,
     EasyModelPartAnimationMode partAnimationMode) {
 
   public static final EasyModelEntityRenderOptions DEFAULT =
       new EasyModelEntityRenderOptions(
-          null, EasyModelPartAnimator.NONE, EasyModelPartAnimationMode.ADD);
+          null, null, EasyModelPartAnimator.NONE, EasyModelPartAnimationMode.ADD);
 
   public EasyModelEntityRenderOptions(Float animationTicks, EasyModelPartAnimator partAnimator) {
-    this(animationTicks, partAnimator, EasyModelPartAnimationMode.ADD);
+    this(null, animationTicks, partAnimator, EasyModelPartAnimationMode.ADD);
+  }
+
+  public EasyModelEntityRenderOptions(
+      Float animationTicks,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode) {
+    this(null, animationTicks, partAnimator, partAnimationMode);
   }
 
   public EasyModelEntityRenderOptions {
@@ -40,19 +48,24 @@ public record EasyModelEntityRenderOptions(
         partAnimationMode == null ? EasyModelPartAnimationMode.ADD : partAnimationMode;
   }
 
+  public EasyModelEntityRenderOptions withScale(float scale) {
+    return new EasyModelEntityRenderOptions(
+        scale, this.animationTicks, this.partAnimator, this.partAnimationMode);
+  }
+
   public EasyModelEntityRenderOptions withAnimationTicks(float animationTicks) {
     return new EasyModelEntityRenderOptions(
-        animationTicks, this.partAnimator, this.partAnimationMode);
+        this.scale, animationTicks, this.partAnimator, this.partAnimationMode);
   }
 
   public EasyModelEntityRenderOptions withPartAnimator(EasyModelPartAnimator partAnimator) {
     return new EasyModelEntityRenderOptions(
-        this.animationTicks, partAnimator, this.partAnimationMode);
+        this.scale, this.animationTicks, partAnimator, this.partAnimationMode);
   }
 
   public EasyModelEntityRenderOptions withPartAnimationMode(
       EasyModelPartAnimationMode partAnimationMode) {
     return new EasyModelEntityRenderOptions(
-        this.animationTicks, this.partAnimator, partAnimationMode);
+        this.scale, this.animationTicks, this.partAnimator, partAnimationMode);
   }
 }

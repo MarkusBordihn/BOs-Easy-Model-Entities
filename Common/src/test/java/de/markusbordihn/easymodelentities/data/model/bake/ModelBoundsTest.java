@@ -17,29 +17,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.data.model;
+package de.markusbordihn.easymodelentities.data.model.bake;
 
-public record Vec3f(float x, float y, float z) {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
-  public static final Vec3f ZERO = new Vec3f(0.0f, 0.0f, 0.0f);
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import org.junit.jupiter.api.Test;
 
-  public static Vec3f of(float[] values) {
-    if (values == null || values.length != 3) {
-      throw new IllegalArgumentException("Vec3f requires 3 values.");
-    }
+class ModelBoundsTest {
 
-    return new Vec3f(values[0], values[1], values[2]);
+  @Test
+  void scaledByOneReturnsSameInstance() {
+    ModelBounds bounds =
+        new ModelBounds(new Vec3f(-1.0f, -2.0f, -3.0f), new Vec3f(1.0f, 2.0f, 3.0f));
+    assertSame(bounds, bounds.scaled(1.0f));
   }
 
-  public boolean isZero() {
-    return this.x == 0.0f && this.y == 0.0f && this.z == 0.0f;
-  }
-
-  public Vec3f add(Vec3f other) {
-    return new Vec3f(this.x + other.x, this.y + other.y, this.z + other.z);
-  }
-
-  public Vec3f scale(float factor) {
-    return new Vec3f(this.x * factor, this.y * factor, this.z * factor);
+  @Test
+  void scaledScalesMinAndMax() {
+    ModelBounds scaled =
+        new ModelBounds(new Vec3f(-1.0f, -2.0f, -3.0f), new Vec3f(1.0f, 2.0f, 3.0f)).scaled(2.0f);
+    assertEquals(new Vec3f(-2.0f, -4.0f, -6.0f), scaled.min());
+    assertEquals(new Vec3f(2.0f, 4.0f, 6.0f), scaled.max());
+    assertEquals(4.0f, scaled.sizeX());
+    assertEquals(12.0f, scaled.sizeZ());
   }
 }

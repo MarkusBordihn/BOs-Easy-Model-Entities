@@ -82,7 +82,7 @@ public final class HostEntityGameTestCases {
 
     EasyModelRuntimeContract contract = groundEntity.getEasyModelRuntimeContract();
     if (!GROUND_PROFILE_ID.equals(contract.profileId())
-        || !new ResourceLocation("example", "ground_render").equals(contract.renderProfileId())
+        || !GROUND_PROFILE_ID.equals(contract.renderProfileId())
         || !"ground-v1".equals(contract.version())
         || contract.bodyType() != ModelBodyType.QUADRUPED
         || contract.width() != 0.7f
@@ -253,8 +253,7 @@ public final class HostEntityGameTestCases {
     hostBlockEntity.setEasyModelProfileId(BLOCK_PROFILE_ID);
     EasyModelRuntimeContract contract = hostBlockEntity.getEasyModelRuntimeContract();
     if (!BLOCK_PROFILE_ID.equals(contract.profileId())
-        || !new ResourceLocation("example", "animated_block_render")
-            .equals(contract.renderProfileId())
+        || !BLOCK_PROFILE_ID.equals(contract.renderProfileId())
         || !"block-v1".equals(contract.version())
         || contract.bodyType() != ModelBodyType.STATIC
         || contract.width() != 1.0f
@@ -362,9 +361,6 @@ public final class HostEntityGameTestCases {
           "entity": {
             "body_type": "quadruped"
           },
-          "client": {
-            "render_profile": "example:ground_render"
-          },
           "dimensions": {
             "width": 0.7,
             "height": 0.9,
@@ -389,9 +385,6 @@ public final class HostEntityGameTestCases {
         {
           "model_type": "entity",
           "preset_type": "statue",
-          "client": {
-            "render_profile": "example:static_render"
-          },
           "dimensions": {
             "width": 0.6,
             "height": 1.2,
@@ -407,9 +400,6 @@ public final class HostEntityGameTestCases {
           "model_type": "entity",
           "preset_type": "quadruped_wandering",
           "version": "attributes-v1",
-          "client": {
-            "render_profile": "example:attributes_render"
-          },
           "dimensions": {
             "width": 0.7,
             "height": 0.9,
@@ -434,9 +424,6 @@ public final class HostEntityGameTestCases {
           "model_type": "block_entity",
           "preset_type": "animated",
           "version": "block-v1",
-          "client": {
-            "render_profile": "example:animated_block_render"
-          },
           "dimensions": {
             "width": 1.0,
             "height": 1.0,

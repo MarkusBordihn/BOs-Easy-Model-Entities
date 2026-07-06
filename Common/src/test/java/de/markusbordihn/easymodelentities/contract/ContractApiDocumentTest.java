@@ -54,7 +54,7 @@ class ContractApiDocumentTest {
   void generatedReferenceMatchesRuntimeConstants() {
     JsonObject reference = ContractApiDocument.toJson();
 
-    assertEquals("0.1.0", reference.get("schema_version").getAsString());
+    assertEquals("0.2.0", reference.get("schema_version").getAsString());
     assertEquals(
         2 * 1024 * 1024,
         reference.getAsJsonObject("budgets").get("max_model_file_size_bytes").getAsInt());

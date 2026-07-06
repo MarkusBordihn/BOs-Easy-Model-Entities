@@ -21,12 +21,20 @@ package de.markusbordihn.easymodelentities.data.profile;
 
 import java.util.Locale;
 import java.util.Optional;
+import net.minecraft.resources.ResourceLocation;
 
 public enum ModelType {
   ENTITY,
   BLOCK_ENTITY;
 
   private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
+  public static ModelType fromProfileId(ResourceLocation profileId) {
+    if (profileId != null && profileId.getPath().startsWith(BLOCK_ENTITY.serializedName + "/")) {
+      return BLOCK_ENTITY;
+    }
+    return ENTITY;
+  }
 
   public static Optional<ModelType> bySerializedName(String serializedName) {
     if (serializedName == null) {

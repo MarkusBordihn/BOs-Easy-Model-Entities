@@ -185,9 +185,6 @@ class EasyModelProfileParserTest {
             {
               "model_type": "entity",
               "preset_type": "quadruped_wandering",
-              "client": {
-                "render_profile": "example:custom_render"
-              },
               "dimensions": {
                 "width": 1.2,
                 "height": 0.85,
@@ -205,7 +202,7 @@ class EasyModelProfileParserTest {
             """);
 
     assertEquals(ModelProfileStatus.ACTIVE, profile.status());
-    assertEquals(new ResourceLocation("example", "custom_render"), profile.renderProfileId());
+    assertEquals(PROFILE_ID, profile.renderProfileId());
     assertEquals(1.2f, profile.width());
     assertEquals(0.85f, profile.height());
     assertEquals(0.6f, profile.eyeHeight());
@@ -285,23 +282,6 @@ class EasyModelProfileParserTest {
             """);
 
     assertEquals(ModelProfileStatus.INVALID_SCHEMA_VERSION, profile.status());
-  }
-
-  @Test
-  void rejectsInvalidClientRenderProfile() {
-    EasyModelEntityProfile profile =
-        parse(
-            """
-            {
-              "model_type": "entity",
-              "preset_type": "statue",
-              "client": {
-                "render_profile": "bad id"
-              }
-            }
-            """);
-
-    assertEquals(ModelProfileStatus.INVALID_RESOURCE_LOCATION, profile.status());
   }
 
   @Test

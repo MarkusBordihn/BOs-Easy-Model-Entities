@@ -17,29 +17,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.data.model;
+package de.markusbordihn.easymodelentities.api.data.client;
 
-public record Vec3f(float x, float y, float z) {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-  public static final Vec3f ZERO = new Vec3f(0.0f, 0.0f, 0.0f);
+import de.markusbordihn.easymodelentities.data.model.ModelPartType;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
-  public static Vec3f of(float[] values) {
-    if (values == null || values.length != 3) {
-      throw new IllegalArgumentException("Vec3f requires 3 values.");
-    }
+class EasyModelPartDefinitionTest {
 
-    return new Vec3f(values[0], values[1], values[2]);
+  private static EasyModelPartDefinition partDefinition(String name) {
+    return new EasyModelPartDefinition(name, Vec3f.ZERO, Vec3f.ZERO, List.of());
   }
 
-  public boolean isZero() {
-    return this.x == 0.0f && this.y == 0.0f && this.z == 0.0f;
+  @Test
+  void semanticTypeResolvesKnownName() {
+    assertEquals(ModelPartType.HEAD, partDefinition("head").semanticType());
+    assertEquals(ModelPartType.RIGHT_WING, partDefinition("right_wing").semanticType());
   }
 
-  public Vec3f add(Vec3f other) {
-    return new Vec3f(this.x + other.x, this.y + other.y, this.z + other.z);
-  }
-
-  public Vec3f scale(float factor) {
-    return new Vec3f(this.x * factor, this.y * factor, this.z * factor);
+  @Test
+  void semanticTypeFallsBackToUnknown() {
+    assertEquals(ModelPartType.UNKNOWN, partDefinition("mystery_bone").semanticType());
+    assertEquals(ModelPartType.UNKNOWN, partDefinition(null).semanticType());
   }
 }

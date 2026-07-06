@@ -1,11 +1,8 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "model_type": "entity",
   "preset_type": "statue",
   "version": "demo-training-dummy-v2",
-  "client": {
-    "render_profile": "easy_model_entities_examples:training_dummy"
-  },
   "dimensions": {
     "width": 0.9,
     "height": 2.75,

@@ -43,6 +43,15 @@ class SchemaMigrationTest {
   void currentVersionLoadsActive() {
     EasyModelRenderProfile profile =
         parse(
+            "{\"schema_version\":\"0.2.0\",\"preset_type\":\"static\"}", SchemaMigrations.DEFAULT);
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, profile.status());
+  }
+
+  @Test
+  void previousVersionIsMigratedByDefault() {
+    EasyModelRenderProfile profile =
+        parse(
             "{\"schema_version\":\"0.1.0\",\"preset_type\":\"static\"}", SchemaMigrations.DEFAULT);
 
     assertEquals(ModelRenderProfileStatus.ACTIVE, profile.status());
@@ -52,7 +61,7 @@ class SchemaMigrationTest {
   void newerVersionIsDisabledWithInvalidSchemaVersion() {
     EasyModelRenderProfile profile =
         parse(
-            "{\"schema_version\":\"0.2.0\",\"preset_type\":\"static\"}", SchemaMigrations.DEFAULT);
+            "{\"schema_version\":\"0.3.0\",\"preset_type\":\"static\"}", SchemaMigrations.DEFAULT);
 
     assertEquals(ModelRenderProfileStatus.INVALID_SCHEMA_VERSION, profile.status());
   }
@@ -87,7 +96,7 @@ class SchemaMigrationTest {
 
           @Override
           public String to() {
-            return "0.1.0";
+            return "0.2.0";
           }
 
           @Override
@@ -116,6 +125,7 @@ class SchemaMigrationTest {
 
   @Test
   void emptyMigrationsCannotMigrateOlderVersion() {
-    assertTrue(SchemaMigrations.DEFAULT.migrate(new JsonObject(), "0.0.9", "0.1.0").isEmpty());
+    assertTrue(
+        new SchemaMigrations(List.of()).migrate(new JsonObject(), "0.0.9", "0.1.0").isEmpty());
   }
 }
