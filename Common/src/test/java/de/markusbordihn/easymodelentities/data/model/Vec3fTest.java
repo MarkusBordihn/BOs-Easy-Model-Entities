@@ -19,27 +19,26 @@
 
 package de.markusbordihn.easymodelentities.data.model;
 
-public record Vec3f(float x, float y, float z) {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-  public static final Vec3f ZERO = new Vec3f(0.0f, 0.0f, 0.0f);
+import org.junit.jupiter.api.Test;
 
-  public static Vec3f of(float[] values) {
-    if (values == null || values.length != 3) {
-      throw new IllegalArgumentException("Vec3f requires 3 values.");
-    }
+class Vec3fTest {
 
-    return new Vec3f(values[0], values[1], values[2]);
+  @Test
+  void scaleMultipliesEachAxis() {
+    Vec3f scaled = new Vec3f(1.0f, -2.0f, 3.0f).scale(2.0f);
+    assertEquals(2.0f, scaled.x());
+    assertEquals(-4.0f, scaled.y());
+    assertEquals(6.0f, scaled.z());
   }
 
-  public boolean isZero() {
-    return this.x == 0.0f && this.y == 0.0f && this.z == 0.0f;
-  }
-
-  public Vec3f add(Vec3f other) {
-    return new Vec3f(this.x + other.x, this.y + other.y, this.z + other.z);
-  }
-
-  public Vec3f scale(float factor) {
-    return new Vec3f(this.x * factor, this.y * factor, this.z * factor);
+  @Test
+  void scaleByOneKeepsComponents() {
+    Vec3f vector = new Vec3f(0.1f, 0.2f, 0.3f);
+    Vec3f scaled = vector.scale(1.0f);
+    assertEquals(vector.x(), scaled.x());
+    assertEquals(vector.y(), scaled.y());
+    assertEquals(vector.z(), scaled.z());
   }
 }

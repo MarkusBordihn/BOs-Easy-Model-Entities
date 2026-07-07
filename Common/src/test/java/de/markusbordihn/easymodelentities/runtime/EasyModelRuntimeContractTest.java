@@ -21,10 +21,17 @@ package de.markusbordihn.easymodelentities.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderSettings;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
 import java.io.StringReader;
+import java.util.List;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
@@ -44,9 +51,6 @@ class EasyModelRuntimeContractTest {
                   "model_type": "entity",
                   "preset_type": "quadruped_wandering",
                   "version": "v1",
-                  "client": {
-                    "render_profile": "example:lizard_render"
-                  },
                   "dimensions": {
                     "width": 0.6,
                     "height": 0.8,
@@ -59,15 +63,44 @@ class EasyModelRuntimeContractTest {
         EasyModelRuntimeContract.fromProfile(profile, EasyModelAnimationState.WALK);
 
     assertEquals(PROFILE_ID, contract.profileId());
-    assertEquals(
-        ResourceLocation.fromNamespaceAndPath("example", "lizard_render"),
-        contract.renderProfileId());
+    assertEquals(PROFILE_ID, contract.renderProfileId());
     assertEquals("v1", contract.version());
     assertEquals(0.6f, contract.width());
     assertEquals(0.8f, contract.height());
     assertEquals(0.5f, contract.eyeHeight());
     assertEquals(ModelBodyType.QUADRUPED, contract.bodyType());
     assertEquals(EasyModelAnimationState.WALK, contract.animationState());
+  }
+
+  @Test
+  void fromRenderProfileKeepsRenderIdentityAndFallsBackToSafeDimensions() {
+    ResourceLocation renderProfileId =
+        ResourceLocation.fromNamespaceAndPath("example", "lizard_render");
+    EasyModelRenderProfile renderProfile =
+        new EasyModelRenderProfile(
+            renderProfileId,
+            "0.1.0",
+            "client-v2",
+            ModelBodyType.WINGED,
+            ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/lizard"),
+            ResourceLocation.fromNamespaceAndPath("example", "textures/entity/lizard.png"),
+            new ModelRenderSettings(1.0f, 0.3f, 0.0f, 0.0f, Vec3f.ZERO),
+            new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
+            ModelRenderProfileStatus.ACTIVE,
+            List.of());
+
+    EasyModelRuntimeContract contract =
+        EasyModelRuntimeContract.fromRenderProfile(
+            PROFILE_ID, renderProfile, EasyModelAnimationState.FLY);
+
+    assertEquals(PROFILE_ID, contract.profileId());
+    assertEquals(renderProfileId, contract.renderProfileId());
+    assertEquals("client-v2", contract.version());
+    assertEquals(0.6f, contract.width());
+    assertEquals(1.8f, contract.height());
+    assertEquals(1.62f, contract.eyeHeight());
+    assertEquals(ModelBodyType.WINGED, contract.bodyType());
+    assertEquals(EasyModelAnimationState.FLY, contract.animationState());
   }
 
   @Test

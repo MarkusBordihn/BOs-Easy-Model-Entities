@@ -1,11 +1,8 @@
 {
-  "schema_version": "0.1.0",
+  "schema_version": "0.2.0",
   "model_type": "block_entity",
   "preset_type": "animated_randomly",
   "version": "demo-shrine-v2",
-  "client": {
-    "render_profile": "easy_model_entities_examples:shrine"
-  },
   "dimensions": {
     "width": 1.0,
     "height": 1.35,

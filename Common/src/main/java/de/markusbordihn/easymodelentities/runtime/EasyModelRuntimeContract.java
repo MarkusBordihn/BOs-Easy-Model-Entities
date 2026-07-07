@@ -22,6 +22,7 @@ package de.markusbordihn.easymodelentities.runtime;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
 
@@ -54,6 +55,24 @@ public record EasyModelRuntimeContract(
         profile.height(),
         profile.eyeHeight(),
         profile.bodyType(),
+        animationState);
+  }
+
+  public static EasyModelRuntimeContract fromRenderProfile(
+      ResourceLocation profileId,
+      EasyModelRenderProfile renderProfile,
+      EasyModelAnimationState animationState) {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(renderProfile, "renderProfile");
+    EasyModelRuntimeContract fallback = fallback(profileId, animationState);
+    return new EasyModelRuntimeContract(
+        profileId,
+        renderProfile.id(),
+        renderProfile.version(),
+        fallback.width(),
+        fallback.height(),
+        fallback.eyeHeight(),
+        renderProfile.bodyType(),
         animationState);
   }
 

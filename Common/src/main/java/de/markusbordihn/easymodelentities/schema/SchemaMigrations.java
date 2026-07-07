@@ -26,7 +26,8 @@ import java.util.Optional;
 
 public final class SchemaMigrations {
 
-  public static final SchemaMigrations DEFAULT = new SchemaMigrations(List.of());
+  public static final SchemaMigrations DEFAULT =
+      new SchemaMigrations(List.of(new ClientLinkRemovalMigration()));
 
   private final List<SchemaMigration> migrations;
 
@@ -52,5 +53,25 @@ public final class SchemaMigrations {
     }
 
     return Objects.equals(current, currentVersion) ? Optional.of(working) : Optional.empty();
+  }
+
+  private static final class ClientLinkRemovalMigration implements SchemaMigration {
+
+    @Override
+    public String from() {
+      return "0.1.0";
+    }
+
+    @Override
+    public String to() {
+      return "0.2.0";
+    }
+
+    @Override
+    public JsonObject apply(JsonObject input) {
+      input.remove("client");
+      input.addProperty("schema_version", to());
+      return input;
+    }
   }
 }
