@@ -33,10 +33,12 @@ import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProf
 import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
+import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
+import java.util.Optional;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
@@ -53,6 +55,27 @@ public final class EasyModelEntityRenderBackend {
 
   public static EasyModelRenderState resolveRenderState(EasyModelRuntimeContract contract) {
     return EasyModelRenderStateCache.resolve(contract);
+  }
+
+  public static Optional<EasyModelRuntimeContract> resolveContract(
+      Identifier profileId, EasyModelAnimationState animationState) {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(animationState, "animationState");
+    Optional<EasyModelRuntimeContract> contract =
+        EasyModelServices.profileService()
+            .getProfile(profileId)
+            .filter(EasyModelEntityProfile::isActive)
+            .map(profile -> EasyModelRuntimeContract.fromProfile(profile, animationState));
+    if (contract.isPresent()) {
+      return contract;
+    }
+    return EasyModelServices.renderProfileService()
+        .getRenderProfile(profileId)
+        .filter(EasyModelRenderProfile::isActive)
+        .map(
+            renderProfile ->
+                EasyModelRuntimeContract.fromRenderProfile(
+                    profileId, renderProfile, animationState));
   }
 
   public static void render(
@@ -137,21 +160,78 @@ public final class EasyModelEntityRenderBackend {
             ? entity.tickCount + partialTick
             : safeOptions.animationTicks();
 
-    poseStack.pushPose();
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - entityYaw));
-    poseStack.scale(-renderState.scale(), -renderState.scale(), renderState.scale());
-    poseStack.translate(0.0f, -1.501f, 0.0f);
-
-    EasyModelBakedModelRenderer.render(
-        renderState.bakedModel(),
+    render(
         renderState,
+        entityYaw,
         limbSwing(entity, partialTick),
         limbSwingAmount(entity, partialTick),
         ageInTicks,
         airborneAmount(entity),
         animationState(entity),
-        safeOptions.partAnimator(),
-        safeOptions.partAnimationMode(),
+        safeOptions,
+        poseStack,
+        bufferSource,
+        packedLight);
+  }
+
+  public static void render(
+      EasyModelRenderState renderState,
+      float yaw,
+      EasyModelEntityRenderOptions options,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight) {
+    Objects.requireNonNull(renderState, "renderState");
+    Objects.requireNonNull(poseStack, "poseStack");
+    Objects.requireNonNull(bufferSource, "bufferSource");
+
+    EasyModelEntityRenderOptions safeOptions =
+        options == null ? EasyModelEntityRenderOptions.DEFAULT : options;
+    float ageInTicks = safeOptions.animationTicks() == null ? 0.0f : safeOptions.animationTicks();
+
+    render(
+        renderState,
+        yaw,
+        0.0f,
+        0.0f,
+        ageInTicks,
+        0.0f,
+        EasyModelAnimationState.AUTO,
+        safeOptions,
+        poseStack,
+        bufferSource,
+        packedLight);
+  }
+
+  private static void render(
+      EasyModelRenderState renderState,
+      float yaw,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      float airborneAmount,
+      EasyModelAnimationState animationState,
+      EasyModelEntityRenderOptions options,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight) {
+    float scale = renderState.scale() * (options.scale() == null ? 1.0f : options.scale());
+
+    poseStack.pushPose();
+    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yaw));
+    poseStack.scale(-scale, -scale, scale);
+    poseStack.translate(0.0f, -1.501f, 0.0f);
+
+    EasyModelBakedModelRenderer.render(
+        renderState.bakedModel(),
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        airborneAmount,
+        animationState,
+        options.partAnimator(),
+        options.partAnimationMode(),
         poseStack,
         bufferSource,
         packedLight);

@@ -38,4 +38,8 @@ public record Vec3f(float x, float y, float z) {
   public Vec3f add(Vec3f other) {
     return new Vec3f(this.x + other.x, this.y + other.y, this.z + other.z);
   }
+
+  public Vec3f scale(float factor) {
+    return new Vec3f(this.x * factor, this.y * factor, this.z * factor);
+  }
 }

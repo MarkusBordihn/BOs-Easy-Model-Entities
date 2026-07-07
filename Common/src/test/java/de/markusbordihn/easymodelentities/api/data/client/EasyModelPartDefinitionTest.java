@@ -17,41 +17,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.data.profile;
+package de.markusbordihn.easymodelentities.api.data.client;
 
-import java.util.Locale;
-import java.util.Optional;
-import net.minecraft.resources.Identifier;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public enum ModelType {
-  ENTITY,
-  BLOCK_ENTITY;
+import de.markusbordihn.easymodelentities.data.model.ModelPartType;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import java.util.List;
+import org.junit.jupiter.api.Test;
 
-  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+class EasyModelPartDefinitionTest {
 
-  public static ModelType fromProfileId(Identifier profileId) {
-    if (profileId != null && profileId.getPath().startsWith(BLOCK_ENTITY.serializedName + "/")) {
-      return BLOCK_ENTITY;
-    }
-    return ENTITY;
+  private static EasyModelPartDefinition partDefinition(String name) {
+    return new EasyModelPartDefinition(name, Vec3f.ZERO, Vec3f.ZERO, List.of());
   }
 
-  public static Optional<ModelType> bySerializedName(String serializedName) {
-    if (serializedName == null) {
-      return Optional.empty();
-    }
-
-    String normalizedName = serializedName.toLowerCase(Locale.ROOT);
-    for (ModelType modelType : values()) {
-      if (modelType.getSerializedName().equals(normalizedName)) {
-        return Optional.of(modelType);
-      }
-    }
-
-    return Optional.empty();
+  @Test
+  void semanticTypeResolvesKnownName() {
+    assertEquals(ModelPartType.HEAD, partDefinition("head").semanticType());
+    assertEquals(ModelPartType.RIGHT_WING, partDefinition("right_wing").semanticType());
   }
 
-  public String getSerializedName() {
-    return this.serializedName;
+  @Test
+  void semanticTypeFallsBackToUnknown() {
+    assertEquals(ModelPartType.UNKNOWN, partDefinition("mystery_bone").semanticType());
+    assertEquals(ModelPartType.UNKNOWN, partDefinition(null).semanticType());
   }
 }

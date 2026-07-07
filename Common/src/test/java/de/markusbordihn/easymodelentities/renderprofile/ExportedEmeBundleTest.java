@@ -136,7 +136,7 @@ class ExportedEmeBundleTest {
         reader(
             zipEntry(
                 resourcepack,
-                "assets/example_org/easy_model_entities/render_profiles/disguised_chestling.json")));
+                "assets/example_org/easy_model_entities/render_profiles/entity/disguised_chestling.json")));
   }
 
   @Test
@@ -158,11 +158,11 @@ class ExportedEmeBundleTest {
     assertTrue(bakeResult.successful());
     assertEquals(profileId, profile.id());
     assertEquals(
-        Identifier.fromNamespaceAndPath(NAMESPACE, "disguised_chestling"),
+        Identifier.fromNamespaceAndPath(NAMESPACE, "entity/disguised_chestling"),
         profile.renderProfileId());
     assertEquals(profile.renderProfileId(), renderProfile.id());
-    assertEquals(ModelBodyType.STATIC, profile.bodyType());
-    assertEquals(ModelBodyType.STATIC, renderProfile.bodyType());
+    assertEquals(ModelBodyType.CUBOID, profile.bodyType());
+    assertEquals(ModelBodyType.CUBOID, renderProfile.bodyType());
     assertEquals(profile.version(), renderProfile.version());
 
     assertTrue(renderProfile.hasVisibleBounds());

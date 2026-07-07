@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.api.data.client;
 
+import de.markusbordihn.easymodelentities.data.model.ModelPartType;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import java.util.List;
 import java.util.Objects;
@@ -30,5 +31,9 @@ public record EasyModelPartDefinition(
     Objects.requireNonNull(offset, "offset");
     Objects.requireNonNull(rotation, "rotation");
     children = List.copyOf(children);
+  }
+
+  public ModelPartType semanticType() {
+    return ModelPartType.get(this.name);
   }
 }
