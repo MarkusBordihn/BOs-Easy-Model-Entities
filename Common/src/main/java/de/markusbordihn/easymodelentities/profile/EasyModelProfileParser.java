@@ -56,8 +56,6 @@ public final class EasyModelProfileParser {
   private static final String TYPE_FIELD = "type";
   private static final String MOVEMENT_TYPE_FIELD = "movement_type";
   private static final String BODY_TYPE_FIELD = "body_type";
-  private static final String CLIENT_FIELD = "client";
-  private static final String RENDER_PROFILE_FIELD = "render_profile";
   private static final String DIMENSIONS_FIELD = "dimensions";
   private static final String WIDTH_FIELD = "width";
   private static final String HEIGHT_FIELD = "height";
@@ -80,8 +78,6 @@ public final class EasyModelProfileParser {
   private static final String BLOCK_ENTITY_TYPE_FIELD = BLOCK_ENTITY_FIELD + "." + TYPE_FIELD;
   private static final String BLOCK_ENTITY_BODY_TYPE_FIELD =
       BLOCK_ENTITY_FIELD + "." + BODY_TYPE_FIELD;
-  private static final String CLIENT_RENDER_PROFILE_FIELD =
-      CLIENT_FIELD + "." + RENDER_PROFILE_FIELD;
   private static final String DIMENSIONS_WIDTH_FIELD = DIMENSIONS_FIELD + "." + WIDTH_FIELD;
   private static final String DIMENSIONS_HEIGHT_FIELD = DIMENSIONS_FIELD + "." + HEIGHT_FIELD;
   private static final String DIMENSIONS_EYE_HEIGHT_FIELD =
@@ -185,14 +181,6 @@ public final class EasyModelProfileParser {
             ? parseBlockEntity(rawBlockEntity, resolvedBlockEntityPresetType, issues)
             : null;
 
-    RawClient rawClient = optionalObject(rawProfile.client, CLIENT_FIELD, RawClient.class, issues);
-    Identifier renderProfile =
-        parseOptionalResourceLocation(
-            rawClient == null ? null : rawClient.renderProfile,
-            expectedId,
-            CLIENT_RENDER_PROFILE_FIELD,
-            issues);
-
     RawDimensions rawDimensions =
         custom
             ? requiredObject(rawProfile.dimensions, DIMENSIONS_FIELD, RawDimensions.class, issues)
@@ -229,7 +217,7 @@ public final class EasyModelProfileParser {
         resolvedModelType,
         entity,
         blockEntity,
-        new ModelClientSettings(renderProfile == null ? expectedId : renderProfile),
+        new ModelClientSettings(expectedId),
         dimensions,
         movement,
         behavior,
@@ -982,9 +970,6 @@ public final class EasyModelProfileParser {
     @SerializedName(BLOCK_ENTITY_FIELD)
     JsonElement blockEntity;
 
-    @SerializedName(CLIENT_FIELD)
-    JsonElement client;
-
     @SerializedName(DIMENSIONS_FIELD)
     JsonElement dimensions;
 
@@ -1015,11 +1000,6 @@ public final class EasyModelProfileParser {
 
     @SerializedName(BODY_TYPE_FIELD)
     JsonElement bodyType;
-  }
-
-  private static class RawClient {
-    @SerializedName(RENDER_PROFILE_FIELD)
-    JsonElement renderProfile;
   }
 
   private static class RawDimensions {

@@ -17,41 +17,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.data.profile;
+package de.markusbordihn.easymodelentities.data.model;
 
-import java.util.Locale;
-import java.util.Optional;
-import net.minecraft.resources.Identifier;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public enum ModelType {
-  ENTITY,
-  BLOCK_ENTITY;
+import org.junit.jupiter.api.Test;
 
-  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+class Vec3fTest {
 
-  public static ModelType fromProfileId(Identifier profileId) {
-    if (profileId != null && profileId.getPath().startsWith(BLOCK_ENTITY.serializedName + "/")) {
-      return BLOCK_ENTITY;
-    }
-    return ENTITY;
+  @Test
+  void scaleMultipliesEachAxis() {
+    Vec3f scaled = new Vec3f(1.0f, -2.0f, 3.0f).scale(2.0f);
+    assertEquals(2.0f, scaled.x());
+    assertEquals(-4.0f, scaled.y());
+    assertEquals(6.0f, scaled.z());
   }
 
-  public static Optional<ModelType> bySerializedName(String serializedName) {
-    if (serializedName == null) {
-      return Optional.empty();
-    }
-
-    String normalizedName = serializedName.toLowerCase(Locale.ROOT);
-    for (ModelType modelType : values()) {
-      if (modelType.getSerializedName().equals(normalizedName)) {
-        return Optional.of(modelType);
-      }
-    }
-
-    return Optional.empty();
-  }
-
-  public String getSerializedName() {
-    return this.serializedName;
+  @Test
+  void scaleByOneKeepsComponents() {
+    Vec3f vector = new Vec3f(0.1f, 0.2f, 0.3f);
+    Vec3f scaled = vector.scale(1.0f);
+    assertEquals(vector.x(), scaled.x());
+    assertEquals(vector.y(), scaled.y());
+    assertEquals(vector.z(), scaled.z());
   }
 }

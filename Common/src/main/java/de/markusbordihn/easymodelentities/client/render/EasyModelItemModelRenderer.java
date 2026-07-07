@@ -21,13 +21,11 @@ package de.markusbordihn.easymodelentities.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.ModelBounds;
-import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.item.EasyModelEntitiesItems;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
@@ -102,15 +100,14 @@ public final class EasyModelItemModelRenderer {
       return;
     }
 
-    Optional<EasyModelEntityProfile> profile =
-        EasyModelEntitiesApi.getProfile(profileId.get()).filter(EasyModelEntityProfile::isActive);
-    if (profile.isEmpty()) {
+    Optional<EasyModelRuntimeContract> contract =
+        EasyModelEntityRenderBackend.resolveContract(profileId.get(), EasyModelAnimationState.IDLE);
+    if (contract.isEmpty()) {
       return;
     }
 
-    EasyModelRuntimeContract contract =
-        EasyModelRuntimeContract.fromProfile(profile.get(), EasyModelAnimationState.IDLE);
-    EasyModelRenderState renderState = EasyModelEntityRenderBackend.resolveRenderState(contract);
+    EasyModelRenderState renderState =
+        EasyModelEntityRenderBackend.resolveRenderState(contract.get());
 
     ModelBounds bounds = renderState.bakedModel().bounds();
     float horizontal = (float) Math.hypot(bounds.sizeX(), bounds.sizeZ());

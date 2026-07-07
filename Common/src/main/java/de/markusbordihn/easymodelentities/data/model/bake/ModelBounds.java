@@ -54,6 +54,10 @@ public record ModelBounds(Vec3f min, Vec3f max) {
         (this.min.z() + this.max.z()) / 2.0f);
   }
 
+  public ModelBounds scaled(float factor) {
+    return factor == 1.0f ? this : new ModelBounds(this.min.scale(factor), this.max.scale(factor));
+  }
+
   public boolean isEmpty() {
     return sizeX() <= 0.0f && sizeY() <= 0.0f && sizeZ() <= 0.0f;
   }
