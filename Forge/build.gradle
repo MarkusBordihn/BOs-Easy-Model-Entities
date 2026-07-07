@@ -119,8 +119,9 @@ jar {
 
 publishing {
   publications {
-    mavenJava(MavenPublication) {
-      artifact jar
+    register('mavenJava', MavenPublication) {
+      artifactId = base.archivesName.get()
+      artifact tasks.named('jar')
     }
   }
 }
