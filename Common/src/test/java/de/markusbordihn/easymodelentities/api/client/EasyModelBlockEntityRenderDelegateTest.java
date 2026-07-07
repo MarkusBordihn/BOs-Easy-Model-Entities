@@ -22,12 +22,9 @@ package de.markusbordihn.easymodelentities.api.client;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.markusbordihn.easymodelentities.api.EasyModelAnimationStates;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
@@ -64,7 +61,7 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.SharedConstants;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
@@ -208,9 +205,7 @@ class EasyModelBlockEntityRenderDelegateTest {
         mock(RenderableBlockEntity.class, Answers.CALLS_REAL_METHODS);
     BakedModel bakedModel =
         new BakedModel(Identifier.fromNamespaceAndPath("example", "empty"), 64, 64, List.of());
-    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
-    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
-    when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);
+    SubmitNodeCollector submitNodeCollector = mock(SubmitNodeCollector.class);
 
     assertDoesNotThrow(
         () ->
@@ -220,7 +215,7 @@ class EasyModelBlockEntityRenderDelegateTest {
                 0.0f,
                 null,
                 new PoseStack(),
-                bufferSource,
+                submitNodeCollector,
                 0));
   }
 

@@ -36,7 +36,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -58,13 +58,13 @@ public final class EasyModelEntitiesClientApi {
   public static boolean render(
       Identifier profileId,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight,
       float yaw,
       EasyModelEntityRenderOptions options) {
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(poseStack, "poseStack");
-    Objects.requireNonNull(bufferSource, "bufferSource");
+    Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
     Optional<EasyModelRenderState> renderState =
         resolveRenderState(profileId, EasyModelAnimationState.AUTO);
     if (renderState.isEmpty()) {
@@ -75,7 +75,7 @@ public final class EasyModelEntitiesClientApi {
         yaw,
         options == null ? EasyModelEntityRenderOptions.DEFAULT : options,
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight);
     return true;
   }
@@ -84,7 +84,7 @@ public final class EasyModelEntitiesClientApi {
       Entity entity,
       Identifier profileId,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight,
       float yaw,
       float partialTick,
@@ -92,7 +92,7 @@ public final class EasyModelEntitiesClientApi {
     Objects.requireNonNull(entity, "entity");
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(poseStack, "poseStack");
-    Objects.requireNonNull(bufferSource, "bufferSource");
+    Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
     Optional<EasyModelRenderState> renderState =
         resolveRenderState(profileId, EasyModelAnimationState.AUTO);
     if (renderState.isEmpty()) {
@@ -105,7 +105,7 @@ public final class EasyModelEntitiesClientApi {
         partialTick,
         options == null ? EasyModelEntityRenderOptions.DEFAULT : options,
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight);
     return true;
   }

@@ -31,7 +31,6 @@ import de.markusbordihn.easymodelentities.item.EasyModelEntitiesItems;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Optional;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.LightCoordsUtil;
@@ -45,30 +44,6 @@ public final class EasyModelItemModelRenderer {
   private static final float MIN_SUBJECT_SIZE = 0.1f;
 
   private EasyModelItemModelRenderer() {}
-
-  public static void render(
-      ItemStack stack,
-      PoseStack poseStack,
-      MultiBufferSource bufferSource,
-      int packedLight,
-      int packedOverlay) {
-    render(
-        stack,
-        poseStack,
-        (bakedModel, renderState, innerPoseStack) ->
-            EasyModelBakedModelRenderer.render(
-                bakedModel,
-                renderState,
-                0.0f,
-                0.0f,
-                0.0f,
-                0.0f,
-                EasyModelPartAnimator.NONE,
-                EasyModelPartAnimationMode.ADD,
-                innerPoseStack,
-                bufferSource,
-                LightCoordsUtil.FULL_BRIGHT));
-  }
 
   public static void render(
       ItemStack stack,

@@ -47,7 +47,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.IntFunction;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
@@ -256,72 +255,6 @@ public final class EasyModelBakedModelRenderer {
                 partAnimationMode);
           });
     }
-  }
-
-  public static void render(
-      BakedModel bakedModel,
-      EasyModelRenderState renderState,
-      float limbSwing,
-      float limbSwingAmount,
-      float ageInTicks,
-      float airborneAmount,
-      EasyModelPartAnimator partAnimator,
-      EasyModelPartAnimationMode partAnimationMode,
-      PoseStack poseStack,
-      MultiBufferSource bufferSource,
-      int packedLight) {
-    render(
-        bakedModel,
-        renderState,
-        limbSwing,
-        limbSwingAmount,
-        ageInTicks,
-        airborneAmount,
-        EasyModelAnimationState.AUTO,
-        partAnimator,
-        partAnimationMode,
-        poseStack,
-        bufferSource,
-        packedLight);
-  }
-
-  public static void render(
-      BakedModel bakedModel,
-      EasyModelRenderState renderState,
-      float limbSwing,
-      float limbSwingAmount,
-      float ageInTicks,
-      float airborneAmount,
-      EasyModelAnimationState animationState,
-      EasyModelPartAnimator partAnimator,
-      EasyModelPartAnimationMode partAnimationMode,
-      PoseStack poseStack,
-      MultiBufferSource bufferSource,
-      int packedLight) {
-    Objects.requireNonNull(renderState, "renderState");
-    Objects.requireNonNull(bufferSource, "bufferSource");
-    boolean cullBackfaces = bakedModel.cullBackfaces();
-    IntFunction<VertexConsumer> bufferProvider =
-        textureIndex -> {
-          Identifier texture = textureFor(renderState, textureIndex);
-          return bufferSource.getBuffer(
-              cullBackfaces
-                  ? RenderTypes.entityCutoutCull(texture)
-                  : RenderTypes.entityCutout(texture));
-        };
-    render(
-        bakedModel,
-        renderState,
-        limbSwing,
-        limbSwingAmount,
-        ageInTicks,
-        airborneAmount,
-        animationState,
-        poseStack,
-        bufferProvider,
-        packedLight,
-        partAnimator,
-        partAnimationMode);
   }
 
   private static Identifier textureFor(EasyModelRenderState renderState, int textureIndex) {

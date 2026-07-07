@@ -22,12 +22,10 @@ package de.markusbordihn.easymodelentities.api.client;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.markusbordihn.easymodelentities.api.EasyModelAnimationStates;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
@@ -64,7 +62,7 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.SharedConstants;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.Entity;
@@ -73,7 +71,6 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Answers;
 
 class EasyModelEntityRenderDelegateTest {
 
@@ -211,9 +208,7 @@ class EasyModelEntityRenderDelegateTest {
     Entity entity = entity(0.9f, 1.2f, 0.8f);
     BakedModel bakedModel =
         new BakedModel(Identifier.fromNamespaceAndPath("example", "empty"), 64, 64, List.of());
-    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
-    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
-    when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);
+    SubmitNodeCollector submitNodeCollector = mock(SubmitNodeCollector.class);
 
     assertDoesNotThrow(
         () ->
@@ -224,7 +219,7 @@ class EasyModelEntityRenderDelegateTest {
                 0.0f,
                 null,
                 new PoseStack(),
-                bufferSource,
+                submitNodeCollector,
                 0));
   }
 

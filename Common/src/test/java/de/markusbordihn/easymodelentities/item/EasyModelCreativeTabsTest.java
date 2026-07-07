@@ -60,7 +60,7 @@ class EasyModelCreativeTabsTest {
   }
 
   private static void bindItemComponents() {
-    // Bootstrap.bootStrap() in MC 26.1.2 does not bind DataComponents to item holders, so
+    // Bootstrap.bootStrap() in MC 26.2 does not bind DataComponents to item holders, so
     // new ItemStack(item) throws "Components not bound yet". Holder.Reference.bindComponents()
     // is a public method — call it directly on every registered item holder.
     for (Item item : BuiltInRegistries.ITEM) {

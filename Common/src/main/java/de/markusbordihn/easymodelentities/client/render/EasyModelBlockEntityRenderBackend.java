@@ -36,7 +36,6 @@ import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileSe
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -54,7 +53,7 @@ public final class EasyModelBlockEntityRenderBackend {
       EasyModelRenderState renderState,
       float partialTick,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight) {
     render(
         blockEntity,
@@ -62,7 +61,7 @@ public final class EasyModelBlockEntityRenderBackend {
         partialTick,
         EasyModelBlockEntityRenderOptions.DEFAULT,
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight);
   }
 
@@ -98,48 +97,17 @@ public final class EasyModelBlockEntityRenderBackend {
   }
 
   public static void render(
-      EasyModelRenderState renderState,
-      float ageInTicks,
-      float yawDegrees,
-      PoseStack poseStack,
-      MultiBufferSource bufferSource,
-      int packedLight) {
-    Objects.requireNonNull(renderState, "renderState");
-    Objects.requireNonNull(poseStack, "poseStack");
-    Objects.requireNonNull(bufferSource, "bufferSource");
-
-    poseStack.pushPose();
-    poseStack.translate(0.5f, 1.5f, 0.5f);
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yawDegrees));
-    poseStack.scale(-renderState.scale(), -renderState.scale(), renderState.scale());
-
-    EasyModelBakedModelRenderer.render(
-        renderState.bakedModel(),
-        renderState,
-        0.0f,
-        0.0f,
-        ageInTicks,
-        0.0f,
-        EasyModelPartAnimator.NONE,
-        EasyModelPartAnimationMode.ADD,
-        poseStack,
-        bufferSource,
-        packedLight);
-    poseStack.popPose();
-  }
-
-  public static void render(
       BlockEntity blockEntity,
       EasyModelRenderState renderState,
       float partialTick,
       EasyModelBlockEntityRenderOptions options,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight) {
     Objects.requireNonNull(blockEntity, "blockEntity");
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(poseStack, "poseStack");
-    Objects.requireNonNull(bufferSource, "bufferSource");
+    Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
 
     EasyModelBlockEntityRenderOptions safeOptions =
         options == null ? EasyModelBlockEntityRenderOptions.DEFAULT : options;
@@ -167,7 +135,7 @@ public final class EasyModelBlockEntityRenderBackend {
         safeOptions.partAnimator(),
         safeOptions.partAnimationMode(),
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight);
     poseStack.popPose();
   }

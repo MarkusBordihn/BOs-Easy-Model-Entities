@@ -39,7 +39,6 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import java.util.Optional;
-import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -126,7 +125,7 @@ public final class EasyModelEntityRenderBackend {
       float entityYaw,
       float partialTick,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight) {
     render(
         entity,
@@ -135,7 +134,7 @@ public final class EasyModelEntityRenderBackend {
         partialTick,
         EasyModelEntityRenderOptions.DEFAULT,
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight);
   }
 
@@ -146,12 +145,12 @@ public final class EasyModelEntityRenderBackend {
       float partialTick,
       EasyModelEntityRenderOptions options,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight) {
     Objects.requireNonNull(entity, "entity");
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(poseStack, "poseStack");
-    Objects.requireNonNull(bufferSource, "bufferSource");
+    Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
 
     EasyModelEntityRenderOptions safeOptions =
         options == null ? EasyModelEntityRenderOptions.DEFAULT : options;
@@ -170,7 +169,7 @@ public final class EasyModelEntityRenderBackend {
         animationState(entity),
         safeOptions,
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight);
   }
 
@@ -179,11 +178,11 @@ public final class EasyModelEntityRenderBackend {
       float yaw,
       EasyModelEntityRenderOptions options,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight) {
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(poseStack, "poseStack");
-    Objects.requireNonNull(bufferSource, "bufferSource");
+    Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
 
     EasyModelEntityRenderOptions safeOptions =
         options == null ? EasyModelEntityRenderOptions.DEFAULT : options;
@@ -199,7 +198,7 @@ public final class EasyModelEntityRenderBackend {
         EasyModelAnimationState.AUTO,
         safeOptions,
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight);
   }
 
@@ -213,7 +212,7 @@ public final class EasyModelEntityRenderBackend {
       EasyModelAnimationState animationState,
       EasyModelEntityRenderOptions options,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight) {
     float scale = renderState.scale() * (options.scale() == null ? 1.0f : options.scale());
 
@@ -233,7 +232,7 @@ public final class EasyModelEntityRenderBackend {
         options.partAnimator(),
         options.partAnimationMode(),
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight);
     poseStack.popPose();
   }

@@ -1,4 +1,5 @@
 plugins {
+  id 'maven-publish'
   id 'net.fabricmc.fabric-loom' version "${fabric_loom}"
   id 'net.darkhax.curseforgegradle' version '1.2.30'
   id 'nu.studer.credentials' version '3.0'
@@ -80,6 +81,15 @@ tasks.withType(JavaCompile).configureEach {
 
 tasks.withType(Test).configureEach {
   failOnNoDiscoveredTests = false
+}
+
+publishing {
+  publications {
+    register('mavenJava', MavenPublication) {
+      artifactId = base.archivesName.get()
+      artifact tasks.named('jar')
+    }
+  }
 }
 
 test {

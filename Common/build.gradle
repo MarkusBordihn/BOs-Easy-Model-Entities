@@ -1,9 +1,10 @@
 plugins {
+  id 'maven-publish'
   id 'net.neoforged.moddev' version '2.0.141'
 }
 
 base {
-  archivesName = "${mod_name}-common-${minecraft_version}"
+  archivesName = "${mod_id}-common-${minecraft_version}"
 }
 
 neoForge {
@@ -36,4 +37,13 @@ processResources {
 tasks.register('prepareWorkspace') {
   description = 'Prepares the workspace (compatibility task for moddev)'
   group = 'neoforge'
+}
+
+publishing {
+  publications {
+    register('mavenJava', MavenPublication) {
+      artifactId = base.archivesName.get()
+      artifact tasks.named('jar')
+    }
+  }
 }

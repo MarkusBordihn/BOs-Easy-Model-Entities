@@ -28,7 +28,7 @@ import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 
@@ -41,14 +41,14 @@ public final class EasyModelEntityRenderDelegate<T extends Entity & EasyModelRen
       float entityYaw,
       float partialTick,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight) {
     render(
         entity,
         entityYaw,
         partialTick,
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight,
         EasyModelEntityRenderOptions.DEFAULT);
   }
@@ -58,13 +58,20 @@ public final class EasyModelEntityRenderDelegate<T extends Entity & EasyModelRen
       float entityYaw,
       float partialTick,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight,
       EasyModelEntityRenderOptions options) {
     EasyModelRenderState renderState =
         EasyModelEntityRenderBackend.resolveRenderState(contract(entity));
     EasyModelEntityRenderBackend.render(
-        entity, renderState, entityYaw, partialTick, options, poseStack, bufferSource, packedLight);
+        entity,
+        renderState,
+        entityYaw,
+        partialTick,
+        options,
+        poseStack,
+        submitNodeCollector,
+        packedLight);
   }
 
   public Identifier getTextureLocation(T entity) {

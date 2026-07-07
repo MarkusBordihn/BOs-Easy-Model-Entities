@@ -32,7 +32,7 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -46,13 +46,13 @@ public final class EasyModelBlockEntityRenderDelegate<T extends BlockEntity & Ea
       T blockEntity,
       float partialTick,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight) {
     render(
         blockEntity,
         partialTick,
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight,
         EasyModelBlockEntityRenderOptions.DEFAULT);
   }
@@ -61,7 +61,7 @@ public final class EasyModelBlockEntityRenderDelegate<T extends BlockEntity & Ea
       T blockEntity,
       float partialTick,
       PoseStack poseStack,
-      MultiBufferSource bufferSource,
+      SubmitNodeCollector submitNodeCollector,
       int packedLight,
       EasyModelBlockEntityRenderOptions options) {
     EasyModelRenderState renderState =
@@ -74,7 +74,7 @@ public final class EasyModelBlockEntityRenderDelegate<T extends BlockEntity & Ea
         partialTick,
         resolvedOptions,
         poseStack,
-        bufferSource,
+        submitNodeCollector,
         packedLight);
   }
 
