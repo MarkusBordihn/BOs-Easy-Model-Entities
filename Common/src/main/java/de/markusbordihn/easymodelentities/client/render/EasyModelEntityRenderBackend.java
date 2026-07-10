@@ -22,9 +22,7 @@ package de.markusbordihn.easymodelentities.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
-import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
-import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
@@ -89,6 +87,10 @@ public final class EasyModelEntityRenderBackend {
     Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
 
     EasyModelRenderState easyModelRenderState = renderState.easyModelRenderState;
+    EasyModelEntityRenderOptions renderOptions =
+        renderState.renderOptions == null
+            ? EasyModelEntityRenderOptions.DEFAULT
+            : renderState.renderOptions;
     poseStack.pushPose();
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.entityYaw));
     poseStack.scale(
@@ -103,8 +105,8 @@ public final class EasyModelEntityRenderBackend {
         renderState.ageInTicks,
         renderState.airborneAmount,
         renderState.animationState,
-        EasyModelPartAnimator.NONE,
-        EasyModelPartAnimationMode.ADD,
+        renderOptions.partAnimator(),
+        renderOptions.partAnimationMode(),
         poseStack,
         submitNodeCollector,
         packedLight);

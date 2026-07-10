@@ -20,9 +20,14 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
@@ -124,6 +129,29 @@ class EasyModelEntityRenderBackendTest {
   @AfterEach
   void resetServices() {
     EasyModelServices.reset();
+  }
+
+  @Test
+  void renderStateDefaultsToSafeRenderOptions() {
+    EasyModelEntityRenderState renderState = new EasyModelEntityRenderState();
+
+    assertSame(EasyModelEntityRenderOptions.DEFAULT, renderState.renderOptions);
+  }
+
+  @Test
+  void renderStateRetainsCustomPartAnimationOptions() {
+    EasyModelPartAnimator animator = context -> EasyModelPartTransform.NONE;
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT
+            .withPartAnimator(animator)
+            .withPartAnimationMode(EasyModelPartAnimationMode.REPLACE);
+    EasyModelEntityRenderState renderState = new EasyModelEntityRenderState();
+
+    renderState.renderOptions = options;
+
+    assertSame(animator, renderState.renderOptions.partAnimator());
+    assertEquals(
+        EasyModelPartAnimationMode.REPLACE, renderState.renderOptions.partAnimationMode());
   }
 
   @Test
