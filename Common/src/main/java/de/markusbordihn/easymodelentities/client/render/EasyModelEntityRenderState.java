@@ -19,6 +19,8 @@
 
 package de.markusbordihn.easymodelentities.client.render;
 
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
@@ -27,6 +29,8 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 public class EasyModelEntityRenderState extends EntityRenderState {
   public EasyModelRenderState easyModelRenderState;
   public EasyModelAnimationState animationState = EasyModelAnimationState.AUTO;
+  public EasyModelPartAnimator partAnimator = EasyModelPartAnimator.NONE;
+  public EasyModelPartAnimationMode partAnimationMode = EasyModelPartAnimationMode.ADD;
   public float entityYaw;
   public float limbSwing;
   public float limbSwingAmount;
