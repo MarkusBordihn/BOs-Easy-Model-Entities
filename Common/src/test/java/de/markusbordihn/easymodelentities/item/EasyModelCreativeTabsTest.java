@@ -175,8 +175,7 @@ class EasyModelCreativeTabsTest {
   @Test
   void tabsAreEmptyWhenItemsAreNotBound() {
     EasyModelServices.setRenderProfileService(
-        renderProfileService(
-            active(Identifier.fromNamespaceAndPath("example", "entity/alpha"))));
+        renderProfileService(active(Identifier.fromNamespaceAndPath("example", "entity/alpha"))));
 
     assertEquals(List.of(), EasyModelCreativeTabs.entityTabStacks());
     assertEquals(List.of(), EasyModelCreativeTabs.blockTabStacks());

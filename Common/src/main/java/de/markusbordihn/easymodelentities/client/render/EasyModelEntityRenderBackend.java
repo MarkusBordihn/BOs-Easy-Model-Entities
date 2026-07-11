@@ -103,8 +103,10 @@ public final class EasyModelEntityRenderBackend {
         renderState.ageInTicks,
         renderState.airborneAmount,
         renderState.animationState,
-        EasyModelPartAnimator.NONE,
-        EasyModelPartAnimationMode.ADD,
+        renderState.partAnimator == null ? EasyModelPartAnimator.NONE : renderState.partAnimator,
+        renderState.partAnimationMode == null
+            ? EasyModelPartAnimationMode.ADD
+            : renderState.partAnimationMode,
         poseStack,
         submitNodeCollector,
         packedLight);

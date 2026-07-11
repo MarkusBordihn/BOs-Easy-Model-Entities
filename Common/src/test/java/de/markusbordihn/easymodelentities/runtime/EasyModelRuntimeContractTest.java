@@ -73,8 +73,7 @@ class EasyModelRuntimeContractTest {
 
   @Test
   void fromRenderProfileKeepsRenderIdentityAndFallsBackToSafeDimensions() {
-    Identifier renderProfileId =
-        Identifier.fromNamespaceAndPath("example", "lizard_render");
+    Identifier renderProfileId = Identifier.fromNamespaceAndPath("example", "lizard_render");
     EasyModelRenderProfile renderProfile =
         new EasyModelRenderProfile(
             renderProfileId,

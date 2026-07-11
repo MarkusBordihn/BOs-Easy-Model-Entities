@@ -78,8 +78,7 @@ class BundledDemoProfilesTest {
           new Demo("block_entity/shrine", ModelBodyType.STATIC));
 
   private static void assertDemo(String path, ModelBodyType bodyType) throws Exception {
-    Identifier id =
-        Identifier.fromNamespaceAndPath("easy_model_entities_examples", path);
+    Identifier id = Identifier.fromNamespaceAndPath("easy_model_entities_examples", path);
     Identifier renderProfileId =
         Identifier.fromNamespaceAndPath("easy_model_entities_examples", path);
     EasyModelEntityProfile profile = parseProfile(id);

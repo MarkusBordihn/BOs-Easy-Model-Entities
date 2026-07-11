@@ -28,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -43,6 +44,14 @@ public final class EasyModelEntitiesApi {
   public static Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
     return EasyModelServices.profileService()
         .getProfile(Objects.requireNonNull(profileId, "profileId"));
+  }
+
+  public static Optional<EntityDimensions> getProfileEntityDimensions(Identifier profileId) {
+    return getProfile(profileId)
+        .map(
+            profile ->
+                EntityDimensions.scalable(profile.width(), profile.height())
+                    .withEyeHeight(profile.eyeHeight()));
   }
 
   public static List<EasyModelEntityProfile> listProfiles() {
