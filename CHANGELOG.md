@@ -5,6 +5,22 @@
 This change log includes the summarized changes.
 For the full changelog, please go to the [GitHub History][history] instead.
 
+### 1.6.0
+
+- Added an `attack` animation state with standard Blockbench `attack` clip support for all body
+  types, driven by the entity's attack swing progress.
+- Added a procedural vanilla-style arm swing for biped and winged humanoid models that lack an
+  `attack` clip.
+- Added a part pose capture API (`EasyModelPartPoseListener` / `EasyModelPartPose` via
+  `EasyModelEntityRenderOptions.withPartPoseListener`) so integrations can anchor held items or
+  attachments to animated model parts.
+- Added `EasyModelEntitiesClientApi.getItemAnchor(profileId, arm)` with cached anchor resolution
+  (dedicated `right_item`/`left_item` anchor parts take precedence over the `*_hand`/`*_arm`
+  fallback).
+- Added `EasyModelEntityRenderOptions.withAnimationState(int)` to force an animation state without
+  implementing `EasyModelRenderable`.
+- Improved performance by 10%.
+
 ### 1.5.0
 
 - Fixed the entity and block-entity creative tabs being empty on dedicated clients by building them

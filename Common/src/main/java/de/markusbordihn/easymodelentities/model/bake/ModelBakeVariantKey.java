@@ -17,19 +17,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.api;
+package de.markusbordihn.easymodelentities.model.bake;
 
-public final class EasyModelAnimationStates {
+import de.markusbordihn.easymodelentities.data.model.bake.ModelCacheKey;
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import java.util.Map;
+import java.util.Objects;
+import net.minecraft.resources.ResourceLocation;
 
-  public static final int AUTO = 0;
-  public static final int IDLE = 1;
-  public static final int WALK = 2;
-  public static final int RUN = 3;
-  public static final int HURT = 4;
-  public static final int DEATH = 5;
-  public static final int SWIM = 6;
-  public static final int FLY = 7;
-  public static final int ATTACK = 8;
+record ModelBakeVariantKey(
+    ModelCacheKey cacheKey,
+    ModelBodyType bodyType,
+    ResourceLocation texture,
+    Map<Integer, ResourceLocation> textures) {
 
-  private EasyModelAnimationStates() {}
+  ModelBakeVariantKey {
+    Objects.requireNonNull(cacheKey, "cacheKey");
+    Objects.requireNonNull(bodyType, "bodyType");
+    Objects.requireNonNull(texture, "texture");
+    textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
+  }
 }

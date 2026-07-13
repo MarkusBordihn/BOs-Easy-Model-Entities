@@ -35,6 +35,7 @@ import de.markusbordihn.easymodelentities.data.profile.ModelDimensions;
 import de.markusbordihn.easymodelentities.data.profile.ModelMovementSettings;
 import de.markusbordihn.easymodelentities.data.profile.ModelProfileStatus;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
@@ -46,6 +47,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.AfterEach;
@@ -65,10 +67,14 @@ class EasyModelHostBlockEntityTest {
   }
 
   private static EasyModelEntityProfile profile() {
+    return profile("server-v1");
+  }
+
+  private static EasyModelEntityProfile profile(String version) {
     return new EasyModelEntityProfile(
         PROFILE_ID,
         "0.1.0",
-        "server-v1",
+        version,
         ModelType.BLOCK_ENTITY,
         null,
         new ModelBlockEntitySettings(
@@ -147,6 +153,19 @@ class EasyModelHostBlockEntityTest {
     blockEntity.clientTick(null, BlockPos.ZERO, mock(BlockState.class));
 
     assertEquals(1, blockEntity.getEasyModelAnimationTicks());
+  }
+
+  @Test
+  void profileReloadRebindsLoadedServerBlockEntity() {
+    EasyModelServices.setProfileService(profileService(profile("server-v1")));
+    TestBlockEntity blockEntity = new TestBlockEntity();
+    blockEntity.setLevel(mock(Level.class));
+    blockEntity.setEasyModelProfileId(PROFILE_ID);
+
+    EasyModelServices.setProfileService(profileService(profile("server-v2")));
+    EasyModelReloadDispatcher.fireProfileReload();
+
+    assertEquals("server-v2", blockEntity.getEasyModelVersion());
   }
 
   @Test

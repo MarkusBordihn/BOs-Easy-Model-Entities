@@ -21,7 +21,8 @@
       "de.markusbordihn.easymodelentities.EasyModelEntitiesClient"
     ],
     "fabric-gametest": [
-      "de.markusbordihn.easymodelentities.gametest.SmokeTest"
+      "de.markusbordihn.easymodelentities.gametest.SmokeTest",
+      "de.markusbordihn.easymodelentities.gametest.HostEntityGameTest"
     ]
   },
   "accessWidener": "easymodelentities.accesswidener",

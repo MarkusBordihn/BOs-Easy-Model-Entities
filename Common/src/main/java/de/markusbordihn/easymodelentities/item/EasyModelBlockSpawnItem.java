@@ -36,6 +36,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 
 public class EasyModelBlockSpawnItem extends EasyModelSpawnItem {
 
@@ -77,6 +78,7 @@ public class EasyModelBlockSpawnItem extends EasyModelSpawnItem {
     }
 
     BlockPos placePos = placeContext.getClickedPos();
+    BlockState replacedState = level.getBlockState(placePos);
     BlockState blockState = block.getStateForPlacement(placeContext);
     if (blockState == null) {
       blockState = block.defaultBlockState();
@@ -88,10 +90,15 @@ public class EasyModelBlockSpawnItem extends EasyModelSpawnItem {
     if (level.getBlockEntity(placePos) instanceof EasyModelHostBlockEntity hostBlockEntity) {
       hostBlockEntity.setEasyModelProfileId(profileId.get());
     } else {
+      level.setBlock(placePos, replacedState, Block.UPDATE_ALL);
       notifyPlayer(
           context.getPlayer(), "Placed block at " + placePos + " without Easy Model BlockEntity.");
       return InteractionResult.FAIL;
     }
+
+    block.setPlacedBy(level, placePos, blockState, context.getPlayer(), stack);
+    level.gameEvent(
+        GameEvent.BLOCK_PLACE, placePos, GameEvent.Context.of(context.getPlayer(), blockState));
 
     Player player = context.getPlayer();
     if (player == null || !player.getAbilities().instabuild) {

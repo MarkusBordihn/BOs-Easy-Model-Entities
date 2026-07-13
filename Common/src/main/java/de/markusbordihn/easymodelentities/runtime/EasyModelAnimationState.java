@@ -30,7 +30,8 @@ public enum EasyModelAnimationState {
   HURT(EasyModelAnimationStates.HURT),
   DEATH(EasyModelAnimationStates.DEATH),
   SWIM(EasyModelAnimationStates.SWIM),
-  FLY(EasyModelAnimationStates.FLY);
+  FLY(EasyModelAnimationStates.FLY),
+  ATTACK(EasyModelAnimationStates.ATTACK);
 
   private static final EasyModelAnimationState[] VALUES = values();
 

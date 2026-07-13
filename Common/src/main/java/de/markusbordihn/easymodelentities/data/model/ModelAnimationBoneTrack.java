@@ -44,21 +44,30 @@ public record ModelAnimationBoneTrack(
     if (time <= first.time()) {
       return first.value();
     }
-    ModelAnimationKeyframe previous = first;
-    for (ModelAnimationKeyframe keyframe : keyframes) {
-      if (time <= keyframe.time()) {
-        if (keyframe.step()) {
-          return time < keyframe.time() ? previous.value() : keyframe.value();
-        }
-        float span = keyframe.time() - previous.time();
-        if (span <= 0.0f) {
-          return keyframe.value();
-        }
-        return lerp(previous.value(), keyframe.value(), (time - previous.time()) / span);
-      }
-      previous = keyframe;
+    ModelAnimationKeyframe last = keyframes.get(keyframes.size() - 1);
+    if (time >= last.time()) {
+      return last.value();
     }
-    return previous.value();
+    int low = 1;
+    int high = keyframes.size() - 1;
+    while (low < high) {
+      int middle = (low + high) >>> 1;
+      if (time <= keyframes.get(middle).time()) {
+        high = middle;
+      } else {
+        low = middle + 1;
+      }
+    }
+    ModelAnimationKeyframe keyframe = keyframes.get(low);
+    ModelAnimationKeyframe previous = keyframes.get(low - 1);
+    if (keyframe.step()) {
+      return time < keyframe.time() ? previous.value() : keyframe.value();
+    }
+    float span = keyframe.time() - previous.time();
+    if (span <= 0.0f) {
+      return keyframe.value();
+    }
+    return lerp(previous.value(), keyframe.value(), (time - previous.time()) / span);
   }
 
   private static Vec3f lerp(Vec3f from, Vec3f to, float progress) {
