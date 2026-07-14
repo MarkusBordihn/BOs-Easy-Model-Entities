@@ -74,6 +74,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
 
   protected EasyModelHostEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
     super(entityType, level);
+    EasyModelHostSupport.registerHost(this, FIELDS);
     this.setPersistenceRequired();
   }
 

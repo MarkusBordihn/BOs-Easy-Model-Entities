@@ -23,6 +23,7 @@ import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.render.EasyModelRenderStateResolver;
+import de.markusbordihn.easymodelentities.runtime.AssetPairing;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Map;
@@ -32,10 +33,12 @@ import net.minecraft.client.Minecraft;
 
 public final class EasyModelRenderStateCache {
 
+  private static final int MAX_CACHE_ENTRIES = 4096;
   private static final Map<EasyModelRuntimeContract, EasyModelRenderState> CACHE =
       new ConcurrentHashMap<>();
 
   static {
+    EasyModelReloadDispatcher.addProfileReloadListener(CACHE::clear);
     EasyModelReloadDispatcher.addRenderProfileReloadListener(CACHE::clear);
   }
 
@@ -48,6 +51,9 @@ public final class EasyModelRenderStateCache {
     if (renderState != null) {
       return renderState;
     }
+    if (CACHE.size() >= MAX_CACHE_ENTRIES) {
+      CACHE.clear();
+    }
     return CACHE.computeIfAbsent(
         key,
         cacheKey ->
@@ -59,16 +65,22 @@ public final class EasyModelRenderStateCache {
   }
 
   private static EasyModelRuntimeContract keyOf(EasyModelRuntimeContract contract) {
-    return contract.animationState() == EasyModelAnimationState.AUTO
-        ? contract
-        : new EasyModelRuntimeContract(
-            contract.profileId(),
-            contract.renderProfileId(),
-            contract.version(),
-            contract.width(),
-            contract.height(),
-            contract.eyeHeight(),
-            contract.bodyType(),
-            EasyModelAnimationState.AUTO);
+    boolean activeRenderProfile =
+        EasyModelServices.renderProfileService()
+            .getRenderProfile(contract.renderProfileId())
+            .filter(renderProfile -> renderProfile.isActive())
+            .filter(renderProfile -> renderProfile.bodyType() == contract.bodyType())
+            .filter(
+                renderProfile -> AssetPairing.matches(contract.version(), renderProfile.version()))
+            .isPresent();
+    return new EasyModelRuntimeContract(
+        contract.renderProfileId(),
+        contract.renderProfileId(),
+        contract.version(),
+        activeRenderProfile ? 0.0f : contract.width(),
+        activeRenderProfile ? 0.0f : contract.height(),
+        0.0f,
+        contract.bodyType(),
+        EasyModelAnimationState.AUTO);
   }
 }

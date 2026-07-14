@@ -22,9 +22,9 @@ package de.markusbordihn.easymodelentities.renderprofile;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnosticSeverity;
-import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.runtime.AssetPairing;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,15 +66,13 @@ public final class ModelRenderProfileValidator {
 
     String serverVersion = runtimeContract.version();
     String clientVersion = renderProfile.version();
-    if (!serverVersion.isEmpty() || !clientVersion.isEmpty()) {
-      if (!serverVersion.equals(clientVersion)) {
-        diagnostics.add(
-            diagnostic(
-                ModelDiagnosticSeverity.ERROR,
-                CLIENT_ASSET_MISMATCH_CODE,
-                "Render profile version does not match runtime version.",
-                renderProfile.id()));
-      }
+    if (!AssetPairing.matches(serverVersion, clientVersion)) {
+      diagnostics.add(
+          diagnostic(
+              ModelDiagnosticSeverity.ERROR,
+              CLIENT_ASSET_MISMATCH_CODE,
+              "Render profile version does not match runtime version.",
+              renderProfile.id()));
     }
 
     logOnce(diagnostics);

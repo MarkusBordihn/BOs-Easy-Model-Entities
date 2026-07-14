@@ -73,7 +73,10 @@ public class EasyModelEntitySpawnItem extends EasyModelSpawnItem {
       return InteractionResult.FAIL;
     }
 
-    level.addFreshEntity(entity.get());
+    if (!level.addFreshEntity(entity.get())) {
+      notifyPlayer(context.getPlayer(), "Could not add Easy Model Entities host entity to level.");
+      return InteractionResult.FAIL;
+    }
     Player player = context.getPlayer();
     if (player == null || !player.getAbilities().instabuild) {
       stack.shrink(1);
