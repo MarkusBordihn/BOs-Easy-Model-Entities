@@ -17,19 +17,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.api;
+package de.markusbordihn.easymodelentities.api.data.client;
 
-public final class EasyModelAnimationStates {
+import com.mojang.blaze3d.vertex.PoseStack;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 
-  public static final int AUTO = 0;
-  public static final int IDLE = 1;
-  public static final int WALK = 2;
-  public static final int RUN = 3;
-  public static final int HURT = 4;
-  public static final int DEATH = 5;
-  public static final int SWIM = 6;
-  public static final int FLY = 7;
-  public static final int ATTACK = 8;
+public record EasyModelPartPose(
+    String partName, Matrix4f poseMatrix, Matrix3f normalMatrix, Vec3f cubeMin, Vec3f cubeMax) {
 
-  private EasyModelAnimationStates() {}
+  public void applyTo(PoseStack poseStack) {
+    poseStack.last().pose().set(this.poseMatrix);
+    poseStack.last().normal().set(this.normalMatrix);
+  }
 }

@@ -53,6 +53,7 @@ import net.minecraft.SharedConstants;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.AfterEach;
@@ -172,6 +173,29 @@ class EasyModelEntitiesApiTest {
     assertEquals(ACTIVE_PROFILE_ID, EasyModelEntitiesApi.listProfiles().get(0).id());
     assertEquals(1, EasyModelEntitiesApi.listProfiles(ModelBodyType.QUADRUPED).size());
     assertTrue(EasyModelEntitiesApi.listProfiles(ModelBodyType.BIPED).isEmpty());
+  }
+
+  @Test
+  void getProfileEntityDimensionsReturnsScalableProfileDimensions() {
+    EasyModelServices.setProfileService(
+        profileService(profile(ACTIVE_PROFILE_ID, ModelProfileStatus.ACTIVE)));
+
+    EntityDimensions dimensions =
+        EasyModelEntitiesApi.getProfileEntityDimensions(ACTIVE_PROFILE_ID).orElseThrow();
+    assertEquals(0.6f, dimensions.width());
+    assertEquals(0.8f, dimensions.height());
+    assertFalse(dimensions.fixed());
+    assertTrue(EasyModelEntitiesApi.getProfileEntityDimensions(MISSING_PROFILE_ID).isEmpty());
+  }
+
+  @Test
+  void getProfileStandingEyeHeightReturnsProfileEyeHeight() {
+    EasyModelServices.setProfileService(
+        profileService(profile(ACTIVE_PROFILE_ID, ModelProfileStatus.ACTIVE)));
+
+    assertEquals(
+        0.5f, EasyModelEntitiesApi.getProfileStandingEyeHeight(ACTIVE_PROFILE_ID).orElseThrow());
+    assertTrue(EasyModelEntitiesApi.getProfileStandingEyeHeight(MISSING_PROFILE_ID).isEmpty());
   }
 
   @Test
