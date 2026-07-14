@@ -122,7 +122,8 @@ public final class EasyModelEntityRenderBackend {
         limbSwingAmount(entity, partialTick),
         ageInTicks,
         airborneAmount(entity),
-        animationState(entity),
+        attackAmount(entity, partialTick),
+        resolveAnimationState(safeOptions, animationState(entity)),
         safeOptions,
         poseStack,
         bufferSource,
@@ -151,7 +152,8 @@ public final class EasyModelEntityRenderBackend {
         0.0f,
         ageInTicks,
         0.0f,
-        EasyModelAnimationState.AUTO,
+        0.0f,
+        resolveAnimationState(safeOptions, EasyModelAnimationState.AUTO),
         safeOptions,
         poseStack,
         bufferSource,
@@ -165,6 +167,7 @@ public final class EasyModelEntityRenderBackend {
       float limbSwingAmount,
       float ageInTicks,
       float airborneAmount,
+      float attackAmount,
       EasyModelAnimationState animationState,
       EasyModelEntityRenderOptions options,
       PoseStack poseStack,
@@ -184,13 +187,22 @@ public final class EasyModelEntityRenderBackend {
         limbSwingAmount,
         ageInTicks,
         airborneAmount,
+        attackAmount,
         animationState,
         options.partAnimator(),
         options.partAnimationMode(),
+        options.partPoseListener(),
         poseStack,
         bufferSource,
         packedLight);
     poseStack.popPose();
+  }
+
+  private static EasyModelAnimationState resolveAnimationState(
+      EasyModelEntityRenderOptions options, EasyModelAnimationState fallback) {
+    return options.animationState() == null
+        ? fallback
+        : EasyModelAnimationState.byApiState(options.animationState());
   }
 
   private static EasyModelAnimationState animationState(Entity entity) {
@@ -264,6 +276,12 @@ public final class EasyModelEntityRenderBackend {
   private static float limbSwingAmount(Entity entity, float partialTick) {
     return entity instanceof LivingEntity livingEntity
         ? Math.min(livingEntity.walkAnimation.speed(partialTick), 1.0f)
+        : 0.0f;
+  }
+
+  private static float attackAmount(Entity entity, float partialTick) {
+    return entity instanceof LivingEntity livingEntity
+        ? livingEntity.getAttackAnim(partialTick)
         : 0.0f;
   }
 

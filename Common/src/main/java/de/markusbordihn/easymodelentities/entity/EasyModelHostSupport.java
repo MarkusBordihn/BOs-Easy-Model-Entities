@@ -24,17 +24,25 @@ import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.WeakHashMap;
+import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 
@@ -45,8 +53,39 @@ public final class EasyModelHostSupport {
   public static final float FALLBACK_EYE_HEIGHT = 1.62f;
   public static final ResourceLocation MISSING_PROFILE_ID =
       ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "missing");
+  private static final Map<Mob, EasyModelHostFields> LOADED_HOSTS =
+      Collections.synchronizedMap(new WeakHashMap<>());
+
+  static {
+    EasyModelReloadDispatcher.addProfileReloadListener(EasyModelHostSupport::reloadProfiles);
+  }
 
   private EasyModelHostSupport() {}
+
+  public static void registerHost(Mob entity, EasyModelHostFields fields) {
+    LOADED_HOSTS.put(
+        Objects.requireNonNull(entity, "entity"), Objects.requireNonNull(fields, "fields"));
+  }
+
+  private static void reloadProfiles() {
+    List<Map.Entry<Mob, EasyModelHostFields>> hosts = new ArrayList<>();
+    synchronized (LOADED_HOSTS) {
+      LOADED_HOSTS.forEach((entity, fields) -> hosts.add(Map.entry(entity, fields)));
+    }
+    for (Map.Entry<Mob, EasyModelHostFields> entry : hosts) {
+      Mob entity = entry.getKey();
+      if (entity.level().isClientSide || entity.isRemoved()) {
+        continue;
+      }
+      ResourceLocation profileId = getProfileId(entity.getEntityData(), entry.getValue());
+      EasyModelAnimationState animationState =
+          getAnimationState(entity.getEntityData(), entry.getValue());
+      activeProfile(profileId)
+          .ifPresentOrElse(
+              profile -> applyProfile(entity, entry.getValue(), profile, animationState),
+              () -> applyFallback(entity, entry.getValue(), profileId, animationState));
+    }
+  }
 
   public static AttributeSupplier.Builder createAttributes() {
     return Mob.createMobAttributes()
@@ -107,8 +146,7 @@ public final class EasyModelHostSupport {
     EasyModelAnimationState animationState = state.animationState();
 
     if (profileId == null) {
-      applyRuntimeContract(
-          entity, fields, EasyModelRuntimeContract.fallback(MISSING_PROFILE_ID, animationState));
+      applyFallback(entity, fields, MISSING_PROFILE_ID, animationState);
       return;
     }
 
@@ -118,7 +156,7 @@ public final class EasyModelHostSupport {
       return;
     }
 
-    applyRuntimeContract(
+    applyFallback(
         entity,
         fields,
         new EasyModelRuntimeContract(
@@ -149,8 +187,32 @@ public final class EasyModelHostSupport {
       return;
     }
 
-    applyRuntimeContract(
-        entity, fields, EasyModelRuntimeContract.fallback(profileId, animationState));
+    applyFallback(entity, fields, profileId, animationState);
+  }
+
+  private static void applyFallback(
+      Mob entity,
+      EasyModelHostFields fields,
+      ResourceLocation profileId,
+      EasyModelAnimationState animationState) {
+    applyFallback(entity, fields, EasyModelRuntimeContract.fallback(profileId, animationState));
+  }
+
+  private static void applyFallback(
+      Mob entity, EasyModelHostFields fields, EasyModelRuntimeContract contract) {
+    applyRuntimeContract(entity, fields, contract);
+    entity.setNoGravity(false);
+    setBaseAttribute(entity, Attributes.STEP_HEIGHT, 0.6);
+    setBaseAttribute(entity, Attributes.MOVEMENT_SPEED, 0.0);
+    setBaseAttribute(entity, Attributes.MAX_HEALTH, 10.0);
+    setBaseAttribute(entity, Attributes.FOLLOW_RANGE, 16.0);
+    entity.setHealth(Math.min(entity.getHealth(), entity.getMaxHealth()));
+  }
+
+  private static void setBaseAttribute(Mob entity, Holder<Attribute> attribute, double value) {
+    if (entity.getAttribute(attribute) != null) {
+      entity.getAttribute(attribute).setBaseValue(value);
+    }
   }
 
   public static ResourceLocation getRenderProfileId(
@@ -215,15 +277,9 @@ public final class EasyModelHostSupport {
         entity, fields, EasyModelRuntimeContract.fromProfile(profile, animationState));
     entity.setNoGravity(!profile.movement().gravity());
 
-    if (entity.getAttribute(Attributes.MOVEMENT_SPEED) != null) {
-      entity.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(profile.movement().speed());
-    }
-    if (entity.getAttribute(Attributes.MAX_HEALTH) != null) {
-      entity.getAttribute(Attributes.MAX_HEALTH).setBaseValue(profile.attributes().maxHealth());
-    }
-    if (entity.getAttribute(Attributes.FOLLOW_RANGE) != null) {
-      entity.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(profile.attributes().followRange());
-    }
+    setBaseAttribute(entity, Attributes.MOVEMENT_SPEED, profile.movement().speed());
+    setBaseAttribute(entity, Attributes.MAX_HEALTH, profile.attributes().maxHealth());
+    setBaseAttribute(entity, Attributes.FOLLOW_RANGE, profile.attributes().followRange());
   }
 
   public static void applyRuntimeContract(

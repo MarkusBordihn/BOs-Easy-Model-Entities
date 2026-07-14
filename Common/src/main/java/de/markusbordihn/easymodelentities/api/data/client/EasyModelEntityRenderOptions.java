@@ -20,16 +20,24 @@
 package de.markusbordihn.easymodelentities.api.data.client;
 
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 
 public record EasyModelEntityRenderOptions(
     Float scale,
     Float animationTicks,
     EasyModelPartAnimator partAnimator,
-    EasyModelPartAnimationMode partAnimationMode) {
+    EasyModelPartAnimationMode partAnimationMode,
+    EasyModelPartPoseListener partPoseListener,
+    Integer animationState) {
 
   public static final EasyModelEntityRenderOptions DEFAULT =
       new EasyModelEntityRenderOptions(
-          null, null, EasyModelPartAnimator.NONE, EasyModelPartAnimationMode.ADD);
+          null,
+          null,
+          EasyModelPartAnimator.NONE,
+          EasyModelPartAnimationMode.ADD,
+          EasyModelPartPoseListener.NONE,
+          null);
 
   public EasyModelEntityRenderOptions(Float animationTicks, EasyModelPartAnimator partAnimator) {
     this(null, animationTicks, partAnimator, EasyModelPartAnimationMode.ADD);
@@ -42,30 +50,86 @@ public record EasyModelEntityRenderOptions(
     this(null, animationTicks, partAnimator, partAnimationMode);
   }
 
+  public EasyModelEntityRenderOptions(
+      Float scale,
+      Float animationTicks,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode) {
+    this(
+        scale,
+        animationTicks,
+        partAnimator,
+        partAnimationMode,
+        EasyModelPartPoseListener.NONE,
+        null);
+  }
+
   public EasyModelEntityRenderOptions {
     partAnimator = partAnimator == null ? EasyModelPartAnimator.NONE : partAnimator;
     partAnimationMode =
         partAnimationMode == null ? EasyModelPartAnimationMode.ADD : partAnimationMode;
+    partPoseListener = partPoseListener == null ? EasyModelPartPoseListener.NONE : partPoseListener;
   }
 
   public EasyModelEntityRenderOptions withScale(float scale) {
     return new EasyModelEntityRenderOptions(
-        scale, this.animationTicks, this.partAnimator, this.partAnimationMode);
+        scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animationState);
   }
 
   public EasyModelEntityRenderOptions withAnimationTicks(float animationTicks) {
     return new EasyModelEntityRenderOptions(
-        this.scale, animationTicks, this.partAnimator, this.partAnimationMode);
+        this.scale,
+        animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animationState);
   }
 
   public EasyModelEntityRenderOptions withPartAnimator(EasyModelPartAnimator partAnimator) {
     return new EasyModelEntityRenderOptions(
-        this.scale, this.animationTicks, partAnimator, this.partAnimationMode);
+        this.scale,
+        this.animationTicks,
+        partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animationState);
   }
 
   public EasyModelEntityRenderOptions withPartAnimationMode(
       EasyModelPartAnimationMode partAnimationMode) {
     return new EasyModelEntityRenderOptions(
-        this.scale, this.animationTicks, this.partAnimator, partAnimationMode);
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        partAnimationMode,
+        this.partPoseListener,
+        this.animationState);
+  }
+
+  public EasyModelEntityRenderOptions withPartPoseListener(
+      EasyModelPartPoseListener partPoseListener) {
+    return new EasyModelEntityRenderOptions(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        partPoseListener,
+        this.animationState);
+  }
+
+  public EasyModelEntityRenderOptions withAnimationState(int animationState) {
+    return new EasyModelEntityRenderOptions(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        animationState);
   }
 }

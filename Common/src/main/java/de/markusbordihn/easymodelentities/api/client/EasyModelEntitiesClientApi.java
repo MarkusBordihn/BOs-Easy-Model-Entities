@@ -22,7 +22,9 @@ package de.markusbordihn.easymodelentities.api.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelItemAnchor;
 import de.markusbordihn.easymodelentities.client.render.EasyModelEntityRenderBackend;
+import de.markusbordihn.easymodelentities.client.render.EasyModelItemAnchorResolver;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.ModelBounds;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
@@ -39,6 +41,7 @@ import java.util.Optional;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public final class EasyModelEntitiesClientApi {
@@ -121,6 +124,13 @@ public final class EasyModelEntitiesClientApi {
     Objects.requireNonNull(profileId, "profileId");
     return resolveRenderState(profileId, EasyModelAnimationState.AUTO)
         .map(renderState -> renderState.bakedModel().bounds().scaled(renderState.scale()));
+  }
+
+  public static Optional<EasyModelItemAnchor> getItemAnchor(
+      ResourceLocation profileId, HumanoidArm arm) {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(arm, "arm");
+    return EasyModelItemAnchorResolver.getItemAnchor(profileId, arm);
   }
 
   public static Optional<ModelBodyType> getBodyType(ResourceLocation profileId) {

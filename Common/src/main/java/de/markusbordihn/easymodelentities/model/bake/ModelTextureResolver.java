@@ -34,12 +34,15 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -144,25 +147,52 @@ public final class ModelTextureResolver {
               "Missing texture asset " + textureResourceLocation + "."));
     }
 
-    try (InputStream inputStream = textureResource.get().open()) {
-      BufferedImage image = ImageIO.read(inputStream);
-      if (image == null) {
+    try (InputStream inputStream = textureResource.get().open();
+        ImageInputStream imageInputStream = ImageIO.createImageInputStream(inputStream)) {
+      if (imageInputStream == null) {
         return List.of(
             new ModelRenderProfileValidationIssue(
                 ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
                 "texture",
                 "Texture asset " + textureResourceLocation + " could not be decoded."));
       }
-      if (image.getWidth() > MAX_TEXTURE_SIZE || image.getHeight() > MAX_TEXTURE_SIZE) {
+      Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
+      if (!readers.hasNext()) {
         return List.of(
             new ModelRenderProfileValidationIssue(
                 ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
                 "texture",
-                "Texture asset "
-                    + textureResourceLocation
-                    + " exceeds the 2048x2048 asset budget."));
+                "Texture asset " + textureResourceLocation + " could not be decoded."));
       }
-      if (image.getWidth() > SOFT_TEXTURE_SIZE || image.getHeight() > SOFT_TEXTURE_SIZE) {
+
+      ImageReader reader = readers.next();
+      int width;
+      int height;
+      try {
+        reader.setInput(imageInputStream, true, true);
+        width = reader.getWidth(0);
+        height = reader.getHeight(0);
+        if (width > MAX_TEXTURE_SIZE || height > MAX_TEXTURE_SIZE) {
+          return List.of(
+              new ModelRenderProfileValidationIssue(
+                  ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
+                  "texture",
+                  "Texture asset "
+                      + textureResourceLocation
+                      + " exceeds the 2048x2048 asset budget."));
+        }
+        BufferedImage image = reader.read(0);
+        if (image == null) {
+          return List.of(
+              new ModelRenderProfileValidationIssue(
+                  ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
+                  "texture",
+                  "Texture asset " + textureResourceLocation + " could not be decoded."));
+        }
+      } finally {
+        reader.dispose();
+      }
+      if (width > SOFT_TEXTURE_SIZE || height > SOFT_TEXTURE_SIZE) {
         return List.of(
             new ModelRenderProfileValidationIssue(
                 ModelRenderProfileStatus.ACTIVE,

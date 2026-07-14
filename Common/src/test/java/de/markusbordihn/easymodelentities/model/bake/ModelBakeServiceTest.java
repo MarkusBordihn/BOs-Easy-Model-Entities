@@ -430,6 +430,39 @@ class ModelBakeServiceTest {
   }
 
   @Test
+  void sameFingerprintKeepsTextureVariantsSeparate() throws Exception {
+    ModelBakeService bakeService = ModelBakeService.createDefault();
+    ResourceLocation alternateTexture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/alternate.png");
+    ResourceManager resourceManager = resourceManager("static_explicit_root.bbmodel", png(64, 64));
+    when(resourceManager.getResource(alternateTexture))
+        .thenReturn(Optional.of(resource(png(64, 64))));
+    EasyModelRenderProfile firstProfile =
+        renderProfile(ModelBodyType.STATIC, "v1", "shared-fingerprint");
+    EasyModelRenderProfile secondProfile =
+        new EasyModelRenderProfile(
+            firstProfile.id(),
+            firstProfile.schemaVersion(),
+            firstProfile.version(),
+            firstProfile.bodyType(),
+            firstProfile.model(),
+            alternateTexture,
+            firstProfile.textures(),
+            firstProfile.rendering(),
+            firstProfile.animation(),
+            firstProfile.status(),
+            firstProfile.validationIssues(),
+            firstProfile.assetFingerprint());
+
+    ModelBakeResult first = bakeService.bake(firstProfile, resourceManager);
+    ModelBakeResult second = bakeService.bake(secondProfile, resourceManager);
+
+    assertEquals(TEXTURE_ID, first.bakedModel().textures().get(0));
+    assertEquals(alternateTexture, second.bakedModel().textures().get(0));
+    assertEquals(2, bakeService.cachedResultCount());
+  }
+
+  @Test
   void blankFingerprintFallsBackToVersionDiscriminator() throws Exception {
     ModelBakeService bakeService = ModelBakeService.createDefault();
 

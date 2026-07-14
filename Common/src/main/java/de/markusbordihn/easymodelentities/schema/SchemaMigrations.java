@@ -20,9 +20,11 @@
 package de.markusbordihn.easymodelentities.schema;
 
 import com.google.gson.JsonObject;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 public final class SchemaMigrations {
 
@@ -38,13 +40,21 @@ public final class SchemaMigrations {
   public Optional<JsonObject> migrate(JsonObject root, String fromVersion, String currentVersion) {
     Objects.requireNonNull(root, "root");
     String current = fromVersion;
-    JsonObject working = root;
+    JsonObject working = root.deepCopy();
+    Set<String> visitedVersions = new HashSet<>();
     boolean progressed = true;
     while (!Objects.equals(current, currentVersion) && progressed) {
+      if (!visitedVersions.add(current)) {
+        return Optional.empty();
+      }
       progressed = false;
       for (SchemaMigration migration : this.migrations) {
         if (migration.from().equals(current)) {
-          working = migration.apply(working);
+          JsonObject migrationResult = migration.apply(working);
+          if (migrationResult == null) {
+            return Optional.empty();
+          }
+          working = migrationResult;
           current = migration.to();
           progressed = true;
           break;

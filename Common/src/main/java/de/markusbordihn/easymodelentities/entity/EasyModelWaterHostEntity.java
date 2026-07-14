@@ -82,6 +82,7 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
 
   protected EasyModelWaterHostEntity(EntityType<? extends WaterAnimal> entityType, Level level) {
     super(entityType, level);
+    EasyModelHostSupport.registerHost(this, FIELDS);
     this.setPersistenceRequired();
     this.moveControl = new EasyModelWaterMoveControl(this);
   }

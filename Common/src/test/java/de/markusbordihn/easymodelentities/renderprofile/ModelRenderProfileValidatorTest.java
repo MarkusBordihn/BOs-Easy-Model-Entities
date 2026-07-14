@@ -120,13 +120,13 @@ class ModelRenderProfileValidatorTest {
   }
 
   @Test
-  void oneSidedVersionActivatesFallback() {
+  void oneSidedVersionUsesWildcardMatching() {
     EasyModelRenderProfile renderProfile = renderProfile("", ModelBodyType.QUADRUPED);
     EasyModelRuntimeContract runtimeContract =
         runtimeContract("server-v1", ModelBodyType.QUADRUPED);
 
     assertEquals(
-        ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
+        ModelRenderProfileStatus.ACTIVE,
         ModelRenderProfileValidator.runtimeStatus(renderProfile, runtimeContract));
   }
 }
