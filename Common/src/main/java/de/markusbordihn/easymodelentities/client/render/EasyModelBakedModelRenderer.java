@@ -23,8 +23,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartPose;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
 import de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility;
 import de.markusbordihn.easymodelentities.data.model.FaceUv;
@@ -52,6 +54,8 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
 
 public final class EasyModelBakedModelRenderer {
 
@@ -205,6 +209,7 @@ public final class EasyModelBakedModelRenderer {
         limbSwingAmount,
         ageInTicks,
         airborneAmount,
+        0.0f,
         EasyModelAnimationState.AUTO,
         partAnimator,
         partAnimationMode,
@@ -223,6 +228,68 @@ public final class EasyModelBakedModelRenderer {
       EasyModelAnimationState animationState,
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        airborneAmount,
+        0.0f,
+        animationState,
+        partAnimator,
+        partAnimationMode,
+        poseStack,
+        submitNodeCollector,
+        packedLight);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelAnimationState animationState,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        airborneAmount,
+        attackAmount,
+        animationState,
+        partAnimator,
+        partAnimationMode,
+        EasyModelPartPoseListener.NONE,
+        poseStack,
+        submitNodeCollector,
+        packedLight);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelAnimationState animationState,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
       PoseStack poseStack,
       SubmitNodeCollector submitNodeCollector,
       int packedLight) {
@@ -247,12 +314,14 @@ public final class EasyModelBakedModelRenderer {
                 limbSwingAmount,
                 ageInTicks,
                 airborneAmount,
+                attackAmount,
                 animationState,
                 innerStack,
                 renderTextureIndex -> renderTextureIndex == textureIndex ? vertexConsumer : null,
                 packedLight,
                 partAnimator,
-                partAnimationMode);
+                partAnimationMode,
+                partPoseListener);
           });
     }
   }
@@ -300,12 +369,14 @@ public final class EasyModelBakedModelRenderer {
         limbSwingAmount,
         ageInTicks,
         airborneAmount,
+        0.0f,
         EasyModelAnimationState.AUTO,
         poseStack,
         textureIndex -> vertexConsumer,
         packedLight,
         partAnimator,
-        partAnimationMode);
+        partAnimationMode,
+        EasyModelPartPoseListener.NONE);
   }
 
   static void render(
@@ -315,19 +386,24 @@ public final class EasyModelBakedModelRenderer {
       float limbSwingAmount,
       float ageInTicks,
       float airborneAmount,
+      float attackAmount,
       EasyModelAnimationState animationState,
       PoseStack poseStack,
       IntFunction<VertexConsumer> bufferProvider,
       int packedLight,
       EasyModelPartAnimator partAnimator,
-      EasyModelPartAnimationMode partAnimationMode) {
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener) {
     Objects.requireNonNull(bakedModel, "bakedModel");
     Objects.requireNonNull(animationState, "animationState");
     Objects.requireNonNull(partAnimator, "partAnimator");
     Objects.requireNonNull(partAnimationMode, "partAnimationMode");
+    Objects.requireNonNull(partPoseListener, "partPoseListener");
     ModelAnimationClip clip =
-        selectClip(bakedModel, renderState, animationState, limbSwingAmount, airborneAmount);
-    float clipTime = clip == null ? 0.0f : clipTime(clip, renderState, limbSwing, ageInTicks);
+        selectClip(
+            bakedModel, renderState, animationState, limbSwingAmount, airborneAmount, attackAmount);
+    float clipTime =
+        clip == null ? 0.0f : clipTime(clip, renderState, limbSwing, ageInTicks, attackAmount);
     VertexSinks sinks = new VertexSinks(bufferProvider, poseStack, packedLight);
     for (BakedModelPart part : bakedModel.rootParts()) {
       renderPart(
@@ -337,12 +413,14 @@ public final class EasyModelBakedModelRenderer {
           limbSwingAmount,
           ageInTicks,
           airborneAmount,
+          attackAmount,
           clip,
           clipTime,
           poseStack,
           sinks,
           partAnimator,
-          partAnimationMode);
+          partAnimationMode,
+          partPoseListener);
     }
   }
 
@@ -353,12 +431,14 @@ public final class EasyModelBakedModelRenderer {
       float limbSwingAmount,
       float ageInTicks,
       float airborneAmount,
+      float attackAmount,
       ModelAnimationClip clip,
       float clipTime,
       PoseStack poseStack,
       VertexSinks sinks,
       EasyModelPartAnimator partAnimator,
-      EasyModelPartAnimationMode partAnimationMode) {
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener) {
     poseStack.pushPose();
     Vec3f offset = part.offset();
     Vec3f rotation = part.rotation();
@@ -370,6 +450,7 @@ public final class EasyModelBakedModelRenderer {
             limbSwingAmount,
             ageInTicks,
             airborneAmount,
+            attackAmount,
             clip,
             clipTime);
     EasyModelPartTransform animationTransform;
@@ -412,6 +493,10 @@ public final class EasyModelBakedModelRenderer {
     }
 
     if (animationTransform.visible()) {
+      if (partPoseListener != EasyModelPartPoseListener.NONE
+          && partPoseListener.wantsPart(part.name())) {
+        partPoseListener.onPartPose(buildPartPose(part, poseStack));
+      }
       for (BakedModelCube cube : part.cubes()) {
         renderCube(cube, sinks);
       }
@@ -423,16 +508,49 @@ public final class EasyModelBakedModelRenderer {
             limbSwingAmount,
             ageInTicks,
             airborneAmount,
+            attackAmount,
             clip,
             clipTime,
             poseStack,
             sinks,
             partAnimator,
-            partAnimationMode);
+            partAnimationMode,
+            partPoseListener);
       }
     }
 
     poseStack.popPose();
+  }
+
+  private static EasyModelPartPose buildPartPose(BakedModelPart part, PoseStack poseStack) {
+    Vec3f cubeMin = Vec3f.ZERO;
+    Vec3f cubeMax = Vec3f.ZERO;
+    if (!part.cubes().isEmpty()) {
+      float minX = Float.MAX_VALUE;
+      float minY = Float.MAX_VALUE;
+      float minZ = Float.MAX_VALUE;
+      float maxX = -Float.MAX_VALUE;
+      float maxY = -Float.MAX_VALUE;
+      float maxZ = -Float.MAX_VALUE;
+      for (BakedModelCube cube : part.cubes()) {
+        Vec3f position = cube.position();
+        Vec3f dimensions = cube.dimensions();
+        minX = Math.min(minX, position.x());
+        minY = Math.min(minY, position.y());
+        minZ = Math.min(minZ, position.z());
+        maxX = Math.max(maxX, position.x() + dimensions.x());
+        maxY = Math.max(maxY, position.y() + dimensions.y());
+        maxZ = Math.max(maxZ, position.z() + dimensions.z());
+      }
+      cubeMin = new Vec3f(minX, minY, minZ);
+      cubeMax = new Vec3f(maxX, maxY, maxZ);
+    }
+    return new EasyModelPartPose(
+        part.name(),
+        new Matrix4f(poseStack.last().pose()),
+        new Matrix3f(poseStack.last().normal()),
+        cubeMin,
+        cubeMax);
   }
 
   private static EasyModelPartTransform animationRotation(
@@ -442,6 +560,7 @@ public final class EasyModelBakedModelRenderer {
       float limbSwingAmount,
       float ageInTicks,
       float airborneAmount,
+      float attackAmount,
       ModelAnimationClip clip,
       float clipTime) {
     if (renderState.fallbackModel()
@@ -450,25 +569,54 @@ public final class EasyModelBakedModelRenderer {
       return noRotation();
     }
 
+    ModelPartType part = ModelPartType.get(partName);
+    EasyModelPartTransform baseTransform = null;
     if (clip != null) {
       ModelAnimationBoneTrack track = clip.track(partName);
       if (track != null) {
-        return keyframeTransform(track, clipTime);
+        baseTransform = keyframeTransform(track, clipTime);
       }
     }
-
-    ModelPartType part = ModelPartType.get(partName);
-    if (limbSwingAmount > 0.01f) {
-      return walkRotation(partName, part, renderState, limbSwing, limbSwingAmount, airborneAmount);
+    if (baseTransform == null) {
+      baseTransform =
+          limbSwingAmount > 0.01f
+              ? walkRotation(
+                  partName, part, renderState, limbSwing, limbSwingAmount, airborneAmount)
+              : idleRotation(
+                  partName,
+                  part,
+                  renderState.bodyType(),
+                  ageInTicks,
+                  airborneAmount,
+                  renderState.animation().idleStrength());
     }
 
-    return idleRotation(
-        partName,
-        part,
-        renderState.bodyType(),
-        ageInTicks,
-        airborneAmount,
-        renderState.animation().idleStrength());
+    if (attackAmount > 0.0f && (clip == null || !isAttackClip(clip))) {
+      EasyModelPartTransform attackTransform =
+          attackRotation(part, renderState.bodyType(), attackAmount);
+      if (attackTransform != EasyModelPartTransform.NONE) {
+        baseTransform = baseTransform.add(attackTransform);
+      }
+    }
+    return baseTransform;
+  }
+
+  private static EasyModelPartTransform attackRotation(
+      ModelPartType part, ModelBodyType bodyType, float attackAmount) {
+    if (bodyType != ModelBodyType.BIPED && bodyType != ModelBodyType.WINGED_HUMANOID) {
+      return EasyModelPartTransform.NONE;
+    }
+
+    float bodySwing = Mth.sin(Mth.sqrt(attackAmount) * Mth.TWO_PI);
+    if (part == ModelPartType.RIGHT_ARM) {
+      float raise = Mth.sin(attackAmount * Mth.PI);
+      float strike = Mth.sin((1.0f - (1.0f - attackAmount) * (1.0f - attackAmount)) * Mth.PI);
+      return new EasyModelPartTransform(-(raise * 1.2f + strike * 0.4f), -bodySwing * 0.2f, 0.0f);
+    }
+    if (part == ModelPartType.BODY) {
+      return new EasyModelPartTransform(0.0f, bodySwing * 0.2f, 0.0f);
+    }
+    return EasyModelPartTransform.NONE;
   }
 
   private static ModelAnimationClip selectClip(
@@ -476,7 +624,8 @@ public final class EasyModelBakedModelRenderer {
       EasyModelRenderState renderState,
       EasyModelAnimationState animationState,
       float limbSwingAmount,
-      float airborneAmount) {
+      float airborneAmount,
+      float attackAmount) {
     Map<String, ModelAnimationClip> clips = bakedModel.animations();
     if (clips.isEmpty()) {
       return null;
@@ -484,6 +633,12 @@ public final class EasyModelBakedModelRenderer {
     ModelAnimationClip forcedClip = forcedClip(clips, animationState);
     if (forcedClip != null) {
       return forcedClip;
+    }
+    if (attackAmount > 0.0f) {
+      ModelAnimationClip attackClip = clips.get(ModelAnimationClips.ATTACK);
+      if (attackClip != null) {
+        return attackClip;
+      }
     }
     if (airborneAmount > 0.5f) {
       ModelAnimationClip flyClip = clips.get(ModelAnimationClips.FLY);
@@ -508,7 +663,11 @@ public final class EasyModelBakedModelRenderer {
       ModelAnimationClip clip,
       EasyModelRenderState renderState,
       float limbSwing,
-      float ageInTicks) {
+      float ageInTicks,
+      float attackAmount) {
+    if (isAttackClip(clip) && clip.length() > 0.0f) {
+      return Mth.clamp(attackAmount, 0.0f, 1.0f) * clip.length();
+    }
     if (isMovementClip(clip) && clip.length() > 0.0f) {
       float cycles =
           limbSwing * WALK_SWING_FREQUENCY * renderState.animation().swingSpeed() / Mth.TWO_PI;
@@ -522,6 +681,10 @@ public final class EasyModelBakedModelRenderer {
         || ModelAnimationClips.SWIM.equals(clip.name());
   }
 
+  private static boolean isAttackClip(ModelAnimationClip clip) {
+    return ModelAnimationClips.ATTACK.equals(clip.name());
+  }
+
   private static ModelAnimationClip forcedClip(
       Map<String, ModelAnimationClip> clips, EasyModelAnimationState animationState) {
     return switch (animationState) {
@@ -529,7 +692,10 @@ public final class EasyModelBakedModelRenderer {
       case WALK, RUN -> clips.get(ModelAnimationClips.WALK);
       case SWIM -> clips.get(ModelAnimationClips.SWIM);
       case FLY -> clips.get(ModelAnimationClips.FLY);
-      case AUTO, HURT, DEATH -> null;
+      case HURT -> clips.get(ModelAnimationClips.HURT);
+      case DEATH -> clips.get(ModelAnimationClips.DEATH);
+      case ATTACK -> clips.get(ModelAnimationClips.ATTACK);
+      case AUTO -> null;
     };
   }
 

@@ -54,6 +54,10 @@ public final class EasyModelEntitiesApi {
                     .withEyeHeight(profile.eyeHeight()));
   }
 
+  public static Optional<Float> getProfileStandingEyeHeight(Identifier profileId) {
+    return getProfile(profileId).map(EasyModelEntityProfile::eyeHeight);
+  }
+
   public static List<EasyModelEntityProfile> listProfiles() {
     return List.copyOf(EasyModelServices.profileService().getActiveProfiles());
   }

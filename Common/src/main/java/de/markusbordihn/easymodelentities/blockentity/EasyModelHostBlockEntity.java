@@ -24,12 +24,18 @@ import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -54,6 +60,12 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   public static final int RANDOM_IDLE_BURST_LENGTH = 53;
   public static final int RANDOM_IDLE_MIN_GAP = 200;
   public static final int RANDOM_IDLE_GAP_RANGE = 201;
+  private static final Set<EasyModelHostBlockEntity> LOADED_HOSTS =
+      Collections.newSetFromMap(Collections.synchronizedMap(new WeakHashMap<>()));
+
+  static {
+    EasyModelReloadDispatcher.addProfileReloadListener(EasyModelHostBlockEntity::reloadProfiles);
+  }
 
   private EasyModelRuntimeContract runtimeContract =
       EasyModelRuntimeContract.fallback(MISSING_PROFILE_ID);
@@ -67,6 +79,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
       BlockPos blockPos,
       BlockState blockState) {
     super(blockEntityType, blockPos, blockState);
+    LOADED_HOSTS.add(this);
     this.runtimeContract =
         new EasyModelRuntimeContract(
             MISSING_PROFILE_ID,
@@ -88,6 +101,27 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
 
   private static int randomIdleDelay(RandomSource random) {
     return RANDOM_IDLE_MIN_GAP + random.nextInt(RANDOM_IDLE_GAP_RANGE);
+  }
+
+  private static void reloadProfiles() {
+    List<EasyModelHostBlockEntity> hosts;
+    synchronized (LOADED_HOSTS) {
+      hosts = new ArrayList<>(LOADED_HOSTS);
+    }
+    for (EasyModelHostBlockEntity host : hosts) {
+      if (host.level == null || host.level.isClientSide() || host.isRemoved()) {
+        continue;
+      }
+      Identifier profileId = host.runtimeContract.profileId();
+      activeBlockEntityProfile(profileId)
+          .ifPresentOrElse(
+              profile -> host.applyProfile(profile, host.runtimeContract.animationState(), true),
+              () ->
+                  host.applyRuntimeContract(
+                      host.fallbackRuntimeContract(
+                          profileId, host.runtimeContract.animationState()),
+                      true));
+    }
   }
 
   public void serverTick(Level level, BlockPos blockPos, BlockState blockState) {}

@@ -72,6 +72,8 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
           BODY_TYPE,
           ANIMATION_STATE);
 
+  private boolean easyModelHostRegistered;
+
   protected EasyModelHostEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
     super(entityType, level);
     this.setPersistenceRequired();
@@ -79,6 +81,15 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
 
   public static AttributeSupplier.Builder createAttributes() {
     return EasyModelHostSupport.createAttributes();
+  }
+
+  @Override
+  public void tick() {
+    super.tick();
+    if (!this.easyModelHostRegistered) {
+      this.easyModelHostRegistered = true;
+      EasyModelHostSupport.registerHost(this, FIELDS);
+    }
   }
 
   @Override

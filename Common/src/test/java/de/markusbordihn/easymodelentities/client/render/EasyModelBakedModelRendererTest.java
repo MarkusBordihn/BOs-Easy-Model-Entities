@@ -30,11 +30,18 @@ import static org.mockito.Mockito.verify;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartPose;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
 import de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility;
 import de.markusbordihn.easymodelentities.data.model.FaceUv;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationBoneTrack;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationKeyframe;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
@@ -218,6 +225,47 @@ class EasyModelBakedModelRendererTest {
                         new Vec3f(1.0f, 1.0f, 1.0f),
                         false)),
                 List.of())));
+  }
+
+  private static float forcedClipRotation(
+      String clipName, EasyModelAnimationState animationState, float rotation) {
+    ModelAnimationBoneTrack track =
+        new ModelAnimationBoneTrack(
+            List.of(new ModelAnimationKeyframe(0.0f, new Vec3f(rotation, 0.0f, 0.0f), false)),
+            List.of());
+    ModelAnimationClip clip = new ModelAnimationClip(clipName, 1.0f, false, Map.of("body", track));
+    BakedModel bakedModel =
+        new BakedModel(
+            Identifier.fromNamespaceAndPath("example", clipName),
+            64,
+            64,
+            List.of(new BakedModelPart("body", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())),
+            Map.of(),
+            false,
+            Map.of(clipName, clip),
+            null);
+    AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel, ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC),
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        animationState,
+        new PoseStack(),
+        textureIndex -> mock(VertexConsumer.class, Answers.RETURNS_SELF),
+        0,
+        animationContext -> {
+          context.set(animationContext);
+          return EasyModelPartTransform.NONE;
+        },
+        EasyModelPartAnimationMode.ADD,
+        EasyModelPartPoseListener.NONE);
+
+    return context.get().automaticTransform().xRotation();
   }
 
   @Test
@@ -509,6 +557,48 @@ class EasyModelBakedModelRendererTest {
   }
 
   @Test
+  void forcedStatesSelectMatchingClips() {
+    assertEquals(
+        0.25f, forcedClipRotation(ModelAnimationClips.HURT, EasyModelAnimationState.HURT, 0.25f));
+    assertEquals(
+        0.75f, forcedClipRotation(ModelAnimationClips.DEATH, EasyModelAnimationState.DEATH, 0.75f));
+    assertEquals(
+        0.5f, forcedClipRotation(ModelAnimationClips.ATTACK, EasyModelAnimationState.ATTACK, 0.5f));
+  }
+
+  @Test
+  void capturesTransformedPartPose() {
+    BakedModelPart hand =
+        new BakedModelPart(
+            "right_hand", new Vec3f(16.0f, 32.0f, 48.0f), Vec3f.ZERO, List.of(), List.of());
+    BakedModel bakedModel =
+        new BakedModel(
+            Identifier.fromNamespaceAndPath("example", "part_pose"), 64, 64, List.of(hand));
+    AtomicReference<EasyModelPartPose> capturedPose = new AtomicReference<>();
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        EasyModelAnimationState.AUTO,
+        new PoseStack(),
+        textureIndex -> mock(VertexConsumer.class, Answers.RETURNS_SELF),
+        0,
+        EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        capturedPose::set);
+
+    assertEquals("right_hand", capturedPose.get().partName());
+    assertEquals(1.0f, capturedPose.get().poseMatrix().m30(), 0.0001f);
+    assertEquals(2.0f, capturedPose.get().poseMatrix().m31(), 0.0001f);
+    assertEquals(3.0f, capturedPose.get().poseMatrix().m32(), 0.0001f);
+  }
+
+  @Test
   void forwardsAutomaticTransformToCustomAnimator() {
     BakedModel bakedModel =
         new BakedModel(
@@ -733,6 +823,7 @@ class EasyModelBakedModelRendererTest {
         0.0f,
         0.0f,
         0.0f,
+        0.0f,
         EasyModelAnimationState.AUTO,
         new PoseStack(),
         textureIndex -> {
@@ -740,8 +831,9 @@ class EasyModelBakedModelRendererTest {
           return vertexConsumer;
         },
         0,
-        de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator.NONE,
-        EasyModelPartAnimationMode.ADD);
+        EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        EasyModelPartPoseListener.NONE);
 
     assertEquals(1, fetches.get(), "three same-texture cubes must fetch the buffer once");
     verify(vertexConsumer, times(3 * 24))
@@ -802,12 +894,14 @@ class EasyModelBakedModelRendererTest {
         0.0f,
         0.0f,
         0.0f,
+        0.0f,
         EasyModelAnimationState.AUTO,
         new PoseStack(),
         bufferProvider,
         0,
-        de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator.NONE,
-        EasyModelPartAnimationMode.ADD);
+        EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        EasyModelPartPoseListener.NONE);
 
     assertEquals(0, bufferProvider.droppedVertices, "no vertices may be written to a stale buffer");
     assertEquals(4 * 24, bufferProvider.recordedVertices, "all four cubes must be rendered");

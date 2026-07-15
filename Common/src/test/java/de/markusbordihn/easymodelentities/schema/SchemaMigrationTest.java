@@ -39,6 +39,26 @@ class SchemaMigrationTest {
     return ModelRenderProfileParser.parse(ID, new StringReader(json), migrations);
   }
 
+  private static SchemaMigration migration(String from, String to) {
+    return new SchemaMigration() {
+      @Override
+      public String from() {
+        return from;
+      }
+
+      @Override
+      public String to() {
+        return to;
+      }
+
+      @Override
+      public JsonObject apply(JsonObject input) {
+        input.addProperty("schema_version", to);
+        return input;
+      }
+    };
+  }
+
   @Test
   void currentVersionLoadsActive() {
     EasyModelRenderProfile profile =
@@ -127,5 +147,45 @@ class SchemaMigrationTest {
   void emptyMigrationsCannotMigrateOlderVersion() {
     assertTrue(
         new SchemaMigrations(List.of()).migrate(new JsonObject(), "0.0.9", "0.1.0").isEmpty());
+  }
+
+  @Test
+  void cyclicMigrationsTerminateWithoutMutatingInput() {
+    SchemaMigration forward = migration("0.1.0", "0.2.0");
+    SchemaMigration backward = migration("0.2.0", "0.1.0");
+    JsonObject input = new JsonObject();
+    input.addProperty("schema_version", "0.1.0");
+
+    assertTrue(
+        new SchemaMigrations(List.of(forward, backward))
+            .migrate(input, "0.1.0", "0.3.0")
+            .isEmpty());
+    assertEquals("0.1.0", input.get("schema_version").getAsString());
+  }
+
+  @Test
+  void nullMigrationResultIsRejected() {
+    SchemaMigration invalidMigration =
+        new SchemaMigration() {
+          @Override
+          public String from() {
+            return "0.1.0";
+          }
+
+          @Override
+          public String to() {
+            return "0.2.0";
+          }
+
+          @Override
+          public JsonObject apply(JsonObject input) {
+            return null;
+          }
+        };
+
+    assertTrue(
+        new SchemaMigrations(List.of(invalidMigration))
+            .migrate(new JsonObject(), "0.1.0", "0.2.0")
+            .isEmpty());
   }
 }

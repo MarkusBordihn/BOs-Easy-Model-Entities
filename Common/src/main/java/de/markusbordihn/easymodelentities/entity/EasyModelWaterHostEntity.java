@@ -81,6 +81,8 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
           BODY_TYPE,
           ANIMATION_STATE);
 
+  private boolean easyModelHostRegistered;
+
   protected EasyModelWaterHostEntity(EntityType<? extends WaterAnimal> entityType, Level level) {
     super(entityType, level);
     this.setPersistenceRequired();
@@ -89,6 +91,15 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
 
   public static AttributeSupplier.Builder createAttributes() {
     return EasyModelHostSupport.createAttributes();
+  }
+
+  @Override
+  public void tick() {
+    super.tick();
+    if (!this.easyModelHostRegistered) {
+      this.easyModelHostRegistered = true;
+      EasyModelHostSupport.registerHost(this, FIELDS);
+    }
   }
 
   @Override

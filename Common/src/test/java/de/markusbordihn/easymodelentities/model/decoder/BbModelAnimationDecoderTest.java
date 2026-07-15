@@ -75,8 +75,12 @@ class BbModelAnimationDecoderTest {
   }
 
   private static DecodedModel decode(String fixtureName) throws Exception {
+    return decodeAnimations(animationsFixture(fixtureName));
+  }
+
+  private static DecodedModel decodeAnimations(String animationsJson) throws Exception {
     return new BlockbenchBbModelDecoder()
-        .decode(MODEL_ID, resource(modelWithAnimations(animationsFixture(fixtureName))));
+        .decode(MODEL_ID, resource(modelWithAnimations(animationsJson)));
   }
 
   @Test
@@ -105,11 +109,31 @@ class BbModelAnimationDecoderTest {
 
   @Test
   void ignoresNonStandardClipNamesWithWarning() throws Exception {
-    DecodedModel model = decode("non_standard_attack.json");
+    String attackAnimation = animationsFixture("attack_clip.json");
+
+    DecodedModel model = decodeAnimations(attackAnimation.replace("attack", "dance"));
 
     assertTrue(model.animations().isEmpty());
     assertTrue(
-        model.validationIssues().stream().anyMatch(issue -> issue.message().contains("attack")));
+        model.validationIssues().stream().anyMatch(issue -> issue.message().contains("dance")));
+  }
+
+  @Test
+  void decodesAttackClip() throws Exception {
+    DecodedModel model = decode("attack_clip.json");
+
+    assertNotNull(model.animations().get("attack"));
+  }
+
+  @Test
+  void decodesHurtAndDeathClips() throws Exception {
+    String attackAnimation = animationsFixture("attack_clip.json");
+
+    DecodedModel hurt = decodeAnimations(attackAnimation.replace("attack", "hurt"));
+    DecodedModel death = decodeAnimations(attackAnimation.replace("attack", "death"));
+
+    assertNotNull(hurt.animations().get("hurt"));
+    assertNotNull(death.animations().get("death"));
   }
 
   @Test

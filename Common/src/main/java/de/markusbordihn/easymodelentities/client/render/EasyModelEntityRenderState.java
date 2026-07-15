@@ -35,4 +35,5 @@ public class EasyModelEntityRenderState extends EntityRenderState {
   public float limbSwing;
   public float limbSwingAmount;
   public float airborneAmount;
+  public float attackAmount;
 }

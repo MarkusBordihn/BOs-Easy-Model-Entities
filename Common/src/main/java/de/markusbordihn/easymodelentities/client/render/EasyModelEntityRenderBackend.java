@@ -23,8 +23,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartPose;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
@@ -101,6 +103,7 @@ public final class EasyModelEntityRenderBackend {
         renderState.limbSwingAmount,
         renderState.ageInTicks,
         renderState.airborneAmount,
+        renderState.attackAmount,
         renderState.animationState,
         renderState.partAnimator == null ? EasyModelPartAnimator.NONE : renderState.partAnimator,
         renderState.partAnimationMode == null
@@ -110,6 +113,48 @@ public final class EasyModelEntityRenderBackend {
         submitNodeCollector,
         packedLight);
     poseStack.popPose();
+  }
+
+  /**
+   * Resolves the world-space pose of a named model part without submitting any geometry. Mirrors
+   * the transform chain applied by the submit-based {@link #render(EasyModelEntityRenderState,
+   * PoseStack, SubmitNodeCollector, int)} so callers can, for example, anchor held items to a hand
+   * part. The returned pose is relative to the supplied {@code poseStack} state.
+   */
+  public static Optional<EasyModelPartPose> resolvePartPose(
+      EasyModelEntityRenderState renderState, String partName, PoseStack poseStack) {
+    if (renderState == null || renderState.easyModelRenderState == null || partName == null) {
+      return Optional.empty();
+    }
+    Objects.requireNonNull(poseStack, "poseStack");
+
+    EasyModelRenderState easyModelRenderState = renderState.easyModelRenderState;
+    CapturingPartPoseListener listener = new CapturingPartPoseListener(partName);
+
+    poseStack.pushPose();
+    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.entityYaw));
+    poseStack.scale(
+        -easyModelRenderState.scale(), -easyModelRenderState.scale(), easyModelRenderState.scale());
+    poseStack.translate(0.0f, -1.501f, 0.0f);
+    EasyModelBakedModelRenderer.render(
+        easyModelRenderState.bakedModel(),
+        easyModelRenderState,
+        renderState.limbSwing,
+        renderState.limbSwingAmount,
+        renderState.ageInTicks,
+        renderState.airborneAmount,
+        renderState.attackAmount,
+        renderState.animationState,
+        poseStack,
+        textureIndex -> null,
+        0,
+        renderState.partAnimator == null ? EasyModelPartAnimator.NONE : renderState.partAnimator,
+        renderState.partAnimationMode == null
+            ? EasyModelPartAnimationMode.ADD
+            : renderState.partAnimationMode,
+        listener);
+    poseStack.popPose();
+    return listener.capturedPose();
   }
 
   public static float airborneAmount(Entity entity) {
@@ -168,7 +213,8 @@ public final class EasyModelEntityRenderBackend {
         limbSwingAmount(entity, partialTick),
         ageInTicks,
         airborneAmount(entity),
-        animationState(entity),
+        attackAmount(entity, partialTick),
+        resolveAnimationState(safeOptions, animationState(entity)),
         safeOptions,
         poseStack,
         submitNodeCollector,
@@ -197,7 +243,8 @@ public final class EasyModelEntityRenderBackend {
         0.0f,
         ageInTicks,
         0.0f,
-        EasyModelAnimationState.AUTO,
+        0.0f,
+        resolveAnimationState(safeOptions, EasyModelAnimationState.AUTO),
         safeOptions,
         poseStack,
         submitNodeCollector,
@@ -211,6 +258,7 @@ public final class EasyModelEntityRenderBackend {
       float limbSwingAmount,
       float ageInTicks,
       float airborneAmount,
+      float attackAmount,
       EasyModelAnimationState animationState,
       EasyModelEntityRenderOptions options,
       PoseStack poseStack,
@@ -230,13 +278,22 @@ public final class EasyModelEntityRenderBackend {
         limbSwingAmount,
         ageInTicks,
         airborneAmount,
+        attackAmount,
         animationState,
         options.partAnimator(),
         options.partAnimationMode(),
+        options.partPoseListener(),
         poseStack,
         submitNodeCollector,
         packedLight);
     poseStack.popPose();
+  }
+
+  private static EasyModelAnimationState resolveAnimationState(
+      EasyModelEntityRenderOptions options, EasyModelAnimationState fallback) {
+    return options.animationState() == null
+        ? fallback
+        : EasyModelAnimationState.byApiState(options.animationState());
   }
 
   private static EasyModelAnimationState animationState(Entity entity) {
@@ -312,6 +369,12 @@ public final class EasyModelEntityRenderBackend {
         : 0.0f;
   }
 
+  public static float attackAmount(Entity entity, float partialTick) {
+    return entity instanceof LivingEntity livingEntity
+        ? livingEntity.getAttackAnim(partialTick)
+        : 0.0f;
+  }
+
   private static float width(Entity entity) {
     return entity.getBbWidth() > 0.0f ? entity.getBbWidth() : EasyModelHostEntity.FALLBACK_WIDTH;
   }
@@ -324,5 +387,31 @@ public final class EasyModelEntityRenderBackend {
     return entity.getEyeHeight() > 0.0f
         ? entity.getEyeHeight()
         : EasyModelHostEntity.FALLBACK_EYE_HEIGHT;
+  }
+
+  private static final class CapturingPartPoseListener implements EasyModelPartPoseListener {
+
+    private final String partName;
+    private EasyModelPartPose capturedPose;
+
+    private CapturingPartPoseListener(String partName) {
+      this.partName = partName;
+    }
+
+    @Override
+    public boolean wantsPart(String candidatePartName) {
+      return this.capturedPose == null && this.partName.equals(candidatePartName);
+    }
+
+    @Override
+    public void onPartPose(EasyModelPartPose partPose) {
+      if (this.capturedPose == null) {
+        this.capturedPose = partPose;
+      }
+    }
+
+    private Optional<EasyModelPartPose> capturedPose() {
+      return Optional.ofNullable(this.capturedPose);
+    }
   }
 }

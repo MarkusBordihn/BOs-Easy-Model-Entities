@@ -17,19 +17,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.api;
+package de.markusbordihn.easymodelentities.api.data.client;
 
-public final class EasyModelAnimationStates {
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
 
-  public static final int AUTO = 0;
-  public static final int IDLE = 1;
-  public static final int WALK = 2;
-  public static final int RUN = 3;
-  public static final int HURT = 4;
-  public static final int DEATH = 5;
-  public static final int SWIM = 6;
-  public static final int FLY = 7;
-  public static final int ATTACK = 8;
-
-  private EasyModelAnimationStates() {}
-}
+public record EasyModelItemAnchor(String partName, Vec3f localOffset) {}
