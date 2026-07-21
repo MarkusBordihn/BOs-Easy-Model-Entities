@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnosticSeverity;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
@@ -92,12 +93,16 @@ class ModelRenderProfileValidatorTest {
     List<ModelDiagnostic> diagnostics =
         ModelRenderProfileValidator.validateRuntimeContract(renderProfile, runtimeContract);
 
-    assertTrue(
+    ModelDiagnostic mismatch =
         diagnostics.stream()
-            .anyMatch(
+            .filter(
                 diagnostic ->
                     ModelRenderProfileValidator.CLIENT_ASSET_MISMATCH_CODE.equals(
-                        diagnostic.code())));
+                        diagnostic.code()))
+            .findFirst()
+            .orElseThrow();
+
+    assertEquals(ModelDiagnosticSeverity.WARNING, mismatch.severity());
     assertEquals(
         ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
         ModelRenderProfileValidator.runtimeStatus(renderProfile, runtimeContract));

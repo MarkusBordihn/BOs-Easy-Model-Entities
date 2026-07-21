@@ -52,10 +52,10 @@ import org.junit.jupiter.api.Test;
 
 class ExportedEmeBundleTest {
 
-  private static final String BUNDLE = "bundles/example_org_disguised_chestling_eme.zip";
+  private static final String BUNDLE = "bundles/example_org_test_disguised_chestling_eme.zip";
   private static final String NAMESPACE = "example_org";
-  private static final String DATAPACK = "disguised_chestling_datapack.zip";
-  private static final String RESOURCEPACK = "disguised_chestling_resourcepack.zip";
+  private static final String DATAPACK = "test_disguised_chestling_datapack.zip";
+  private static final String RESOURCEPACK = "test_disguised_chestling_resourcepack.zip";
 
   private static ResourceManager resourceManager(
       byte[] resourcepack, EasyModelRenderProfile renderProfile, boolean provideOverrideTextures)
@@ -68,7 +68,7 @@ class ExportedEmeBundleTest {
                 resource(
                     zipEntry(
                         resourcepack,
-                        "assets/example_org/easy_model_entities/models/disguised_chestling.bbmodel"))));
+                        "assets/example_org/easy_model_entities/models/test_disguised_chestling.bbmodel"))));
     when(resourceManager.getResource(renderProfile.texture()))
         .thenReturn(Optional.of(resource(png())));
     if (provideOverrideTextures) {
@@ -126,7 +126,7 @@ class ExportedEmeBundleTest {
         reader(
             zipEntry(
                 datapack,
-                "data/example_org/easy_model_entities/profiles/entity/disguised_chestling.json")));
+                "data/example_org/easy_model_entities/profiles/entity/test_disguised_chestling.json")));
   }
 
   private static EasyModelRenderProfile parseRenderProfile(
@@ -136,7 +136,7 @@ class ExportedEmeBundleTest {
         reader(
             zipEntry(
                 resourcepack,
-                "assets/example_org/easy_model_entities/render_profiles/entity/disguised_chestling.json")));
+                "assets/example_org/easy_model_entities/render_profiles/entity/test_disguised_chestling.json")));
   }
 
   @Test
@@ -145,7 +145,7 @@ class ExportedEmeBundleTest {
     byte[] resourcepack = innerZip(RESOURCEPACK);
 
     ResourceLocation profileId =
-        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "entity/disguised_chestling");
+        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "entity/test_disguised_chestling");
     EasyModelEntityProfile profile = parseProfile(datapack, profileId);
     EasyModelRenderProfile renderProfile =
         parseRenderProfile(resourcepack, profile.renderProfileId());
@@ -159,7 +159,7 @@ class ExportedEmeBundleTest {
     assertTrue(bakeResult.successful());
     assertEquals(profileId, profile.id());
     assertEquals(
-        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "entity/disguised_chestling"),
+        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "entity/test_disguised_chestling"),
         profile.renderProfileId());
     assertEquals(profile.renderProfileId(), renderProfile.id());
     assertEquals(ModelBodyType.CUBOID, profile.bodyType());
@@ -172,7 +172,7 @@ class ExportedEmeBundleTest {
     assertEquals(new Vec3f(0.0f, 0.0f, -0.047f), renderProfile.visibleBoundsOffset());
     assertEquals(
         ResourceLocation.fromNamespaceAndPath(
-            NAMESPACE, "textures/entity/disguised_chestling_1.png"),
+            NAMESPACE, "textures/entity/test_disguised_chestling_1.png"),
         renderProfile.textures().get(1));
   }
 
@@ -182,7 +182,7 @@ class ExportedEmeBundleTest {
     byte[] resourcepack = innerZip(RESOURCEPACK);
 
     ResourceLocation profileId =
-        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "entity/disguised_chestling");
+        ResourceLocation.fromNamespaceAndPath(NAMESPACE, "entity/test_disguised_chestling");
     EasyModelEntityProfile profile = parseProfile(datapack, profileId);
     EasyModelRenderProfile renderProfile =
         parseRenderProfile(resourcepack, profile.renderProfileId());

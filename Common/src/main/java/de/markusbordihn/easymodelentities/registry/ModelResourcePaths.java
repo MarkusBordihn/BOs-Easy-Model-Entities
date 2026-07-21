@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.registry;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -89,7 +90,8 @@ public final class ModelResourcePaths {
   public static ResourceLocation defaultModelId(ResourceLocation profileId) {
     Objects.requireNonNull(profileId, "profileId");
     return ResourceLocation.fromNamespaceAndPath(
-        profileId.getNamespace(), joinPath(MODEL_DIRECTORY, profileId.getPath()));
+        profileId.getNamespace(),
+        joinPath(MODEL_DIRECTORY, profileNameWithoutModelType(profileId)));
   }
 
   public static ResourceLocation defaultTextureId(ResourceLocation profileId) {
@@ -98,7 +100,19 @@ public final class ModelResourcePaths {
         profileId.getNamespace(),
         joinPath(
             TEXTURE_ENTITY_DIRECTORY,
-            withExtension(profileId.getPath(), ResourceFileExtension.PNG)));
+            withExtension(profileNameWithoutModelType(profileId), ResourceFileExtension.PNG)));
+  }
+
+  private static String profileNameWithoutModelType(ResourceLocation profileId) {
+    String path = profileId.getPath();
+    for (ModelType modelType : ModelType.values()) {
+      String modelTypePrefix = modelType.getSerializedName() + "/";
+      if (path.startsWith(modelTypePrefix)) {
+        return path.substring(modelTypePrefix.length());
+      }
+    }
+
+    return path;
   }
 
   private static String assetPath(ResourceLocation resourceLocation, String path) {
