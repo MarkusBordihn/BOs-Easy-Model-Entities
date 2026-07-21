@@ -36,10 +36,14 @@ import net.minecraft.resources.Identifier;
 
 public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagnosticsService {
 
-  private static ModelDiagnosticSeverity severity(ModelRenderProfileStatus status) {
-    return status == ModelRenderProfileStatus.MISSING_TEXTURE
-        ? ModelDiagnosticSeverity.WARNING
-        : ModelDiagnosticSeverity.ERROR;
+  private static ModelDiagnosticSeverity severity(ModelRenderProfileStatus issueStatus) {
+    return deactivatesRenderProfile(issueStatus)
+        ? ModelDiagnosticSeverity.ERROR
+        : ModelDiagnosticSeverity.WARNING;
+  }
+
+  private static boolean deactivatesRenderProfile(ModelRenderProfileStatus issueStatus) {
+    return issueStatus != ModelRenderProfileStatus.ACTIVE;
   }
 
   @Override
