@@ -69,7 +69,7 @@ public final class ModelRenderProfileValidator {
     if (!AssetPairing.matches(serverVersion, clientVersion)) {
       diagnostics.add(
           diagnostic(
-              ModelDiagnosticSeverity.ERROR,
+              ModelDiagnosticSeverity.WARNING,
               CLIENT_ASSET_MISMATCH_CODE,
               "Render profile version does not match runtime version.",
               renderProfile.id()));

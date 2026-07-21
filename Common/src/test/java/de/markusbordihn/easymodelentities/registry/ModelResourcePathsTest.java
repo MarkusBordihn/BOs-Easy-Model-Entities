@@ -63,6 +63,34 @@ class ModelResourcePathsTest {
   }
 
   @Test
+  void defaultAssetIdsStripTheModelTypePrefix() {
+    assertEquals(
+        Identifier.fromNamespaceAndPath("example", "textures/entity/lizard.png"),
+        ModelResourcePaths.defaultTextureId(
+            Identifier.fromNamespaceAndPath("example", "entity/lizard")));
+    assertEquals(
+        Identifier.fromNamespaceAndPath("example", "textures/entity/shrine.png"),
+        ModelResourcePaths.defaultTextureId(
+            Identifier.fromNamespaceAndPath("example", "block_entity/shrine")));
+    assertEquals(
+        Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/lizard"),
+        ModelResourcePaths.defaultModelId(
+            Identifier.fromNamespaceAndPath("example", "entity/lizard")));
+    assertEquals(
+        Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/shrine"),
+        ModelResourcePaths.defaultModelId(
+            Identifier.fromNamespaceAndPath("example", "block_entity/shrine")));
+  }
+
+  @Test
+  void defaultAssetIdsKeepNestedPathsThatAreNotAModelType() {
+    assertEquals(
+        Identifier.fromNamespaceAndPath("example", "textures/entity/mobs/lizard.png"),
+        ModelResourcePaths.defaultTextureId(
+            Identifier.fromNamespaceAndPath("example", "mobs/lizard")));
+  }
+
+  @Test
   void fileExtensionsAreNotDuplicated() {
     Identifier modelId =
         Identifier.fromNamespaceAndPath("example", "easy_model_entities/models/lizard.bbmodel");

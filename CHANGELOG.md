@@ -5,6 +5,15 @@
 This change log includes the summarized changes.
 For the full changelog, please go to the [GitHub History][history] instead.
 
+### 1.7.0
+
+- Fixed profiles without an explicit `texture` falling back to a duplicated `entity/entity/` texture
+  path, which left the profile inactive and hid its spawn item from the creative tabs.
+- Changed missing textures to be reported as an error instead of a warning by `validate_profiles`,
+  because a model without a texture cannot be rendered at all.
+- Changed a version mismatch between data pack and resource pack to be reported as a warning
+  instead of an error, because the entity still renders with the fallback model.
+
 ### 1.6.0
 
 - Added an `attack` animation state with standard Blockbench `attack` clip support for all body
