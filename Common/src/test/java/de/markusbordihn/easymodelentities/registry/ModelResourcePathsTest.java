@@ -62,6 +62,30 @@ class ModelResourcePathsTest {
   }
 
   @Test
+  void defaultAssetIdsStripTheModelTypePrefix() {
+    assertEquals(
+        new ResourceLocation("example", "textures/entity/lizard.png"),
+        ModelResourcePaths.defaultTextureId(new ResourceLocation("example", "entity/lizard")));
+    assertEquals(
+        new ResourceLocation("example", "textures/entity/shrine.png"),
+        ModelResourcePaths.defaultTextureId(
+            new ResourceLocation("example", "block_entity/shrine")));
+    assertEquals(
+        new ResourceLocation("example", "easy_model_entities/models/lizard"),
+        ModelResourcePaths.defaultModelId(new ResourceLocation("example", "entity/lizard")));
+    assertEquals(
+        new ResourceLocation("example", "easy_model_entities/models/shrine"),
+        ModelResourcePaths.defaultModelId(new ResourceLocation("example", "block_entity/shrine")));
+  }
+
+  @Test
+  void defaultAssetIdsKeepNestedPathsThatAreNotAModelType() {
+    assertEquals(
+        new ResourceLocation("example", "textures/entity/mobs/lizard.png"),
+        ModelResourcePaths.defaultTextureId(new ResourceLocation("example", "mobs/lizard")));
+  }
+
+  @Test
   void fileExtensionsAreNotDuplicated() {
     ResourceLocation modelId =
         new ResourceLocation("example", "easy_model_entities/models/lizard.bbmodel");

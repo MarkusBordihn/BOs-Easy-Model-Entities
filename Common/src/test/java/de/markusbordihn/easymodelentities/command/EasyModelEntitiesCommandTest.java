@@ -289,7 +289,7 @@ class EasyModelEntitiesCommandTest {
             "example:alpha error CLIENT_BODY_TYPE_MISMATCH: Render profile body type quadruped does not match server profile body type biped."));
     assertTrue(
         lines.contains(
-            "example:alpha warning MISSING_TEXTURE: Missing texture asset example:textures/entity/alpha.png."));
+            "example:alpha error MISSING_TEXTURE: Missing texture asset example:textures/entity/alpha.png."));
   }
 
   @Test
