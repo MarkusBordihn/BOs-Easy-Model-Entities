@@ -80,6 +80,8 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
           BODY_TYPE,
           ANIMATION_STATE);
 
+  private EasyModelRuntimeContract runtimeContract;
+
   protected EasyModelWaterHostEntity(EntityType<? extends WaterAnimal> entityType, Level level) {
     super(entityType, level);
     EasyModelHostSupport.registerHost(this, FIELDS);
@@ -165,7 +167,20 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
 
   @Override
   public EasyModelRuntimeContract getEasyModelRuntimeContract() {
-    return EasyModelHostSupport.getRuntimeContract(this.entityData, FIELDS);
+    EasyModelRuntimeContract cachedContract = this.runtimeContract;
+    if (cachedContract != null) {
+      return cachedContract;
+    }
+    EasyModelRuntimeContract resolvedContract =
+        EasyModelHostSupport.getRuntimeContract(this.entityData, FIELDS);
+    this.runtimeContract = resolvedContract;
+    return resolvedContract;
+  }
+
+  @Override
+  public void onSyncedDataUpdated(EntityDataAccessor<?> entityDataAccessor) {
+    super.onSyncedDataUpdated(entityDataAccessor);
+    this.runtimeContract = null;
   }
 
   @Override

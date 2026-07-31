@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelEntityRenderBackendTest {
@@ -167,6 +168,21 @@ class EasyModelEntityRenderBackendTest {
     EasyModelServices.setRenderProfileService(
         renderProfileService(
             renderProfile(PROFILE_ID, ModelBodyType.WINGED, ModelRenderProfileStatus.ACTIVE)));
+
+    Optional<EasyModelRuntimeContract> contract =
+        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, EasyModelAnimationState.AUTO);
+
+    assertTrue(contract.isPresent());
+    assertEquals(ModelBodyType.WINGED, contract.get().bodyType());
+  }
+
+  @Test
+  @DisplayName("A render profile with a missing texture still resolves to its own body type")
+  void fallsBackToRenderProfileWithMissingTexture() {
+    EasyModelServices.setRenderProfileService(
+        renderProfileService(
+            renderProfile(
+                PROFILE_ID, ModelBodyType.WINGED, ModelRenderProfileStatus.MISSING_TEXTURE)));
 
     Optional<EasyModelRuntimeContract> contract =
         EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, EasyModelAnimationState.AUTO);

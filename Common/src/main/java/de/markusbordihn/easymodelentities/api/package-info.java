@@ -17,28 +17,5 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.runtime;
-
-public final class AssetPairing {
-
-  private AssetPairing() {}
-
-  public static boolean matches(String serverValue, String clientValue) {
-    if (serverValue == null || serverValue.isBlank()) {
-      return true;
-    }
-    if (clientValue == null || clientValue.isBlank()) {
-      return true;
-    }
-
-    return serverValue.equals(clientValue);
-  }
-
-  public static boolean isOneSided(String serverValue, String clientValue) {
-    return isBlank(serverValue) != isBlank(clientValue);
-  }
-
-  private static boolean isBlank(String value) {
-    return value == null || value.isBlank();
-  }
-}
+/** Public API for other mods. Every other package is internal and may change in any release. */
+package de.markusbordihn.easymodelentities.api;

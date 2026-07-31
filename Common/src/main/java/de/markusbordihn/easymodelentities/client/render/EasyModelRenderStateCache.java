@@ -20,55 +20,77 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
+import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.render.EasyModelRenderStateResolver;
 import de.markusbordihn.easymodelentities.runtime.AssetPairing;
 import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.client.Minecraft;
 
 public final class EasyModelRenderStateCache {
 
   private static final int MAX_CACHE_ENTRIES = 4096;
-  private static final Map<EasyModelRuntimeContract, EasyModelRenderState> CACHE =
-      new ConcurrentHashMap<>();
+  private static final Map<EasyModelRuntimeContract, EasyModelRenderState> RENDER_STATES =
+      leastRecentlyUsedCache();
+  private static final Map<EasyModelRuntimeContract, EasyModelRenderState> BY_CONTRACT =
+      leastRecentlyUsedCache();
 
   static {
-    EasyModelReloadDispatcher.addProfileReloadListener(CACHE::clear);
-    EasyModelReloadDispatcher.addRenderProfileReloadListener(CACHE::clear);
+    EasyModelReloadDispatcher.addProfileReloadListener(EasyModelRenderStateCache::clear);
+    EasyModelReloadDispatcher.addRenderProfileReloadListener(EasyModelRenderStateCache::clear);
   }
 
   private EasyModelRenderStateCache() {}
 
+  private static Map<EasyModelRuntimeContract, EasyModelRenderState> leastRecentlyUsedCache() {
+    return Collections.synchronizedMap(
+        new LinkedHashMap<>(256, 0.75f, true) {
+          @Override
+          protected boolean removeEldestEntry(
+              Map.Entry<EasyModelRuntimeContract, EasyModelRenderState> eldest) {
+            return size() > MAX_CACHE_ENTRIES;
+          }
+        });
+  }
+
   public static EasyModelRenderState resolve(EasyModelRuntimeContract contract) {
     Objects.requireNonNull(contract, "contract");
+    EasyModelRenderState contractState = BY_CONTRACT.get(contract);
+    if (contractState != null) {
+      return contractState;
+    }
+
     EasyModelRuntimeContract key = keyOf(contract);
-    EasyModelRenderState renderState = CACHE.get(key);
-    if (renderState != null) {
-      return renderState;
+    EasyModelRenderState renderState = RENDER_STATES.get(key);
+    if (renderState == null) {
+      renderState =
+          EasyModelRenderStateResolver.resolve(
+              key,
+              EasyModelServices.renderProfileService(),
+              EasyModelServices.bakeService(),
+              Minecraft.getInstance().getResourceManager());
+      RENDER_STATES.put(key, renderState);
     }
-    if (CACHE.size() >= MAX_CACHE_ENTRIES) {
-      CACHE.clear();
-    }
-    return CACHE.computeIfAbsent(
-        key,
-        cacheKey ->
-            EasyModelRenderStateResolver.resolve(
-                cacheKey,
-                EasyModelServices.renderProfileService(),
-                EasyModelServices.bakeService(),
-                Minecraft.getInstance().getResourceManager()));
+    BY_CONTRACT.put(contract, renderState);
+    return renderState;
+  }
+
+  private static void clear() {
+    BY_CONTRACT.clear();
+    RENDER_STATES.clear();
   }
 
   private static EasyModelRuntimeContract keyOf(EasyModelRuntimeContract contract) {
     boolean activeRenderProfile =
         EasyModelServices.renderProfileService()
             .getRenderProfile(contract.renderProfileId())
-            .filter(renderProfile -> renderProfile.isActive())
+            .filter(EasyModelRenderProfile::isRenderable)
             .filter(renderProfile -> renderProfile.bodyType() == contract.bodyType())
             .filter(
                 renderProfile -> AssetPairing.matches(contract.version(), renderProfile.version()))

@@ -32,6 +32,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartPose;
@@ -59,6 +60,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
@@ -242,6 +244,7 @@ class EasyModelBakedModelRendererTest {
         0.0f,
         0.0f,
         0.0f,
+        EasyModelHeadLook.NONE,
         animationState,
         new PoseStack(),
         textureIndex -> mock(VertexConsumer.class, Answers.RETURNS_SELF),
@@ -254,6 +257,74 @@ class EasyModelBakedModelRendererTest {
         EasyModelPartPoseListener.NONE);
 
     return context.get().automaticTransform().xRotation();
+  }
+
+  private static EasyModelPartTransform captureHeadLookTransform(
+      String partName, ModelBodyType bodyType, EasyModelHeadLook headLook) {
+    BakedModel bakedModel =
+        new BakedModel(
+            ResourceLocation.fromNamespaceAndPath("example", "head_look"),
+            64,
+            64,
+            List.of(new BakedModelPart(partName, Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())));
+    AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel, bodyType, ModelAnimationMode.NONE),
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        headLook,
+        EasyModelAnimationState.AUTO,
+        new PoseStack(),
+        textureIndex -> mock(VertexConsumer.class, Answers.RETURNS_SELF),
+        0,
+        animationContext -> {
+          context.set(animationContext);
+          return EasyModelPartTransform.NONE;
+        },
+        EasyModelPartAnimationMode.ADD,
+        EasyModelPartPoseListener.NONE);
+
+    return context.get().automaticTransform();
+  }
+
+  @Test
+  void headTurnsTowardsLookDirection() {
+    EasyModelPartTransform head =
+        captureHeadLookTransform(
+            "head", ModelBodyType.FLOATING, EasyModelHeadLook.of(30.0f, -20.0f));
+
+    assertEquals(30.0f * Mth.DEG_TO_RAD, head.yRotation(), 0.001f);
+    assertEquals(-20.0f * Mth.DEG_TO_RAD, head.xRotation(), 0.001f);
+  }
+
+  @Test
+  void cuboidHeadStaysClosedOnLookDirection() {
+    EasyModelPartTransform lid =
+        captureHeadLookTransform("head", ModelBodyType.CUBOID, EasyModelHeadLook.of(30.0f, -20.0f));
+
+    assertEquals(0.0f, lid.yRotation(), 0.001f);
+    assertEquals(0.0f, lid.xRotation(), 0.001f);
+  }
+
+  @Test
+  void bodyKeepsItsOwnRotationOnLookDirection() {
+    EasyModelPartTransform body =
+        captureHeadLookTransform("body", ModelBodyType.BIPED, EasyModelHeadLook.of(30.0f, -20.0f));
+
+    assertEquals(0.0f, body.yRotation(), 0.001f);
+    assertEquals(0.0f, body.xRotation(), 0.001f);
+  }
+
+  @Test
+  void headLookClampsToTheRangeOfAVanillaHead() {
+    assertEquals(75.0f, EasyModelHeadLook.of(120.0f, 0.0f).yaw(), 0.001f);
+    assertEquals(-60.0f, EasyModelHeadLook.of(0.0f, -90.0f).pitch(), 0.001f);
+    assertEquals(EasyModelHeadLook.NONE, EasyModelHeadLook.of(Float.NaN, 0.0f));
   }
 
   @Test
@@ -572,6 +643,7 @@ class EasyModelBakedModelRendererTest {
         0.0f,
         0.0f,
         0.0f,
+        EasyModelHeadLook.NONE,
         EasyModelAnimationState.AUTO,
         new PoseStack(),
         textureIndex -> mock(VertexConsumer.class, Answers.RETURNS_SELF),
@@ -812,6 +884,7 @@ class EasyModelBakedModelRendererTest {
         0.0f,
         0.0f,
         0.0f,
+        EasyModelHeadLook.NONE,
         EasyModelAnimationState.AUTO,
         new PoseStack(),
         textureIndex -> {
@@ -883,6 +956,7 @@ class EasyModelBakedModelRendererTest {
         0.0f,
         0.0f,
         0.0f,
+        EasyModelHeadLook.NONE,
         EasyModelAnimationState.AUTO,
         new PoseStack(),
         bufferProvider,

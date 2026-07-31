@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.renderprofile;
 
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelResourceRejection;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import java.util.Collection;
 import java.util.List;
@@ -28,6 +29,10 @@ import net.minecraft.resources.ResourceLocation;
 public interface EasyModelRenderProfileService {
 
   EasyModelRenderProfileService EMPTY = new EasyModelRenderProfileService() {};
+
+  default Collection<ModelResourceRejection> getRejectedResources() {
+    return List.of();
+  }
 
   default boolean hasRenderProfile(ResourceLocation renderProfileId) {
     return getRenderProfile(renderProfileId).isPresent();

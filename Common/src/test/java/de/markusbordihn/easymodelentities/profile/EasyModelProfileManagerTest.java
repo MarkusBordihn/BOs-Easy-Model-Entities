@@ -21,13 +21,49 @@ package de.markusbordihn.easymodelentities.profile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import de.markusbordihn.easymodelentities.data.profile.*;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelResourceRejection;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelProfileManagerTest {
+
+  private static final String PROFILE_JSON =
+      "{\"schema_version\":\"0.2.0\",\"model_type\":\"entity\",\"preset_type\":\"statue\"}";
+
+  private static ResourceManager resourceManager(ResourceLocation... profileResources) {
+    ResourceManager resourceManager = mock(ResourceManager.class);
+    Map<ResourceLocation, Resource> resources =
+        Arrays.stream(profileResources)
+            .collect(
+                Collectors.toMap(
+                    resourceLocation -> resourceLocation,
+                    resourceLocation -> resource(PROFILE_JSON)));
+    when(resourceManager.listResources(eq(ModelResourcePaths.SERVER_PROFILE_DIRECTORY), any()))
+        .thenReturn(resources);
+    return resourceManager;
+  }
+
+  private static Resource resource(String json) {
+    PackResources packResources = mock(PackResources.class);
+    return new Resource(
+        packResources, () -> new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+  }
 
   @Test
   void derivesEntityProfileIdFromTypedDataPath() {
@@ -60,5 +96,25 @@ class EasyModelProfileManagerTest {
                 "example", "easy_model_entities/profiles/lizard.json"));
 
     assertTrue(profileId.isEmpty());
+  }
+
+  @Test
+  @DisplayName("A profile outside of the typed folders is reported instead of vanishing")
+  void ignoredProfilesAreReported() {
+    ResourceLocation misplacedResource =
+        ResourceLocation.fromNamespaceAndPath(
+            "example", "easy_model_entities/profiles/lizard.json");
+    ResourceLocation loadedResource =
+        ResourceLocation.fromNamespaceAndPath(
+            "example", "easy_model_entities/profiles/entity/lizard.json");
+
+    EasyModelProfileManager manager =
+        EasyModelProfileManager.load(resourceManager(misplacedResource, loadedResource));
+
+    assertEquals(1, manager.getProfileIds().size());
+    assertEquals(1, manager.getRejectedResources().size());
+    ModelResourceRejection rejection = manager.getRejectedResources().iterator().next();
+    assertEquals(misplacedResource, rejection.resource());
+    assertTrue(rejection.reason().contains("entity/"));
   }
 }

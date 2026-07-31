@@ -75,7 +75,7 @@ public final class ModelTextureResolver {
             new ModelRenderProfileValidationIssue(
                 ModelRenderProfileStatus.MISSING_TEXTURE,
                 "texture",
-                "No texture mapping for texture index " + index + "."));
+                textureMappingMessage(index, decodedTextures.get(index))));
         continue;
       }
       List<ModelRenderProfileValidationIssue> textureIssues =
@@ -104,14 +104,31 @@ public final class ModelTextureResolver {
     return derivedTexture(decodedTexture);
   }
 
+  private static String textureMappingMessage(int index, DecodedTexture decodedTexture) {
+    String textureName = decodedTexture == null ? "" : textureName(decodedTexture);
+    if (textureName.isBlank()) {
+      return "No texture mapping for texture index " + index + ".";
+    }
+
+    return "Texture name "
+        + textureName
+        + " for texture index "
+        + index
+        + " cannot be used as a resource location, use lowercase letters, digits, '_', '-' and '/'"
+        + " only.";
+  }
+
+  private static String textureName(DecodedTexture decodedTexture) {
+    String relativePath = decodedTexture.relativePath().trim();
+    return relativePath.isBlank() ? decodedTexture.name().trim() : relativePath;
+  }
+
   private static ResourceLocation derivedTexture(DecodedTexture decodedTexture) {
     if (decodedTexture == null) {
       return null;
     }
-    String relativePath = decodedTexture.relativePath().trim();
-    if (relativePath.isBlank()) {
-      relativePath = decodedTexture.name().trim();
-    }
+
+    String relativePath = textureName(decodedTexture);
     if (relativePath.isBlank()) {
       return null;
     }

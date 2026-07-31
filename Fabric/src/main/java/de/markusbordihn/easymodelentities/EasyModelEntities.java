@@ -26,6 +26,7 @@ import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSer
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.packs.PackType;
@@ -57,5 +58,7 @@ public class EasyModelEntities implements ModInitializer {
         .registerReloadListener(new EasyModelProfileReloadListenerWrapper());
     CommandRegistrationCallback.EVENT.register(
         (dispatcher, registryAccess, environment) -> EasyModelEntitiesCommand.register(dispatcher));
+    ServerLifecycleEvents.SERVER_STOPPED.register(
+        server -> EasyModelServices.clearProfileService());
   }
 }

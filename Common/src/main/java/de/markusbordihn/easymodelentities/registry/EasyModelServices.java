@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.registry;
 
+import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntityTypeProvider;
 import de.markusbordihn.easymodelentities.diagnostics.EasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelEntityFactory;
@@ -27,9 +28,12 @@ import de.markusbordihn.easymodelentities.model.decoder.EasyModelDecoderRegistry
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import java.util.Objects;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public final class EasyModelServices {
 
+  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
   private static volatile EasyModelProfileService profileService;
   private static volatile EasyModelRenderProfileService renderProfileService;
   private static volatile EasyModelEntityFactory entityFactory;
@@ -50,6 +54,12 @@ public final class EasyModelServices {
 
   public static void setProfileService(EasyModelProfileService profileService) {
     EasyModelServices.profileService = Objects.requireNonNull(profileService, "profileService");
+  }
+
+  public static void clearProfileService() {
+    int profileCount = EasyModelServices.profileService.getProfiles().size();
+    EasyModelServices.profileService = EasyModelProfileService.EMPTY;
+    log.info("Cleared {} profile(s) after the server stopped.", profileCount);
   }
 
   public static EasyModelRenderProfileService renderProfileService() {

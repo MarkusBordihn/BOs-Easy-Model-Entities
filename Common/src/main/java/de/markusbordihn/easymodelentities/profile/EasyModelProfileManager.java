@@ -19,11 +19,14 @@
 
 package de.markusbordihn.easymodelentities.profile;
 
+import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelResourceRejection;
 import de.markusbordihn.easymodelentities.data.profile.*;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -34,37 +37,70 @@ import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public final class EasyModelProfileManager implements EasyModelProfileService {
 
+  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
   private static final String JSON_EXTENSION = ".json";
   private final Map<ResourceLocation, EasyModelEntityProfile> profilesById;
+  private final List<ModelResourceRejection> rejectedResources;
 
   public EasyModelProfileManager(Map<ResourceLocation, EasyModelEntityProfile> profilesById) {
+    this(profilesById, List.of());
+  }
+
+  public EasyModelProfileManager(
+      Map<ResourceLocation, EasyModelEntityProfile> profilesById,
+      List<ModelResourceRejection> rejectedResources) {
     this.profilesById =
         Collections.unmodifiableMap(
             new LinkedHashMap<>(Objects.requireNonNull(profilesById, "profilesById")));
+    this.rejectedResources =
+        List.copyOf(Objects.requireNonNull(rejectedResources, "rejectedResources"));
   }
 
   public static EasyModelProfileManager load(ResourceManager resourceManager) {
     Objects.requireNonNull(resourceManager, "resourceManager");
     Map<ResourceLocation, EasyModelEntityProfile> profiles = new LinkedHashMap<>();
+    List<ModelResourceRejection> rejectedResources = new ArrayList<>();
     Map<ResourceLocation, Resource> resources =
         resourceManager.listResources(
             ModelResourcePaths.SERVER_PROFILE_DIRECTORY,
             resourceLocation -> resourceLocation.getPath().endsWith(JSON_EXTENSION));
 
+    int invalidProfiles = 0;
     for (Map.Entry<ResourceLocation, Resource> entry : resources.entrySet()) {
       ResourceLocation resourceLocation = entry.getKey();
       Optional<ResourceLocation> profileId = profileIdFromResourceLocation(resourceLocation);
       if (profileId.isEmpty()) {
+        String reason =
+            "Profiles must be placed in "
+                + ModelResourcePaths.SERVER_PROFILE_DIRECTORY
+                + "/entity/ or "
+                + ModelResourcePaths.SERVER_PROFILE_DIRECTORY
+                + "/block_entity/ and use lowercase letters, digits, '_', '-' and '/' only.";
+        rejectedResources.add(new ModelResourceRejection(resourceLocation, reason));
+        log.warn("Ignoring profile {}: {}", resourceLocation, reason);
         continue;
       }
 
-      profiles.put(profileId.get(), parseProfile(profileId.get(), entry.getValue()));
+      EasyModelEntityProfile profile = parseProfile(profileId.get(), entry.getValue());
+      profiles.put(profileId.get(), profile);
+      logProfileIssues(profileId.get(), profile);
+      if (!profile.isActive()) {
+        invalidProfiles++;
+      }
     }
+    log.info(
+        "Loaded {} profile(s) from {} resource(s), {} of them are inactive and {} were ignored.",
+        profiles.size(),
+        resources.size(),
+        invalidProfiles,
+        rejectedResources.size());
 
-    return new EasyModelProfileManager(profiles);
+    return new EasyModelProfileManager(profiles, rejectedResources);
   }
 
   public static Optional<ResourceLocation> profileIdFromResourceLocation(
@@ -98,6 +134,26 @@ public final class EasyModelProfileManager implements EasyModelProfileService {
           "json",
           "Could not read server profile JSON: " + exception.getMessage());
     }
+  }
+
+  private static void logProfileIssues(ResourceLocation profileId, EasyModelEntityProfile profile) {
+    for (ModelProfileValidationIssue issue : profile.validationIssues()) {
+      if (issue.status() == ModelProfileStatus.ACTIVE) {
+        log.warn("Profile {} [{}]: {}", profileId, issue.field(), issue.message());
+      } else {
+        log.error(
+            "Profile {} is not usable [{}] {}: {}",
+            profileId,
+            issue.status(),
+            issue.field(),
+            issue.message());
+      }
+    }
+  }
+
+  @Override
+  public Collection<ModelResourceRejection> getRejectedResources() {
+    return this.rejectedResources;
   }
 
   @Override

@@ -44,6 +44,10 @@ public final class EasyModelApiContract {
     return Constants.SCHEMA_VERSION;
   }
 
+  public static String apiVersion() {
+    return Constants.API_VERSION;
+  }
+
   public static int maxModelFileSizeBytes() {
     return ModelAssetBudgets.MAX_MODEL_FILE_SIZE_BYTES;
   }
