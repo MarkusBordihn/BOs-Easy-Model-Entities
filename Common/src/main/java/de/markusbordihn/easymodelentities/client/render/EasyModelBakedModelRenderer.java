@@ -24,6 +24,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartPose;
@@ -259,6 +260,40 @@ public final class EasyModelBakedModelRenderer {
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        airborneAmount,
+        attackAmount,
+        EasyModelHeadLook.NONE,
+        animationState,
+        partAnimator,
+        partAnimationMode,
+        partPoseListener,
+        poseStack,
+        bufferSource,
+        packedLight);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationState animationState,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight) {
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(bufferSource, "bufferSource");
     boolean cullBackfaces = bakedModel.cullBackfaces();
@@ -278,6 +313,7 @@ public final class EasyModelBakedModelRenderer {
         ageInTicks,
         airborneAmount,
         attackAmount,
+        headLook,
         animationState,
         poseStack,
         bufferProvider,
@@ -288,6 +324,10 @@ public final class EasyModelBakedModelRenderer {
   }
 
   private static ResourceLocation textureFor(EasyModelRenderState renderState, int textureIndex) {
+    if (renderState.textures().isEmpty()) {
+      return renderState.texture();
+    }
+
     return renderState.textures().getOrDefault(textureIndex, renderState.texture());
   }
 
@@ -311,6 +351,7 @@ public final class EasyModelBakedModelRenderer {
         ageInTicks,
         airborneAmount,
         0.0f,
+        EasyModelHeadLook.NONE,
         EasyModelAnimationState.AUTO,
         poseStack,
         textureIndex -> vertexConsumer,
@@ -328,6 +369,7 @@ public final class EasyModelBakedModelRenderer {
       float ageInTicks,
       float airborneAmount,
       float attackAmount,
+      EasyModelHeadLook headLook,
       EasyModelAnimationState animationState,
       PoseStack poseStack,
       IntFunction<VertexConsumer> bufferProvider,
@@ -355,6 +397,7 @@ public final class EasyModelBakedModelRenderer {
           ageInTicks,
           airborneAmount,
           attackAmount,
+          headLook,
           clip,
           clipTime,
           poseStack,
@@ -373,6 +416,7 @@ public final class EasyModelBakedModelRenderer {
       float ageInTicks,
       float airborneAmount,
       float attackAmount,
+      EasyModelHeadLook headLook,
       ModelAnimationClip clip,
       float clipTime,
       PoseStack poseStack,
@@ -385,7 +429,7 @@ public final class EasyModelBakedModelRenderer {
     Vec3f rotation = part.rotation();
     EasyModelPartTransform automaticTransform =
         animationRotation(
-            part.name(),
+            part,
             renderState,
             limbSwing,
             limbSwingAmount,
@@ -394,6 +438,9 @@ public final class EasyModelBakedModelRenderer {
             attackAmount,
             clip,
             clipTime);
+    if (looksWithHead(part.partType(), renderState.bodyType()) && !headLook.isNeutral()) {
+      automaticTransform = automaticTransform.add(headLook.toTransform());
+    }
     EasyModelPartTransform animationTransform;
     if (partAnimator == EasyModelPartAnimator.NONE) {
       animationTransform =
@@ -450,6 +497,7 @@ public final class EasyModelBakedModelRenderer {
             ageInTicks,
             airborneAmount,
             attackAmount,
+            headLook,
             clip,
             clipTime,
             poseStack,
@@ -495,7 +543,7 @@ public final class EasyModelBakedModelRenderer {
   }
 
   private static EasyModelPartTransform animationRotation(
-      String partName,
+      BakedModelPart modelPart,
       EasyModelRenderState renderState,
       float limbSwing,
       float limbSwingAmount,
@@ -510,10 +558,11 @@ public final class EasyModelBakedModelRenderer {
       return noRotation();
     }
 
-    ModelPartType part = ModelPartType.get(partName);
+    ModelPartType part = modelPart.partType();
+    boolean tailPart = modelPart.tailPart();
     EasyModelPartTransform baseTransform = null;
     if (clip != null) {
-      ModelAnimationBoneTrack track = clip.track(partName);
+      ModelAnimationBoneTrack track = clip.track(modelPart.name());
       if (track != null) {
         baseTransform = keyframeTransform(track, clipTime);
       }
@@ -522,9 +571,9 @@ public final class EasyModelBakedModelRenderer {
       baseTransform =
           limbSwingAmount > 0.01f
               ? walkRotation(
-                  partName, part, renderState, limbSwing, limbSwingAmount, airborneAmount)
+                  tailPart, part, renderState, limbSwing, limbSwingAmount, airborneAmount)
               : idleRotation(
-                  partName,
+                  tailPart,
                   part,
                   renderState.bodyType(),
                   ageInTicks,
@@ -658,7 +707,7 @@ public final class EasyModelBakedModelRenderer {
   }
 
   private static EasyModelPartTransform walkRotation(
-      String partName,
+      boolean tailPart,
       ModelPartType part,
       EasyModelRenderState renderState,
       float limbSwing,
@@ -679,7 +728,7 @@ public final class EasyModelBakedModelRenderer {
     if (animatesOnX(part, bodyType)) {
       return new EasyModelPartTransform(swing, 0.0f, 0.0f);
     }
-    if (animatesOnY(partName, bodyType)) {
+    if (animatesOnY(tailPart, bodyType)) {
       return new EasyModelPartTransform(0.0f, swing * 0.75f, 0.0f);
     }
     if (animatesOnZ(part, bodyType)) {
@@ -704,7 +753,7 @@ public final class EasyModelBakedModelRenderer {
   }
 
   private static EasyModelPartTransform idleRotation(
-      String partName,
+      boolean tailPart,
       ModelPartType part,
       ModelBodyType bodyType,
       float ageInTicks,
@@ -738,7 +787,7 @@ public final class EasyModelBakedModelRenderer {
     if (part == ModelPartType.HEAD) {
       return new EasyModelPartTransform(breath * 0.5f, 0.0f, 0.0f);
     }
-    if (animatesOnY(partName, bodyType)) {
+    if (animatesOnY(tailPart, bodyType)) {
       return new EasyModelPartTransform(
           0.0f, Mth.sin(ageInTicks * 0.18f) * IDLE_TAIL_ROTATION * idleStrength, 0.0f);
     }
@@ -779,21 +828,19 @@ public final class EasyModelBakedModelRenderer {
     };
   }
 
-  private static boolean animatesOnY(String partName, ModelBodyType bodyType) {
-    return bodyType != ModelBodyType.STATIC && isTailPart(partName);
+  private static boolean looksWithHead(ModelPartType part, ModelBodyType bodyType) {
+    return part == ModelPartType.HEAD
+        && bodyType != ModelBodyType.STATIC
+        && bodyType != ModelBodyType.CUBOID;
+  }
+
+  private static boolean animatesOnY(boolean tailPart, ModelBodyType bodyType) {
+    return bodyType != ModelBodyType.STATIC && tailPart;
   }
 
   private static boolean animatesOnZ(ModelPartType part, ModelBodyType bodyType) {
     return (bodyType == ModelBodyType.WINGED || bodyType == ModelBodyType.WINGED_HUMANOID)
         && (part == ModelPartType.LEFT_WING || part == ModelPartType.RIGHT_WING);
-  }
-
-  private static boolean isTailPart(String partName) {
-    return ModelPartType.TAIL.getTagName().equals(partName)
-        || ModelPartType.TAIL_FIN.getTagName().equals(partName)
-        || partName.startsWith("tail_")
-        || partName.endsWith("_tail")
-        || partName.contains("_tail_");
   }
 
   private static float wingSwing(ModelPartType part, float swing) {

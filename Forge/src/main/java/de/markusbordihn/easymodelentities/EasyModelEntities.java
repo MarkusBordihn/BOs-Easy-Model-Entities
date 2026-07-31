@@ -29,6 +29,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
@@ -62,6 +63,7 @@ public class EasyModelEntities {
 
     MinecraftForge.EVENT_BUS.addListener(this::addReloadListeners);
     MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
+    MinecraftForge.EVENT_BUS.addListener(this::serverStopped);
 
     DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new EasyModelEntitiesClient(modEventBus));
   }
@@ -72,5 +74,9 @@ public class EasyModelEntities {
 
   private void registerCommands(RegisterCommandsEvent event) {
     EasyModelEntitiesCommand.register(event.getDispatcher());
+  }
+
+  private void serverStopped(ServerStoppedEvent event) {
+    EasyModelServices.clearProfileService();
   }
 }

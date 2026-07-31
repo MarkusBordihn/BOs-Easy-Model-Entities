@@ -187,6 +187,14 @@ public final class ModelBakeService implements EasyModelBakeService {
     ModelEmptyCubePruner.Result pruned = ModelEmptyCubePruner.prune(rootParts);
     rootParts = pruned.rootParts();
     boolean cullBackfaces = bodyType == ModelBodyType.STATIC;
+    if (pruned.droppedCubes() > 0) {
+      log.warn(
+          "Model {} (body type {}): {} cube(s) are fully covered by other cubes and are not"
+              + " rendered.",
+          decodedModel.modelId(),
+          bodyType.getSerializedName(),
+          pruned.droppedCubes());
+    }
     if (log.isDebugEnabled()) {
       log.debug(
           "Baked model {} (body type {}): occlusion-culled {} faces, dropped {} fully hidden cubes,"
@@ -317,6 +325,15 @@ public final class ModelBakeService implements EasyModelBakeService {
         List.of(new ModelRenderProfileValidationIssue(status, field, message)));
   }
 
+  private static String decodeFailureMessage(EasyModelDecodeException exception) {
+    Throwable cause = exception.getCause();
+    if (cause == null || cause.getMessage() == null) {
+      return exception.getMessage();
+    }
+
+    return exception.getMessage() + " (" + cause.getMessage() + ")";
+  }
+
   private ModelResourceLookup findModelResource(
       ResourceLocation modelId, ResourceManager resourceManager) {
     boolean foundModelResource = false;
@@ -428,7 +445,7 @@ public final class ModelBakeService implements EasyModelBakeService {
           "Could not decode model "
               + modelResource.resourceLocation()
               + ": "
-              + exception.getMessage());
+              + decodeFailureMessage(exception));
     }
   }
 

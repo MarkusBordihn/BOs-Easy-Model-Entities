@@ -30,6 +30,7 @@ import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileS
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
 import de.markusbordihn.easymodelentities.model.bake.ModelFallbackFactory;
+import de.markusbordihn.easymodelentities.model.bake.ModelTextureResolver;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import de.markusbordihn.easymodelentities.runtime.AssetPairing;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
@@ -41,8 +42,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 
 public final class EasyModelRenderStateResolver {
 
-  public static final ResourceLocation FALLBACK_TEXTURE =
-      new ResourceLocation("minecraft", "textures/block/pink_wool.png");
+  public static final ResourceLocation FALLBACK_TEXTURE = ModelTextureResolver.FALLBACK_TEXTURE;
   private static final ResourceLocation FALLBACK_MODEL =
       new ResourceLocation(Constants.MOD_ID, "fallback");
   private static final ModelAnimationSettings NO_ANIMATION =
@@ -62,7 +62,7 @@ public final class EasyModelRenderStateResolver {
 
     return renderProfileService
         .getRenderProfile(contract.renderProfileId())
-        .filter(EasyModelRenderProfile::isActive)
+        .filter(EasyModelRenderProfile::isRenderable)
         .map(renderProfile -> resolveProfile(contract, renderProfile, bakeService, resourceManager))
         .orElseGet(
             () ->

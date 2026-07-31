@@ -39,6 +39,14 @@ public record EasyModelPartTransform(
 
   public EasyModelPartTransform add(EasyModelPartTransform transform) {
     java.util.Objects.requireNonNull(transform, "transform");
+    if (NONE.equals(transform)) {
+      return this;
+    }
+
+    if (NONE.equals(this)) {
+      return transform;
+    }
+
     return new EasyModelPartTransform(
         this.xRotation + transform.xRotation,
         this.yRotation + transform.yRotation,

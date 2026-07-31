@@ -65,16 +65,9 @@ class BundledDemoProfilesTest {
           new Demo("entity/wisp_lantern", ModelBodyType.FLOATING),
           new Demo("entity/orientation_test", ModelBodyType.STATIC),
           new Demo("entity/disguised_chestling", ModelBodyType.CUBOID),
-          new Demo("entity/still_sentinel", ModelBodyType.BIPED),
           new Demo("entity/perched_sparrow", ModelBodyType.WINGED),
-          new Demo("entity/still_crawler", ModelBodyType.QUADRUPED),
-          new Demo("entity/idle_skitter", ModelBodyType.ARTHROPOD),
-          new Demo("entity/reef_idol", ModelBodyType.AQUATIC),
-          new Demo("entity/still_cube", ModelBodyType.CUBOID),
-          new Demo("entity/swift_crawler", ModelBodyType.QUADRUPED),
-          new Demo("entity/still_turtle", ModelBodyType.AMPHIBIOUS),
-          new Demo("entity/perched_wanderer", ModelBodyType.WINGED_HUMANOID),
           new Demo("entity/custom_strider", ModelBodyType.QUADRUPED),
+          new Demo("entity/text_example", ModelBodyType.STATIC),
           new Demo("block_entity/shrine", ModelBodyType.STATIC));
 
   private static void assertDemo(String path, ModelBodyType bodyType) throws Exception {

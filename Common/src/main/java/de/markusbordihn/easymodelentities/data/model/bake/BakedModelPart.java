@@ -19,12 +19,15 @@
 
 package de.markusbordihn.easymodelentities.data.model.bake;
 
+import de.markusbordihn.easymodelentities.data.model.ModelPartType;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import java.util.List;
 import java.util.Objects;
 
 public record BakedModelPart(
     String name,
+    ModelPartType partType,
+    boolean tailPart,
     Vec3f offset,
     Vec3f rotation,
     List<BakedModelCube> cubes,
@@ -32,10 +35,35 @@ public record BakedModelPart(
 
   public BakedModelPart {
     Objects.requireNonNull(name, "name");
+    Objects.requireNonNull(partType, "partType");
     Objects.requireNonNull(offset, "offset");
     Objects.requireNonNull(rotation, "rotation");
     cubes = List.copyOf(Objects.requireNonNull(cubes, "cubes"));
     children = List.copyOf(Objects.requireNonNull(children, "children"));
+  }
+
+  public BakedModelPart(
+      String name,
+      Vec3f offset,
+      Vec3f rotation,
+      List<BakedModelCube> cubes,
+      List<BakedModelPart> children) {
+    this(
+        Objects.requireNonNull(name, "name"),
+        ModelPartType.get(name),
+        isTailPart(name),
+        offset,
+        rotation,
+        cubes,
+        children);
+  }
+
+  private static boolean isTailPart(String name) {
+    return ModelPartType.TAIL.getTagName().equals(name)
+        || ModelPartType.TAIL_FIN.getTagName().equals(name)
+        || name.startsWith("tail_")
+        || name.endsWith("_tail")
+        || name.contains("_tail_");
   }
 
   public int partCount() {

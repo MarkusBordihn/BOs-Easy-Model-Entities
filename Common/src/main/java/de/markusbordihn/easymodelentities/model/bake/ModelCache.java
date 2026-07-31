@@ -27,24 +27,24 @@ import java.util.Optional;
 final class ModelCache {
 
   private final Map<ModelBakeVariantKey, ModelBakeResult> resultsByKey = new LinkedHashMap<>();
+  private final Map<ModelCacheKey, ModelBakeResult> firstResultByCacheKey = new LinkedHashMap<>();
 
   synchronized Optional<ModelBakeResult> get(ModelBakeVariantKey variantKey) {
     return Optional.ofNullable(this.resultsByKey.get(variantKey));
   }
 
   synchronized Optional<ModelBakeResult> get(ModelCacheKey cacheKey) {
-    return this.resultsByKey.entrySet().stream()
-        .filter(entry -> entry.getKey().cacheKey().equals(cacheKey))
-        .map(Map.Entry::getValue)
-        .findFirst();
+    return Optional.ofNullable(this.firstResultByCacheKey.get(cacheKey));
   }
 
   synchronized void put(ModelBakeVariantKey variantKey, ModelBakeResult result) {
     this.resultsByKey.put(variantKey, result);
+    this.firstResultByCacheKey.putIfAbsent(variantKey.cacheKey(), result);
   }
 
   synchronized void clear() {
     this.resultsByKey.clear();
+    this.firstResultByCacheKey.clear();
   }
 
   synchronized int size() {

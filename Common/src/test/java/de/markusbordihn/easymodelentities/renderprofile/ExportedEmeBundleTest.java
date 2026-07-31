@@ -158,7 +158,8 @@ class ExportedEmeBundleTest {
     assertTrue(bakeResult.successful());
     assertEquals(profileId, profile.id());
     assertEquals(
-        new ResourceLocation(NAMESPACE, "entity/test_disguised_chestling"), profile.renderProfileId());
+        new ResourceLocation(NAMESPACE, "entity/test_disguised_chestling"),
+        profile.renderProfileId());
     assertEquals(profile.renderProfileId(), renderProfile.id());
     assertEquals(ModelBodyType.CUBOID, profile.bodyType());
     assertEquals(ModelBodyType.CUBOID, renderProfile.bodyType());

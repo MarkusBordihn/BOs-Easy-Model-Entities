@@ -42,6 +42,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
 public final class ModelRenderProfileParser {
@@ -86,6 +87,32 @@ public final class ModelRenderProfileParser {
   private static final String ANIMATION_IDLE_STRENGTH_FIELD =
       ANIMATION_FIELD + "." + IDLE_STRENGTH_FIELD;
   private static final String ANIMATION_GAIT_FIELD = ANIMATION_FIELD + "." + GAIT_FIELD;
+  private static final Set<String> ROOT_FIELDS =
+      Set.of(
+          SCHEMA_VERSION_FIELD,
+          PRESET_TYPE_FIELD,
+          VERSION_FIELD,
+          ASSET_FINGERPRINT_FIELD,
+          BODY_TYPE_FIELD,
+          MODEL_FIELD,
+          TEXTURE_FIELD,
+          TEXTURES_FIELD,
+          RENDERING_FIELD,
+          ANIMATION_FIELD);
+  private static final Set<String> RENDERING_FIELDS =
+      Set.of(
+          SCALE_FIELD,
+          SHADOW_RADIUS_FIELD,
+          VISIBLE_BOUNDS_WIDTH_FIELD,
+          VISIBLE_BOUNDS_HEIGHT_FIELD,
+          VISIBLE_BOUNDS_OFFSET_FIELD);
+  private static final Set<String> ANIMATION_FIELDS =
+      Set.of(
+          MODE_FIELD,
+          SWING_SPEED_FIELD,
+          WALK_SPEED_MULTIPLIER_FIELD,
+          IDLE_STRENGTH_FIELD,
+          GAIT_FIELD);
   private static final float DEFAULT_SCALE = 1.0f;
   private static final float DEFAULT_SWING_SPEED = 1.0f;
   private static final float DEFAULT_WALK_SPEED_MULTIPLIER = 1.0f;
@@ -145,6 +172,15 @@ public final class ModelRenderProfileParser {
   private static EasyModelRenderProfile parseObject(
       ResourceLocation expectedId, JsonObject jsonObject, SchemaMigrations migrations) {
     List<ModelRenderProfileValidationIssue> issues = new ArrayList<>();
+    if (!JsonValues.hasField(jsonObject, SCHEMA_VERSION_FIELD)) {
+      addIssue(
+          issues,
+          ModelRenderProfileStatus.ACTIVE,
+          SCHEMA_VERSION_FIELD,
+          "Missing schema_version, "
+              + Constants.SCHEMA_VERSION
+              + " is assumed and no migration is applied.");
+    }
     String schemaVersion =
         optionalString(
             jsonObject.get(SCHEMA_VERSION_FIELD),
@@ -154,7 +190,10 @@ public final class ModelRenderProfileParser {
             ModelRenderProfileStatus.INVALID_SCHEMA_VERSION);
     JsonObject effectiveObject =
         applySchemaMigrations(jsonObject, schemaVersion, migrations, issues);
+    reportUnknownFields(effectiveObject, EMPTY_VALUE, ROOT_FIELDS, issues);
     RawRenderProfile rawProfile = GSON.fromJson(effectiveObject, RawRenderProfile.class);
+    reportUnknownFields(rawProfile.rendering, RENDERING_FIELD + ".", RENDERING_FIELDS, issues);
+    reportUnknownFields(rawProfile.animation, ANIMATION_FIELD + ".", ANIMATION_FIELDS, issues);
 
     String version = optionalString(rawProfile.version, EMPTY_VALUE, VERSION_FIELD, issues);
     String assetFingerprint =
@@ -438,19 +477,14 @@ public final class ModelRenderProfileParser {
       String field,
       Class<T> objectClass,
       List<ModelRenderProfileValidationIssue> issues) {
-    if (value == null || value.isJsonNull()) {
-      return null;
-    }
-    if (!value.isJsonObject()) {
-      addIssue(
-          issues,
-          ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
-          field,
-          "Field " + field + " must be an object.");
-      return null;
-    }
-
-    return GSON.fromJson(value, objectClass);
+    return JsonValues.optionalObject(
+        value,
+        field,
+        objectClass,
+        GSON,
+        (issueField, message) ->
+            addIssue(
+                issues, ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, issueField, message));
   }
 
   private static String requiredString(
@@ -539,16 +573,13 @@ public final class ModelRenderProfileParser {
     if (rawValue == null) {
       return defaultValue;
     }
-    ResourceLocation resourceLocation = ResourceLocation.tryParse(rawValue);
-    if (resourceLocation == null) {
-      addIssue(
-          issues,
-          ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION,
-          field,
-          "Invalid ResourceLocation " + rawValue + ".");
-    }
 
-    return resourceLocation;
+    return JsonValues.parseResourceLocation(
+        rawValue,
+        field,
+        (issueField, message) ->
+            addIssue(
+                issues, ModelRenderProfileStatus.INVALID_RESOURCE_LOCATION, issueField, message));
   }
 
   private static float optionalFloat(
@@ -556,34 +587,35 @@ public final class ModelRenderProfileParser {
       float defaultValue,
       String field,
       List<ModelRenderProfileValidationIssue> issues) {
-    if (value == null || value.isJsonNull()) {
-      return defaultValue;
-    }
-    Float floatValue = parseFloat(value, field, issues);
-    return floatValue == null ? defaultValue : floatValue;
+    return JsonValues.optionalFloat(
+        value,
+        defaultValue,
+        field,
+        (issueField, message) ->
+            addIssue(
+                issues, ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, issueField, message));
   }
 
   private static Float parseFloat(
       JsonElement value, String field, List<ModelRenderProfileValidationIssue> issues) {
-    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
-      addIssue(
-          issues,
-          ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
-          field,
-          "Field " + field + " must be a number.");
-      return null;
-    }
-    float floatValue = value.getAsFloat();
-    if (!Float.isFinite(floatValue)) {
-      addIssue(
-          issues,
-          ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
-          field,
-          "Field " + field + " must be finite.");
-      return null;
-    }
+    return JsonValues.parseFloat(
+        value,
+        field,
+        (issueField, message) ->
+            addIssue(
+                issues, ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, issueField, message));
+  }
 
-    return floatValue;
+  private static void reportUnknownFields(
+      JsonElement value,
+      String fieldPrefix,
+      Set<String> knownFields,
+      List<ModelRenderProfileValidationIssue> issues) {
+    JsonValues.reportUnknownFields(
+        value,
+        fieldPrefix,
+        knownFields,
+        (field, message) -> addIssue(issues, ModelRenderProfileStatus.ACTIVE, field, message));
   }
 
   private static ModelRenderProfileStatus statusForRequiredField(String field) {

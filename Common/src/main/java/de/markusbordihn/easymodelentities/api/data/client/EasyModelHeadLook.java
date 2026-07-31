@@ -17,28 +17,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.runtime;
+package de.markusbordihn.easymodelentities.api.data.client;
 
-public final class AssetPairing {
+import net.minecraft.util.Mth;
 
-  private AssetPairing() {}
+public record EasyModelHeadLook(float yaw, float pitch) {
 
-  public static boolean matches(String serverValue, String clientValue) {
-    if (serverValue == null || serverValue.isBlank()) {
-      return true;
+  public static final EasyModelHeadLook NONE = new EasyModelHeadLook(0.0f, 0.0f);
+
+  private static final float MAX_YAW = 75.0f;
+  private static final float MAX_PITCH = 60.0f;
+
+  public static EasyModelHeadLook of(float yaw, float pitch) {
+    if (!Float.isFinite(yaw) || !Float.isFinite(pitch)) {
+      return NONE;
     }
-    if (clientValue == null || clientValue.isBlank()) {
-      return true;
-    }
-
-    return serverValue.equals(clientValue);
+    return new EasyModelHeadLook(
+        Mth.clamp(Mth.wrapDegrees(yaw), -MAX_YAW, MAX_YAW),
+        Mth.clamp(pitch, -MAX_PITCH, MAX_PITCH));
   }
 
-  public static boolean isOneSided(String serverValue, String clientValue) {
-    return isBlank(serverValue) != isBlank(clientValue);
+  public boolean isNeutral() {
+    return this.yaw == 0.0f && this.pitch == 0.0f;
   }
 
-  private static boolean isBlank(String value) {
-    return value == null || value.isBlank();
+  public EasyModelPartTransform toTransform() {
+    return new EasyModelPartTransform(this.pitch * Mth.DEG_TO_RAD, this.yaw * Mth.DEG_TO_RAD, 0.0f);
   }
 }

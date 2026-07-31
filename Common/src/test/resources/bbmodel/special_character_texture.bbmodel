@@ -1,0 +1,50 @@
+{
+  "meta": {"format_version": "5.0", "model_format": "eme_entity", "box_uv": true},
+  "resolution": {"width": 16, "height": 16},
+  "elements": [
+    {
+      "name": "cube_a",
+      "from": [-1, 0, -1],
+      "to": [1, 2, 1],
+      "origin": [0, 0, 0],
+      "uv_offset": [0, 0],
+      "faces": {
+        "north": {"uv": [2, 2, 4, 4], "texture": 0},
+        "east": {"uv": [0, 2, 2, 4], "texture": 0},
+        "south": {"uv": [6, 2, 8, 4], "texture": 0},
+        "west": {"uv": [4, 2, 6, 4], "texture": 0},
+        "up": {"uv": [4, 2, 2, 0], "texture": 0},
+        "down": {"uv": [6, 0, 4, 2], "texture": 0}
+      },
+      "type": "cube",
+      "uuid": "element_a"
+    },
+    {
+      "name": "cube_b",
+      "from": [-1, 3, -1],
+      "to": [1, 5, 1],
+      "origin": [0, 3, 0],
+      "uv_offset": [0, 0],
+      "faces": {
+        "north": {"uv": [2, 2, 4, 4], "texture": 1},
+        "east": {"uv": [0, 2, 2, 4], "texture": 1},
+        "south": {"uv": [6, 2, 8, 4], "texture": 1},
+        "west": {"uv": [4, 2, 6, 4], "texture": 1},
+        "up": {"uv": [4, 2, 2, 0], "texture": 1},
+        "down": {"uv": [6, 0, 4, 2], "texture": 1}
+      },
+      "type": "cube",
+      "uuid": "element_b"
+    }
+  ],
+  "groups": [
+    {"name": "root", "uuid": "group_root", "origin": [0, 0, 0], "rotation": [0, 0, 0]}
+  ],
+  "outliner": [
+    {"uuid": "group_root", "children": ["element_a", "element_b"]}
+  ],
+  "textures": [
+    {"name": "model_a.png", "relative_path": "model_a.png", "folder": "block", "namespace": "", "id": "0", "uv_width": 16, "uv_height": 16},
+    {"name": "Bär Textur.png", "relative_path": "Bär Textur.png", "folder": "block", "namespace": "minecraft", "id": "1", "uv_width": 16, "uv_height": 16}
+  ]
+}

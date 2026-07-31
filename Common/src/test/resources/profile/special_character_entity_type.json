@@ -1,0 +1,15 @@
+{
+  "model_type": "entity",
+  "preset_type": "custom",
+  "version": "v1",
+  "entity": {
+    "type": "example:bär_wächter",
+    "movement_type": "ground",
+    "body_type": "biped"
+  },
+  "dimensions": {
+    "width": 0.6,
+    "height": 1.8,
+    "eye_height": 1.62
+  }
+}

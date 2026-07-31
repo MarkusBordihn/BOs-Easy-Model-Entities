@@ -24,6 +24,7 @@ import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnosticSeverity;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.runtime.AssetPairing;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.ArrayList;
@@ -41,6 +42,11 @@ public final class ModelRenderProfileValidator {
   public static final String CLIENT_BODY_TYPE_MISMATCH_CODE = "CLIENT_BODY_TYPE_MISMATCH";
   private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
   private static final Set<String> LOGGED_DIAGNOSTICS = ConcurrentHashMap.newKeySet();
+
+  static {
+    EasyModelReloadDispatcher.addProfileReloadListener(LOGGED_DIAGNOSTICS::clear);
+    EasyModelReloadDispatcher.addRenderProfileReloadListener(LOGGED_DIAGNOSTICS::clear);
+  }
 
   private ModelRenderProfileValidator() {}
 
