@@ -32,6 +32,7 @@ import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProf
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderSettings;
 import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
@@ -48,6 +49,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelRenderStateResolverTest {
@@ -227,5 +229,33 @@ class EasyModelRenderStateResolverTest {
     assertEquals(EasyModelRenderStateResolver.FALLBACK_TEXTURE, renderState.texture());
     assertEquals(1.25f, renderState.scale(), 0.01f);
     assertEquals(0.45f, renderState.shadowRadius(), 0.01f);
+  }
+
+  @Test
+  @DisplayName("A render profile deactivated by a missing texture still renders its own model")
+  void missingTextureStatusKeepsBakedModel() throws Exception {
+    EasyModelRenderProfile missingTextureProfile =
+        renderProfile(ModelBodyType.STATIC, "fingerprint")
+            .withValidationIssues(
+                List.of(
+                    new ModelRenderProfileValidationIssue(
+                        ModelRenderProfileStatus.MISSING_TEXTURE,
+                        "texture",
+                        "Missing texture asset " + TEXTURE_ID + ".")));
+
+    assertEquals(ModelRenderProfileStatus.MISSING_TEXTURE, missingTextureProfile.status());
+    assertFalse(missingTextureProfile.isActive());
+    assertTrue(missingTextureProfile.isRenderable());
+
+    EasyModelRenderState renderState =
+        EasyModelRenderStateResolver.resolve(
+            contract(ModelBodyType.STATIC, "fingerprint"),
+            renderProfileService(missingTextureProfile),
+            ModelBakeService.createDefault(),
+            resourceManager(false));
+
+    assertFalse(renderState.fallbackModel());
+    assertTrue(renderState.fallbackTexture());
+    assertEquals(EasyModelRenderStateResolver.FALLBACK_TEXTURE, renderState.texture());
   }
 }

@@ -35,6 +35,7 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
@@ -81,6 +82,7 @@ public class EasyModelEntities {
 
     NeoForge.EVENT_BUS.addListener(this::addReloadListeners);
     NeoForge.EVENT_BUS.addListener(this::registerCommands);
+    NeoForge.EVENT_BUS.addListener(this::serverStopped);
   }
 
   private void addReloadListeners(AddServerReloadListenersEvent event) {
@@ -92,5 +94,9 @@ public class EasyModelEntities {
 
   private void registerCommands(RegisterCommandsEvent event) {
     EasyModelEntitiesCommand.register(event.getDispatcher());
+  }
+
+  private void serverStopped(ServerStoppedEvent event) {
+    EasyModelServices.clearProfileService();
   }
 }

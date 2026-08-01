@@ -25,6 +25,7 @@ import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartPose;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
@@ -73,7 +74,7 @@ public final class EasyModelEntityRenderBackend {
     }
     return EasyModelServices.renderProfileService()
         .getRenderProfile(profileId)
-        .filter(EasyModelRenderProfile::isActive)
+        .filter(EasyModelRenderProfile::isRenderable)
         .map(
             renderProfile ->
                 EasyModelRuntimeContract.fromRenderProfile(
@@ -105,6 +106,7 @@ public final class EasyModelEntityRenderBackend {
         renderState.ageInTicks,
         renderState.airborneAmount,
         renderState.attackAmount,
+        renderState.headLook == null ? EasyModelHeadLook.NONE : renderState.headLook,
         renderState.animationState,
         renderState.partAnimator == null ? EasyModelPartAnimator.NONE : renderState.partAnimator,
         renderState.partAnimationMode == null
@@ -145,6 +147,7 @@ public final class EasyModelEntityRenderBackend {
         renderState.ageInTicks,
         renderState.airborneAmount,
         renderState.attackAmount,
+        renderState.headLook == null ? EasyModelHeadLook.NONE : renderState.headLook,
         renderState.animationState,
         poseStack,
         textureIndex -> null,
@@ -215,6 +218,7 @@ public final class EasyModelEntityRenderBackend {
         ageInTicks,
         airborneAmount(entity),
         attackAmount(entity, partialTick),
+        headLook(entity, entityYaw, partialTick, safeOptions),
         resolveAnimationState(safeOptions, animationState(entity)),
         safeOptions,
         poseStack,
@@ -245,6 +249,7 @@ public final class EasyModelEntityRenderBackend {
         ageInTicks,
         0.0f,
         0.0f,
+        safeOptions.headLook() == null ? EasyModelHeadLook.NONE : safeOptions.headLook(),
         resolveAnimationState(safeOptions, EasyModelAnimationState.AUTO),
         safeOptions,
         poseStack,
@@ -260,6 +265,7 @@ public final class EasyModelEntityRenderBackend {
       float ageInTicks,
       float airborneAmount,
       float attackAmount,
+      EasyModelHeadLook headLook,
       EasyModelAnimationState animationState,
       EasyModelEntityRenderOptions options,
       PoseStack poseStack,
@@ -280,6 +286,7 @@ public final class EasyModelEntityRenderBackend {
         ageInTicks,
         airborneAmount,
         attackAmount,
+        headLook,
         animationState,
         options.partAnimator(),
         options.partAnimationMode(),
@@ -288,6 +295,25 @@ public final class EasyModelEntityRenderBackend {
         bufferSource,
         packedLight);
     poseStack.popPose();
+  }
+
+  public static EasyModelHeadLook headLook(Entity entity, float bodyYaw, float partialTick) {
+    if (!(entity instanceof LivingEntity livingEntity)) {
+      return EasyModelHeadLook.NONE;
+    }
+
+    return EasyModelHeadLook.of(
+        Mth.rotLerp(partialTick, livingEntity.yHeadRotO, livingEntity.yHeadRot) - bodyYaw,
+        Mth.lerp(partialTick, livingEntity.xRotO, livingEntity.getXRot()));
+  }
+
+  private static EasyModelHeadLook headLook(
+      Entity entity, float bodyYaw, float partialTick, EasyModelEntityRenderOptions options) {
+    if (options.headLook() != null) {
+      return options.headLook();
+    }
+
+    return headLook(entity, bodyYaw, partialTick);
   }
 
   private static EasyModelAnimationState resolveAnimationState(
@@ -342,7 +368,7 @@ public final class EasyModelEntityRenderBackend {
     ModelBodyType bodyType =
         renderProfileService
             .getRenderProfile(renderProfileId)
-            .filter(EasyModelRenderProfile::isActive)
+            .filter(EasyModelRenderProfile::isRenderable)
             .map(EasyModelRenderProfile::bodyType)
             .orElse(ModelBodyType.STATIC);
     String renderableVersion = Objects.requireNonNullElse(renderable.getEasyModelVersion(), "");

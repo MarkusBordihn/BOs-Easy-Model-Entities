@@ -18,47 +18,44 @@
 > output may still change before the final version. Please report problems and ideas on the
 > [issue tracker][issues].
 
-**Easy Model Entities** turns Blockbench models into Minecraft entities and
-block-entities without requiring custom Java code for every model.
+**Easy Model Entities** turns Blockbench models into Minecraft entities and block-entities without
+requiring custom Java code for every model.
 
-It exists to make custom models easier to ship, test, and maintain. Instead of
-writing a renderer, registering one-off entity classes, and hardcoding
-animation behavior, you describe the model with data and resource pack profiles.
-EME provides the host entities, host blocks, renderer integration, profile
-validation, and a small automatic animation layer.
+It exists to make custom models easier to ship, test, and maintain. Instead of writing a renderer,
+registering one-off entity classes, and hardcoding animation behavior, you describe the model with
+data and resource pack profiles. EME provides the host entities, host blocks, renderer integration,
+profile validation, and a small automatic animation layer.
 
-Install it if you want custom Blockbench models that can appear as ambient
-creatures, static display entities, decorative block-entities, shrines, mimics,
-or mod-integrated renderable objects with much less boilerplate.
+Install it if you want custom Blockbench models that can appear as ambient creatures, static display
+entities, decorative block-entities, shrines, mimics, or mod-integrated renderable objects with much
+less boilerplate.
 
 ## ✨ Why Use It?
 
-- **No per-model Java required**: Define most models with data packs and
-  resource packs.
-- **Entity and block-entity support**: Use moving entities for mobs or fixed
-  block-entities for decorations and machines.
-- **Blockbench-friendly workflow**: Load bundled `.bbmodel` assets directly
-  from resource packs.
-- **Profile-driven behavior**: Configure host type, body type, dimensions,
-  movement, behavior, rendering, texture, and animation from JSON.
-- **Automatic animation**: Basic idle, walk, wing, tail, and random-idle
-  behavior is available out of the box.
+- **No per-model Java required**: Define most models with data packs and resource packs.
+- **Entity and block-entity support**: Use moving entities for mobs or fixed block-entities for
+  decorations and machines.
+- **Blockbench-friendly workflow**: Load bundled `.bbmodel` assets directly from resource packs.
+- **Profile-driven behavior**: Configure host type, body type, dimensions, movement, behavior,
+  rendering, texture, and animation from JSON.
+- **Automatic animation**: Basic idle, walk, wing, tail, and random-idle behavior is available out
+  of the box.
 - **Standard keyframe clips**: Blockbench animations named `idle`, `walk`,
-  `swim`, `fly`, or `attack` are played automatically. `hurt` and `death` are
-  loaded but only play when driven by a command or a mod. Clips with any other
-  name are ignored to keep the runtime simple (no state machines, no Molang).
-- **Developer API**: Mods can use render delegates, custom part animators, and
-  runtime profile data without depending on internal renderer classes.
-- **Diagnostics and demo profiles**: Commands help list, validate, debug, spawn,
-  and place test models in a dev world.
+  `swim`, `fly`, or `attack` are played automatically. `hurt` and `death` are loaded but only play
+  when driven by a command or a mod. Clips with any other name are ignored to keep the runtime
+  simple (no state machines, no Molang).
+- **Developer API**: Mods can use render delegates, custom part animators, and runtime profile data
+  without depending on internal renderer classes.
+- **Diagnostics and demo profiles**: Commands help list, validate, debug, spawn, and place test
+  models in a dev world.
 
 ## 🗣 What Can You Build?
 
 - Ambient critters, NPCs, training dummies, and simple custom entities.
 - Static display models that still use Minecraft entity rendering.
 - Decorative block-entities such as shrines, statues, altars, or mimics.
-- Mod-controlled entities and block-entities that use EME for model loading,
-  rendering, texture handling, and optional part animation.
+- Mod-controlled entities and block-entities that use EME for model loading, rendering, texture
+  handling, and optional part animation.
 
 ## ℹ️ Quick Start
 
@@ -85,34 +82,30 @@ More demo commands and explanations are available in the
 ## 🧩 Blockbench Plugin
 
 You can write the profile JSON by hand, but the
-[Easy Model Entities Exporter][plugin] does it for you: it exports the current
-Blockbench project as a ready-to-install data pack and resource pack, detects a
-fitting preset from your bone names, and validates the model before writing
-anything.
+[Easy Model Entities Exporter][plugin] does it for you: it exports the current Blockbench project as
+a ready-to-install data pack and resource pack, detects a fitting preset from your bone names, and
+validates the model before writing anything.
 
 Two ways to get it:
 
-- **Blockbench plugin list** (recommended): *File > Plugins > Available*, search
-  for `Easy Model Entities`. This is the reviewed release, so new versions can
-  take a while to appear there.
-- **Development version**: use *File > Plugins > Load Plugin from URL* with this
-  address:
+- **Blockbench plugin list** (recommended): *File > Plugins > Available*, search for
+  `Easy Model Entities`. This is the reviewed release, so new versions can take a while to appear
+  there.
+- **Development version**: use *File > Plugins > Load Plugin from URL* with this address:
 
   ```text
   https://raw.githubusercontent.com/MarkusBordihn/BOs-Easy-Model-Entities-Blockbench-Plugin/refs/heads/master/plugins/easy_model_entities/easy_model_entities.js
   ```
 
-  This is the current `master` state — newer, but it may contain errors and is
-  not reviewed.
+  This is the current `master` state — newer, but it may contain errors and is not reviewed.
 
 ## 📦 Pack Workflow
 
 Easy Model Entities uses two profile layers:
 
-- **Server profiles** in a data pack decide what the model is and how it
-  behaves.
-- **Render profiles** in a resource pack decide which model, texture, scale,
-  bounds, and animation settings are used on the client.
+- **Server profiles** in a data pack decide what the model is and how it behaves.
+- **Render profiles** in a resource pack decide which model, texture, scale, bounds, and animation
+  settings are used on the client.
 
 Typical files:
 
@@ -140,18 +133,18 @@ Mods can integrate EME into their own renderers by implementing
 - `EasyModelBlockEntityRenderOptions`
 - `EasyModelPartAnimator`
 
-Custom part animation can either add to the automatic EME transform or replace
-it entirely with `EasyModelPartAnimationMode.REPLACE`.
+Custom part animation can either add to the automatic EME transform or replace it entirely with
+`EasyModelPartAnimationMode.REPLACE`.
 
 See the [Developer Integration wiki page](wiki/Developer-Guide.md) for examples.
 
 ## Installation and Compatibility
 
-This branch targets **Minecraft 1.20.1** and provides loader-specific modules
-for **Fabric** and **Forge**.
+This branch targets **Minecraft 1.21.1** and provides loader-specific modules for **Fabric**,
+**Forge** and **NeoForge**.
 
-Install the matching loader build on both client and server when profiles,
-entities, or block-entities are used in multiplayer.
+Install the matching loader build on both client and server when profiles, entities, or
+block-entities are used in multiplayer.
 
 ## ℹ️ Documentation
 

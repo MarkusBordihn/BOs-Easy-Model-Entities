@@ -19,7 +19,9 @@
 
 package de.markusbordihn.easymodelentities.data.model;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public enum ModelPartType {
   ROOT,
@@ -43,24 +45,25 @@ public enum ModelPartType {
   TAIL_FIN,
   UNKNOWN;
 
+  private static final Map<String, ModelPartType> BY_TAG_NAME = byTagName();
+
   private final String tagName = this.name().toLowerCase(Locale.ROOT);
+
+  private static Map<String, ModelPartType> byTagName() {
+    Map<String, ModelPartType> byTagName = new HashMap<>();
+    for (ModelPartType modelPartType : values()) {
+      byTagName.put(modelPartType.name().toLowerCase(Locale.ROOT), modelPartType);
+    }
+
+    return Map.copyOf(byTagName);
+  }
 
   public static ModelPartType get(String modelPart) {
     if (modelPart == null || modelPart.isEmpty()) {
       return ModelPartType.UNKNOWN;
     }
 
-    try {
-      return ModelPartType.valueOf(modelPart.toUpperCase(Locale.ROOT));
-    } catch (IllegalArgumentException e) {
-      for (ModelPartType modelPartTypeEnum : ModelPartType.values()) {
-        if (modelPartTypeEnum.tagName.equalsIgnoreCase(modelPart)) {
-          return modelPartTypeEnum;
-        }
-      }
-
-      return ModelPartType.UNKNOWN;
-    }
+    return BY_TAG_NAME.getOrDefault(modelPart.toLowerCase(Locale.ROOT), ModelPartType.UNKNOWN);
   }
 
   public String getTagName() {

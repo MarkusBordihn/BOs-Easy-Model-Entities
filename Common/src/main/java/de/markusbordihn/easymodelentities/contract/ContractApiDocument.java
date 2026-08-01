@@ -40,6 +40,7 @@ public final class ContractApiDocument {
   public static JsonObject toJson() {
     JsonObject root = new JsonObject();
     root.addProperty("schema_version", EasyModelApiContract.schemaVersion());
+    root.addProperty("api_version", EasyModelApiContract.apiVersion());
 
     JsonObject budgets = new JsonObject();
     budgets.addProperty("max_model_file_size_bytes", EasyModelApiContract.maxModelFileSizeBytes());

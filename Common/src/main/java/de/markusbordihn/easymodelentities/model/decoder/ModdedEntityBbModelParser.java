@@ -20,7 +20,6 @@
 package de.markusbordihn.easymodelentities.model.decoder;
 
 import com.google.gson.JsonObject;
-import de.markusbordihn.easymodelentities.data.model.decoder.DecodedTexture;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import java.util.List;
 
@@ -32,10 +31,5 @@ public final class ModdedEntityBbModelParser extends AbstractBbModelParser {
   protected int textureIndex(
       JsonObject elementObject, List<ModelRenderProfileValidationIssue> issues) {
     return 0;
-  }
-
-  @Override
-  protected List<DecodedTexture> parseTextures(JsonObject root) {
-    return List.of();
   }
 }

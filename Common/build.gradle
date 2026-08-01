@@ -7,6 +7,10 @@ base {
   archivesName = "${mod_id}-common-${minecraft_version}"
 }
 
+java {
+  withSourcesJar()
+}
+
 neoForge {
   neoFormVersion = project.neo_form_version
 
@@ -43,6 +47,7 @@ publishing {
     register('mavenJava', MavenPublication) {
       artifactId = base.archivesName.get()
       artifact tasks.named('jar')
+      artifact tasks.named('sourcesJar')
     }
   }
 }

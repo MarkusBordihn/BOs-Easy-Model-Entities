@@ -43,6 +43,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ModelRenderProfileManagerTest {
@@ -108,6 +109,16 @@ class ModelRenderProfileManagerTest {
         ModelRenderProfileManager.renderProfileIdFromResourceLocation(RENDER_PROFILE_RESOURCE);
 
     assertEquals(Optional.of(RENDER_PROFILE_ID), renderProfileId);
+  }
+
+  @Test
+  @DisplayName("A render profile outside of the entity and block entity folders is reported")
+  void misplacedRenderProfileIsReported() throws IOException {
+    ModelRenderProfileManager manager = ModelRenderProfileManager.load(resourceManager(true, true));
+
+    assertEquals(1, manager.getRejectedResources().size());
+    assertEquals(
+        RENDER_PROFILE_RESOURCE, manager.getRejectedResources().iterator().next().resource());
   }
 
   @Test

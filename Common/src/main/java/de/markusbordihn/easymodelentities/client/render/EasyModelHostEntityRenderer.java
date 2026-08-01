@@ -67,6 +67,8 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
             : 0.0f;
     renderState.airborneAmount = EasyModelEntityRenderBackend.airborneAmount(entity);
     renderState.attackAmount = EasyModelEntityRenderBackend.attackAmount(entity, partialTick);
+    renderState.headLook =
+        EasyModelEntityRenderBackend.headLook(entity, renderState.entityYaw, partialTick);
   }
 
   protected float getShadowRadius(EasyModelEntityRenderState renderState) {
