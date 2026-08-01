@@ -448,13 +448,48 @@ public abstract class AbstractBbModelParser {
     return groupsByUuid;
   }
 
+  private static String outlinerEntryName(
+      JsonElement outlinerElement, Map<String, RawElement> elementsByUuid) {
+    if (!outlinerElement.isJsonPrimitive() || !outlinerElement.getAsJsonPrimitive().isString()) {
+      return String.valueOf(outlinerElement);
+    }
+
+    RawElement element = elementsByUuid.get(outlinerElement.getAsString());
+    return element != null ? element.name() : outlinerElement.getAsString();
+  }
+
+  private static void warnAboutUnusedElements(
+      Map<String, RawElement> elementsByUuid,
+      Set<String> referencedElements,
+      List<ModelRenderProfileValidationIssue> issues) {
+    List<String> unusedNames = new ArrayList<>();
+    for (RawElement element : elementsByUuid.values()) {
+      if (!referencedElements.contains(element.uuid())) {
+        unusedNames.add(element.name());
+      }
+    }
+    if (unusedNames.isEmpty()) {
+      return;
+    }
+
+    issues.add(
+        warning(
+            "model",
+            "Ignoring "
+                + unusedNames.size()
+                + " cube(s) that are not part of any group in the outliner: "
+                + String.join(", ", unusedNames)
+                + "."));
+  }
+
   private static DecodedModelPart convertNode(
       JsonObject node,
       Map<String, RawElement> elementsByUuid,
       Map<String, RawGroup> groupsByUuid,
       RawGroup parentGroup,
       int depth,
-      Set<String> groupPath)
+      Set<String> groupPath,
+      Set<String> referencedElements)
       throws EasyModelDecodeException {
     if (depth > MAX_HIERARCHY_DEPTH) {
       throw new EasyModelDecodeException("Hierarchy depth exceeds " + MAX_HIERARCHY_DEPTH + ".");
@@ -485,6 +520,7 @@ public abstract class AbstractBbModelParser {
             throw new EasyModelDecodeException(
                 "Outliner references unknown element uuid " + childElement.getAsString() + ".");
           }
+          referencedElements.add(rawElement.uuid());
           cubes.add(convertCube(rawElement, group));
         } else if (childElement.isJsonObject()) {
           children.add(
@@ -494,7 +530,8 @@ public abstract class AbstractBbModelParser {
                   groupsByUuid,
                   group,
                   depth + 1,
-                  groupPath));
+                  groupPath,
+                  referencedElements));
         } else {
           throw new EasyModelDecodeException(
               "Outliner children must be group objects or element ids.");
@@ -774,12 +811,50 @@ public abstract class AbstractBbModelParser {
     }
   }
 
+  private static int textureId(JsonObject textureObject, int positionalIndex)
+      throws EasyModelDecodeException {
+    String id = optionalString(textureObject, "id", "");
+    if (id.isBlank()) {
+      return positionalIndex;
+    }
+    try {
+      return Math.max(Integer.parseInt(id.trim()), 0);
+    } catch (NumberFormatException exception) {
+      return positionalIndex;
+    }
+  }
+
   protected abstract int textureIndex(
       JsonObject elementObject, List<ModelRenderProfileValidationIssue> issues)
       throws EasyModelDecodeException;
 
-  protected abstract List<DecodedTexture> parseTextures(JsonObject root)
-      throws EasyModelDecodeException;
+  protected List<DecodedTexture> parseTextures(JsonObject root) throws EasyModelDecodeException {
+    JsonElement texturesElement = root.get("textures");
+    if (texturesElement == null || texturesElement.isJsonNull()) {
+      return List.of();
+    }
+    if (!texturesElement.isJsonArray()) {
+      throw new EasyModelDecodeException("Field textures must be an array.");
+    }
+
+    List<DecodedTexture> textures = new ArrayList<>();
+    int positionalIndex = 0;
+    for (JsonElement textureElement : texturesElement.getAsJsonArray()) {
+      JsonObject textureObject = requireObjectElement(textureElement, "textures");
+      textures.add(
+          new DecodedTexture(
+              textureId(textureObject, positionalIndex),
+              optionalString(textureObject, "namespace", ""),
+              optionalString(textureObject, "folder", ""),
+              optionalString(textureObject, "relative_path", ""),
+              optionalString(textureObject, "name", ""),
+              optionalNonNegativeInt(textureObject, "uv_width", 0),
+              optionalNonNegativeInt(textureObject, "uv_height", 0)));
+      positionalIndex++;
+    }
+
+    return textures;
+  }
 
   public final DecodedModel parse(Identifier modelId, JsonObject root, int modelByteLength)
       throws EasyModelDecodeException {
@@ -827,9 +902,13 @@ public abstract class AbstractBbModelParser {
     Map<String, RawGroup> groupsByUuid = parseGroups(groupsArray);
     Map<String, ModelAnimationClip> animations = parseAnimations(root, groupsByUuid, issues);
     List<DecodedModelPart> rootParts = new ArrayList<>();
+    Set<String> referencedElements = new HashSet<>();
     for (JsonElement outlinerElement : outlinerArray) {
       if (!outlinerElement.isJsonObject()) {
-        throw new EasyModelDecodeException("Root outliner entries must be group objects.");
+        throw new EasyModelDecodeException(
+            "Outliner entry "
+                + outlinerEntryName(outlinerElement, elementsByUuid)
+                + " is not a group: every cube must be placed inside a group (bone).");
       }
       rootParts.add(
           convertNode(
@@ -838,8 +917,10 @@ public abstract class AbstractBbModelParser {
               groupsByUuid,
               null,
               1,
-              new HashSet<>()));
+              new HashSet<>(),
+              referencedElements));
     }
+    warnAboutUnusedElements(elementsByUuid, referencedElements, issues);
 
     List<DecodedTexture> textures = parseTextures(root);
     addSoftBudgetWarnings(rootParts, issues);

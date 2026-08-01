@@ -73,6 +73,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
           ANIMATION_STATE);
 
   private boolean easyModelHostRegistered;
+  private EasyModelRuntimeContract runtimeContract;
 
   protected EasyModelHostEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
     super(entityType, level);
@@ -147,7 +148,20 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
 
   @Override
   public EasyModelRuntimeContract getEasyModelRuntimeContract() {
-    return EasyModelHostSupport.getRuntimeContract(this.entityData, FIELDS);
+    EasyModelRuntimeContract cachedContract = this.runtimeContract;
+    if (cachedContract != null) {
+      return cachedContract;
+    }
+    EasyModelRuntimeContract resolvedContract =
+        EasyModelHostSupport.getRuntimeContract(this.entityData, FIELDS);
+    this.runtimeContract = resolvedContract;
+    return resolvedContract;
+  }
+
+  @Override
+  public void onSyncedDataUpdated(EntityDataAccessor<?> entityDataAccessor) {
+    super.onSyncedDataUpdated(entityDataAccessor);
+    this.runtimeContract = null;
   }
 
   @Override

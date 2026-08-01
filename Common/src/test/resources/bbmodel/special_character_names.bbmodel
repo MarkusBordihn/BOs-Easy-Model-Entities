@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "modded_entity"
+  },
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "elements": [
+    {"name": "Würfel Größe #1", "from": [-2, 0, -2], "to": [2, 6, 2], "origin": [0, 0, 0], "uv_offset": [0, 0], "type": "cube", "uuid": "element_umlaut"},
+    {"name": "キューブ 🐢", "from": [-2, 6, -2], "to": [2, 8, 2], "origin": [0, 6, 0], "uv_offset": [0, 20], "type": "cube", "uuid": "element_emoji"}
+  ],
+  "groups": [
+    {"uuid": "group_root", "name": "root", "origin": [0, 0, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_umlaut", "name": "Körper Ärmel", "origin": [0, 0, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_cyrillic", "name": "Модель", "origin": [0, 6, 0], "rotation": [0, 0, 0]}
+  ],
+  "outliner": [
+    {
+      "uuid": "group_root",
+      "children": [
+        {"uuid": "group_umlaut", "children": ["element_umlaut"]},
+        {"uuid": "group_cyrillic", "children": ["element_emoji"]}
+      ]
+    }
+  ]
+}

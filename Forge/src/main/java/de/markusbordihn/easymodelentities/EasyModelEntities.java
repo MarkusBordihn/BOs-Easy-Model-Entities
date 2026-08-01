@@ -27,6 +27,7 @@ import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.minecraftforge.event.AddReloadListenerEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.bus.BusGroup;
 import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -74,5 +75,10 @@ public class EasyModelEntities {
   @SubscribeEvent
   public static void registerCommands(RegisterCommandsEvent event) {
     EasyModelEntitiesCommand.register(event.getDispatcher());
+  }
+
+  @SubscribeEvent
+  public static void serverStopped(ServerStoppedEvent event) {
+    EasyModelServices.clearProfileService();
   }
 }

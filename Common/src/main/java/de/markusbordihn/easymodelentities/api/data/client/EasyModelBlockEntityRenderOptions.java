@@ -20,46 +20,130 @@
 package de.markusbordihn.easymodelentities.api.data.client;
 
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 
 public record EasyModelBlockEntityRenderOptions(
     Float yawDegrees,
+    Float scale,
     Float animationTicks,
     EasyModelPartAnimator partAnimator,
-    EasyModelPartAnimationMode partAnimationMode) {
+    EasyModelPartAnimationMode partAnimationMode,
+    EasyModelPartPoseListener partPoseListener,
+    Integer animationState) {
 
   public static final EasyModelBlockEntityRenderOptions DEFAULT =
       new EasyModelBlockEntityRenderOptions(
-          null, null, EasyModelPartAnimator.NONE, EasyModelPartAnimationMode.ADD);
+          null,
+          null,
+          null,
+          EasyModelPartAnimator.NONE,
+          EasyModelPartAnimationMode.ADD,
+          EasyModelPartPoseListener.NONE,
+          null);
 
   public EasyModelBlockEntityRenderOptions(
       Float yawDegrees, Float animationTicks, EasyModelPartAnimator partAnimator) {
     this(yawDegrees, animationTicks, partAnimator, EasyModelPartAnimationMode.ADD);
   }
 
+  public EasyModelBlockEntityRenderOptions(
+      Float yawDegrees,
+      Float animationTicks,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode) {
+    this(
+        yawDegrees,
+        null,
+        animationTicks,
+        partAnimator,
+        partAnimationMode,
+        EasyModelPartPoseListener.NONE,
+        null);
+  }
+
   public EasyModelBlockEntityRenderOptions {
     partAnimator = partAnimator == null ? EasyModelPartAnimator.NONE : partAnimator;
     partAnimationMode =
         partAnimationMode == null ? EasyModelPartAnimationMode.ADD : partAnimationMode;
+    partPoseListener = partPoseListener == null ? EasyModelPartPoseListener.NONE : partPoseListener;
   }
 
   public EasyModelBlockEntityRenderOptions withYawDegrees(float yawDegrees) {
     return new EasyModelBlockEntityRenderOptions(
-        yawDegrees, this.animationTicks, this.partAnimator, this.partAnimationMode);
+        yawDegrees,
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animationState);
+  }
+
+  public EasyModelBlockEntityRenderOptions withScale(float scale) {
+    return new EasyModelBlockEntityRenderOptions(
+        this.yawDegrees,
+        scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animationState);
   }
 
   public EasyModelBlockEntityRenderOptions withAnimationTicks(float animationTicks) {
     return new EasyModelBlockEntityRenderOptions(
-        this.yawDegrees, animationTicks, this.partAnimator, this.partAnimationMode);
+        this.yawDegrees,
+        this.scale,
+        animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animationState);
   }
 
   public EasyModelBlockEntityRenderOptions withPartAnimator(EasyModelPartAnimator partAnimator) {
     return new EasyModelBlockEntityRenderOptions(
-        this.yawDegrees, this.animationTicks, partAnimator, this.partAnimationMode);
+        this.yawDegrees,
+        this.scale,
+        this.animationTicks,
+        partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animationState);
   }
 
   public EasyModelBlockEntityRenderOptions withPartAnimationMode(
       EasyModelPartAnimationMode partAnimationMode) {
     return new EasyModelBlockEntityRenderOptions(
-        this.yawDegrees, this.animationTicks, this.partAnimator, partAnimationMode);
+        this.yawDegrees,
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        partAnimationMode,
+        this.partPoseListener,
+        this.animationState);
+  }
+
+  public EasyModelBlockEntityRenderOptions withPartPoseListener(
+      EasyModelPartPoseListener partPoseListener) {
+    return new EasyModelBlockEntityRenderOptions(
+        this.yawDegrees,
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        partPoseListener,
+        this.animationState);
+  }
+
+  public EasyModelBlockEntityRenderOptions withAnimationState(int animationState) {
+    return new EasyModelBlockEntityRenderOptions(
+        this.yawDegrees,
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        animationState);
   }
 }

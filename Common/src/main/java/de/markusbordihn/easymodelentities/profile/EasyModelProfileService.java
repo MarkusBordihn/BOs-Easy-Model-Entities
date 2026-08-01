@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.profile;
 
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelResourceRejection;
 import de.markusbordihn.easymodelentities.data.profile.*;
 import java.util.Collection;
 import java.util.List;
@@ -28,6 +29,10 @@ import net.minecraft.resources.Identifier;
 public interface EasyModelProfileService {
 
   EasyModelProfileService EMPTY = new EasyModelProfileService() {};
+
+  default Collection<ModelResourceRejection> getRejectedResources() {
+    return List.of();
+  }
 
   default boolean hasProfile(Identifier profileId) {
     return getProfile(profileId).isPresent();

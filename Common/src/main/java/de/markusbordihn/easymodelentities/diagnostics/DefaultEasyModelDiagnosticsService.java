@@ -21,7 +21,9 @@ package de.markusbordihn.easymodelentities.diagnostics;
 
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnosticSeverity;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelResourceRejection;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.data.profile.ModelProfileStatus;
 import de.markusbordihn.easymodelentities.data.profile.ModelProfileValidationIssue;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
@@ -36,6 +38,10 @@ import net.minecraft.resources.Identifier;
 
 public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagnosticsService {
 
+  private static final String REJECTED_PROFILE_CODE = "REJECTED_PROFILE";
+  private static final String REJECTED_RENDER_PROFILE_CODE = "REJECTED_RENDER_PROFILE";
+  private static final String ONE_SIDED_VERSION_CODE = "ONE_SIDED_VERSION";
+
   private static ModelDiagnosticSeverity severity(ModelRenderProfileStatus issueStatus) {
     return deactivatesRenderProfile(issueStatus)
         ? ModelDiagnosticSeverity.ERROR
@@ -44,6 +50,12 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
 
   private static boolean deactivatesRenderProfile(ModelRenderProfileStatus issueStatus) {
     return issueStatus != ModelRenderProfileStatus.ACTIVE;
+  }
+
+  private static ModelDiagnosticSeverity severity(ModelProfileStatus issueStatus) {
+    return issueStatus == ModelProfileStatus.ACTIVE
+        ? ModelDiagnosticSeverity.WARNING
+        : ModelDiagnosticSeverity.ERROR;
   }
 
   @Override
@@ -56,10 +68,35 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
 
   @Override
   public List<ModelDiagnostic> getDiagnostics() {
-    return EasyModelServices.profileService().getProfiles().stream()
+    List<ModelDiagnostic> diagnostics = new ArrayList<>(rejectionDiagnostics());
+    EasyModelServices.profileService().getProfiles().stream()
         .sorted(Comparator.comparing(profile -> profile.id().toString()))
-        .flatMap(profile -> diagnosticsForProfile(profile).stream())
-        .toList();
+        .forEach(profile -> diagnostics.addAll(diagnosticsForProfile(profile)));
+    return List.copyOf(diagnostics);
+  }
+
+  private List<ModelDiagnostic> rejectionDiagnostics() {
+    List<ModelDiagnostic> diagnostics = new ArrayList<>();
+    for (ModelResourceRejection rejection :
+        EasyModelServices.profileService().getRejectedResources()) {
+      diagnostics.add(
+          new ModelDiagnostic(
+              ModelDiagnosticSeverity.ERROR,
+              REJECTED_PROFILE_CODE,
+              rejection.resource() + ": " + rejection.reason(),
+              Optional.empty()));
+    }
+    for (ModelResourceRejection rejection :
+        EasyModelServices.renderProfileService().getRejectedResources()) {
+      diagnostics.add(
+          new ModelDiagnostic(
+              ModelDiagnosticSeverity.ERROR,
+              REJECTED_RENDER_PROFILE_CODE,
+              rejection.resource() + ": " + rejection.reason(),
+              Optional.empty()));
+    }
+
+    return diagnostics;
   }
 
   private List<ModelDiagnostic> diagnosticsForProfile(EasyModelEntityProfile profile) {
@@ -67,7 +104,7 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
     for (ModelProfileValidationIssue issue : profile.validationIssues()) {
       diagnostics.add(
           new ModelDiagnostic(
-              ModelDiagnosticSeverity.ERROR,
+              severity(issue.status()),
               issue.status().name(),
               issue.message(),
               Optional.of(profile.id())));
@@ -106,6 +143,14 @@ public final class DefaultEasyModelDiagnosticsService implements EasyModelDiagno
               ModelDiagnosticSeverity.WARNING,
               ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH.name(),
               "Render profile version does not match server profile version.",
+              Optional.of(profile.id())));
+    } else if (AssetPairing.isOneSided(profile.version(), renderProfileValue.version())) {
+      diagnostics.add(
+          new ModelDiagnostic(
+              ModelDiagnosticSeverity.WARNING,
+              ONE_SIDED_VERSION_CODE,
+              "Only one of the data pack and resource pack declares a version, so the data pack and"
+                  + " resource pack are never checked against each other.",
               Optional.of(profile.id())));
     }
     for (ModelRenderProfileValidationIssue issue : renderProfileValue.validationIssues()) {
