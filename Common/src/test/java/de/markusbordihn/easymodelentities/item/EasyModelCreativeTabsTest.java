@@ -24,19 +24,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderSettings;
+import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
+import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
+import java.io.StringReader;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentMap;
@@ -48,6 +53,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelCreativeTabsTest {
@@ -109,6 +115,32 @@ class EasyModelCreativeTabsTest {
     return renderProfile(renderProfileId, ModelRenderProfileStatus.ACTIVE);
   }
 
+  private static EasyModelProfileService profileService(Identifier... profileIds) {
+    Set<Identifier> knownProfileIds = Set.of(profileIds);
+    return new EasyModelProfileService() {
+      @Override
+      public Collection<EasyModelEntityProfile> getProfiles() {
+        return knownProfileIds.stream().map(EasyModelCreativeTabsTest::serverProfile).toList();
+      }
+
+      @Override
+      public Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
+        return knownProfileIds.contains(profileId)
+            ? Optional.of(serverProfile(profileId))
+            : Optional.empty();
+      }
+    };
+  }
+
+  private static EasyModelEntityProfile serverProfile(Identifier profileId) {
+    return EasyModelProfileParser.parse(
+        profileId,
+        new StringReader(
+            "{\"schema_version\":\""
+                + Constants.SCHEMA_VERSION
+                + "\",\"model_type\":\"entity\",\"preset_type\":\"humanoid_wandering\"}"));
+  }
+
   @AfterEach
   void resetServices() {
     EasyModelServices.reset();
@@ -154,12 +186,45 @@ class EasyModelCreativeTabsTest {
   }
 
   @Test
-  void unprefixedRenderProfileFallsBackToEntityTab() {
+  @DisplayName("With server profiles present the tab only offers models the server knows")
+  void tabIsLimitedToServerProfiles() {
+    Identifier known = Identifier.fromNamespaceAndPath("example", "entity/known");
+    Identifier clientOnly = Identifier.fromNamespaceAndPath("example", "entity/client_only");
+    EasyModelEntitiesItems.bind(Items.STICK, Items.STONE);
+    EasyModelServices.setRenderProfileService(
+        renderProfileService(active(known), active(clientOnly)));
+    EasyModelServices.setProfileService(profileService(known));
+
+    List<ItemStack> stacks = EasyModelCreativeTabs.entityTabStacks();
+
+    assertEquals(1, stacks.size());
+    assertEquals(Optional.of(known), EasyModelEntitiesItems.profileId(stacks.get(0)));
+  }
+
+  @Test
+  @DisplayName("Without server profiles the tab falls back to the client render profiles")
+  void tabFallsBackToRenderProfilesOnDedicatedClients() {
+    Identifier clientOnly = Identifier.fromNamespaceAndPath("example", "entity/client_only");
+    EasyModelEntitiesItems.bind(Items.STICK, Items.STONE);
+    EasyModelServices.setRenderProfileService(renderProfileService(active(clientOnly)));
+    EasyModelServices.setProfileService(
+        profileService(Identifier.fromNamespaceAndPath("example", "unused")));
+    EasyModelServices.clearProfileService();
+
+    List<ItemStack> stacks = EasyModelCreativeTabs.entityTabStacks();
+
+    assertEquals(1, stacks.size());
+    assertEquals(Optional.of(clientOnly), EasyModelEntitiesItems.profileId(stacks.get(0)));
+  }
+
+  @Test
+  @DisplayName("A render profile without an entity or block entity folder is offered in no tab")
+  void unprefixedRenderProfileIsSkipped() {
     EasyModelEntitiesItems.bind(Items.STICK, Items.STONE);
     EasyModelServices.setRenderProfileService(
         renderProfileService(active(Identifier.fromNamespaceAndPath("example", "legacy"))));
 
-    assertEquals(1, EasyModelCreativeTabs.entityTabStacks().size());
+    assertEquals(List.of(), EasyModelCreativeTabs.entityTabStacks());
     assertEquals(List.of(), EasyModelCreativeTabs.blockTabStacks());
   }
 

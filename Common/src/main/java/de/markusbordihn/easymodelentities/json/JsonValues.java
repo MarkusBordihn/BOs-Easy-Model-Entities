@@ -19,12 +19,109 @@
 
 package de.markusbordihn.easymodelentities.json;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.BiConsumer;
+import net.minecraft.resources.Identifier;
 
 public final class JsonValues {
 
   private JsonValues() {}
+
+  public static void reportUnknownFields(
+      JsonElement value,
+      String fieldPrefix,
+      Set<String> knownFields,
+      BiConsumer<String, String> issueReporter) {
+    if (value == null || !value.isJsonObject()) {
+      return;
+    }
+
+    for (Map.Entry<String, JsonElement> entry : value.getAsJsonObject().entrySet()) {
+      if (knownFields.contains(entry.getKey())) {
+        continue;
+      }
+      String field = fieldPrefix + entry.getKey();
+      issueReporter.accept(field, "Unknown field " + field + " is ignored, check the spelling.");
+    }
+  }
+
+  public static boolean hasField(JsonObject jsonObject, String field) {
+    return jsonObject != null && jsonObject.has(field) && !jsonObject.get(field).isJsonNull();
+  }
+
+  public static <T> T optionalObject(
+      JsonElement value,
+      String field,
+      Class<T> objectClass,
+      Gson gson,
+      BiConsumer<String, String> issueReporter) {
+    if (value == null || value.isJsonNull()) {
+      return null;
+    }
+    if (!value.isJsonObject()) {
+      issueReporter.accept(field, "Field " + field + " must be an object.");
+      return null;
+    }
+
+    return gson.fromJson(value, objectClass);
+  }
+
+  public static Float parseFloat(
+      JsonElement value, String field, BiConsumer<String, String> issueReporter) {
+    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
+      issueReporter.accept(field, "Field " + field + " must be a number.");
+      return null;
+    }
+    float floatValue = value.getAsFloat();
+    if (!Float.isFinite(floatValue)) {
+      issueReporter.accept(field, "Field " + field + " must be finite.");
+      return null;
+    }
+
+    return floatValue;
+  }
+
+  public static float optionalFloat(
+      JsonElement value,
+      float defaultValue,
+      String field,
+      BiConsumer<String, String> issueReporter) {
+    if (value == null || value.isJsonNull()) {
+      return defaultValue;
+    }
+    Float floatValue = parseFloat(value, field, issueReporter);
+    return floatValue == null ? defaultValue : floatValue;
+  }
+
+  public static boolean optionalBoolean(
+      JsonElement value,
+      boolean defaultValue,
+      String field,
+      BiConsumer<String, String> issueReporter) {
+    if (value == null || value.isJsonNull()) {
+      return defaultValue;
+    }
+    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
+      issueReporter.accept(field, "Field " + field + " must be a boolean.");
+      return defaultValue;
+    }
+
+    return value.getAsBoolean();
+  }
+
+  public static Identifier parseResourceLocation(
+      String rawValue, String field, BiConsumer<String, String> issueReporter) {
+    Identifier resourceLocation = Identifier.tryParse(rawValue);
+    if (resourceLocation == null) {
+      issueReporter.accept(field, "Invalid Identifier " + rawValue + ".");
+    }
+
+    return resourceLocation;
+  }
 
   public static String requiredString(
       JsonElement value, String field, BiConsumer<String, String> issueReporter) {

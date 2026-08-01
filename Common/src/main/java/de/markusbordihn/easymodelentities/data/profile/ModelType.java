@@ -36,6 +36,20 @@ public enum ModelType {
     return ENTITY;
   }
 
+  public static boolean hasModelTypeDirectory(Identifier profileId) {
+    if (profileId == null) {
+      return false;
+    }
+    String path = profileId.getPath();
+    for (ModelType modelType : values()) {
+      if (path.startsWith(modelType.serializedName + "/")) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   public static Optional<ModelType> bySerializedName(String serializedName) {
     if (serializedName == null) {
       return Optional.empty();

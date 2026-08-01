@@ -2,17 +2,41 @@
 
 ## Note
 
-This change log includes the summarized changes.
-For the full changelog, please go to the [GitHub History][history] instead.
+This change log includes the summarized changes. For the full changelog, please go to
+the [GitHub History][history] instead.
 
 ### 1.7.0
 
-- Fixed profiles without an explicit `texture` falling back to a duplicated `entity/entity/` texture
-  path, which left the profile inactive and hid its spawn item from the creative tabs.
-- Changed missing textures to be reported as an error instead of a warning by `validate_profiles`,
-  because a model without a texture cannot be rendered at all.
-- Changed a version mismatch between data pack and resource pack to be reported as a warning
-  instead of an error, because the entity still renders with the fallback model.
+- Fixed the head of an entity never turning towards what it looks at.
+- Fixed cubes outside of an outliner group being dropped without any message.
+- Fixed profiles without an explicit `texture` staying inactive because of a wrong texture path.
+- Fixed a single minor finding, such as an unknown behavior mode, deactivating a whole server
+  profile.
+- Fixed repaired models being reported only once, because the log suppression survived a resource
+  reload.
+- Fixed `modded_entity` models never deriving a texture path from the model file itself.
+- Fixed the profiles of a single player world staying active after leaving it, which could break the
+  models on a server joined afterwards.
+- Changed a model with a missing texture to render its own shape with a pink placeholder texture
+  instead of a pink box.
+- Changed the creative tabs to hide render profiles from unexpected folders and models the server
+  does not know.
+- Removed eight example entities that only mirrored another example with different presets or
+  numbers.
+- Added a head look render option, so another mod can supply its own look direction.
+- Added warnings for unknown fields, a missing `schema_version`, a one-sided `version` declaration
+  and cubes that are fully covered by other cubes.
+- Added detailed log and `validate_profiles` output for every skipped or failed profile, including
+  the reason and the affected field.
+- Added `scale`, a part pose listener and a forced animation state to the block entity render
+  options, so block entities support the same integration as entities.
+- Improved error messages to name the underlying parser message and the affected texture file.
+- Improved render performance by resolving bone names once while baking and by reusing the entity
+  render data per frame.
+- Improved the render cache to drop only the least recently used entries instead of emptying itself
+  completely.
+- Improved the profile and render profile parsers to share their field handling, so both report the
+  same problems in the same way.
 
 ### 1.6.0
 
@@ -51,11 +75,11 @@ For the full changelog, please go to the [GitHub History][history] instead.
 - Fixed choppy body rotation of walking host entities by using the interpolated body rotation.
 - Added playback of standard Blockbench keyframe animations (`idle`, `walk`, `swim`, `fly`) with
   linear interpolation and automatic clip selection.
-- Added `set_animation` command to force an animation state on host entities for testing and
-  command block setups.
+- Added `set_animation` command to force an animation state on host entities for testing and command
+  block setups.
 - Added `swim` and `fly` animation states to the API.
-- Added standard `idle`/`walk`/`swim`/`fly` animations to the little explorer, stone turtle,
-  dawn sparrow, and coral drifter examples.
+- Added standard `idle`/`walk`/`swim`/`fly` animations to the little explorer, stone turtle, dawn
+  sparrow, and coral drifter examples.
 - Added entity and block entity spawn items for all example profiles.
 - Added offset, rotation, and scale to the `ModelPart` definition to allow complex model
   definitions.

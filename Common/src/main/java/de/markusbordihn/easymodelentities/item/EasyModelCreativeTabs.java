@@ -22,6 +22,7 @@ package de.markusbordihn.easymodelentities.item;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import java.util.Comparator;
 import java.util.List;
@@ -50,10 +51,14 @@ public final class EasyModelCreativeTabs {
     if (item == null) {
       return List.of();
     }
+    EasyModelProfileService profileService = EasyModelServices.profileService();
+    boolean hasServerProfiles = !profileService.getProfiles().isEmpty();
     return EasyModelServices.renderProfileService().getRenderProfiles().stream()
-        .filter(EasyModelRenderProfile::isActive)
+        .filter(EasyModelRenderProfile::isRenderable)
         .map(EasyModelRenderProfile::id)
+        .filter(ModelType::hasModelTypeDirectory)
         .filter(id -> ModelType.fromProfileId(id) == modelType)
+        .filter(id -> !hasServerProfiles || profileService.isActive(id))
         .sorted(Comparator.comparing(Identifier::toString))
         .map(id -> EasyModelEntitiesItems.forProfile(item, id))
         .toList();

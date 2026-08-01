@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import net.minecraft.resources.Identifier;
 
 public final class EasyModelProfileParser {
@@ -98,6 +99,29 @@ public final class EasyModelProfileParser {
       ATTRIBUTES_FIELD + "." + FOLLOW_RANGE_FIELD;
   private static final float DEFAULT_MAX_HEALTH = 10.0f;
   private static final float DEFAULT_FOLLOW_RANGE = 16.0f;
+  private static final Set<String> ROOT_FIELDS =
+      Set.of(
+          SCHEMA_VERSION_FIELD,
+          MODEL_TYPE_FIELD,
+          PRESET_TYPE_FIELD,
+          VERSION_FIELD,
+          ENTITY_FIELD,
+          BLOCK_ENTITY_FIELD,
+          DIMENSIONS_FIELD,
+          MOVEMENT_FIELD,
+          BEHAVIOR_FIELD,
+          ATTRIBUTES_FIELD);
+  private static final Set<String> ENTITY_FIELDS =
+      Set.of(TYPE_FIELD, MOVEMENT_TYPE_FIELD, BODY_TYPE_FIELD);
+  private static final Set<String> BLOCK_ENTITY_FIELDS = Set.of(TYPE_FIELD, BODY_TYPE_FIELD);
+  private static final Set<String> DIMENSIONS_FIELDS =
+      Set.of(WIDTH_FIELD, HEIGHT_FIELD, EYE_HEIGHT_FIELD);
+  private static final Set<String> MOVEMENT_FIELDS =
+      Set.of(SPEED_FIELD, STEP_HEIGHT_FIELD, GRAVITY_FIELD);
+  private static final Set<String> BEHAVIOR_FIELDS =
+      Set.of(MODE_FIELD, LOOK_AT_PLAYERS_FIELD, RANDOM_STROLL_FIELD);
+  private static final Set<String> ATTRIBUTES_FIELDS =
+      Set.of(MAX_HEALTH_FIELD, MOVEMENT_SPEED_FIELD, FOLLOW_RANGE_FIELD);
 
   private EasyModelProfileParser() {}
 
@@ -136,6 +160,15 @@ public final class EasyModelProfileParser {
   private static EasyModelEntityProfile parseObject(
       Identifier expectedId, JsonObject jsonObject, SchemaMigrations migrations) {
     List<ModelProfileValidationIssue> issues = new ArrayList<>();
+    if (!JsonValues.hasField(jsonObject, SCHEMA_VERSION_FIELD)) {
+      addIssue(
+          issues,
+          ModelProfileStatus.ACTIVE,
+          SCHEMA_VERSION_FIELD,
+          "Missing schema_version, "
+              + Constants.SCHEMA_VERSION
+              + " is assumed and no migration is applied.");
+    }
     String schemaVersion =
         optionalString(
             jsonObject.get(SCHEMA_VERSION_FIELD),
@@ -145,7 +178,15 @@ public final class EasyModelProfileParser {
             ModelProfileStatus.INVALID_SCHEMA_VERSION);
     JsonObject effectiveObject =
         applySchemaMigrations(jsonObject, schemaVersion, migrations, issues);
+    reportUnknownFields(effectiveObject, EMPTY_VALUE, ROOT_FIELDS, issues);
     RawProfile rawProfile = GSON.fromJson(effectiveObject, RawProfile.class);
+    reportUnknownFields(rawProfile.entity, ENTITY_FIELD + ".", ENTITY_FIELDS, issues);
+    reportUnknownFields(
+        rawProfile.blockEntity, BLOCK_ENTITY_FIELD + ".", BLOCK_ENTITY_FIELDS, issues);
+    reportUnknownFields(rawProfile.dimensions, DIMENSIONS_FIELD + ".", DIMENSIONS_FIELDS, issues);
+    reportUnknownFields(rawProfile.movement, MOVEMENT_FIELD + ".", MOVEMENT_FIELDS, issues);
+    reportUnknownFields(rawProfile.behavior, BEHAVIOR_FIELD + ".", BEHAVIOR_FIELDS, issues);
+    reportUnknownFields(rawProfile.attributes, ATTRIBUTES_FIELD + ".", ATTRIBUTES_FIELDS, issues);
     String version = optionalString(rawProfile.version, EMPTY_VALUE, VERSION_FIELD, issues);
     ModelType modelType = parseModelType(rawProfile.modelType, issues);
     ModelType resolvedModelType = modelType == null ? ModelType.ENTITY : modelType;
@@ -752,16 +793,13 @@ public final class EasyModelProfileParser {
       String field,
       Class<T> objectClass,
       List<ModelProfileValidationIssue> issues) {
-    if (value == null || value.isJsonNull()) {
-      return null;
-    }
-    if (!value.isJsonObject()) {
-      addIssue(
-          issues, ModelProfileStatus.DISABLED, field, "Field " + field + " must be an object.");
-      return null;
-    }
-
-    return GSON.fromJson(value, objectClass);
+    return JsonValues.optionalObject(
+        value,
+        field,
+        objectClass,
+        GSON,
+        (issueField, message) ->
+            addIssue(issues, ModelProfileStatus.DISABLED, issueField, message));
   }
 
   private static String requiredString(
@@ -814,16 +852,11 @@ public final class EasyModelProfileParser {
 
   private static Identifier parseResourceLocation(
       String rawValue, String issueField, List<ModelProfileValidationIssue> issues) {
-    Identifier identifier = Identifier.tryParse(rawValue);
-    if (identifier == null) {
-      addIssue(
-          issues,
-          ModelProfileStatus.INVALID_RESOURCE_LOCATION,
-          issueField,
-          "Invalid Identifier " + rawValue + ".");
-    }
-
-    return identifier;
+    return JsonValues.parseResourceLocation(
+        rawValue,
+        issueField,
+        (field, message) ->
+            addIssue(issues, ModelProfileStatus.INVALID_RESOURCE_LOCATION, field, message));
   }
 
   private static Float requiredFloat(
@@ -845,11 +878,11 @@ public final class EasyModelProfileParser {
       float defaultValue,
       String issueField,
       List<ModelProfileValidationIssue> issues) {
-    if (value == null || value.isJsonNull()) {
-      return defaultValue;
-    }
-    Float floatValue = parseFloat(value, issueField, issues, ModelProfileStatus.DISABLED);
-    return floatValue == null ? defaultValue : floatValue;
+    return JsonValues.optionalFloat(
+        value,
+        defaultValue,
+        issueField,
+        (field, message) -> addIssue(issues, ModelProfileStatus.DISABLED, field, message));
   }
 
   private static Float parseFloat(
@@ -857,17 +890,8 @@ public final class EasyModelProfileParser {
       String issueField,
       List<ModelProfileValidationIssue> issues,
       ModelProfileStatus status) {
-    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
-      addIssue(issues, status, issueField, "Field " + issueField + " must be a number.");
-      return null;
-    }
-    float floatValue = value.getAsFloat();
-    if (!Float.isFinite(floatValue)) {
-      addIssue(issues, status, issueField, "Field " + issueField + " must be finite.");
-      return null;
-    }
-
-    return floatValue;
+    return JsonValues.parseFloat(
+        value, issueField, (field, message) -> addIssue(issues, status, field, message));
   }
 
   private static boolean optionalBoolean(
@@ -875,19 +899,11 @@ public final class EasyModelProfileParser {
       boolean defaultValue,
       String issueField,
       List<ModelProfileValidationIssue> issues) {
-    if (value == null || value.isJsonNull()) {
-      return defaultValue;
-    }
-    if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
-      addIssue(
-          issues,
-          ModelProfileStatus.DISABLED,
-          issueField,
-          "Field " + issueField + " must be a boolean.");
-      return defaultValue;
-    }
-
-    return value.getAsBoolean();
+    return JsonValues.optionalBoolean(
+        value,
+        defaultValue,
+        issueField,
+        (field, message) -> addIssue(issues, ModelProfileStatus.DISABLED, field, message));
   }
 
   static EasyModelEntityProfile invalidFallback(
@@ -950,8 +966,21 @@ public final class EasyModelProfileParser {
   private static ModelProfileStatus statusForIssues(List<ModelProfileValidationIssue> issues) {
     return issues.stream()
         .map(ModelProfileValidationIssue::status)
+        .filter(status -> status != ModelProfileStatus.ACTIVE)
         .min(Comparator.comparingInt(Enum::ordinal))
         .orElse(ModelProfileStatus.ACTIVE);
+  }
+
+  private static void reportUnknownFields(
+      JsonElement value,
+      String fieldPrefix,
+      Set<String> knownFields,
+      List<ModelProfileValidationIssue> issues) {
+    JsonValues.reportUnknownFields(
+        value,
+        fieldPrefix,
+        knownFields,
+        (field, message) -> addIssue(issues, ModelProfileStatus.ACTIVE, field, message));
   }
 
   private static class RawProfile {

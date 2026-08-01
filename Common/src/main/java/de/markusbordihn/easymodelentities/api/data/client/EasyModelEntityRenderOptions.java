@@ -28,7 +28,8 @@ public record EasyModelEntityRenderOptions(
     EasyModelPartAnimator partAnimator,
     EasyModelPartAnimationMode partAnimationMode,
     EasyModelPartPoseListener partPoseListener,
-    Integer animationState) {
+    Integer animationState,
+    EasyModelHeadLook headLook) {
 
   public static final EasyModelEntityRenderOptions DEFAULT =
       new EasyModelEntityRenderOptions(
@@ -37,6 +38,7 @@ public record EasyModelEntityRenderOptions(
           EasyModelPartAnimator.NONE,
           EasyModelPartAnimationMode.ADD,
           EasyModelPartPoseListener.NONE,
+          null,
           null);
 
   public EasyModelEntityRenderOptions(Float animationTicks, EasyModelPartAnimator partAnimator) {
@@ -61,6 +63,7 @@ public record EasyModelEntityRenderOptions(
         partAnimator,
         partAnimationMode,
         EasyModelPartPoseListener.NONE,
+        null,
         null);
   }
 
@@ -78,7 +81,8 @@ public record EasyModelEntityRenderOptions(
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState);
+        this.animationState,
+        this.headLook);
   }
 
   public EasyModelEntityRenderOptions withAnimationTicks(float animationTicks) {
@@ -88,7 +92,8 @@ public record EasyModelEntityRenderOptions(
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState);
+        this.animationState,
+        this.headLook);
   }
 
   public EasyModelEntityRenderOptions withPartAnimator(EasyModelPartAnimator partAnimator) {
@@ -98,7 +103,8 @@ public record EasyModelEntityRenderOptions(
         partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState);
+        this.animationState,
+        this.headLook);
   }
 
   public EasyModelEntityRenderOptions withPartAnimationMode(
@@ -109,7 +115,8 @@ public record EasyModelEntityRenderOptions(
         this.partAnimator,
         partAnimationMode,
         this.partPoseListener,
-        this.animationState);
+        this.animationState,
+        this.headLook);
   }
 
   public EasyModelEntityRenderOptions withPartPoseListener(
@@ -120,7 +127,8 @@ public record EasyModelEntityRenderOptions(
         this.partAnimator,
         this.partAnimationMode,
         partPoseListener,
-        this.animationState);
+        this.animationState,
+        this.headLook);
   }
 
   public EasyModelEntityRenderOptions withAnimationState(int animationState) {
@@ -130,6 +138,18 @@ public record EasyModelEntityRenderOptions(
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        animationState);
+        animationState,
+        this.headLook);
+  }
+
+  public EasyModelEntityRenderOptions withHeadLook(EasyModelHeadLook headLook) {
+    return new EasyModelEntityRenderOptions(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animationState,
+        headLook);
   }
 }

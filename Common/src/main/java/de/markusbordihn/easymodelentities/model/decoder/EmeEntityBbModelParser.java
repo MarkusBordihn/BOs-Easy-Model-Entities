@@ -19,31 +19,15 @@
 
 package de.markusbordihn.easymodelentities.model.decoder;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
-import de.markusbordihn.easymodelentities.data.model.decoder.DecodedTexture;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
-import java.util.ArrayList;
 import java.util.List;
 
 public final class EmeEntityBbModelParser extends AbstractBbModelParser {
 
   public static final String MODEL_FORMAT = "eme_entity";
-
-  private static int parseTextureId(JsonObject textureObject, int positionalIndex)
-      throws EasyModelDecodeException {
-    String id = optionalString(textureObject, "id", "");
-    if (id.isBlank()) {
-      return positionalIndex;
-    }
-    try {
-      return Math.max(Integer.parseInt(id.trim()), 0);
-    } catch (NumberFormatException exception) {
-      return positionalIndex;
-    }
-  }
 
   @Override
   protected int textureIndex(
@@ -92,36 +76,5 @@ public final class EmeEntityBbModelParser extends AbstractBbModelParser {
     }
 
     return cubeIndex;
-  }
-
-  @Override
-  protected List<DecodedTexture> parseTextures(JsonObject root) throws EasyModelDecodeException {
-    JsonElement texturesElement = root.get("textures");
-    if (texturesElement == null || texturesElement.isJsonNull()) {
-      return List.of();
-    }
-    if (!texturesElement.isJsonArray()) {
-      throw new EasyModelDecodeException("Field textures must be an array.");
-    }
-
-    JsonArray texturesArray = texturesElement.getAsJsonArray();
-    List<DecodedTexture> textures = new ArrayList<>();
-    int positionalIndex = 0;
-    for (JsonElement textureElement : texturesArray) {
-      JsonObject textureObject = requireObjectElement(textureElement, "textures");
-      int index = parseTextureId(textureObject, positionalIndex);
-      textures.add(
-          new DecodedTexture(
-              index,
-              optionalString(textureObject, "namespace", ""),
-              optionalString(textureObject, "folder", ""),
-              optionalString(textureObject, "relative_path", ""),
-              optionalString(textureObject, "name", ""),
-              optionalNonNegativeInt(textureObject, "uv_width", 0),
-              optionalNonNegativeInt(textureObject, "uv_height", 0)));
-      positionalIndex++;
-    }
-
-    return textures;
   }
 }

@@ -24,6 +24,7 @@ import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
@@ -150,11 +151,15 @@ public final class EasyModelBlockEntityRenderBackend {
                 ? hostBlockEntity.getEasyModelAnimationTicks(partialTick)
                 : 0.0f;
     float yawDegrees = safeOptions.yawDegrees() == null ? 0.0f : safeOptions.yawDegrees();
+    float scale =
+        safeOptions.scale() == null
+            ? renderState.scale()
+            : renderState.scale() * safeOptions.scale();
 
     poseStack.pushPose();
     poseStack.translate(0.5f, 1.5f, 0.5f);
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yawDegrees));
-    poseStack.scale(-renderState.scale(), -renderState.scale(), renderState.scale());
+    poseStack.scale(-scale, -scale, scale);
 
     EasyModelBakedModelRenderer.render(
         renderState.bakedModel(),
@@ -163,16 +168,24 @@ public final class EasyModelBlockEntityRenderBackend {
         0.0f,
         ageInTicks,
         0.0f,
-        animationState(blockEntity),
+        0.0f,
+        EasyModelHeadLook.NONE,
+        animationState(blockEntity, safeOptions),
         safeOptions.partAnimator(),
         safeOptions.partAnimationMode(),
+        safeOptions.partPoseListener(),
         poseStack,
         bufferSource,
         packedLight);
     poseStack.popPose();
   }
 
-  private static EasyModelAnimationState animationState(BlockEntity blockEntity) {
+  private static EasyModelAnimationState animationState(
+      BlockEntity blockEntity, EasyModelBlockEntityRenderOptions options) {
+    if (options.animationState() != null) {
+      return EasyModelAnimationState.byApiState(options.animationState());
+    }
+
     return blockEntity instanceof EasyModelRenderable renderable
         ? EasyModelAnimationState.byApiState(renderable.getEasyModelAnimationState())
         : EasyModelAnimationState.AUTO;
@@ -210,7 +223,7 @@ public final class EasyModelBlockEntityRenderBackend {
     ModelBodyType bodyType =
         renderProfileService
             .getRenderProfile(renderProfileId)
-            .filter(EasyModelRenderProfile::isActive)
+            .filter(EasyModelRenderProfile::isRenderable)
             .map(EasyModelRenderProfile::bodyType)
             .orElse(ModelBodyType.STATIC);
     String renderableVersion = Objects.requireNonNullElse(renderable.getEasyModelVersion(), "");

@@ -140,7 +140,7 @@ public final class EasyModelEntitiesClientApi {
 
   public static List<Identifier> listRenderableProfileIds() {
     return EasyModelServices.renderProfileService().getRenderProfiles().stream()
-        .filter(EasyModelRenderProfile::isActive)
+        .filter(EasyModelRenderProfile::isRenderable)
         .map(EasyModelRenderProfile::id)
         .sorted(Comparator.comparing(Identifier::toString))
         .toList();

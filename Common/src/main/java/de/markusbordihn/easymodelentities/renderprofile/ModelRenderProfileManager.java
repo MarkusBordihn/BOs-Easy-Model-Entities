@@ -19,7 +19,10 @@
 
 package de.markusbordihn.easymodelentities.renderprofile;
 
+import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelResourceRejection;
 import de.markusbordihn.easymodelentities.data.model.bake.ModelBakeResult;
+import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
@@ -37,16 +40,28 @@ import java.util.Optional;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public final class ModelRenderProfileManager implements EasyModelRenderProfileService {
 
+  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
   private static final String JSON_EXTENSION = ".json";
   private final Map<Identifier, EasyModelRenderProfile> renderProfilesById;
+  private final List<ModelResourceRejection> rejectedResources;
 
   public ModelRenderProfileManager(Map<Identifier, EasyModelRenderProfile> renderProfilesById) {
+    this(renderProfilesById, List.of());
+  }
+
+  public ModelRenderProfileManager(
+      Map<Identifier, EasyModelRenderProfile> renderProfilesById,
+      List<ModelResourceRejection> rejectedResources) {
     this.renderProfilesById =
         Collections.unmodifiableMap(
             new LinkedHashMap<>(Objects.requireNonNull(renderProfilesById, "renderProfilesById")));
+    this.rejectedResources =
+        List.copyOf(Objects.requireNonNull(rejectedResources, "rejectedResources"));
   }
 
   public static ModelRenderProfileManager load(ResourceManager resourceManager) {
@@ -57,6 +72,7 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
       ResourceManager resourceManager, EasyModelBakeService bakeService) {
     Objects.requireNonNull(resourceManager, "resourceManager");
     Map<Identifier, EasyModelRenderProfile> renderProfiles = new LinkedHashMap<>();
+    List<ModelResourceRejection> rejectedResources = new ArrayList<>();
     Map<Identifier, Resource> resources =
         resourceManager.listResources(
             ModelResourcePaths.RENDER_PROFILE_DIRECTORY,
@@ -66,21 +82,42 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
       Identifier identifier = entry.getKey();
       Optional<Identifier> renderProfileId = renderProfileIdFromResourceLocation(identifier);
       if (renderProfileId.isEmpty()) {
+        String reason =
+            "The file name cannot be used as a resource location, use lowercase letters, digits,"
+                + " '_', '-' and '/' only.";
+        rejectedResources.add(new ModelResourceRejection(identifier, reason));
+        log.warn("Ignoring render profile {}: {}", identifier, reason);
         continue;
+      }
+      if (!ModelType.hasModelTypeDirectory(renderProfileId.get())) {
+        String reason =
+            "Render profiles must be placed in "
+                + ModelResourcePaths.RENDER_PROFILE_DIRECTORY
+                + "/entity/ or "
+                + ModelResourcePaths.RENDER_PROFILE_DIRECTORY
+                + "/block_entity/, otherwise they can never match a server profile.";
+        rejectedResources.add(new ModelResourceRejection(identifier, reason));
+        log.warn("Unusable render profile {}: {}", identifier, reason);
       }
 
       EasyModelRenderProfile renderProfile =
           parseRenderProfile(renderProfileId.get(), entry.getValue());
       EasyModelRenderProfile validatedRenderProfile =
           validateClientAssets(renderProfile, resourceManager, bakeService == null);
-      renderProfiles.put(
-          renderProfileId.get(),
+      EasyModelRenderProfile resolvedRenderProfile =
           bakeService == null
               ? validatedRenderProfile
-              : validateBakedModel(validatedRenderProfile, resourceManager, bakeService));
+              : validateBakedModel(validatedRenderProfile, resourceManager, bakeService);
+      renderProfiles.put(renderProfileId.get(), resolvedRenderProfile);
+      logRenderProfileIssues(renderProfileId.get(), resolvedRenderProfile);
     }
+    log.info(
+        "Loaded {} render profile(s) from {} resource(s), {} of them are misplaced or ignored.",
+        renderProfiles.size(),
+        resources.size(),
+        rejectedResources.size());
 
-    return new ModelRenderProfileManager(renderProfiles);
+    return new ModelRenderProfileManager(renderProfiles, rejectedResources);
   }
 
   public static Optional<Identifier> renderProfileIdFromResourceLocation(Identifier identifier) {
@@ -109,6 +146,22 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
           ModelRenderProfileStatus.INVALID_JSON,
           "json",
           "Could not read render profile JSON: " + exception.getMessage());
+    }
+  }
+
+  private static void logRenderProfileIssues(
+      Identifier renderProfileId, EasyModelRenderProfile renderProfile) {
+    for (ModelRenderProfileValidationIssue issue : renderProfile.validationIssues()) {
+      if (issue.status() == ModelRenderProfileStatus.ACTIVE) {
+        log.warn("Render profile {} [{}]: {}", renderProfileId, issue.field(), issue.message());
+      } else {
+        log.error(
+            "Render profile {} is not usable [{}] {}: {}",
+            renderProfileId,
+            issue.status(),
+            issue.field(),
+            issue.message());
+      }
     }
   }
 
@@ -163,6 +216,11 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
         new ArrayList<>(renderProfile.validationIssues());
     issues.addAll(bakeResult.validationIssues());
     return renderProfile.withValidationIssues(issues);
+  }
+
+  @Override
+  public Collection<ModelResourceRejection> getRejectedResources() {
+    return this.rejectedResources;
   }
 
   @Override
