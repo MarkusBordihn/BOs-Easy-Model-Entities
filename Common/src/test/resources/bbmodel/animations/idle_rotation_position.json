@@ -4,6 +4,7 @@
     "name": "idle",
     "loop": "loop",
     "length": 2.0,
+    "snapping": 12,
     "animators": {
       "g": {
         "name": "Body",

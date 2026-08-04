@@ -33,8 +33,26 @@ public record EasyModelPartTransform(
 
   public static final EasyModelPartTransform NONE = new EasyModelPartTransform(0.0f, 0.0f, 0.0f);
 
+  public EasyModelPartTransform {
+    requireFinite(xRotation, "xRotation");
+    requireFinite(yRotation, "yRotation");
+    requireFinite(zRotation, "zRotation");
+    requireFinite(offsetX, "offsetX");
+    requireFinite(offsetY, "offsetY");
+    requireFinite(offsetZ, "offsetZ");
+    requireFinite(scaleX, "scaleX");
+    requireFinite(scaleY, "scaleY");
+    requireFinite(scaleZ, "scaleZ");
+  }
+
   public EasyModelPartTransform(float xRotation, float yRotation, float zRotation) {
     this(xRotation, yRotation, zRotation, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, true);
+  }
+
+  private static void requireFinite(float value, String name) {
+    if (!Float.isFinite(value)) {
+      throw new IllegalArgumentException(name + " must be finite.");
+    }
   }
 
   public EasyModelPartTransform add(EasyModelPartTransform transform) {

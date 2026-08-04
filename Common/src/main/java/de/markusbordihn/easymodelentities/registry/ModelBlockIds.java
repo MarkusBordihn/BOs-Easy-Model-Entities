@@ -19,19 +19,18 @@
 
 package de.markusbordihn.easymodelentities.registry;
 
-import de.markusbordihn.easymodelentities.Constants;
 import net.minecraft.resources.ResourceLocation;
 
 public final class ModelBlockIds {
 
   public static final ResourceLocation STATIC_BLOCK =
-      new ResourceLocation(Constants.MOD_ID, "static_block");
+      ModelResourcePaths.modResourceLocation("static_block");
   public static final ResourceLocation TICKING_BLOCK =
-      new ResourceLocation(Constants.MOD_ID, "ticking_block");
+      ModelResourcePaths.modResourceLocation("ticking_block");
   public static final ResourceLocation ANIMATED_BLOCK =
-      new ResourceLocation(Constants.MOD_ID, "animated_block");
+      ModelResourcePaths.modResourceLocation("animated_block");
   public static final ResourceLocation ANIMATED_RANDOMLY_BLOCK =
-      new ResourceLocation(Constants.MOD_ID, "animated_randomly_block");
+      ModelResourcePaths.modResourceLocation("animated_randomly_block");
 
   private ModelBlockIds() {}
 }

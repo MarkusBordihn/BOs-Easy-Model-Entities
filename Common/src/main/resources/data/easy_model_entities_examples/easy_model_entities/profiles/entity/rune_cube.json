@@ -2,5 +2,10 @@
   "schema_version": "0.2.0",
   "model_type": "entity",
   "preset_type": "cuboid_hopping",
-  "version": "demo-rune-cube-v1"
+  "version": "demo-rune-cube-v2",
+  "dimensions": {
+    "width": 0.6,
+    "height": 0.7,
+    "eye_height": 0.5
+  }
 }

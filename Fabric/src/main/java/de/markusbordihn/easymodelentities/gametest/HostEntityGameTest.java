@@ -37,6 +37,11 @@ public class HostEntityGameTest {
   }
 
   @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
+  public void frozenBehaviorStopsHostEntityMovement(GameTestHelper helper) {
+    HostEntityGameTestCases.frozenBehaviorStopsHostEntityMovement(helper);
+  }
+
+  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
   public void missingAndInvalidProfilesReturnEmpty(GameTestHelper helper) {
     HostEntityGameTestCases.missingAndInvalidProfilesReturnEmpty(helper);
   }

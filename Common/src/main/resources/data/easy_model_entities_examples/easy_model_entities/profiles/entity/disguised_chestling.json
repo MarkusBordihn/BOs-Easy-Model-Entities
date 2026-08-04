@@ -2,10 +2,10 @@
   "schema_version": "0.2.0",
   "model_type": "entity",
   "preset_type": "cuboid_hopping",
-  "version": "demo-disguised-chestling-v1",
+  "version": "demo-disguised-chestling-v2",
   "dimensions": {
-    "width": 0.969,
-    "height": 0.938,
-    "eye_height": 0.797
+    "width": 1.05,
+    "height": 1.36,
+    "eye_height": 0.88
   }
 }

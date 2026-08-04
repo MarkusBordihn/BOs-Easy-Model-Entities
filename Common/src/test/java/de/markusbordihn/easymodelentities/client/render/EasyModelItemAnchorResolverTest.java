@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.client.render;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelVec3f;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelItemAnchor;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
@@ -56,7 +57,7 @@ class EasyModelItemAnchorResolverTest {
         EasyModelItemAnchorResolver.resolve(List.of(hand, anchor), HumanoidArm.RIGHT).orElseThrow();
 
     assertEquals("right_item", result.partName());
-    assertEquals(Vec3f.ZERO, result.localOffset());
+    assertEquals(EasyModelVec3f.ZERO, result.localOffset());
   }
 
   @Test
@@ -75,7 +76,7 @@ class EasyModelItemAnchorResolverTest {
         EasyModelItemAnchorResolver.resolve(List.of(arm), HumanoidArm.RIGHT).orElseThrow();
 
     assertEquals("right_arm", result.partName());
-    assertEquals(new Vec3f(2.0f, 9.0f, 4.0f), result.localOffset());
+    assertEquals(new EasyModelVec3f(2.0f, 9.0f, 4.0f), result.localOffset());
   }
 
   @Test

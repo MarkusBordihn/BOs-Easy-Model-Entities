@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.runtime;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -29,7 +30,7 @@ public final class EasyModelHostPersistence {
   public static final String RENDER_PROFILE_ID_TAG = "RenderProfileId";
   public static final String VERSION_TAG = "Version";
   public static final String BODY_TYPE_TAG = "BodyType";
-  public static final String ANIMATION_STATE_TAG = "AnimationState";
+  public static final String ANIMATION_TAG = "Animation";
 
   private EasyModelHostPersistence() {}
 
@@ -51,7 +52,16 @@ public final class EasyModelHostPersistence {
         parseResourceLocation(compoundTag.getString(RENDER_PROFILE_ID_TAG)),
         compoundTag.getString(VERSION_TAG),
         ModelBodyType.bySerializedName(compoundTag.getString(BODY_TYPE_TAG)),
-        EasyModelAnimationState.bySerializedName(compoundTag.getString(ANIMATION_STATE_TAG)));
+        readAnimation(compoundTag));
+  }
+
+  public static void writeAnimation(CompoundTag compoundTag, EasyModelAnimationSetting animation) {
+    compoundTag.put(ANIMATION_TAG, animation.createTag());
+  }
+
+  private static EasyModelAnimationSetting readAnimation(CompoundTag compoundTag) {
+    return EasyModelAnimationSetting.fromTag(compoundTag.get(ANIMATION_TAG))
+        .orElse(EasyModelAnimationSetting.AUTO);
   }
 
   public record State(
@@ -59,5 +69,5 @@ public final class EasyModelHostPersistence {
       ResourceLocation renderProfileId,
       String version,
       ModelBodyType bodyType,
-      EasyModelAnimationState animationState) {}
+      EasyModelAnimationSetting animation) {}
 }

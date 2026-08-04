@@ -22,11 +22,12 @@ package de.markusbordihn.easymodelentities.renderprofile;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnosticSeverity;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.io.StringReader;
 import java.util.List;
@@ -61,7 +62,7 @@ class ModelRenderProfileValidatorTest {
         0.8f,
         0.5f,
         bodyType,
-        EasyModelAnimationState.AUTO);
+        EasyModelAnimationSetting.of(EasyModelAnimation.AUTO));
   }
 
   @Test

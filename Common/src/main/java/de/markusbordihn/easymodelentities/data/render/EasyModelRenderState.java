@@ -49,6 +49,10 @@ public record EasyModelRenderState(
     Objects.requireNonNull(texture, "texture");
     Objects.requireNonNull(bodyType, "bodyType");
     Objects.requireNonNull(animation, "animation");
+    requirePositiveFinite(scale, "scale");
+    requireNonNegativeFinite(shadowRadius, "shadowRadius");
+    requireNonNegativeFinite(visibleBoundsWidth, "visibleBoundsWidth");
+    requireNonNegativeFinite(visibleBoundsHeight, "visibleBoundsHeight");
     if (visibleBoundsOffset == null) {
       visibleBoundsOffset = Vec3f.ZERO;
     }
@@ -80,6 +84,18 @@ public record EasyModelRenderState(
         fallbackModel,
         fallbackTexture,
         validationIssues);
+  }
+
+  private static void requirePositiveFinite(float value, String name) {
+    if (!Float.isFinite(value) || value <= 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite positive value.");
+    }
+  }
+
+  private static void requireNonNegativeFinite(float value, String name) {
+    if (!Float.isFinite(value) || value < 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite non-negative value.");
+    }
   }
 
   public boolean hasVisibleBounds() {

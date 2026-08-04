@@ -31,6 +31,7 @@ import static org.mockito.Mockito.when;
 import de.markusbordihn.easymodelentities.api.EasyModelReloadEvents;
 import de.markusbordihn.easymodelentities.api.EasyModelReloadEvents.Listener;
 import de.markusbordihn.easymodelentities.data.model.bake.ModelBakeResult;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
 import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
 import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
 import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
@@ -58,6 +59,8 @@ class ModelRenderProfileReloadListenerTest {
 
   private static final ResourceLocation RENDER_PROFILE_RESOURCE =
       new ResourceLocation("example", "easy_model_entities/render_profiles/entity/pillar.json");
+  private static final ResourceLocation RENDER_PROFILE_ID =
+      new ResourceLocation("example", "entity/pillar");
   private static final ResourceLocation MODEL_ID =
       new ResourceLocation("example", "easy_model_entities/models/pillar");
   private static final ResourceLocation TEXTURE_ID =
@@ -65,6 +68,10 @@ class ModelRenderProfileReloadListenerTest {
   private static final String PROFILE_VERSION = "v1";
 
   private static ResourceManager resourceManager(float pillarHeight) throws IOException {
+    return resourceManager(Float.toString(pillarHeight));
+  }
+
+  private static ResourceManager resourceManager(String pillarHeight) throws IOException {
     ResourceManager resourceManager = mock(ResourceManager.class);
     when(resourceManager.listResources(eq(ModelResourcePaths.RENDER_PROFILE_DIRECTORY), any()))
         .thenReturn(Map.of(RENDER_PROFILE_RESOURCE, resource(renderProfileJson())));
@@ -85,7 +92,7 @@ class ModelRenderProfileReloadListenerTest {
         .getBytes(StandardCharsets.UTF_8);
   }
 
-  private static byte[] modelJson(float pillarHeight) {
+  private static byte[] modelJson(String pillarHeight) {
     return ("{\"meta\":{\"format_version\":\"5.0\",\"model_format\":\"modded_entity\"},"
             + "\"resolution\":{\"width\":64,\"height\":64},"
             + "\"elements\":[{\"name\":\"pillar\",\"from\":[-1,0,-1],\"to\":[1,"
@@ -162,6 +169,34 @@ class ModelRenderProfileReloadListenerTest {
     reload(resourceManager(6.0f));
 
     assertNotSame(firstBakeService, EasyModelServices.bakeService());
+    assertEquals(6.0f, bakedPillarHeight(), 0.001f);
+  }
+
+  @Test
+  @DisplayName("A corrected non-finite model value is loaded by the next resource reload")
+  void reloadRecoversFromNonFiniteModelValue() throws IOException {
+    reload(resourceManager("NaN"));
+
+    assertEquals(
+        ModelRenderProfileStatus.MODEL_DECODE_FAILED,
+        EasyModelServices.renderProfileService()
+            .getRenderProfile(RENDER_PROFILE_ID)
+            .orElseThrow()
+            .status());
+    assertTrue(
+        EasyModelServices.renderProfileService()
+            .getRenderProfile(RENDER_PROFILE_ID)
+            .orElseThrow()
+            .canResolveRenderState());
+
+    reload(resourceManager(6.0f));
+
+    assertEquals(
+        ModelRenderProfileStatus.ACTIVE,
+        EasyModelServices.renderProfileService()
+            .getRenderProfile(RENDER_PROFILE_ID)
+            .orElseThrow()
+            .status());
     assertEquals(6.0f, bakedPillarHeight(), 0.001f);
   }
 }

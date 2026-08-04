@@ -19,13 +19,34 @@
 
 package de.markusbordihn.easymodelentities.api.data.client;
 
-import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
+import de.markusbordihn.easymodelentities.api.data.EasyModelBodyType;
+import java.util.Objects;
 
 public record EasyModelPartAnimationContext(
     String partName,
-    ModelBodyType bodyType,
+    EasyModelBodyType bodyType,
     float limbSwing,
     float limbSwingAmount,
     float ageInTicks,
     float airborneAmount,
-    EasyModelPartTransform automaticTransform) {}
+    EasyModelPartTransform automaticTransform) {
+
+  public EasyModelPartAnimationContext {
+    partName = Objects.requireNonNull(partName, "partName").trim();
+    if (partName.isEmpty()) {
+      throw new IllegalArgumentException("partName must not be blank.");
+    }
+    Objects.requireNonNull(bodyType, "bodyType");
+    requireFinite(limbSwing, "limbSwing");
+    requireFinite(limbSwingAmount, "limbSwingAmount");
+    requireFinite(ageInTicks, "ageInTicks");
+    requireFinite(airborneAmount, "airborneAmount");
+    Objects.requireNonNull(automaticTransform, "automaticTransform");
+  }
+
+  private static void requireFinite(float value, String name) {
+    if (!Float.isFinite(value)) {
+      throw new IllegalArgumentException(name + " must be finite.");
+    }
+  }
+}

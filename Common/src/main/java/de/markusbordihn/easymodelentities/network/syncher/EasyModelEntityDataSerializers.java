@@ -19,8 +19,12 @@
 
 package de.markusbordihn.easymodelentities.network.syncher;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.minecraft.network.syncher.EntityDataSerializers;
 
@@ -30,8 +34,32 @@ public final class EasyModelEntityDataSerializers {
   public static final EntityDataSerializer<Float> FLOAT = EntityDataSerializers.FLOAT;
   public static final EntityDataSerializer<ModelBodyType> BODY_TYPE =
       enumSerializer(ModelBodyType.class);
-  public static final EntityDataSerializer<EasyModelAnimationState> ANIMATION_STATE =
-      enumSerializer(EasyModelAnimationState.class);
+  public static final EntityDataSerializer<EasyModelAnimationSetting> ANIMATION_SETTING =
+      new EntityDataSerializer<>() {
+
+        @Override
+        public void write(FriendlyByteBuf buffer, EasyModelAnimationSetting animation) {
+          buffer.writeUtf(
+              animation.animation().serializedName(),
+              ClientboundEasyModelAnimationPacket.MAX_ANIMATION_NAME_LENGTH);
+          buffer.writeEnum(animation.loop());
+        }
+
+        @Override
+        public EasyModelAnimationSetting read(FriendlyByteBuf buffer) {
+          EasyModelAnimation animation =
+              EasyModelAnimation.parse(
+                      buffer.readUtf(ClientboundEasyModelAnimationPacket.MAX_ANIMATION_NAME_LENGTH))
+                  .orElse(EasyModelAnimation.AUTO);
+          return new EasyModelAnimationSetting(
+              animation, buffer.readEnum(EasyModelAnimationLoop.class));
+        }
+
+        @Override
+        public EasyModelAnimationSetting copy(EasyModelAnimationSetting animation) {
+          return animation;
+        }
+      };
 
   private static boolean registered = false;
 
@@ -43,7 +71,7 @@ public final class EasyModelEntityDataSerializers {
     }
 
     registerSerializer(BODY_TYPE);
-    registerSerializer(ANIMATION_STATE);
+    registerSerializer(ANIMATION_SETTING);
     registered = true;
   }
 

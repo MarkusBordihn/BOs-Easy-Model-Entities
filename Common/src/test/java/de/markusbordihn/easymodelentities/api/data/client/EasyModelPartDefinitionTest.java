@@ -20,27 +20,35 @@
 package de.markusbordihn.easymodelentities.api.data.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import de.markusbordihn.easymodelentities.data.model.ModelPartType;
-import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import de.markusbordihn.easymodelentities.api.data.EasyModelVec3f;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class EasyModelPartDefinitionTest {
 
   private static EasyModelPartDefinition partDefinition(String name) {
-    return new EasyModelPartDefinition(name, Vec3f.ZERO, Vec3f.ZERO, List.of());
+    return new EasyModelPartDefinition(name, EasyModelVec3f.ZERO, EasyModelVec3f.ZERO, List.of());
   }
 
   @Test
   void semanticTypeResolvesKnownName() {
-    assertEquals(ModelPartType.HEAD, partDefinition("head").semanticType());
-    assertEquals(ModelPartType.RIGHT_WING, partDefinition("right_wing").semanticType());
+    assertEquals(EasyModelPartType.HEAD, partDefinition("head").semanticType());
+    assertEquals(EasyModelPartType.RIGHT_WING, partDefinition("right_wing").semanticType());
   }
 
   @Test
   void semanticTypeFallsBackToUnknown() {
-    assertEquals(ModelPartType.UNKNOWN, partDefinition("mystery_bone").semanticType());
-    assertEquals(ModelPartType.UNKNOWN, partDefinition(null).semanticType());
+    assertEquals(EasyModelPartType.UNKNOWN, partDefinition("mystery_bone").semanticType());
+  }
+
+  @Test
+  void rejectsMissingNamesAndChildren() {
+    assertThrows(NullPointerException.class, () -> partDefinition(null));
+    assertThrows(IllegalArgumentException.class, () -> partDefinition("   "));
+    assertThrows(
+        NullPointerException.class,
+        () -> new EasyModelPartDefinition("head", EasyModelVec3f.ZERO, EasyModelVec3f.ZERO, null));
   }
 }

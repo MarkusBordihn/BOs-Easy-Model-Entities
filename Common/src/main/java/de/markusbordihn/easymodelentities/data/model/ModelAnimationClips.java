@@ -32,8 +32,10 @@ public final class ModelAnimationClips {
   public static final String HURT = "hurt";
   public static final String DEATH = "death";
   public static final String ATTACK = "attack";
+  public static final String SIT = "sit";
 
-  public static final List<String> STANDARD = List.of(IDLE, WALK, SWIM, FLY, HURT, DEATH, ATTACK);
+  public static final List<String> STANDARD =
+      List.of(IDLE, WALK, SWIM, FLY, HURT, DEATH, ATTACK, SIT);
   public static final Set<String> STANDARD_NAMES = Set.copyOf(STANDARD);
 
   private ModelAnimationClips() {}

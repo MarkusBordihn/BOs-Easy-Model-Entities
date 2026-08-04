@@ -31,11 +31,11 @@ import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.json.JsonValues;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
+import de.markusbordihn.easymodelentities.schema.SchemaMigrationV0_1ToV0_2;
 import de.markusbordihn.easymodelentities.schema.SchemaMigrations;
 import de.markusbordihn.easymodelentities.schema.SchemaVersions;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -52,6 +52,8 @@ public final class EasyModelProfileParser {
   private static final String MODEL_TYPE_FIELD = "model_type";
   private static final String PRESET_TYPE_FIELD = "preset_type";
   private static final String VERSION_FIELD = "version";
+  private static final String LEGACY_RENDER_PROFILE_FIELD =
+      SchemaMigrationV0_1ToV0_2.MIGRATED_RENDER_PROFILE_FIELD;
   private static final String ENTITY_FIELD = "entity";
   private static final String BLOCK_ENTITY_FIELD = "block_entity";
   private static final String TYPE_FIELD = "type";
@@ -176,8 +178,12 @@ public final class EasyModelProfileParser {
             SCHEMA_VERSION_FIELD,
             issues,
             ModelProfileStatus.INVALID_SCHEMA_VERSION);
+    boolean migratingLegacyProfile = SchemaMigrationV0_1ToV0_2.FROM_VERSION.equals(schemaVersion);
     JsonObject effectiveObject =
         applySchemaMigrations(jsonObject, schemaVersion, migrations, issues);
+    JsonElement legacyRenderProfile =
+        migratingLegacyProfile ? effectiveObject.remove(LEGACY_RENDER_PROFILE_FIELD) : null;
+    schemaVersion = effectiveSchemaVersion(effectiveObject, schemaVersion);
     reportUnknownFields(effectiveObject, EMPTY_VALUE, ROOT_FIELDS, issues);
     RawProfile rawProfile = GSON.fromJson(effectiveObject, RawProfile.class);
     reportUnknownFields(rawProfile.entity, ENTITY_FIELD + ".", ENTITY_FIELDS, issues);
@@ -222,6 +228,10 @@ public final class EasyModelProfileParser {
             ? parseBlockEntity(rawBlockEntity, resolvedBlockEntityPresetType, issues)
             : null;
 
+    ResourceLocation renderProfile =
+        parseOptionalResourceLocation(
+            legacyRenderProfile, expectedId, "client.render_profile", issues);
+
     RawDimensions rawDimensions =
         custom
             ? requiredObject(rawProfile.dimensions, DIMENSIONS_FIELD, RawDimensions.class, issues)
@@ -258,7 +268,7 @@ public final class EasyModelProfileParser {
         resolvedModelType,
         entity,
         blockEntity,
-        new ModelClientSettings(expectedId),
+        new ModelClientSettings(renderProfile == null ? expectedId : renderProfile),
         dimensions,
         movement,
         behavior,
@@ -400,7 +410,13 @@ public final class EasyModelProfileParser {
     float resolvedHeight = height == null ? defaults.height() : height;
     float resolvedEyeHeight = eyeHeight == null ? defaults.eyeHeight() : eyeHeight;
     validateDimensions(resolvedWidth, resolvedHeight, resolvedEyeHeight, issues);
-    return new ModelDimensions(resolvedWidth, resolvedHeight, resolvedEyeHeight);
+    float validWidth = isInRange(resolvedWidth, 0.01f, 8.0f) ? resolvedWidth : defaults.width();
+    float validHeight = isInRange(resolvedHeight, 0.01f, 8.0f) ? resolvedHeight : defaults.height();
+    float validEyeHeight =
+        isInRange(resolvedEyeHeight, 0.0f, validHeight)
+            ? resolvedEyeHeight
+            : Math.min(defaults.eyeHeight(), validHeight);
+    return new ModelDimensions(validWidth, validHeight, validEyeHeight);
   }
 
   private static ModelMovementSettings parseMovement(
@@ -447,7 +463,10 @@ public final class EasyModelProfileParser {
           "Step height must be between 0.0 and 2.0.");
     }
 
-    return new ModelMovementSettings(speed, stepHeight, gravity);
+    return new ModelMovementSettings(
+        isInRange(speed, 0.0f, 2.0f) ? speed : movementType.defaultSpeed(),
+        isInRange(stepHeight, 0.0f, 2.0f) ? stepHeight : movementType.defaultStepHeight(),
+        gravity);
   }
 
   private static boolean defaultGravity(
@@ -525,7 +544,10 @@ public final class EasyModelProfileParser {
           "Invalid follow range.");
     }
 
-    return new ModelAttributes(maxHealth, movementSpeed, followRange);
+    return new ModelAttributes(
+        isNonNegativeFinite(maxHealth) ? maxHealth : DEFAULT_MAX_HEALTH,
+        isNonNegativeFinite(movementSpeed) ? movementSpeed : movement.speed(),
+        isNonNegativeFinite(followRange) ? followRange : DEFAULT_FOLLOW_RANGE);
   }
 
   private static JsonObject applySchemaMigrations(
@@ -774,18 +796,13 @@ public final class EasyModelProfileParser {
       String field,
       Class<T> objectClass,
       List<ModelProfileValidationIssue> issues) {
-    if (value == null || value.isJsonNull()) {
-      addIssue(
-          issues, statusForRequiredField(field), field, "Missing required field " + field + ".");
-      return null;
-    }
-    if (!value.isJsonObject()) {
-      addIssue(
-          issues, statusForRequiredField(field), field, "Field " + field + " must be an object.");
-      return null;
-    }
-
-    return GSON.fromJson(value, objectClass);
+    return JsonValues.requiredObject(
+        value,
+        field,
+        objectClass,
+        GSON,
+        (issueField, message) ->
+            addIssue(issues, statusForRequiredField(issueField), issueField, message));
   }
 
   private static <T> T optionalObject(
@@ -935,6 +952,10 @@ public final class EasyModelProfileParser {
     return Float.isFinite(value) && value >= minimum && value <= maximum;
   }
 
+  private static boolean isNonNegativeFinite(float value) {
+    return Float.isFinite(value) && value >= 0.0f;
+  }
+
   private static void addIssue(
       List<ModelProfileValidationIssue> issues,
       ModelProfileStatus status,
@@ -964,11 +985,22 @@ public final class EasyModelProfileParser {
   }
 
   private static ModelProfileStatus statusForIssues(List<ModelProfileValidationIssue> issues) {
-    return issues.stream()
-        .map(ModelProfileValidationIssue::status)
-        .filter(status -> status != ModelProfileStatus.ACTIVE)
-        .min(Comparator.comparingInt(Enum::ordinal))
-        .orElse(ModelProfileStatus.ACTIVE);
+    ModelProfileStatus result = ModelProfileStatus.ACTIVE;
+    for (ModelProfileValidationIssue issue : issues) {
+      ModelProfileStatus status = issue.status();
+      if (status != ModelProfileStatus.ACTIVE
+          && (result == ModelProfileStatus.ACTIVE || status.ordinal() < result.ordinal())) {
+        result = status;
+      }
+    }
+    return result;
+  }
+
+  private static String effectiveSchemaVersion(JsonObject jsonObject, String fallback) {
+    JsonElement value = jsonObject.get(SCHEMA_VERSION_FIELD);
+    return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
+        ? value.getAsString()
+        : fallback;
   }
 
   private static void reportUnknownFields(

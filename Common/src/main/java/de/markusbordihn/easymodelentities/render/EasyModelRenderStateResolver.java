@@ -19,7 +19,6 @@
 
 package de.markusbordihn.easymodelentities.render;
 
-import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.model.bake.ModelBakeResult;
 import de.markusbordihn.easymodelentities.data.model.bake.ModelCacheKey;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
@@ -31,6 +30,7 @@ import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileV
 import de.markusbordihn.easymodelentities.model.bake.EasyModelBakeService;
 import de.markusbordihn.easymodelentities.model.bake.ModelFallbackFactory;
 import de.markusbordihn.easymodelentities.model.bake.ModelTextureResolver;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import de.markusbordihn.easymodelentities.runtime.AssetPairing;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
@@ -44,7 +44,7 @@ public final class EasyModelRenderStateResolver {
 
   public static final ResourceLocation FALLBACK_TEXTURE = ModelTextureResolver.FALLBACK_TEXTURE;
   private static final ResourceLocation FALLBACK_MODEL =
-      new ResourceLocation(Constants.MOD_ID, "fallback");
+      ModelResourcePaths.modResourceLocation("fallback");
   private static final ModelAnimationSettings NO_ANIMATION =
       new ModelAnimationSettings(ModelAnimationMode.NONE, 1.0f, 1.0f);
 
@@ -62,7 +62,7 @@ public final class EasyModelRenderStateResolver {
 
     return renderProfileService
         .getRenderProfile(contract.renderProfileId())
-        .filter(EasyModelRenderProfile::isRenderable)
+        .filter(EasyModelRenderProfile::canResolveRenderState)
         .map(renderProfile -> resolveProfile(contract, renderProfile, bakeService, resourceManager))
         .orElseGet(
             () ->

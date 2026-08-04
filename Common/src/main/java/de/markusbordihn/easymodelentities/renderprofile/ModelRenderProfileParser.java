@@ -190,6 +190,7 @@ public final class ModelRenderProfileParser {
             ModelRenderProfileStatus.INVALID_SCHEMA_VERSION);
     JsonObject effectiveObject =
         applySchemaMigrations(jsonObject, schemaVersion, migrations, issues);
+    schemaVersion = effectiveSchemaVersion(effectiveObject, schemaVersion);
     reportUnknownFields(effectiveObject, EMPTY_VALUE, ROOT_FIELDS, issues);
     RawRenderProfile rawProfile = GSON.fromJson(effectiveObject, RawRenderProfile.class);
     reportUnknownFields(rawProfile.rendering, RENDERING_FIELD + ".", RENDERING_FIELDS, issues);
@@ -241,25 +242,42 @@ public final class ModelRenderProfileParser {
     RawRendering rawRendering =
         optionalObject(renderingElement, RENDERING_FIELD, RawRendering.class, issues);
     ModelRenderSettings defaults = defaultRenderSettings(presetType);
-
-    return new ModelRenderSettings(
+    float scale =
         optionalFloat(
             rawRendering == null ? null : rawRendering.scale,
             defaults.scale(),
             RENDERING_SCALE_FIELD,
-            issues),
+            issues);
+    float shadowRadius =
         optionalFloat(
             rawRendering == null ? null : rawRendering.shadowRadius,
             defaults.shadowRadius(),
             RENDERING_SHADOW_RADIUS_FIELD,
-            issues),
+            issues);
+    float visibleBoundsWidth =
         optionalFloat(
             rawRendering == null ? null : rawRendering.visibleBoundsWidth,
             defaults.visibleBoundsWidth(),
             RENDERING_VISIBLE_BOUNDS_WIDTH_FIELD,
-            issues),
+            issues);
+    float visibleBoundsHeight =
         optionalFloat(
             rawRendering == null ? null : rawRendering.visibleBoundsHeight,
+            defaults.visibleBoundsHeight(),
+            RENDERING_VISIBLE_BOUNDS_HEIGHT_FIELD,
+            issues);
+
+    return new ModelRenderSettings(
+        positiveOrDefault(scale, defaults.scale(), RENDERING_SCALE_FIELD, issues),
+        nonNegativeOrDefault(
+            shadowRadius, defaults.shadowRadius(), RENDERING_SHADOW_RADIUS_FIELD, issues),
+        nonNegativeOrDefault(
+            visibleBoundsWidth,
+            defaults.visibleBoundsWidth(),
+            RENDERING_VISIBLE_BOUNDS_WIDTH_FIELD,
+            issues),
+        nonNegativeOrDefault(
+            visibleBoundsHeight,
             defaults.visibleBoundsHeight(),
             RENDERING_VISIBLE_BOUNDS_HEIGHT_FIELD,
             issues),
@@ -306,25 +324,69 @@ public final class ModelRenderProfileParser {
     ModelAnimationSettings defaults = defaultAnimationSettings(presetType);
     ModelAnimationMode mode = parseAnimationMode(rawAnimation, defaults.mode(), issues);
     ModelGaitType gait = parseGait(rawAnimation, defaults.gait(), issues);
-
-    return new ModelAnimationSettings(
-        mode,
+    float swingSpeed =
         optionalFloat(
             rawAnimation == null ? null : rawAnimation.swingSpeed,
             defaults.swingSpeed(),
             ANIMATION_SWING_SPEED_FIELD,
-            issues),
+            issues);
+    float walkSpeedMultiplier =
         optionalFloat(
             rawAnimation == null ? null : rawAnimation.walkSpeedMultiplier,
             defaults.walkSpeedMultiplier(),
             ANIMATION_WALK_SPEED_MULTIPLIER_FIELD,
-            issues),
+            issues);
+    float idleStrength =
         optionalFloat(
             rawAnimation == null ? null : rawAnimation.idleStrength,
             defaults.idleStrength(),
             ANIMATION_IDLE_STRENGTH_FIELD,
+            issues);
+
+    return new ModelAnimationSettings(
+        mode,
+        nonNegativeOrDefault(
+            swingSpeed, defaults.swingSpeed(), ANIMATION_SWING_SPEED_FIELD, issues),
+        nonNegativeOrDefault(
+            walkSpeedMultiplier,
+            defaults.walkSpeedMultiplier(),
+            ANIMATION_WALK_SPEED_MULTIPLIER_FIELD,
             issues),
+        nonNegativeOrDefault(
+            idleStrength, defaults.idleStrength(), ANIMATION_IDLE_STRENGTH_FIELD, issues),
         gait);
+  }
+
+  private static float positiveOrDefault(
+      float value,
+      float defaultValue,
+      String field,
+      List<ModelRenderProfileValidationIssue> issues) {
+    if (value > 0.0f) {
+      return value;
+    }
+    addIssue(
+        issues,
+        ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
+        field,
+        "Field " + field + " must be positive.");
+    return defaultValue;
+  }
+
+  private static float nonNegativeOrDefault(
+      float value,
+      float defaultValue,
+      String field,
+      List<ModelRenderProfileValidationIssue> issues) {
+    if (value >= 0.0f) {
+      return value;
+    }
+    addIssue(
+        issues,
+        ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
+        field,
+        "Field " + field + " must not be negative.");
+    return defaultValue;
   }
 
   private static ModelGaitType parseGait(
@@ -635,6 +697,13 @@ public final class ModelRenderProfileParser {
       String field,
       String message) {
     issues.add(new ModelRenderProfileValidationIssue(status, field, message));
+  }
+
+  private static String effectiveSchemaVersion(JsonObject jsonObject, String fallback) {
+    JsonElement value = jsonObject.get(SCHEMA_VERSION_FIELD);
+    return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()
+        ? value.getAsString()
+        : fallback;
   }
 
   private static class RawRenderProfile {

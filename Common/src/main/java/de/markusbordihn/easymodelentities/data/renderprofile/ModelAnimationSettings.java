@@ -31,6 +31,9 @@ public record ModelAnimationSettings(
   public ModelAnimationSettings {
     Objects.requireNonNull(mode, "mode");
     Objects.requireNonNull(gait, "gait");
+    requireNonNegativeFinite(swingSpeed, "swingSpeed");
+    requireNonNegativeFinite(walkSpeedMultiplier, "walkSpeedMultiplier");
+    requireNonNegativeFinite(idleStrength, "idleStrength");
   }
 
   public ModelAnimationSettings(
@@ -41,5 +44,11 @@ public record ModelAnimationSettings(
   public ModelAnimationSettings(
       ModelAnimationMode mode, float swingSpeed, float walkSpeedMultiplier) {
     this(mode, swingSpeed, walkSpeedMultiplier, 1.0f, ModelGaitType.NATURAL);
+  }
+
+  private static void requireNonNegativeFinite(float value, String name) {
+    if (!Float.isFinite(value) || value < 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite non-negative value.");
+    }
   }
 }

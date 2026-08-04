@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.model.decoder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -91,6 +92,7 @@ class BbModelAnimationDecoderTest {
     ModelAnimationClip clip = model.animations().get("idle");
     assertNotNull(clip);
     assertEquals(2.0f, clip.length(), DELTA);
+    assertEquals(12.0f, clip.framesPerSecond(), DELTA);
     assertTrue(clip.loop());
 
     ModelAnimationBoneTrack track = clip.track("body");
@@ -108,14 +110,25 @@ class BbModelAnimationDecoderTest {
   }
 
   @Test
-  void ignoresNonStandardClipNamesWithWarning() throws Exception {
+  void keepsNonStandardClipNamesWithNote() throws Exception {
     String attackAnimation = animationsFixture("attack_clip.json");
 
     DecodedModel model = decodeAnimations(attackAnimation.replace("attack", "dance"));
 
-    assertTrue(model.animations().isEmpty());
+    assertNotNull(model.animations().get("dance"));
     assertTrue(
         model.validationIssues().stream().anyMatch(issue -> issue.message().contains("dance")));
+  }
+
+  @Test
+  void doesNotReportEmptyCustomClipAsKept() throws Exception {
+    DecodedModel model = decodeAnimations("[{\"name\":\"dance\",\"animators\":{}}]");
+
+    assertTrue(model.animations().isEmpty());
+    assertFalse(
+        model.validationIssues().stream()
+            .anyMatch(
+                issue -> issue.message().contains("Kept custom keyframe animation(s) dance")));
   }
 
   @Test

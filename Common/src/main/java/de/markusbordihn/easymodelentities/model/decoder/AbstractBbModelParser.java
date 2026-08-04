@@ -145,7 +145,7 @@ public abstract class AbstractBbModelParser {
     }
 
     Map<String, ModelAnimationClip> clips = new LinkedHashMap<>();
-    List<String> ignoredNames = new ArrayList<>();
+    List<String> customNames = new ArrayList<>();
     for (JsonElement animationElement : animationsElement.getAsJsonArray()) {
       if (!animationElement.isJsonObject()) {
         continue;
@@ -160,14 +160,14 @@ public abstract class AbstractBbModelParser {
       if (clipName.isEmpty()) {
         continue;
       }
-      if (!ModelAnimationClips.STANDARD_NAMES.contains(clipName)) {
-        ignoredNames.add(clipName);
-        continue;
-      }
+      boolean customName = !ModelAnimationClips.STANDARD_NAMES.contains(clipName);
       try {
         ModelAnimationClip clip = parseAnimationClip(clipName, animationObject, groupsByUuid);
         if (clip != null) {
           clips.put(clipName, clip);
+          if (customName) {
+            customNames.add(clipName);
+          }
         }
       } catch (EasyModelDecodeException exception) {
         issues.add(
@@ -177,15 +177,15 @@ public abstract class AbstractBbModelParser {
       }
     }
 
-    if (!ignoredNames.isEmpty()) {
+    if (!customNames.isEmpty()) {
       issues.add(
           warning(
               "animations",
-              "Ignoring keyframe animation(s) "
-                  + String.join(", ", ignoredNames)
+              "Kept custom keyframe animation(s) "
+                  + String.join(", ", customNames)
                   + ": only the standard clips "
                   + String.join(", ", ModelAnimationClips.STANDARD)
-                  + " are played."));
+                  + " are played automatically; custom clips are played by name via the API."));
     }
 
     return clips;
@@ -196,6 +196,7 @@ public abstract class AbstractBbModelParser {
       throws EasyModelDecodeException {
     boolean loop = "loop".equals(optionalString(animationObject, "loop", "once"));
     float length = optionalNonNegativeFloat(animationObject, "length", 0.0f);
+    float framesPerSecond = optionalNonNegativeFloat(animationObject, "snapping", 0.0f);
     JsonElement animatorsElement = animationObject.get("animators");
     if (animatorsElement == null || !animatorsElement.isJsonObject()) {
       return null;
@@ -233,7 +234,7 @@ public abstract class AbstractBbModelParser {
               .map(ModelAnimationBoneTrack::lastKeyframeTime)
               .reduce(0.0f, Math::max);
     }
-    return new ModelAnimationClip(clipName, length, loop, boneTracks);
+    return new ModelAnimationClip(clipName, length, loop, framesPerSecond, boneTracks);
   }
 
   private static ModelAnimationBoneTrack parseBoneTrack(JsonObject animatorObject)

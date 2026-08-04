@@ -2,5 +2,10 @@
   "schema_version": "0.2.0",
   "model_type": "entity",
   "preset_type": "winged_humanoid_wandering",
-  "version": "demo-skybound-wanderer-v1"
+  "version": "demo-skybound-wanderer-v2",
+  "dimensions": {
+    "width": 1.25,
+    "height": 1.8,
+    "eye_height": 1.6
+  }
 }

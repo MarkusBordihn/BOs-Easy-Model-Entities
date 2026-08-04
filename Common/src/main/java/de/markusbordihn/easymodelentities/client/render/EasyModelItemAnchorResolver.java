@@ -20,12 +20,14 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import de.markusbordihn.easymodelentities.api.EasyModelReloadEvents;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelVec3f;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelItemAnchor;
+import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -59,7 +61,7 @@ public final class EasyModelItemAnchorResolver {
   private static Optional<EasyModelItemAnchor> resolve(
       ResourceLocation profileId, HumanoidArm arm) {
     Optional<EasyModelRenderState> renderState =
-        EasyModelEntityRenderBackend.resolveContract(profileId, EasyModelAnimationState.AUTO)
+        EasyModelEntityRenderBackend.resolveContract(profileId, EasyModelAnimationSetting.AUTO)
             .map(EasyModelEntityRenderBackend::resolveRenderState);
     if (renderState.isEmpty()) {
       return Optional.empty();
@@ -72,17 +74,21 @@ public final class EasyModelItemAnchorResolver {
     String side = arm == HumanoidArm.LEFT ? "left" : "right";
     BakedModelPart anchorPart = findPart(rootParts, side + ANCHOR_SUFFIX);
     if (anchorPart != null) {
-      return Optional.of(new EasyModelItemAnchor(anchorPart.name(), Vec3f.ZERO));
+      return Optional.of(new EasyModelItemAnchor(anchorPart.name(), EasyModelVec3f.ZERO));
     }
 
     BakedModelPart handPart = findPart(rootParts, side + HAND_SUFFIX);
     if (handPart != null) {
-      return Optional.of(new EasyModelItemAnchor(handPart.name(), cubeTipOffset(handPart)));
+      return Optional.of(
+          new EasyModelItemAnchor(
+              handPart.name(), EasyModelApiMapper.vector(cubeTipOffset(handPart))));
     }
 
     BakedModelPart armPart = findPart(rootParts, side + ARM_SUFFIX);
     if (armPart != null) {
-      return Optional.of(new EasyModelItemAnchor(armPart.name(), cubeTipOffset(armPart)));
+      return Optional.of(
+          new EasyModelItemAnchor(
+              armPart.name(), EasyModelApiMapper.vector(cubeTipOffset(armPart))));
     }
 
     return Optional.empty();

@@ -19,12 +19,13 @@
 
 package de.markusbordihn.easymodelentities.entity;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityDimensions;
@@ -56,9 +57,13 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
   private static final EntityDataAccessor<ModelBodyType> BODY_TYPE =
       SynchedEntityData.defineId(
           EasyModelHostEntity.class, EasyModelEntityDataSerializers.BODY_TYPE);
-  private static final EntityDataAccessor<EasyModelAnimationState> ANIMATION_STATE =
+  private static final EntityDataAccessor<EasyModelAnimationSetting> ANIMATION_STATE =
       SynchedEntityData.defineId(
-          EasyModelHostEntity.class, EasyModelEntityDataSerializers.ANIMATION_STATE);
+          EasyModelHostEntity.class, EasyModelEntityDataSerializers.ANIMATION_SETTING);
+  private static final EntityDataAccessor<Boolean> LOOK_AT_PLAYERS =
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EntityDataSerializers.BOOLEAN);
+  private static final EntityDataAccessor<Boolean> RANDOM_STROLL =
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EntityDataSerializers.BOOLEAN);
 
   private static final EasyModelHostFields FIELDS =
       new EasyModelHostFields(
@@ -69,7 +74,9 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
           HEIGHT,
           EYE_HEIGHT,
           BODY_TYPE,
-          ANIMATION_STATE);
+          ANIMATION_STATE,
+          LOOK_AT_PLAYERS,
+          RANDOM_STROLL);
 
   private EasyModelRuntimeContract runtimeContract;
 
@@ -113,7 +120,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
 
   @Override
   public ResourceLocation getEasyModelProfileId() {
-    return EasyModelHostSupport.getProfileId(this.entityData, FIELDS);
+    return getEasyModelRuntimeContract().profileId();
   }
 
   @Override
@@ -123,22 +130,22 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
 
   @Override
   public ResourceLocation getEasyModelRenderProfileId() {
-    return EasyModelHostSupport.getRenderProfileId(this.entityData, FIELDS);
+    return getEasyModelRuntimeContract().renderProfileId();
   }
 
   @Override
   public String getEasyModelVersion() {
-    return EasyModelHostSupport.getVersion(this.entityData, FIELDS);
+    return getEasyModelRuntimeContract().version();
   }
 
   @Override
-  public EasyModelAnimationState getEasyModelAnimationState() {
-    return EasyModelHostSupport.getAnimationState(this.entityData, FIELDS);
+  public EasyModelAnimationSetting getEasyModelAnimationSetting() {
+    return getEasyModelRuntimeContract().animation();
   }
 
   @Override
-  public void setEasyModelAnimationState(EasyModelAnimationState animationState) {
-    EasyModelHostSupport.setAnimationState(this.entityData, FIELDS, animationState);
+  public void setEasyModelAnimation(EasyModelAnimationSetting animation) {
+    EasyModelHostSupport.setAnimation(this.entityData, FIELDS, animation);
   }
 
   @Override
@@ -156,7 +163,12 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
   @Override
   public void onSyncedDataUpdated(EntityDataAccessor<?> entityDataAccessor) {
     super.onSyncedDataUpdated(entityDataAccessor);
-    this.runtimeContract = null;
+    if (FIELDS.isRuntimeContractField(entityDataAccessor)) {
+      this.runtimeContract = null;
+    }
+    if (FIELDS.isDimensionsField(entityDataAccessor)) {
+      this.refreshDimensions();
+    }
   }
 
   @Override

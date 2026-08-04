@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.data.model.bake;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import org.junit.jupiter.api.Test;
@@ -42,5 +43,14 @@ class ModelBoundsTest {
     assertEquals(new Vec3f(2.0f, 4.0f, 6.0f), scaled.max());
     assertEquals(4.0f, scaled.sizeX());
     assertEquals(12.0f, scaled.sizeZ());
+  }
+
+  @Test
+  void rejectsInvertedBoundsAndInvalidScaleFactors() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new ModelBounds(new Vec3f(1.0f, 0.0f, 0.0f), Vec3f.ZERO));
+    assertThrows(IllegalArgumentException.class, () -> ModelBounds.EMPTY.scaled(-1.0f));
+    assertThrows(IllegalArgumentException.class, () -> ModelBounds.EMPTY.scaled(Float.NaN));
   }
 }
