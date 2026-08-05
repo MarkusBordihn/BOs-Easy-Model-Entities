@@ -73,7 +73,7 @@ Useful diagnostic commands:
 /easy_model_entities list_profiles
 /easy_model_entities validate_profiles
 /easy_model_entities debug_profile easy_model_entities_examples:entity/little_explorer
-/easy_model_entities set_animation @e[distance=..8] walk
+/easy_model_entities animation set entity @e[distance=..8] walk
 ```
 
 More demo commands and explanations are available in the
@@ -135,6 +135,65 @@ Mods can integrate EME into their own renderers by implementing
 
 Custom part animation can either add to the automatic EME transform or replace it entirely with
 `EasyModelPartAnimationMode.REPLACE`.
+
+The client API can inspect and control the keyframe clips of an entity or block entity:
+
+```java
+List<EasyModelAnimationInfo> animations = EasyModelEntitiesClientApi.listAnimations(profileId);
+
+EasyModelEntitiesClientApi.playAnimation(entity, EasyModelAnimation.named("wave"));
+
+EasyModelEntitiesClientApi.playAnimation(
+    entity,
+    EasyModelAnimation.named("wave"),
+    EasyModelAnimationPlaybackMode.LOOP,
+    EasyModelAnimationTransition.DEFAULT);
+
+EasyModelEntitiesClientApi.playAnimation(
+    entity,
+    EasyModelAnimation.named("wave"),
+    EasyModelAnimationPlayback.DEFAULT
+        .withMode(EasyModelAnimationPlaybackMode.REPEAT)
+        .withRepeat(3),
+    EasyModelAnimationTransition.DEFAULT);
+
+EasyModelEntitiesClientApi.stopAnimation(entity);
+```
+
+`EasyModelAnimation` is a flat value type: use its constants for standard states,
+`EasyModelAnimation.named(name)` for a custom clip, and `EasyModelAnimation.parse(value)` when
+reading external text. Render options start from `DEFAULT` and are changed through validated
+`with...` methods. A missing animation override inherits the entity selection;
+`withoutAnimationOverride()` restores that behavior explicitly.
+
+The two-argument overload plays once, crossfades over 5 ticks, and returns to the host animation.
+Use `LOOP` for play-until-stopped behavior or `REPEAT` with a repeat count for a fixed number of
+plays. A positive duration caps any playback mode. `AFTER_CURRENT` waits for the next clip boundary;
+only one waiting animation is retained. Stopping releases the explicit clip and resumes automatic
+animation selection.
+
+Operators and command blocks can control the same playback for currently tracking clients:
+
+```mcfunction
+/easy_model_entities animation play entity @e[tag=performer] wave
+/easy_model_entities animation play entity @e[tag=performer] wave repeat 3 immediate 5 0
+/easy_model_entities animation play block ~ ~1 ~ idle loop immediate 5 40
+/easy_model_entities animation stop entity @e[tag=performer]
+/easy_model_entities animation set block ~ ~1 ~ attack
+```
+
+`play`, `stop`, and `restart` are live events. Players who begin tracking the target later do not
+receive an earlier event. `animation set` changes the synchronized host fallback state instead.
+
+Movement is controlled separately, so a resting or dying entity does not keep walking:
+
+```mcfunction
+/easy_model_entities behavior set entity @e[tag=performer] frozen
+/easy_model_entities behavior set entity @e[tag=performer] auto
+```
+
+`frozen` stops the current path and disables the entity AI; `auto` returns control to the behavior
+settings of the profile. The state is saved with the entity and survives a restart.
 
 See the [Developer Integration wiki page](wiki/Developer-Guide.md) for examples.
 

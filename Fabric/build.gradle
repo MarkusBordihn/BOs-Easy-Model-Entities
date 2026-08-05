@@ -57,17 +57,28 @@ dependencies {
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-processResources {
-  from project(":Common").sourceSets.main.resources
-  inputs.property "version", project.version
+def commonProject = project(":Common")
+def modVersion = version.toString()
+def fabricApiMinVersion = fabric_api_min_version.toString()
+def fabricLoaderMinVersion = fabric_loader_min_version.toString()
 
+processResources {
+  from commonProject.sourceSets.main.resources
+
+  inputs.properties(
+      "version": modVersion,
+      "fabric_api_min_version": fabricApiMinVersion,
+      "fabric_loader_min_version": fabricLoaderMinVersion)
   filesMatching("fabric.mod.json") {
-    expand "version": project.version
+    expand(
+        "version": modVersion,
+        "fabric_api_min_version": fabricApiMinVersion,
+        "fabric_loader_min_version": fabricLoaderMinVersion)
   }
 }
 
-tasks.withType(JavaCompile).configureEach {
-  source(project(":Common").sourceSets.main.allSource)
+tasks.named('compileJava', JavaCompile).configure {
+  source(commonProject.sourceSets.main.allSource)
 }
 
 tasks.withType(Test).configureEach {

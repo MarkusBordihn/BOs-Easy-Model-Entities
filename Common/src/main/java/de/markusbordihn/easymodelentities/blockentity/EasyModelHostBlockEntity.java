@@ -19,14 +19,14 @@
 
 package de.markusbordihn.easymodelentities.blockentity;
 
-import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.ArrayList;
@@ -55,8 +55,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   public static final float FALLBACK_WIDTH = 1.0f;
   public static final float FALLBACK_HEIGHT = 1.0f;
   public static final float FALLBACK_EYE_HEIGHT = 0.5f;
-  public static final Identifier MISSING_PROFILE_ID =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "missing");
+  public static final Identifier MISSING_PROFILE_ID = ModelResourcePaths.modIdentifier("missing");
   public static final int RANDOM_IDLE_BURST_LENGTH = 53;
   public static final int RANDOM_IDLE_MIN_GAP = 200;
   public static final int RANDOM_IDLE_GAP_RANGE = 201;
@@ -67,8 +66,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     EasyModelReloadDispatcher.addProfileReloadListener(EasyModelHostBlockEntity::reloadProfiles);
   }
 
-  private EasyModelRuntimeContract runtimeContract =
-      EasyModelRuntimeContract.fallback(MISSING_PROFILE_ID);
+  private EasyModelRuntimeContract runtimeContract;
   private int animationTicks = 0;
   private int randomIdleTicks = 0;
   private int randomIdleBurstTicks = 0;
@@ -89,7 +87,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
             FALLBACK_HEIGHT,
             FALLBACK_EYE_HEIGHT,
             ModelBodyType.STATIC,
-            EasyModelAnimationState.AUTO);
+            EasyModelAnimationSetting.AUTO);
   }
 
   private static Optional<EasyModelEntityProfile> activeBlockEntityProfile(Identifier profileId) {
@@ -115,11 +113,10 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
       Identifier profileId = host.runtimeContract.profileId();
       activeBlockEntityProfile(profileId)
           .ifPresentOrElse(
-              profile -> host.applyProfile(profile, host.runtimeContract.animationState(), true),
+              profile -> host.applyProfile(profile, host.runtimeContract.animation(), true),
               () ->
                   host.applyRuntimeContract(
-                      host.fallbackRuntimeContract(
-                          profileId, host.runtimeContract.animationState()),
+                      host.fallbackRuntimeContract(profileId, host.runtimeContract.animation()),
                       true));
     }
   }
@@ -144,16 +141,16 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     Identifier renderProfileId = state.renderProfileId();
     String version = state.version();
     ModelBodyType bodyType = state.bodyType();
-    EasyModelAnimationState animationState = state.animationState();
+    EasyModelAnimationSetting animation = state.animation();
 
     if (profileId == null) {
-      applyRuntimeContract(fallbackRuntimeContract(MISSING_PROFILE_ID, animationState), false);
+      applyRuntimeContract(fallbackRuntimeContract(MISSING_PROFILE_ID, animation), false);
       return;
     }
 
     Optional<EasyModelEntityProfile> profile = activeBlockEntityProfile(profileId);
     if (profile.isPresent()) {
-      applyProfile(profile.get(), animationState, false);
+      applyProfile(profile.get(), animation, false);
       return;
     }
 
@@ -166,7 +163,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
             FALLBACK_HEIGHT,
             FALLBACK_EYE_HEIGHT,
             bodyType,
-            animationState),
+            animation),
         false);
   }
 
@@ -179,7 +176,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
         this.runtimeContract.renderProfileId(),
         this.runtimeContract.version(),
         this.runtimeContract.bodyType(),
-        this.runtimeContract.animationState());
+        this.runtimeContract.animation());
   }
 
   @Override
@@ -194,20 +191,19 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
 
   @Override
   public Identifier getEasyModelProfileId() {
-    return EasyModelHostPersistence.parseResourceLocationOrMissing(
-        this.runtimeContract.profileId().toString(), MISSING_PROFILE_ID);
+    return this.runtimeContract.profileId();
   }
 
   public void setEasyModelProfileId(Identifier profileId) {
     Objects.requireNonNull(profileId, "profileId");
     Optional<EasyModelEntityProfile> profile = activeBlockEntityProfile(profileId);
     if (profile.isPresent()) {
-      applyProfile(profile.get(), this.runtimeContract.animationState(), true);
+      applyProfile(profile.get(), this.runtimeContract.animation(), true);
       return;
     }
 
     applyRuntimeContract(
-        fallbackRuntimeContract(profileId, this.runtimeContract.animationState()), true);
+        fallbackRuntimeContract(profileId, this.runtimeContract.animation()), true);
   }
 
   @Override
@@ -221,11 +217,11 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   @Override
-  public int getEasyModelAnimationState() {
-    return this.runtimeContract.animationState().getApiState();
+  public EasyModelAnimationSetting getEasyModelAnimationSetting() {
+    return this.runtimeContract.animation();
   }
 
-  public void setEasyModelAnimationState(EasyModelAnimationState animationState) {
+  public void setEasyModelAnimation(EasyModelAnimationSetting animation) {
     applyRuntimeContract(
         new EasyModelRuntimeContract(
             this.runtimeContract.profileId(),
@@ -235,7 +231,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
             this.runtimeContract.height(),
             this.runtimeContract.eyeHeight(),
             this.runtimeContract.bodyType(),
-            Objects.requireNonNull(animationState, "animationState")),
+            Objects.requireNonNull(animation, "animationState")),
         true);
   }
 
@@ -254,7 +250,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   protected EasyModelRuntimeContract fallbackRuntimeContract(
-      Identifier profileId, EasyModelAnimationState animationState) {
+      Identifier profileId, EasyModelAnimationSetting animation) {
     Identifier fallbackProfileId =
         profileId == null ? MISSING_PROFILE_ID : Objects.requireNonNull(profileId, "profileId");
     return new EasyModelRuntimeContract(
@@ -265,12 +261,12 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
         FALLBACK_HEIGHT,
         FALLBACK_EYE_HEIGHT,
         ModelBodyType.STATIC,
-        animationState);
+        animation);
   }
 
   protected void applyProfile(
-      EasyModelEntityProfile profile, EasyModelAnimationState animationState, boolean sync) {
-    applyRuntimeContract(EasyModelRuntimeContract.fromProfile(profile, animationState), sync);
+      EasyModelEntityProfile profile, EasyModelAnimationSetting animation, boolean sync) {
+    applyRuntimeContract(EasyModelRuntimeContract.fromProfile(profile, animation), sync);
   }
 
   protected void applyRuntimeContract(EasyModelRuntimeContract contract, boolean sync) {

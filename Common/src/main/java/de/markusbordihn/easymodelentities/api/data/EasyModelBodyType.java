@@ -17,19 +17,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.api;
+package de.markusbordihn.easymodelentities.api.data;
 
-public final class EasyModelAnimationStates {
+import java.util.Locale;
+import java.util.Optional;
 
-  public static final int AUTO = 0;
-  public static final int IDLE = 1;
-  public static final int WALK = 2;
-  public static final int RUN = 3;
-  public static final int HURT = 4;
-  public static final int DEATH = 5;
-  public static final int SWIM = 6;
-  public static final int FLY = 7;
-  public static final int ATTACK = 8;
+public enum EasyModelBodyType {
+  STATIC,
+  BIPED,
+  QUADRUPED,
+  AQUATIC,
+  AMPHIBIOUS,
+  WINGED,
+  WINGED_HUMANOID,
+  ARTHROPOD,
+  CUBOID,
+  FLOATING;
 
-  private EasyModelAnimationStates() {}
+  private final String serializedName = this.name().toLowerCase(Locale.ROOT);
+
+  public static Optional<EasyModelBodyType> fromSerializedName(String serializedName) {
+    if (serializedName == null) {
+      return Optional.empty();
+    }
+
+    for (EasyModelBodyType bodyType : values()) {
+      if (bodyType.serializedName.equalsIgnoreCase(serializedName)) {
+        return Optional.of(bodyType);
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  public String getSerializedName() {
+    return this.serializedName;
+  }
 }

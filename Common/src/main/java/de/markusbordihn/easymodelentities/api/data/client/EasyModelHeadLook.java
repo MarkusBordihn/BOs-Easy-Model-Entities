@@ -28,13 +28,19 @@ public record EasyModelHeadLook(float yaw, float pitch) {
   private static final float MAX_YAW = 75.0f;
   private static final float MAX_PITCH = 60.0f;
 
+  public EasyModelHeadLook {
+    if (!Float.isFinite(yaw) || !Float.isFinite(pitch)) {
+      throw new IllegalArgumentException("Head look angles must be finite.");
+    }
+    yaw = Mth.clamp(Mth.wrapDegrees(yaw), -MAX_YAW, MAX_YAW);
+    pitch = Mth.clamp(pitch, -MAX_PITCH, MAX_PITCH);
+  }
+
   public static EasyModelHeadLook of(float yaw, float pitch) {
     if (!Float.isFinite(yaw) || !Float.isFinite(pitch)) {
       return NONE;
     }
-    return new EasyModelHeadLook(
-        Mth.clamp(Mth.wrapDegrees(yaw), -MAX_YAW, MAX_YAW),
-        Mth.clamp(pitch, -MAX_PITCH, MAX_PITCH));
+    return new EasyModelHeadLook(yaw, pitch);
   }
 
   public boolean isNeutral() {

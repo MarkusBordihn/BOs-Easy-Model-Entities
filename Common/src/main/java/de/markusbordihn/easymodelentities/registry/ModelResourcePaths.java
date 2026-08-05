@@ -40,6 +40,19 @@ public final class ModelResourcePaths {
 
   private ModelResourcePaths() {}
 
+  public static Identifier identifier(String namespace, String path) {
+    Identifier identifier = Identifier.tryBuild(namespace, path);
+    if (identifier == null) {
+      throw new IllegalArgumentException("Invalid resource location: " + namespace + ':' + path);
+    }
+
+    return identifier;
+  }
+
+  public static Identifier modIdentifier(String path) {
+    return identifier(Constants.MOD_ID, path);
+  }
+
   public static String serverProfilePath(Identifier profileId) {
     return dataPath(
         profileId,
@@ -75,8 +88,7 @@ public final class ModelResourcePaths {
 
   public static Identifier modelResourceLocation(Identifier modelId, String extension) {
     Objects.requireNonNull(modelId, "modelId");
-    return Identifier.fromNamespaceAndPath(
-        modelId.getNamespace(), withExtension(modelId.getPath(), extension));
+    return identifier(modelId.getNamespace(), withExtension(modelId.getPath(), extension));
   }
 
   public static String texturePath(Identifier textureId) {
@@ -89,14 +101,14 @@ public final class ModelResourcePaths {
 
   public static Identifier defaultModelId(Identifier profileId) {
     Objects.requireNonNull(profileId, "profileId");
-    return Identifier.fromNamespaceAndPath(
+    return identifier(
         profileId.getNamespace(),
         joinPath(MODEL_DIRECTORY, profileNameWithoutModelType(profileId)));
   }
 
   public static Identifier defaultTextureId(Identifier profileId) {
     Objects.requireNonNull(profileId, "profileId");
-    return Identifier.fromNamespaceAndPath(
+    return identifier(
         profileId.getNamespace(),
         joinPath(
             TEXTURE_ENTITY_DIRECTORY,

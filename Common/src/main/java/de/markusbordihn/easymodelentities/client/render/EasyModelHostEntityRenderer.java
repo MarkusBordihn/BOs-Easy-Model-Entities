@@ -57,7 +57,9 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
     super.extractRenderState(entity, renderState, partialTick);
     renderState.easyModelRenderState =
         EasyModelEntityRenderBackend.resolveRenderState(entity.getEasyModelRuntimeContract());
-    renderState.animationState = entity.getEasyModelAnimationState();
+    renderState.playbackFrame =
+        EasyModelEntityRenderBackend.playbackFrame(
+            entity, renderState.easyModelRenderState, partialTick);
     renderState.entityYaw = bodyYaw(entity, partialTick);
     renderState.limbSwing =
         entity instanceof LivingEntity le ? le.walkAnimation.position(partialTick) : 0.0f;

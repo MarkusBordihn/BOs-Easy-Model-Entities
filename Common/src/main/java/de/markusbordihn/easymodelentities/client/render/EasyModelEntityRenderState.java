@@ -20,16 +20,17 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
 
 @SuppressWarnings("java:S1104")
 public class EasyModelEntityRenderState extends EntityRenderState {
   public EasyModelRenderState easyModelRenderState;
-  public EasyModelAnimationState animationState = EasyModelAnimationState.AUTO;
+  public EasyModelAnimationPlaybackFrame playbackFrame =
+      EasyModelAnimationPlaybackFrame.single(EasyModelAnimation.AUTO, 0.0f);
   public EasyModelPartAnimator partAnimator = EasyModelPartAnimator.NONE;
   public EasyModelPartAnimationMode partAnimationMode = EasyModelPartAnimationMode.ADD;
   public EasyModelHeadLook headLook = EasyModelHeadLook.NONE;

@@ -2,5 +2,10 @@
   "schema_version": "0.2.0",
   "model_type": "entity",
   "preset_type": "winged_wandering",
-  "version": "demo-dawn-sparrow-v1"
+  "version": "demo-dawn-sparrow-v2",
+  "dimensions": {
+    "width": 0.95,
+    "height": 0.8,
+    "eye_height": 0.7
+  }
 }

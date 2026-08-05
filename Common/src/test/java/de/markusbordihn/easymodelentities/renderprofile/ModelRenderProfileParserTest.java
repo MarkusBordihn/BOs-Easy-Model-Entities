@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.renderprofile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.Constants;
@@ -132,6 +133,41 @@ class ModelRenderProfileParserTest {
             """);
 
     assertEquals(ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, renderProfile.status());
+  }
+
+  @Test
+  void rejectsNegativeRenderAndAnimationValuesWithoutKeepingThem() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            """
+            {
+              "preset_type": "humanoid_wandering",
+              "rendering": {
+                "scale": -1.0,
+                "shadow_radius": -1.0,
+                "visible_bounds_width": -1.0
+              },
+              "animation": {
+                "swing_speed": -1.0
+              }
+            }
+            """);
+
+    assertEquals(ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, renderProfile.status());
+    assertTrue(renderProfile.scale() > 0.0f);
+    assertTrue(renderProfile.shadowRadius() >= 0.0f);
+    assertTrue(renderProfile.visibleBoundsWidth() >= 0.0f);
+    assertTrue(renderProfile.animation().swingSpeed() >= 0.0f);
+  }
+
+  @Test
+  void settingsRecordsRejectInvalidDirectConstruction() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new ModelRenderSettings(0.0f, 0.0f, 0.0f, 0.0f, Vec3f.ZERO));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, -1.0f, 1.0f));
   }
 
   @Test

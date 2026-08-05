@@ -34,7 +34,10 @@ public record BakedModelPart(
     List<BakedModelPart> children) {
 
   public BakedModelPart {
-    Objects.requireNonNull(name, "name");
+    name = Objects.requireNonNull(name, "name").trim();
+    if (name.isEmpty()) {
+      throw new IllegalArgumentException("name must not be blank.");
+    }
     Objects.requireNonNull(partType, "partType");
     Objects.requireNonNull(offset, "offset");
     Objects.requireNonNull(rotation, "rotation");

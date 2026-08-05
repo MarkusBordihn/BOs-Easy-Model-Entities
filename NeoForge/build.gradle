@@ -48,6 +48,8 @@ neoForge {
 
 }
 
+def neoForgeMinVersion = neoforge_min_version.toString()
+
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
@@ -71,6 +73,10 @@ tasks.named("sourcesJar", Jar) {
 
 tasks.withType(ProcessResources).matching(notNeoTask).configureEach {
   from project(":Common").sourceSets.main.resources
+  inputs.property "neoforge_min_version", neoForgeMinVersion
+  filesMatching("META-INF/neoforge.mods.toml") {
+    filter { line -> line.replace("@neoforge_min_version@", neoForgeMinVersion) }
+  }
 }
 
 test {

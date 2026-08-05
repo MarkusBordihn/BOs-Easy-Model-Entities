@@ -19,19 +19,16 @@
 
 package de.markusbordihn.easymodelentities.registry;
 
-import de.markusbordihn.easymodelentities.Constants;
 import net.minecraft.resources.Identifier;
 
 public final class ModelBlockIds {
 
-  public static final Identifier STATIC_BLOCK =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "static_block");
-  public static final Identifier TICKING_BLOCK =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "ticking_block");
+  public static final Identifier STATIC_BLOCK = ModelResourcePaths.modIdentifier("static_block");
+  public static final Identifier TICKING_BLOCK = ModelResourcePaths.modIdentifier("ticking_block");
   public static final Identifier ANIMATED_BLOCK =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "animated_block");
+      ModelResourcePaths.modIdentifier("animated_block");
   public static final Identifier ANIMATED_RANDOMLY_BLOCK =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "animated_randomly_block");
+      ModelResourcePaths.modIdentifier("animated_randomly_block");
 
   private ModelBlockIds() {}
 }

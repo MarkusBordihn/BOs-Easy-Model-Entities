@@ -2,5 +2,10 @@
   "schema_version": "0.2.0",
   "model_type": "entity",
   "preset_type": "statue",
-  "version": "demo-orientation-test-v1"
+  "version": "demo-orientation-test-v2",
+  "dimensions": {
+    "width": 1.0,
+    "height": 1.0,
+    "eye_height": 0.5
+  }
 }

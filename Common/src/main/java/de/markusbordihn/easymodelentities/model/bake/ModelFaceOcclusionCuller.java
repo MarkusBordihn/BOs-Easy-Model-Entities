@@ -26,6 +26,7 @@ import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,6 +107,7 @@ final class ModelFaceOcclusionCuller {
 
   private static int occludeBucket(
       List<Entry> bucket, Map<BakedModelCube, CubeFaceVisibility> updates) {
+    PlaneIndex planeIndex = new PlaneIndex(bucket);
     int culled = 0;
     for (Entry entry : bucket) {
       CubeFaceVisibility visibility = entry.cube().faceVisibility();
@@ -113,7 +115,7 @@ final class ModelFaceOcclusionCuller {
         if (!visibility.isVisible(face)) {
           continue;
         }
-        if (isOccluded(entry, face, bucket)) {
+        if (isOccluded(entry, face, planeIndex)) {
           visibility = visibility.without(face);
           culled++;
         }
@@ -125,23 +127,31 @@ final class ModelFaceOcclusionCuller {
     return culled;
   }
 
-  private static boolean isOccluded(Entry entry, ModelCubeFace face, List<Entry> bucket) {
+  private static boolean isOccluded(Entry entry, ModelCubeFace face, PlaneIndex planeIndex) {
     int axis = axis(face);
     boolean maxPlane = isMaxPlane(face);
     int axisB = (axis + 1) % 3;
     int axisC = (axis + 2) % 3;
     float plane = maxPlane ? entry.max(axis) : entry.min(axis);
 
-    for (Entry other : bucket) {
-      if (other == entry || other.degenerate()) {
+    long planeBucket = PlaneIndex.bucket(plane);
+    for (long candidateBucket = planeBucket - 1;
+        candidateBucket <= planeBucket + 1;
+        candidateBucket++) {
+      List<Entry> candidates = planeIndex.entries(axis, !maxPlane, candidateBucket);
+      if (candidates == null) {
         continue;
       }
-      float otherPlane = maxPlane ? other.min(axis) : other.max(axis);
-      if (Math.abs(otherPlane - plane) > EPSILON) {
-        continue;
-      }
-      if (covers(other, entry, axisB) && covers(other, entry, axisC)) {
-        return true;
+      for (Entry other : candidates) {
+        if (other == entry) {
+          continue;
+        }
+        float otherPlane = maxPlane ? other.min(axis) : other.max(axis);
+        if (Math.abs(otherPlane - plane) <= EPSILON
+            && covers(other, entry, axisB)
+            && covers(other, entry, axisC)) {
+          return true;
+        }
       }
     }
     return false;
@@ -182,6 +192,40 @@ final class ModelFaceOcclusionCuller {
   }
 
   record Result(List<BakedModelPart> rootParts, int culledFaces) {}
+
+  private static final class PlaneIndex {
+
+    private final Map<PlaneKey, List<Entry>> entriesByPlane = new HashMap<>();
+
+    private PlaneIndex(List<Entry> entries) {
+      for (Entry entry : entries) {
+        if (entry.degenerate()) {
+          continue;
+        }
+        for (int axis = 0; axis < 3; axis++) {
+          add(axis, false, entry.min(axis), entry);
+          add(axis, true, entry.max(axis), entry);
+        }
+      }
+    }
+
+    private static long bucket(float plane) {
+      return Math.round(plane / EPSILON);
+    }
+
+    private void add(int axis, boolean maxPlane, float plane, Entry entry) {
+      this.entriesByPlane
+          .computeIfAbsent(
+              new PlaneKey(axis, maxPlane, bucket(plane)), ignored -> new ArrayList<>())
+          .add(entry);
+    }
+
+    private List<Entry> entries(int axis, boolean maxPlane, long planeBucket) {
+      return this.entriesByPlane.get(new PlaneKey(axis, maxPlane, planeBucket));
+    }
+  }
+
+  private record PlaneKey(int axis, boolean maxPlane, long bucket) {}
 
   private record Entry(BakedModelCube cube, Vec3f min) {
 

@@ -37,6 +37,9 @@ public record BakedModel(
 
   public BakedModel {
     Objects.requireNonNull(modelId, "modelId");
+    if (textureWidth <= 0 || textureHeight <= 0) {
+      throw new IllegalArgumentException("Texture dimensions must be positive.");
+    }
     rootParts = List.copyOf(Objects.requireNonNull(rootParts, "rootParts"));
     textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
     animations = Map.copyOf(Objects.requireNonNull(animations, "animations"));

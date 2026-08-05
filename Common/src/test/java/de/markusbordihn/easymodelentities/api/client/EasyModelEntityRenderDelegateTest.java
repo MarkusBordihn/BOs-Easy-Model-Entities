@@ -25,16 +25,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import de.markusbordihn.easymodelentities.api.EasyModelAnimationStates;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartDefinition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
 import de.markusbordihn.easymodelentities.client.render.EasyModelEntityRenderBackend;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationBoneTrack;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationKeyframe;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
@@ -59,10 +65,11 @@ import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderSettings
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.Identifier;
@@ -95,7 +102,8 @@ class EasyModelEntityRenderDelegateTest {
     return entity;
   }
 
-  private static EasyModelRenderable renderable(String version, int animationState) {
+  private static EasyModelRenderable renderable(
+      String version, EasyModelAnimationSetting animation) {
     return new EasyModelRenderable() {
       @Override
       public Identifier getEasyModelProfileId() {
@@ -113,8 +121,8 @@ class EasyModelEntityRenderDelegateTest {
       }
 
       @Override
-      public int getEasyModelAnimationState() {
-        return animationState;
+      public EasyModelAnimationSetting getEasyModelAnimationSetting() {
+        return animation;
       }
     };
   }
@@ -185,6 +193,98 @@ class EasyModelEntityRenderDelegateTest {
         List.of());
   }
 
+  private static BakedModel animatedBakedModel() {
+    ModelAnimationBoneTrack talkTrack =
+        new ModelAnimationBoneTrack(
+            List.of(new ModelAnimationKeyframe(0.0f, new Vec3f(0.5f, 0.0f, 0.0f), false)),
+            List.of());
+    ModelAnimationBoneTrack idleTrack =
+        new ModelAnimationBoneTrack(
+            List.of(new ModelAnimationKeyframe(0.0f, new Vec3f(0.2f, 0.0f, 0.0f), false)),
+            List.of());
+    ModelAnimationClip talkClip =
+        new ModelAnimationClip("talk", 1.0f, true, Map.of("body", talkTrack));
+    ModelAnimationClip idleClip =
+        new ModelAnimationClip("idle", 1.0f, true, Map.of("body", idleTrack));
+    return new BakedModel(
+        Identifier.fromNamespaceAndPath("example", "talker"),
+        64,
+        64,
+        List.of(new BakedModelPart("body", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())),
+        Map.of(),
+        false,
+        Map.of("talk", talkClip, "idle", idleClip),
+        null);
+  }
+
+  private static BakedModel timedAnimatedBakedModel() {
+    return new BakedModel(
+        Identifier.fromNamespaceAndPath("example", "timed_talker"),
+        64,
+        64,
+        List.of(new BakedModelPart("body", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())),
+        Map.of(),
+        false,
+        Map.of("talk", timedClip("talk", 0.0f), "wave", timedClip("wave", 2.0f)),
+        null);
+  }
+
+  private static ModelAnimationClip timedClip(String name, float startRotation) {
+    ModelAnimationBoneTrack track =
+        new ModelAnimationBoneTrack(
+            List.of(
+                new ModelAnimationKeyframe(0.0f, new Vec3f(startRotation, 0.0f, 0.0f), false),
+                new ModelAnimationKeyframe(
+                    1.0f, new Vec3f(startRotation + 1.0f, 0.0f, 0.0f), false)),
+            List.of());
+    return new ModelAnimationClip(name, 1.0f, false, Map.of("body", track));
+  }
+
+  private static EasyModelRenderState animatedRenderState(BakedModel bakedModel) {
+    return new EasyModelRenderState(
+        bakedModel,
+        Identifier.fromNamespaceAndPath("example", "textures/entity/talker.png"),
+        1.0f,
+        0.3f,
+        ModelBodyType.BIPED,
+        new ModelAnimationSettings(ModelAnimationMode.AUTOMATIC, 1.0f, 1.0f),
+        false,
+        false,
+        List.of());
+  }
+
+  private static Entity renderableEntity(String animation) {
+    Entity entity = mock(Entity.class, withSettings().extraInterfaces(EasyModelRenderable.class));
+    when(((EasyModelRenderable) entity).getEasyModelAnimationSetting())
+        .thenReturn(EasyModelAnimationSetting.of(EasyModelAnimation.named(animation)));
+    return entity;
+  }
+
+  private static float renderNamedClipRotation(
+      Entity entity, BakedModel bakedModel, float partialTick) {
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);
+    AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT.withPartAnimator(
+            animationContext -> {
+              context.set(animationContext);
+              return EasyModelPartTransform.NONE;
+            });
+
+    EasyModelEntityRenderBackend.render(
+        entity,
+        animatedRenderState(bakedModel),
+        0.0f,
+        partialTick,
+        options,
+        new PoseStack(),
+        bufferSource,
+        0);
+    return context.get().automaticTransform().xRotation();
+  }
+
   @Test
   void createsDelegateForMimicsStyleEntityType() {
     EasyModelEntityRenderDelegate<MimicsStyleEntity> delegate =
@@ -229,6 +329,105 @@ class EasyModelEntityRenderDelegateTest {
   }
 
   @Test
+  void entityAnimationGetterForcesNamedClipWhenOptionsOmitAnimation() {
+    BakedModel bakedModel = animatedBakedModel();
+    Entity entity = renderableEntity("talk");
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);
+    AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT.withPartAnimator(
+            animationContext -> {
+              context.set(animationContext);
+              return EasyModelPartTransform.NONE;
+            });
+
+    EasyModelEntityRenderBackend.render(
+        entity,
+        animatedRenderState(bakedModel),
+        0.0f,
+        0.0f,
+        options,
+        new PoseStack(),
+        bufferSource,
+        0);
+
+    assertEquals(0.5f, context.get().automaticTransform().xRotation(), 0.0001f);
+  }
+
+  @Test
+  void optionsAnimationWinsOverEntityGetter() {
+    BakedModel bakedModel = animatedBakedModel();
+    Entity entity = renderableEntity("talk");
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);
+    AtomicReference<EasyModelPartAnimationContext> context = new AtomicReference<>();
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT
+            .withAnimation("idle")
+            .withPartAnimator(
+                animationContext -> {
+                  context.set(animationContext);
+                  return EasyModelPartTransform.NONE;
+                });
+
+    EasyModelEntityRenderBackend.render(
+        entity,
+        animatedRenderState(bakedModel),
+        0.0f,
+        0.0f,
+        options,
+        new PoseStack(),
+        bufferSource,
+        0);
+
+    assertEquals(0.2f, context.get().automaticTransform().xRotation(), 0.0001f);
+  }
+
+  @Test
+  void namedNonLoopingClipStartsAtZeroAndRestartsWhenNameChanges() {
+    AtomicReference<String> animation = new AtomicReference<>("talk");
+    Entity entity = mock(Entity.class, withSettings().extraInterfaces(EasyModelRenderable.class));
+    when(((EasyModelRenderable) entity).getEasyModelAnimationSetting())
+        .thenAnswer(
+            call -> EasyModelAnimationSetting.of(EasyModelAnimation.named(animation.get())));
+    BakedModel bakedModel = timedAnimatedBakedModel();
+
+    entity.tickCount = 100;
+    assertEquals(0.0f, renderNamedClipRotation(entity, bakedModel, 0.0f), 0.0001f);
+
+    entity.tickCount = 110;
+    assertEquals(0.5f, renderNamedClipRotation(entity, bakedModel, 0.0f), 0.0001f);
+
+    animation.set("wave");
+    assertEquals(2.0f, renderNamedClipRotation(entity, bakedModel, 0.0f), 0.0001f);
+  }
+
+  @Test
+  void nullRenderableAnimationFallsBackToAutomaticSelection() {
+    Entity entity = mock(Entity.class, withSettings().extraInterfaces(EasyModelRenderable.class));
+    when(((EasyModelRenderable) entity).getEasyModelAnimationSetting()).thenReturn(null);
+    BakedModel bakedModel = animatedBakedModel();
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+    when(bufferSource.getBuffer(any()))
+        .thenReturn(mock(VertexConsumer.class, Answers.RETURNS_SELF));
+
+    assertDoesNotThrow(
+        () ->
+            EasyModelEntityRenderBackend.render(
+                entity,
+                animatedRenderState(bakedModel),
+                0.0f,
+                0.0f,
+                EasyModelEntityRenderOptions.DEFAULT,
+                new PoseStack(),
+                bufferSource,
+                0));
+  }
+
+  @Test
   void partDefinitionsCanBeFlattenedForEntities() {
     EasyModelPartDefinition root =
         EasyModelPartDefinitions.fromBakedPart(
@@ -254,7 +453,7 @@ class EasyModelEntityRenderDelegateTest {
     EasyModelRuntimeContract contract =
         EasyModelEntityRenderBackend.runtimeContract(
             entity,
-            renderable("client-v1", EasyModelAnimationStates.RUN),
+            renderable("client-v1", EasyModelAnimationSetting.of(EasyModelAnimation.RUN)),
             profileService(profile(ModelBodyType.BIPED)),
             EasyModelRenderProfileService.EMPTY);
 
@@ -265,7 +464,7 @@ class EasyModelEntityRenderDelegateTest {
     assertEquals(0.6f, contract.width());
     assertEquals(0.8f, contract.height());
     assertEquals(0.5f, contract.eyeHeight());
-    assertEquals(EasyModelAnimationState.RUN, contract.animationState());
+    assertEquals(EasyModelAnimationSetting.of(EasyModelAnimation.RUN), contract.animation());
   }
 
   @Test
@@ -274,7 +473,7 @@ class EasyModelEntityRenderDelegateTest {
     EasyModelRuntimeContract contract =
         EasyModelEntityRenderBackend.runtimeContract(
             entity,
-            renderable("client-v1", EasyModelAnimationStates.WALK),
+            renderable("client-v1", EasyModelAnimationSetting.of(EasyModelAnimation.WALK)),
             EasyModelProfileService.EMPTY,
             renderProfileService(renderProfile(ModelBodyType.QUADRUPED)));
 
@@ -285,7 +484,7 @@ class EasyModelEntityRenderDelegateTest {
     assertEquals(0.9f, contract.width());
     assertEquals(1.2f, contract.height());
     assertEquals(0.8f, contract.eyeHeight());
-    assertEquals(EasyModelAnimationState.WALK, contract.animationState());
+    assertEquals(EasyModelAnimationSetting.of(EasyModelAnimation.WALK), contract.animation());
   }
 
   @Test
@@ -294,13 +493,14 @@ class EasyModelEntityRenderDelegateTest {
     EasyModelRuntimeContract contract =
         EasyModelEntityRenderBackend.runtimeContract(
             entity,
-            renderable("", 999),
+            renderable("", EasyModelAnimationSetting.of(EasyModelAnimation.named("unknown"))),
             EasyModelProfileService.EMPTY,
             EasyModelRenderProfileService.EMPTY);
 
     assertEquals(ModelBodyType.STATIC, contract.bodyType());
     assertEquals("", contract.version());
-    assertEquals(EasyModelAnimationState.AUTO, contract.animationState());
+    assertEquals(
+        EasyModelAnimationSetting.of(EasyModelAnimation.named("unknown")), contract.animation());
   }
 
   private abstract static class MimicsStyleEntity extends PathfinderMob

@@ -22,13 +22,14 @@ package de.markusbordihn.easymodelentities.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.ModelBounds;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.item.EasyModelEntitiesItems;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Optional;
 import net.minecraft.client.renderer.LightTexture;
@@ -101,7 +102,8 @@ public final class EasyModelItemModelRenderer {
     }
 
     Optional<EasyModelRuntimeContract> contract =
-        EasyModelEntityRenderBackend.resolveContract(profileId.get(), EasyModelAnimationState.IDLE);
+        EasyModelEntityRenderBackend.resolveContract(
+            profileId.get(), EasyModelAnimationSetting.of(EasyModelAnimation.IDLE));
     if (contract.isEmpty()) {
       return;
     }

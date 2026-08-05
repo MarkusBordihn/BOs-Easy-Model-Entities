@@ -19,24 +19,25 @@
 
 package de.markusbordihn.easymodelentities.client.render;
 
+import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.render.EasyModelRenderStateResolver;
 import de.markusbordihn.easymodelentities.runtime.AssetPairing;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import net.minecraft.client.Minecraft;
+import net.minecraft.resources.Identifier;
 
 public final class EasyModelRenderStateCache {
 
   private static final int MAX_CACHE_ENTRIES = 4096;
-  private static final Map<EasyModelRuntimeContract, EasyModelRenderState> RENDER_STATES =
+  private static final Map<RenderStateKey, EasyModelRenderState> RENDER_STATES =
       leastRecentlyUsedCache();
   private static final Map<EasyModelRuntimeContract, EasyModelRenderState> BY_CONTRACT =
       leastRecentlyUsedCache();
@@ -48,12 +49,11 @@ public final class EasyModelRenderStateCache {
 
   private EasyModelRenderStateCache() {}
 
-  private static Map<EasyModelRuntimeContract, EasyModelRenderState> leastRecentlyUsedCache() {
+  private static <K> Map<K, EasyModelRenderState> leastRecentlyUsedCache() {
     return Collections.synchronizedMap(
         new LinkedHashMap<>(256, 0.75f, true) {
           @Override
-          protected boolean removeEldestEntry(
-              Map.Entry<EasyModelRuntimeContract, EasyModelRenderState> eldest) {
+          protected boolean removeEldestEntry(Map.Entry<K, EasyModelRenderState> eldest) {
             return size() > MAX_CACHE_ENTRIES;
           }
         });
@@ -66,12 +66,12 @@ public final class EasyModelRenderStateCache {
       return contractState;
     }
 
-    EasyModelRuntimeContract key = keyOf(contract);
+    RenderStateKey key = keyOf(contract);
     EasyModelRenderState renderState = RENDER_STATES.get(key);
     if (renderState == null) {
       renderState =
           EasyModelRenderStateResolver.resolve(
-              key,
+              contract,
               EasyModelServices.renderProfileService(),
               EasyModelServices.bakeService(),
               Minecraft.getInstance().getResourceManager());
@@ -86,7 +86,7 @@ public final class EasyModelRenderStateCache {
     RENDER_STATES.clear();
   }
 
-  private static EasyModelRuntimeContract keyOf(EasyModelRuntimeContract contract) {
+  static RenderStateKey keyOf(EasyModelRuntimeContract contract) {
     boolean activeRenderProfile =
         EasyModelServices.renderProfileService()
             .getRenderProfile(contract.renderProfileId())
@@ -95,14 +95,18 @@ public final class EasyModelRenderStateCache {
             .filter(
                 renderProfile -> AssetPairing.matches(contract.version(), renderProfile.version()))
             .isPresent();
-    return new EasyModelRuntimeContract(
-        contract.renderProfileId(),
+    return new RenderStateKey(
         contract.renderProfileId(),
         contract.version(),
-        activeRenderProfile ? 0.0f : contract.width(),
-        activeRenderProfile ? 0.0f : contract.height(),
-        0.0f,
         contract.bodyType(),
-        EasyModelAnimationState.AUTO);
+        activeRenderProfile ? 0.0f : contract.width(),
+        activeRenderProfile ? 0.0f : contract.height());
   }
+
+  record RenderStateKey(
+      Identifier renderProfileId,
+      String version,
+      ModelBodyType bodyType,
+      float fallbackWidth,
+      float fallbackHeight) {}
 }

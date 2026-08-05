@@ -30,6 +30,16 @@ public record ModelAnimationBoneTrack(
   public ModelAnimationBoneTrack {
     rotationKeyframes = List.copyOf(Objects.requireNonNull(rotationKeyframes, "rotationKeyframes"));
     positionKeyframes = List.copyOf(Objects.requireNonNull(positionKeyframes, "positionKeyframes"));
+    requireSorted(rotationKeyframes, "rotationKeyframes");
+    requireSorted(positionKeyframes, "positionKeyframes");
+  }
+
+  private static void requireSorted(List<ModelAnimationKeyframe> keyframes, String name) {
+    for (int index = 1; index < keyframes.size(); index++) {
+      if (keyframes.get(index).time() < keyframes.get(index - 1).time()) {
+        throw new IllegalArgumentException(name + " must be sorted by time.");
+      }
+    }
   }
 
   private static float lastTime(List<ModelAnimationKeyframe> keyframes) {
@@ -37,16 +47,31 @@ public record ModelAnimationBoneTrack(
   }
 
   private static Vec3f sample(List<ModelAnimationKeyframe> keyframes, float time) {
-    if (keyframes.isEmpty()) {
+    int keyframeIndex = keyframeIndex(keyframes, time);
+    if (keyframeIndex < 0) {
       return Vec3f.ZERO;
     }
-    ModelAnimationKeyframe first = keyframes.get(0);
-    if (time <= first.time()) {
-      return first.value();
+    ModelAnimationKeyframe keyframe = keyframes.get(keyframeIndex);
+    if (keyframeIndex == 0 || time >= keyframe.time()) {
+      return keyframe.value();
     }
-    ModelAnimationKeyframe last = keyframes.get(keyframes.size() - 1);
-    if (time >= last.time()) {
-      return last.value();
+
+    return new Vec3f(
+        componentAt(keyframes, keyframeIndex, time, 0),
+        componentAt(keyframes, keyframeIndex, time, 1),
+        componentAt(keyframes, keyframeIndex, time, 2));
+  }
+
+  private static int keyframeIndex(List<ModelAnimationKeyframe> keyframes, float time) {
+    if (keyframes.isEmpty()) {
+      return -1;
+    }
+    if (time <= keyframes.get(0).time()) {
+      return 0;
+    }
+    int lastIndex = keyframes.size() - 1;
+    if (time >= keyframes.get(lastIndex).time()) {
+      return lastIndex;
     }
     int low = 1;
     int high = keyframes.size() - 1;
@@ -58,23 +83,55 @@ public record ModelAnimationBoneTrack(
         low = middle + 1;
       }
     }
-    ModelAnimationKeyframe keyframe = keyframes.get(low);
-    ModelAnimationKeyframe previous = keyframes.get(low - 1);
+    return low;
+  }
+
+  private static float componentAt(
+      List<ModelAnimationKeyframe> keyframes, int keyframeIndex, float time, int component) {
+    ModelAnimationKeyframe keyframe = keyframes.get(keyframeIndex);
+    if (keyframeIndex == 0 || time >= keyframe.time()) {
+      return component(keyframe.value(), component);
+    }
+    ModelAnimationKeyframe previous = keyframes.get(keyframeIndex - 1);
     if (keyframe.step()) {
-      return time < keyframe.time() ? previous.value() : keyframe.value();
+      return component(previous.value(), component);
     }
     float span = keyframe.time() - previous.time();
     if (span <= 0.0f) {
-      return keyframe.value();
+      return component(keyframe.value(), component);
     }
-    return lerp(previous.value(), keyframe.value(), (time - previous.time()) / span);
+    return Mth.lerp(
+        (time - previous.time()) / span,
+        component(previous.value(), component),
+        component(keyframe.value(), component));
   }
 
-  private static Vec3f lerp(Vec3f from, Vec3f to, float progress) {
-    return new Vec3f(
-        Mth.lerp(progress, from.x(), to.x()),
-        Mth.lerp(progress, from.y(), to.y()),
-        Mth.lerp(progress, from.z(), to.z()));
+  private static float component(Vec3f vector, int component) {
+    return switch (component) {
+      case 0 -> vector.x();
+      case 1 -> vector.y();
+      default -> vector.z();
+    };
+  }
+
+  private static void sample(
+      List<ModelAnimationKeyframe> keyframes, float time, float[] destination, int offset) {
+    int keyframeIndex = keyframeIndex(keyframes, time);
+    if (keyframeIndex < 0) {
+      destination[offset] = 0.0f;
+      destination[offset + 1] = 0.0f;
+      destination[offset + 2] = 0.0f;
+      return;
+    }
+    destination[offset] = componentAt(keyframes, keyframeIndex, time, 0);
+    destination[offset + 1] = componentAt(keyframes, keyframeIndex, time, 1);
+    destination[offset + 2] = componentAt(keyframes, keyframeIndex, time, 2);
+  }
+
+  private static void requireFiniteTime(float time) {
+    if (!Float.isFinite(time)) {
+      throw new IllegalArgumentException("time must be finite.");
+    }
   }
 
   public boolean isEmpty() {
@@ -86,10 +143,23 @@ public record ModelAnimationBoneTrack(
   }
 
   public Vec3f rotationAt(float time) {
+    requireFiniteTime(time);
     return sample(rotationKeyframes, time);
   }
 
   public Vec3f positionAt(float time) {
+    requireFiniteTime(time);
     return sample(positionKeyframes, time);
+  }
+
+  public void sample(float time, float[] destination, int offset) {
+    requireFiniteTime(time);
+    Objects.requireNonNull(destination, "destination");
+    if (offset < 0 || destination.length - offset < 6) {
+      throw new IllegalArgumentException("Destination must have space for six values.");
+    }
+
+    sample(this.rotationKeyframes, time, destination, offset);
+    sample(this.positionKeyframes, time, destination, offset + 3);
   }
 }

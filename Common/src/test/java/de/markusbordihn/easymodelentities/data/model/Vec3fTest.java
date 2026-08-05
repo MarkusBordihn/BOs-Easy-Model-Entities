@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.data.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,5 +41,11 @@ class Vec3fTest {
     assertEquals(vector.x(), scaled.x());
     assertEquals(vector.y(), scaled.y());
     assertEquals(vector.z(), scaled.z());
+  }
+
+  @Test
+  void rejectsNonFiniteComponentsAndResults() {
+    assertThrows(IllegalArgumentException.class, () -> new Vec3f(Float.NaN, 0.0f, 0.0f));
+    assertThrows(IllegalArgumentException.class, () -> Vec3f.ZERO.scale(Float.POSITIVE_INFINITY));
   }
 }

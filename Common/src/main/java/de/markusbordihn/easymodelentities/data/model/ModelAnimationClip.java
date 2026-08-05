@@ -24,13 +24,31 @@ import java.util.Objects;
 import net.minecraft.util.Mth;
 
 public record ModelAnimationClip(
-    String name, float length, boolean loop, Map<String, ModelAnimationBoneTrack> boneTracks) {
+    String name,
+    float length,
+    boolean loop,
+    float framesPerSecond,
+    Map<String, ModelAnimationBoneTrack> boneTracks) {
 
   private static final float TICKS_PER_SECOND = 20.0f;
 
   public ModelAnimationClip {
-    Objects.requireNonNull(name, "name");
+    name = Objects.requireNonNull(name, "name").trim();
+    if (name.isEmpty()) {
+      throw new IllegalArgumentException("name must not be blank.");
+    }
+    if (!Float.isFinite(length) || length < 0.0f) {
+      throw new IllegalArgumentException("Length must be a finite non-negative value.");
+    }
+    if (!Float.isFinite(framesPerSecond) || framesPerSecond < 0.0f) {
+      throw new IllegalArgumentException("Frames per second must be a finite non-negative value.");
+    }
     boneTracks = Map.copyOf(Objects.requireNonNull(boneTracks, "boneTracks"));
+  }
+
+  public ModelAnimationClip(
+      String name, float length, boolean loop, Map<String, ModelAnimationBoneTrack> boneTracks) {
+    this(name, length, loop, 0.0f, boneTracks);
   }
 
   public ModelAnimationBoneTrack track(String partName) {
@@ -38,6 +56,9 @@ public record ModelAnimationClip(
   }
 
   public float clipTime(float ageInTicks) {
+    if (!Float.isFinite(ageInTicks)) {
+      throw new IllegalArgumentException("ageInTicks must be finite.");
+    }
     if (length <= 0.0f) {
       return 0.0f;
     }
