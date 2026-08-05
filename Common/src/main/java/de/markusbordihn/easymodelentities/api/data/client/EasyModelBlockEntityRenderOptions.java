@@ -21,15 +21,10 @@ package de.markusbordihn.easymodelentities.api.data.client;
 
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import java.util.Objects;
 
-public record EasyModelBlockEntityRenderOptions(
-    Float yawDegrees,
-    Float scale,
-    Float animationTicks,
-    EasyModelPartAnimator partAnimator,
-    EasyModelPartAnimationMode partAnimationMode,
-    EasyModelPartPoseListener partPoseListener,
-    Integer animationState) {
+public final class EasyModelBlockEntityRenderOptions {
 
   public static final EasyModelBlockEntityRenderOptions DEFAULT =
       new EasyModelBlockEntityRenderOptions(
@@ -41,109 +36,238 @@ public record EasyModelBlockEntityRenderOptions(
           EasyModelPartPoseListener.NONE,
           null);
 
-  public EasyModelBlockEntityRenderOptions(
-      Float yawDegrees, Float animationTicks, EasyModelPartAnimator partAnimator) {
-    this(yawDegrees, animationTicks, partAnimator, EasyModelPartAnimationMode.ADD);
-  }
+  private final Float yawDegrees;
+  private final Float scale;
+  private final Float animationTicks;
+  private final EasyModelPartAnimator partAnimator;
+  private final EasyModelPartAnimationMode partAnimationMode;
+  private final EasyModelPartPoseListener partPoseListener;
+  private final EasyModelAnimation animation;
 
-  public EasyModelBlockEntityRenderOptions(
+  private EasyModelBlockEntityRenderOptions(
       Float yawDegrees,
+      Float scale,
       Float animationTicks,
       EasyModelPartAnimator partAnimator,
-      EasyModelPartAnimationMode partAnimationMode) {
-    this(
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
+      EasyModelAnimation animation) {
+    this.yawDegrees = yawDegrees;
+    this.scale = scale;
+    this.animationTicks = animationTicks;
+    this.partAnimator = Objects.requireNonNull(partAnimator, "partAnimator");
+    this.partAnimationMode = Objects.requireNonNull(partAnimationMode, "partAnimationMode");
+    this.partPoseListener = Objects.requireNonNull(partPoseListener, "partPoseListener");
+    this.animation = animation;
+  }
+
+  private static EasyModelBlockEntityRenderOptions copy(
+      Float yawDegrees,
+      Float scale,
+      Float animationTicks,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
+      EasyModelAnimation animation) {
+    return new EasyModelBlockEntityRenderOptions(
         yawDegrees,
-        null,
+        scale,
         animationTicks,
         partAnimator,
         partAnimationMode,
-        EasyModelPartPoseListener.NONE,
-        null);
+        partPoseListener,
+        animation);
   }
 
-  public EasyModelBlockEntityRenderOptions {
-    partAnimator = partAnimator == null ? EasyModelPartAnimator.NONE : partAnimator;
-    partAnimationMode =
-        partAnimationMode == null ? EasyModelPartAnimationMode.ADD : partAnimationMode;
-    partPoseListener = partPoseListener == null ? EasyModelPartPoseListener.NONE : partPoseListener;
+  private static void requireFinite(float value, String name) {
+    if (!Float.isFinite(value)) {
+      throw new IllegalArgumentException(name + " must be finite.");
+    }
+  }
+
+  private static void requirePositiveFinite(float value, String name) {
+    if (!Float.isFinite(value) || value <= 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite positive value.");
+    }
+  }
+
+  private static void requireNonNegativeFinite(float value, String name) {
+    if (!Float.isFinite(value) || value < 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite non-negative value.");
+    }
+  }
+
+  public Float yawDegrees() {
+    return this.yawDegrees;
+  }
+
+  public Float scale() {
+    return this.scale;
+  }
+
+  public Float animationTicks() {
+    return this.animationTicks;
+  }
+
+  public EasyModelPartAnimator partAnimator() {
+    return this.partAnimator;
+  }
+
+  public EasyModelPartAnimationMode partAnimationMode() {
+    return this.partAnimationMode;
+  }
+
+  public EasyModelPartPoseListener partPoseListener() {
+    return this.partPoseListener;
+  }
+
+  public EasyModelAnimation animation() {
+    return this.animation;
   }
 
   public EasyModelBlockEntityRenderOptions withYawDegrees(float yawDegrees) {
-    return new EasyModelBlockEntityRenderOptions(
+    requireFinite(yawDegrees, "yawDegrees");
+    return copy(
         yawDegrees,
         this.scale,
         this.animationTicks,
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState);
+        this.animation);
   }
 
   public EasyModelBlockEntityRenderOptions withScale(float scale) {
-    return new EasyModelBlockEntityRenderOptions(
+    requirePositiveFinite(scale, "scale");
+    return copy(
         this.yawDegrees,
         scale,
         this.animationTicks,
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState);
+        this.animation);
   }
 
   public EasyModelBlockEntityRenderOptions withAnimationTicks(float animationTicks) {
-    return new EasyModelBlockEntityRenderOptions(
+    requireNonNegativeFinite(animationTicks, "animationTicks");
+    return copy(
         this.yawDegrees,
         this.scale,
         animationTicks,
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState);
+        this.animation);
   }
 
   public EasyModelBlockEntityRenderOptions withPartAnimator(EasyModelPartAnimator partAnimator) {
-    return new EasyModelBlockEntityRenderOptions(
+    return copy(
         this.yawDegrees,
         this.scale,
         this.animationTicks,
-        partAnimator,
+        Objects.requireNonNull(partAnimator, "partAnimator"),
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState);
+        this.animation);
   }
 
   public EasyModelBlockEntityRenderOptions withPartAnimationMode(
       EasyModelPartAnimationMode partAnimationMode) {
-    return new EasyModelBlockEntityRenderOptions(
+    return copy(
         this.yawDegrees,
         this.scale,
         this.animationTicks,
         this.partAnimator,
-        partAnimationMode,
+        Objects.requireNonNull(partAnimationMode, "partAnimationMode"),
         this.partPoseListener,
-        this.animationState);
+        this.animation);
   }
 
   public EasyModelBlockEntityRenderOptions withPartPoseListener(
       EasyModelPartPoseListener partPoseListener) {
-    return new EasyModelBlockEntityRenderOptions(
+    return copy(
         this.yawDegrees,
         this.scale,
         this.animationTicks,
         this.partAnimator,
         this.partAnimationMode,
-        partPoseListener,
-        this.animationState);
+        Objects.requireNonNull(partPoseListener, "partPoseListener"),
+        this.animation);
   }
 
-  public EasyModelBlockEntityRenderOptions withAnimationState(int animationState) {
-    return new EasyModelBlockEntityRenderOptions(
+  public EasyModelBlockEntityRenderOptions withAnimation(EasyModelAnimation animation) {
+    return copy(
         this.yawDegrees,
         this.scale,
         this.animationTicks,
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        animationState);
+        Objects.requireNonNull(animation, "animation"));
+  }
+
+  public EasyModelBlockEntityRenderOptions withAnimation(String animation) {
+    return withAnimation(EasyModelAnimation.named(animation));
+  }
+
+  public EasyModelBlockEntityRenderOptions withoutAnimationOverride() {
+    return copy(
+        this.yawDegrees,
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        null);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) {
+      return true;
+    }
+    if (!(object instanceof EasyModelBlockEntityRenderOptions options)) {
+      return false;
+    }
+
+    return Objects.equals(this.yawDegrees, options.yawDegrees)
+        && Objects.equals(this.scale, options.scale)
+        && Objects.equals(this.animationTicks, options.animationTicks)
+        && this.partAnimator.equals(options.partAnimator)
+        && this.partAnimationMode == options.partAnimationMode
+        && this.partPoseListener.equals(options.partPoseListener)
+        && Objects.equals(this.animation, options.animation);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        this.yawDegrees,
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation);
+  }
+
+  @Override
+  public String toString() {
+    return "EasyModelBlockEntityRenderOptions[yawDegrees="
+        + this.yawDegrees
+        + ", scale="
+        + this.scale
+        + ", animationTicks="
+        + this.animationTicks
+        + ", partAnimator="
+        + this.partAnimator
+        + ", partAnimationMode="
+        + this.partAnimationMode
+        + ", partPoseListener="
+        + this.partPoseListener
+        + ", animation="
+        + this.animation
+        + "]";
   }
 }

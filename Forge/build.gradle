@@ -62,6 +62,9 @@ minecraft {
   }
 }
 
+def commonProject = project(":Common")
+def forgeMinVersion = forge_min_version.toString()
+
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
@@ -76,12 +79,16 @@ dependencies {
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.withType(JavaCompile).configureEach {
-  source(project(":Common").sourceSets.main.allSource)
+tasks.named('compileJava', JavaCompile).configure {
+  source(commonProject.sourceSets.main.allSource)
 }
 
 processResources {
-  from project(":Common").sourceSets.main.resources
+  from commonProject.sourceSets.main.resources
+  inputs.property "forge_min_version", forgeMinVersion
+  filesMatching("META-INF/mods.toml") {
+    filter { line -> line.replace("@forge_min_version@", forgeMinVersion) }
+  }
 }
 
 tasks.named('jar', Jar).configure {

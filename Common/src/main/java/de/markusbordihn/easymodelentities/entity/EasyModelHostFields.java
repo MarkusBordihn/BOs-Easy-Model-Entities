@@ -19,8 +19,9 @@
 
 package de.markusbordihn.easymodelentities.entity;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import java.util.Objects;
 import net.minecraft.network.syncher.EntityDataAccessor;
 
 public record EasyModelHostFields(
@@ -31,4 +32,37 @@ public record EasyModelHostFields(
     EntityDataAccessor<Float> height,
     EntityDataAccessor<Float> eyeHeight,
     EntityDataAccessor<ModelBodyType> bodyType,
-    EntityDataAccessor<EasyModelAnimationState> animationState) {}
+    EntityDataAccessor<EasyModelAnimationSetting> animation,
+    EntityDataAccessor<Boolean> lookAtPlayers,
+    EntityDataAccessor<Boolean> randomStroll) {
+
+  public EasyModelHostFields {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(renderProfileId, "renderProfileId");
+    Objects.requireNonNull(version, "version");
+    Objects.requireNonNull(width, "width");
+    Objects.requireNonNull(height, "height");
+    Objects.requireNonNull(eyeHeight, "eyeHeight");
+    Objects.requireNonNull(bodyType, "bodyType");
+    Objects.requireNonNull(animation, "animation");
+    Objects.requireNonNull(lookAtPlayers, "lookAtPlayers");
+    Objects.requireNonNull(randomStroll, "randomStroll");
+  }
+
+  public boolean isRuntimeContractField(EntityDataAccessor<?> entityDataAccessor) {
+    return entityDataAccessor == this.profileId
+        || entityDataAccessor == this.renderProfileId
+        || entityDataAccessor == this.version
+        || entityDataAccessor == this.width
+        || entityDataAccessor == this.height
+        || entityDataAccessor == this.eyeHeight
+        || entityDataAccessor == this.bodyType
+        || entityDataAccessor == this.animation;
+  }
+
+  public boolean isDimensionsField(EntityDataAccessor<?> entityDataAccessor) {
+    return entityDataAccessor == this.width
+        || entityDataAccessor == this.height
+        || entityDataAccessor == this.eyeHeight;
+  }
+}

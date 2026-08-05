@@ -1,7 +1,7 @@
 {
   "schema_version": "0.2.0",
   "preset_type": "cuboid_hopping",
-  "version": "demo-disguised-chestling-v1",
+  "version": "demo-disguised-chestling-v2",
   "model": "easy_model_entities_examples:easy_model_entities/models/disguised_chestling",
   "texture": "minecraft:textures/entity/chest/normal.png",
   "textures": {

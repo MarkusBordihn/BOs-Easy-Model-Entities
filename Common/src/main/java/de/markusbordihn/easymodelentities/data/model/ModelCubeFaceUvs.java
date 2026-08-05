@@ -55,6 +55,16 @@ public record ModelCubeFaceUvs(
         down.scale(textureWidth, textureHeight));
   }
 
+  public ModelCubeFaceUvs mirrorU() {
+    return new ModelCubeFaceUvs(
+        this.north.mirrorU(),
+        this.west.mirrorU(),
+        this.south.mirrorU(),
+        this.east.mirrorU(),
+        this.up.mirrorU(),
+        this.down.mirrorU());
+  }
+
   public FaceUv uv(ModelCubeFace face) {
     return switch (face) {
       case NORTH -> this.north;

@@ -19,21 +19,27 @@
 
 package de.markusbordihn.easymodelentities.api.data.client;
 
-import de.markusbordihn.easymodelentities.data.model.ModelPartType;
-import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import de.markusbordihn.easymodelentities.api.data.EasyModelVec3f;
 import java.util.List;
 import java.util.Objects;
 
 public record EasyModelPartDefinition(
-    String name, Vec3f offset, Vec3f rotation, List<EasyModelPartDefinition> children) {
+    String name,
+    EasyModelVec3f offset,
+    EasyModelVec3f rotation,
+    List<EasyModelPartDefinition> children) {
 
   public EasyModelPartDefinition {
+    name = Objects.requireNonNull(name, "name").trim();
+    if (name.isEmpty()) {
+      throw new IllegalArgumentException("name must not be blank.");
+    }
     Objects.requireNonNull(offset, "offset");
     Objects.requireNonNull(rotation, "rotation");
-    children = List.copyOf(children);
+    children = List.copyOf(Objects.requireNonNull(children, "children"));
   }
 
-  public ModelPartType semanticType() {
-    return ModelPartType.get(this.name);
+  public EasyModelPartType semanticType() {
+    return EasyModelPartType.fromPartName(this.name);
   }
 }

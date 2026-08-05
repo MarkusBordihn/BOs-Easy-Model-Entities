@@ -41,6 +41,7 @@ public final class ContractApiDocument {
     JsonObject root = new JsonObject();
     root.addProperty("schema_version", EasyModelApiContract.schemaVersion());
     root.addProperty("api_version", EasyModelApiContract.apiVersion());
+    root.add("supported_schema_versions", toArray(EasyModelApiContract.supportedSchemaVersions()));
 
     JsonObject budgets = new JsonObject();
     budgets.addProperty("max_model_file_size_bytes", EasyModelApiContract.maxModelFileSizeBytes());
@@ -65,7 +66,12 @@ public final class ContractApiDocument {
     enums.add("preset_types", toArray(EasyModelApiContract.presetTypes()));
     enums.add("block_entity_preset_types", toArray(EasyModelApiContract.blockEntityPresetTypes()));
     enums.add("animation_modes", toArray(EasyModelApiContract.animationModes()));
+    enums.add("animation_states", toArray(EasyModelApiContract.animationStates()));
     enums.add("animation_clips", toArray(EasyModelApiContract.animationClips()));
+    enums.add("animation_loops", toArray(EasyModelApiContract.animationLoops()));
+    enums.add("animation_switch_timings", toArray(EasyModelApiContract.animationSwitchTimings()));
+    enums.add("playback_modes", toArray(EasyModelApiContract.playbackModes()));
+    enums.add("animation_types", toArray(EasyModelApiContract.animationTypes()));
     enums.add("gaits", toArray(EasyModelApiContract.gaits()));
     root.add("enums", enums);
 

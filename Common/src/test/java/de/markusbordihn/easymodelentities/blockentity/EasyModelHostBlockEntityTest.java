@@ -23,6 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
@@ -39,7 +42,6 @@ import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelBlockEntityTypeIds;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import java.util.List;
 import java.util.Optional;
 import net.minecraft.SharedConstants;
@@ -48,10 +50,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -102,8 +106,7 @@ class EasyModelHostBlockEntityTest {
   }
 
   @SuppressWarnings("unchecked")
-  private static <T extends net.minecraft.world.level.block.entity.BlockEntity>
-      BlockEntityType<T> mockValidType() {
+  private static <T extends BlockEntity> BlockEntityType<T> mockValidType() {
     BlockEntityType<T> type = mock(BlockEntityType.class);
     Mockito.lenient().when(type.isValid(Mockito.any())).thenReturn(true);
     return type;
@@ -115,12 +118,53 @@ class EasyModelHostBlockEntityTest {
   }
 
   @Test
+  @DisplayName("A looping named clip is scenery, so it must survive a world reload")
+  void persistsNamedLoopingAnimationAcrossSaveAndLoad() {
+    EasyModelServices.setProfileService(profileService(profile()));
+    TestBlockEntity blockEntity = new TestBlockEntity();
+
+    blockEntity.setEasyModelProfileId(PROFILE_ID);
+    blockEntity.setEasyModelAnimation(
+        new EasyModelAnimationSetting(
+            EasyModelAnimation.named("spin"), EasyModelAnimationLoop.LOOP));
+    CompoundTag savedTag = new CompoundTag();
+    blockEntity.saveAdditional(savedTag, null);
+
+    TestBlockEntity loadedBlockEntity = new TestBlockEntity();
+    loadedBlockEntity.loadAdditional(savedTag, null);
+
+    EasyModelAnimationSetting animation = loadedBlockEntity.getEasyModelAnimationSetting();
+    assertEquals("spin", animation.animation().name());
+    assertTrue(animation.animation().isNamed());
+    assertEquals(EasyModelAnimationLoop.LOOP, animation.loop());
+  }
+
+  @Test
+  void syncsNamedLoopingAnimationThroughTheClientUpdateTag() {
+    EasyModelServices.setProfileService(profileService(profile()));
+    TestBlockEntity blockEntity = new TestBlockEntity();
+
+    blockEntity.setEasyModelProfileId(PROFILE_ID);
+    blockEntity.setEasyModelAnimation(
+        new EasyModelAnimationSetting(
+            EasyModelAnimation.named("spin"), EasyModelAnimationLoop.LOOP));
+
+    TestBlockEntity clientBlockEntity = new TestBlockEntity();
+    clientBlockEntity.loadAdditional(blockEntity.getUpdateTag(null), null);
+
+    assertEquals(
+        new EasyModelAnimationSetting(
+            EasyModelAnimation.named("spin"), EasyModelAnimationLoop.LOOP),
+        clientBlockEntity.getEasyModelAnimationSetting());
+  }
+
+  @Test
   void persistsRuntimeContractAcrossSaveAndLoad() {
     EasyModelServices.setProfileService(profileService(profile()));
     TestBlockEntity blockEntity = new TestBlockEntity();
 
     blockEntity.setEasyModelProfileId(PROFILE_ID);
-    blockEntity.setEasyModelAnimationState(EasyModelAnimationState.IDLE);
+    blockEntity.setEasyModelAnimation(EasyModelAnimationSetting.of(EasyModelAnimation.IDLE));
     CompoundTag savedTag = new CompoundTag();
     blockEntity.saveAdditional(savedTag, null);
 
@@ -131,7 +175,8 @@ class EasyModelHostBlockEntityTest {
     assertEquals(RENDER_PROFILE_ID, loadedBlockEntity.getEasyModelRenderProfileId());
     assertEquals("server-v1", loadedBlockEntity.getEasyModelVersion());
     assertEquals(
-        EasyModelAnimationState.IDLE.getApiState(), loadedBlockEntity.getEasyModelAnimationState());
+        EasyModelAnimationSetting.of(EasyModelAnimation.IDLE),
+        loadedBlockEntity.getEasyModelAnimationSetting());
     assertEquals(ModelBodyType.BIPED, loadedBlockEntity.getEasyModelRuntimeContract().bodyType());
   }
 
@@ -141,7 +186,7 @@ class EasyModelHostBlockEntityTest {
     TestBlockEntity serverBlockEntity = new TestBlockEntity();
 
     serverBlockEntity.setEasyModelProfileId(PROFILE_ID);
-    serverBlockEntity.setEasyModelAnimationState(EasyModelAnimationState.IDLE);
+    serverBlockEntity.setEasyModelAnimation(EasyModelAnimationSetting.of(EasyModelAnimation.IDLE));
 
     CompoundTag updateTag = serverBlockEntity.getUpdateTag(null);
 
@@ -152,7 +197,8 @@ class EasyModelHostBlockEntityTest {
     assertEquals(RENDER_PROFILE_ID, clientBlockEntity.getEasyModelRenderProfileId());
     assertEquals("server-v1", clientBlockEntity.getEasyModelVersion());
     assertEquals(
-        EasyModelAnimationState.IDLE.getApiState(), clientBlockEntity.getEasyModelAnimationState());
+        EasyModelAnimationSetting.of(EasyModelAnimation.IDLE),
+        clientBlockEntity.getEasyModelAnimationSetting());
     assertEquals(ModelBodyType.BIPED, clientBlockEntity.getEasyModelRuntimeContract().bodyType());
   }
 

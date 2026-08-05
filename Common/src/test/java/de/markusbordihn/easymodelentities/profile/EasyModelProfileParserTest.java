@@ -253,6 +253,8 @@ class EasyModelProfileParserTest {
             """);
 
     assertEquals(ModelProfileStatus.INVALID_DIMENSIONS, profile.status());
+    assertTrue(profile.width() > 0.0f);
+    assertTrue(Float.isFinite(profile.width()));
     assertFalse(profile.isActive());
   }
 
@@ -300,6 +302,8 @@ class EasyModelProfileParserTest {
             """);
 
     assertEquals(ModelProfileStatus.INVALID_DIMENSIONS, profile.status());
+    assertTrue(profile.width() > 0.0f);
+    assertTrue(Float.isFinite(profile.width()));
   }
 
   @Test
@@ -317,6 +321,7 @@ class EasyModelProfileParserTest {
             """);
 
     assertEquals(ModelProfileStatus.DISABLED, profile.status());
+    assertEquals(ModelMovementType.GROUND.defaultSpeed(), profile.movement().speed());
   }
 
   @Test

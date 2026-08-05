@@ -70,6 +70,24 @@ public final class JsonValues {
     return gson.fromJson(value, objectClass);
   }
 
+  public static <T> T requiredObject(
+      JsonElement value,
+      String field,
+      Class<T> objectClass,
+      Gson gson,
+      BiConsumer<String, String> issueReporter) {
+    if (value == null || value.isJsonNull()) {
+      issueReporter.accept(field, "Missing required field " + field + ".");
+      return null;
+    }
+    if (!value.isJsonObject()) {
+      issueReporter.accept(field, "Field " + field + " must be an object.");
+      return null;
+    }
+
+    return gson.fromJson(value, objectClass);
+  }
+
   public static Float parseFloat(
       JsonElement value, String field, BiConsumer<String, String> issueReporter) {
     if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {

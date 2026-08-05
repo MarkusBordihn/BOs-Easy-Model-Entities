@@ -23,12 +23,24 @@ public record Vec3f(float x, float y, float z) {
 
   public static final Vec3f ZERO = new Vec3f(0.0f, 0.0f, 0.0f);
 
+  public Vec3f {
+    requireFinite(x, "x");
+    requireFinite(y, "y");
+    requireFinite(z, "z");
+  }
+
   public static Vec3f of(float[] values) {
     if (values == null || values.length != 3) {
       throw new IllegalArgumentException("Vec3f requires 3 values.");
     }
 
     return new Vec3f(values[0], values[1], values[2]);
+  }
+
+  private static void requireFinite(float value, String name) {
+    if (!Float.isFinite(value)) {
+      throw new IllegalArgumentException(name + " must be finite.");
+    }
   }
 
   public boolean isZero() {

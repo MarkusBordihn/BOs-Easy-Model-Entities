@@ -19,14 +19,15 @@
 
 package de.markusbordihn.easymodelentities;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.command.EasyModelEntitiesCommand;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
+import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import net.minecraft.network.syncher.EntityDataSerializer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -57,10 +58,10 @@ public class EasyModelEntities {
 
   @SuppressWarnings("unused")
   public static final DeferredHolder<
-          EntityDataSerializer<?>, EntityDataSerializer<EasyModelAnimationState>>
-      ANIMATION_STATE_SERIALIZER =
+          EntityDataSerializer<?>, EntityDataSerializer<EasyModelAnimationSetting>>
+      ANIMATION_SETTING_SERIALIZER =
           ENTITY_DATA_SERIALIZERS.register(
-              "animation_state", () -> EasyModelEntityDataSerializers.ANIMATION_STATE);
+              "animation_setting", () -> EasyModelEntityDataSerializers.ANIMATION_SETTING);
 
   public EasyModelEntities(IEventBus modEventBus) {
     log.info("Initializing {} (NeoForge) ...", Constants.MOD_NAME);
@@ -73,6 +74,7 @@ public class EasyModelEntities {
     NeoForgeEasyModelBlockEntityTypes.register(modEventBus);
     EasyModelItems.register(modEventBus);
     EasyModelCreativeModeTabs.register(modEventBus);
+    modEventBus.addListener(EasyModelAnimationNetworkHandler::register);
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(NeoForgeEasyModelEntityTypes.INSTANCE));
     EasyModelServices.setBlockEntityTypeProvider(NeoForgeEasyModelBlockEntityTypes.INSTANCE);

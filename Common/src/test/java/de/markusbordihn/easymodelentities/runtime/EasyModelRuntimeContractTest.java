@@ -21,6 +21,8 @@ package de.markusbordihn.easymodelentities.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
@@ -60,7 +62,8 @@ class EasyModelRuntimeContractTest {
                 """));
 
     EasyModelRuntimeContract contract =
-        EasyModelRuntimeContract.fromProfile(profile, EasyModelAnimationState.WALK);
+        EasyModelRuntimeContract.fromProfile(
+            profile, EasyModelAnimationSetting.of(EasyModelAnimation.WALK));
 
     assertEquals(PROFILE_ID, contract.profileId());
     assertEquals(PROFILE_ID, contract.renderProfileId());
@@ -69,7 +72,7 @@ class EasyModelRuntimeContractTest {
     assertEquals(0.8f, contract.height());
     assertEquals(0.5f, contract.eyeHeight());
     assertEquals(ModelBodyType.QUADRUPED, contract.bodyType());
-    assertEquals(EasyModelAnimationState.WALK, contract.animationState());
+    assertEquals(EasyModelAnimationSetting.of(EasyModelAnimation.WALK), contract.animation());
   }
 
   @Test
@@ -91,7 +94,7 @@ class EasyModelRuntimeContractTest {
 
     EasyModelRuntimeContract contract =
         EasyModelRuntimeContract.fromRenderProfile(
-            PROFILE_ID, renderProfile, EasyModelAnimationState.FLY);
+            PROFILE_ID, renderProfile, EasyModelAnimationSetting.of(EasyModelAnimation.FLY));
 
     assertEquals(PROFILE_ID, contract.profileId());
     assertEquals(renderProfileId, contract.renderProfileId());
@@ -100,7 +103,7 @@ class EasyModelRuntimeContractTest {
     assertEquals(1.8f, contract.height());
     assertEquals(1.62f, contract.eyeHeight());
     assertEquals(ModelBodyType.WINGED, contract.bodyType());
-    assertEquals(EasyModelAnimationState.FLY, contract.animationState());
+    assertEquals(EasyModelAnimationSetting.of(EasyModelAnimation.FLY), contract.animation());
   }
 
   @Test
@@ -115,7 +118,7 @@ class EasyModelRuntimeContractTest {
     assertEquals(1.8f, contract.height());
     assertEquals(1.62f, contract.eyeHeight());
     assertEquals(ModelBodyType.STATIC, contract.bodyType());
-    assertEquals(EasyModelAnimationState.AUTO, contract.animationState());
+    assertEquals(EasyModelAnimationSetting.of(EasyModelAnimation.AUTO), contract.animation());
   }
 
   @Test

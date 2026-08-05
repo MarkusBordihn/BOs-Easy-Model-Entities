@@ -27,8 +27,8 @@
   },
   "accessWidener": "easymodelentities.accesswidener",
   "depends": {
-    "fabricloader": ">=0.16",
-    "fabric": "*",
+    "fabricloader": ">=${fabric_loader_min_version}",
+    "fabric": ">=${fabric_api_min_version}",
     "minecraft": ">=1.21.1 <1.22",
     "java": ">=21"
   }

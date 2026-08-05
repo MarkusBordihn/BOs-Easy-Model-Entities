@@ -50,7 +50,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 public final class ModelTextureResolver {
 
   public static final ResourceLocation FALLBACK_TEXTURE =
-      ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/pink_wool.png");
+      ModelResourcePaths.resourceLocation("minecraft", "textures/block/pink_wool.png");
   private static final int MAX_TEXTURE_SIZE = ModelAssetBudgets.MAX_TEXTURE_SIZE;
   private static final int SOFT_TEXTURE_SIZE = ModelAssetBudgets.SOFT_TEXTURE_SIZE;
   private static final String TEXTURE_FOLDER = "textures";
@@ -146,7 +146,11 @@ public final class ModelTextureResolver {
   }
 
   private static String withPngSuffix(String path) {
-    return path.toLowerCase().endsWith(PNG_SUFFIX) ? path : path + PNG_SUFFIX;
+    int suffixStart = path.length() - PNG_SUFFIX.length();
+    return suffixStart >= 0
+            && path.regionMatches(true, suffixStart, PNG_SUFFIX, 0, PNG_SUFFIX.length())
+        ? path
+        : path + PNG_SUFFIX;
   }
 
   private static String joinPath(String... segments) {

@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
@@ -45,7 +47,6 @@ import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.List;
 import java.util.Optional;
@@ -55,6 +56,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelEntityRenderBackendTest {
+
+  private static final EasyModelAnimationSetting AUTO = EasyModelAnimationSetting.AUTO;
+  private static final EasyModelAnimationSetting IDLE =
+      EasyModelAnimationSetting.of(EasyModelAnimation.IDLE);
 
   private static final ResourceLocation PROFILE_ID =
       ResourceLocation.fromNamespaceAndPath("example", "entity/lizard");
@@ -137,7 +142,7 @@ class EasyModelEntityRenderBackendTest {
             renderProfile(PROFILE_ID, ModelBodyType.STATIC, ModelRenderProfileStatus.ACTIVE)));
 
     Optional<EasyModelRuntimeContract> contract =
-        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, EasyModelAnimationState.AUTO);
+        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, AUTO);
 
     assertTrue(contract.isPresent());
     assertEquals(ModelBodyType.QUADRUPED, contract.get().bodyType());
@@ -151,12 +156,12 @@ class EasyModelEntityRenderBackendTest {
             renderProfile(PROFILE_ID, ModelBodyType.WINGED, ModelRenderProfileStatus.ACTIVE)));
 
     Optional<EasyModelRuntimeContract> contract =
-        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, EasyModelAnimationState.IDLE);
+        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, IDLE);
 
     assertTrue(contract.isPresent());
     assertEquals(ModelBodyType.WINGED, contract.get().bodyType());
     assertEquals(PROFILE_ID, contract.get().renderProfileId());
-    assertEquals(EasyModelAnimationState.IDLE, contract.get().animationState());
+    assertEquals(IDLE, contract.get().animation());
   }
 
   @Test
@@ -170,7 +175,7 @@ class EasyModelEntityRenderBackendTest {
             renderProfile(PROFILE_ID, ModelBodyType.WINGED, ModelRenderProfileStatus.ACTIVE)));
 
     Optional<EasyModelRuntimeContract> contract =
-        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, EasyModelAnimationState.AUTO);
+        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, AUTO);
 
     assertTrue(contract.isPresent());
     assertEquals(ModelBodyType.WINGED, contract.get().bodyType());
@@ -185,7 +190,7 @@ class EasyModelEntityRenderBackendTest {
                 PROFILE_ID, ModelBodyType.WINGED, ModelRenderProfileStatus.MISSING_TEXTURE)));
 
     Optional<EasyModelRuntimeContract> contract =
-        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, EasyModelAnimationState.AUTO);
+        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, AUTO);
 
     assertTrue(contract.isPresent());
     assertEquals(ModelBodyType.WINGED, contract.get().bodyType());
@@ -193,8 +198,6 @@ class EasyModelEntityRenderBackendTest {
 
   @Test
   void emptyWhenNeitherProfileAvailable() {
-    assertTrue(
-        EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, EasyModelAnimationState.AUTO)
-            .isEmpty());
+    assertTrue(EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, AUTO).isEmpty());
   }
 }

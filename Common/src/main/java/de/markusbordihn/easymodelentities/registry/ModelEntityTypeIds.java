@@ -19,20 +19,19 @@
 
 package de.markusbordihn.easymodelentities.registry;
 
-import de.markusbordihn.easymodelentities.Constants;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 
 public final class ModelEntityTypeIds {
 
   public static final ResourceLocation GROUND_ENTITY =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "ground_entity");
+      ModelResourcePaths.modResourceLocation("ground_entity");
   public static final ResourceLocation STATIC_ENTITY =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "static_entity");
+      ModelResourcePaths.modResourceLocation("static_entity");
   public static final ResourceLocation AQUATIC_ENTITY =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "aquatic_entity");
+      ModelResourcePaths.modResourceLocation("aquatic_entity");
   public static final ResourceLocation AMPHIBIOUS_ENTITY =
-      ResourceLocation.fromNamespaceAndPath(Constants.MOD_ID, "amphibious_entity");
+      ModelResourcePaths.modResourceLocation("amphibious_entity");
   public static final Set<ResourceLocation> SUPPORTED_HOST_ENTITY_TYPES =
       Set.of(GROUND_ENTITY, STATIC_ENTITY, AQUATIC_ENTITY, AMPHIBIOUS_ENTITY);
 

@@ -22,6 +22,7 @@ package de.markusbordihn.easymodelentities;
 import de.markusbordihn.easymodelentities.command.EasyModelEntitiesCommand;
 import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
+import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
@@ -43,10 +44,10 @@ public class EasyModelEntities {
 
   private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
 
-  public EasyModelEntities(FMLJavaModLoadingContext context) {
+  public EasyModelEntities(FMLJavaModLoadingContext loadingContext) {
     log.info("Initializing {} (Forge) ...", Constants.MOD_NAME);
 
-    IEventBus modEventBus = context.getModEventBus();
+    IEventBus modEventBus = loadingContext.getModEventBus();
 
     Constants.GAME_DIR = FMLPaths.GAMEDIR.get();
     Constants.CONFIG_DIR = FMLPaths.CONFIGDIR.get();
@@ -56,6 +57,7 @@ public class EasyModelEntities {
     EasyModelBlockEntityTypes.register(modEventBus);
     EasyModelItems.register(modEventBus);
     EasyModelCreativeModeTabs.register(modEventBus);
+    EasyModelAnimationNetworkHandler.register();
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(EasyModelEntityTypes.INSTANCE));
     EasyModelServices.setBlockEntityTypeProvider(EasyModelBlockEntityTypes.INSTANCE);

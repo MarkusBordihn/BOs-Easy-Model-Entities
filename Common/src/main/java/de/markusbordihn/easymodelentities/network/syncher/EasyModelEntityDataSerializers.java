@@ -19,8 +19,11 @@
 
 package de.markusbordihn.easymodelentities.network.syncher;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.syncher.EntityDataSerializer;
@@ -32,8 +35,24 @@ public final class EasyModelEntityDataSerializers {
   public static final EntityDataSerializer<Float> FLOAT = EntityDataSerializers.FLOAT;
   public static final EntityDataSerializer<ModelBodyType> BODY_TYPE =
       enumSerializer(ModelBodyType.class);
-  public static final EntityDataSerializer<EasyModelAnimationState> ANIMATION_STATE =
-      enumSerializer(EasyModelAnimationState.class);
+  public static final EntityDataSerializer<EasyModelAnimationSetting> ANIMATION_SETTING =
+      EntityDataSerializer.forValueType(
+          StreamCodec.of(
+              (RegistryFriendlyByteBuf buffer, EasyModelAnimationSetting animationSetting) -> {
+                buffer.writeUtf(
+                    animationSetting.animation().serializedName(),
+                    ClientboundEasyModelAnimationPacket.MAX_ANIMATION_NAME_LENGTH);
+                buffer.writeEnum(animationSetting.loop());
+              },
+              buffer -> {
+                EasyModelAnimation animation =
+                    EasyModelAnimation.parse(
+                            buffer.readUtf(
+                                ClientboundEasyModelAnimationPacket.MAX_ANIMATION_NAME_LENGTH))
+                        .orElse(EasyModelAnimation.AUTO);
+                return new EasyModelAnimationSetting(
+                    animation, buffer.readEnum(EasyModelAnimationLoop.class));
+              }));
 
   private static boolean registered = false;
 
@@ -45,7 +64,7 @@ public final class EasyModelEntityDataSerializers {
     }
 
     registerSerializer(BODY_TYPE);
-    registerSerializer(ANIMATION_STATE);
+    registerSerializer(ANIMATION_SETTING);
     registered = true;
   }
 

@@ -19,7 +19,10 @@
 
 package de.markusbordihn.easymodelentities.gametest;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
+import de.markusbordihn.easymodelentities.command.EasyModelBehaviorCommand;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.entity.EasyModelGroundEntity;
@@ -30,7 +33,7 @@ import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.io.StringReader;
 import java.util.List;
@@ -58,15 +61,15 @@ import net.minecraft.world.phys.Vec3;
 public final class HostEntityGameTestCases {
 
   private static final ResourceLocation GROUND_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "ground");
+      ModelResourcePaths.resourceLocation("example", "ground");
   private static final ResourceLocation STATIC_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "static");
+      ModelResourcePaths.resourceLocation("example", "static");
   private static final ResourceLocation INVALID_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "invalid");
+      ModelResourcePaths.resourceLocation("example", "invalid");
   private static final ResourceLocation BLOCK_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "animated_block");
+      ModelResourcePaths.resourceLocation("example", "animated_block");
   private static final ResourceLocation ATTRIBUTES_PROFILE_ID =
-      ResourceLocation.fromNamespaceAndPath("example", "attributes");
+      ModelResourcePaths.resourceLocation("example", "attributes");
 
   private HostEntityGameTestCases() {}
 
@@ -119,7 +122,7 @@ public final class HostEntityGameTestCases {
         EasyModelServices.entityFactory()
             .createEntity(
                 helper.getLevel(),
-                ResourceLocation.fromNamespaceAndPath("example", "missing"),
+                ModelResourcePaths.resourceLocation("example", "missing"),
                 Vec3.ZERO)
             .isPresent();
     boolean invalidProfileCreated =
@@ -128,6 +131,35 @@ public final class HostEntityGameTestCases {
             .isPresent();
     if (missingProfileCreated || invalidProfileCreated) {
       helper.fail("Missing or invalid profiles must not create host entities.");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  public static void frozenBehaviorStopsHostEntityMovement(GameTestHelper helper) {
+    installProfiles();
+    Optional<Entity> entity =
+        EasyModelServices.entityFactory()
+            .createEntity(helper.getLevel(), GROUND_PROFILE_ID, new Vec3(1.0, 1.0, 1.0));
+    if (entity.isEmpty() || !(entity.get() instanceof EasyModelGroundEntity groundEntity)) {
+      helper.fail("Ground profile did not create an EasyModelGroundEntity.");
+      return;
+    }
+
+    groundEntity.setDeltaMovement(new Vec3(0.5, 0.0, 0.5));
+    groundEntity.setZza(1.0f);
+    EasyModelBehaviorCommand.setFrozen(groundEntity, true);
+    if (!groundEntity.isNoAi()
+        || groundEntity.zza != 0.0f
+        || !groundEntity.getDeltaMovement().equals(Vec3.ZERO)) {
+      helper.fail("Frozen behavior did not stop the host entity movement.");
+      return;
+    }
+
+    EasyModelBehaviorCommand.setFrozen(groundEntity, false);
+    if (groundEntity.isNoAi()) {
+      helper.fail("Automatic behavior did not restore the host entity AI.");
       return;
     }
 
@@ -144,7 +176,7 @@ public final class HostEntityGameTestCases {
       return;
     }
 
-    hostEntity.setEasyModelAnimationState(EasyModelAnimationState.RUN);
+    hostEntity.setEasyModelAnimation(EasyModelAnimationSetting.of(EasyModelAnimation.RUN));
     CompoundTag compoundTag = new CompoundTag();
     hostEntity.addAdditionalSaveData(compoundTag);
 
@@ -160,7 +192,7 @@ public final class HostEntityGameTestCases {
     loadedHostEntity.readAdditionalSaveData(compoundTag);
     EasyModelRuntimeContract contract = loadedHostEntity.getEasyModelRuntimeContract();
     if (!GROUND_PROFILE_ID.equals(contract.profileId())
-        || contract.animationState() != EasyModelAnimationState.RUN
+        || contract.animation().animation() != EasyModelAnimation.RUN
         || contract.bodyType() != ModelBodyType.QUADRUPED) {
       helper.fail("NBT load did not preserve the persisted runtime contract fields.");
       return;
@@ -190,7 +222,7 @@ public final class HostEntityGameTestCases {
     EasyModelRuntimeContract contract = hostEntity.getEasyModelRuntimeContract();
     if (!EasyModelHostEntity.MISSING_PROFILE_ID.equals(contract.profileId())
         || contract.bodyType() != ModelBodyType.STATIC
-        || contract.animationState() != EasyModelAnimationState.AUTO) {
+        || contract.animation() != EasyModelAnimationSetting.AUTO) {
       helper.fail("Invalid NBT ResourceLocation values did not fall back safely.");
       return;
     }

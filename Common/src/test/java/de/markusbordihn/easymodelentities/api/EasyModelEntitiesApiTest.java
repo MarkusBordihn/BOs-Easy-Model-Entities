@@ -22,17 +22,18 @@ package de.markusbordihn.easymodelentities.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelBodyType;
+import de.markusbordihn.easymodelentities.api.data.EasyModelProfileInfo;
+import de.markusbordihn.easymodelentities.api.data.EasyModelProfileType;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorSettings;
-import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelClientSettings;
 import de.markusbordihn.easymodelentities.data.profile.ModelDimensions;
 import de.markusbordihn.easymodelentities.data.profile.ModelEntitySettings;
@@ -53,7 +54,6 @@ import net.minecraft.SharedConstants;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.Bootstrap;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.AfterEach;
@@ -118,7 +118,9 @@ class EasyModelEntitiesApiTest {
         "server-v1",
         ModelType.ENTITY,
         new ModelEntitySettings(
-            ModelEntityTypeIds.GROUND_ENTITY, ModelMovementType.GROUND, ModelBodyType.QUADRUPED),
+            ModelEntityTypeIds.GROUND_ENTITY,
+            ModelMovementType.GROUND,
+            de.markusbordihn.easymodelentities.data.profile.ModelBodyType.QUADRUPED),
         null,
         new ModelClientSettings(profileId),
         new ModelDimensions(0.6f, 0.8f, 0.5f),
@@ -147,56 +149,33 @@ class EasyModelEntitiesApiTest {
   }
 
   @Test
-  void getProfileReturnsServerProfileData() {
+  void getProfileInfoReturnsStableProfileData() {
     EasyModelEntityProfile profile = profile(ACTIVE_PROFILE_ID, ModelProfileStatus.ACTIVE);
     EasyModelServices.setProfileService(profileService(profile));
 
-    assertSame(profile, EasyModelEntitiesApi.getProfile(ACTIVE_PROFILE_ID).orElseThrow());
-    assertEquals(ACTIVE_PROFILE_ID, profile.id());
+    EasyModelProfileInfo profileInfo =
+        EasyModelEntitiesApi.getProfileInfo(ACTIVE_PROFILE_ID).orElseThrow();
+
+    assertEquals(ACTIVE_PROFILE_ID, profileInfo.id());
+    assertEquals(EasyModelProfileType.ENTITY, profileInfo.modelType());
+    assertEquals(EasyModelBodyType.QUADRUPED, profileInfo.bodyType());
+    assertEquals(0.6f, profileInfo.dimensions().width());
+    assertEquals(0.8f, profileInfo.dimensions().height());
+    assertEquals(0.5f, profileInfo.standingEyeHeight());
   }
 
   @Test
-  void profileCollectionsAreReadOnly() {
-    EasyModelEntityProfile profile = profile(ACTIVE_PROFILE_ID, ModelProfileStatus.ACTIVE);
-
-    assertThrows(UnsupportedOperationException.class, () -> profile.validationIssues().add(null));
-  }
-
-  @Test
-  void listProfilesReturnsOnlyActiveProfilesFilteredByBodyType() {
+  void listProfileInfosReturnsOnlyActiveProfilesFilteredByBodyType() {
     EasyModelServices.setProfileService(
         profileService(
             profile(ACTIVE_PROFILE_ID, ModelProfileStatus.ACTIVE),
             profile(INVALID_PROFILE_ID, ModelProfileStatus.DISABLED)));
 
     assertEquals(List.of(ACTIVE_PROFILE_ID), EasyModelEntitiesApi.listProfileIds());
-    assertEquals(1, EasyModelEntitiesApi.listProfiles().size());
-    assertEquals(ACTIVE_PROFILE_ID, EasyModelEntitiesApi.listProfiles().get(0).id());
-    assertEquals(1, EasyModelEntitiesApi.listProfiles(ModelBodyType.QUADRUPED).size());
-    assertTrue(EasyModelEntitiesApi.listProfiles(ModelBodyType.BIPED).isEmpty());
-  }
-
-  @Test
-  void getProfileEntityDimensionsReturnsScalableProfileDimensions() {
-    EasyModelServices.setProfileService(
-        profileService(profile(ACTIVE_PROFILE_ID, ModelProfileStatus.ACTIVE)));
-
-    EntityDimensions dimensions =
-        EasyModelEntitiesApi.getProfileEntityDimensions(ACTIVE_PROFILE_ID).orElseThrow();
-    assertEquals(0.6f, dimensions.width());
-    assertEquals(0.8f, dimensions.height());
-    assertFalse(dimensions.fixed());
-    assertTrue(EasyModelEntitiesApi.getProfileEntityDimensions(MISSING_PROFILE_ID).isEmpty());
-  }
-
-  @Test
-  void getProfileStandingEyeHeightReturnsProfileEyeHeight() {
-    EasyModelServices.setProfileService(
-        profileService(profile(ACTIVE_PROFILE_ID, ModelProfileStatus.ACTIVE)));
-
-    assertEquals(
-        0.5f, EasyModelEntitiesApi.getProfileStandingEyeHeight(ACTIVE_PROFILE_ID).orElseThrow());
-    assertTrue(EasyModelEntitiesApi.getProfileStandingEyeHeight(MISSING_PROFILE_ID).isEmpty());
+    assertEquals(1, EasyModelEntitiesApi.listProfileInfos().size());
+    assertEquals(ACTIVE_PROFILE_ID, EasyModelEntitiesApi.listProfileInfos().get(0).id());
+    assertEquals(1, EasyModelEntitiesApi.listProfileInfos(EasyModelBodyType.QUADRUPED).size());
+    assertTrue(EasyModelEntitiesApi.listProfileInfos(EasyModelBodyType.BIPED).isEmpty());
   }
 
   @Test

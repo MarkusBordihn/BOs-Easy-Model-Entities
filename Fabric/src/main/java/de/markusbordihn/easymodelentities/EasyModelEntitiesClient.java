@@ -22,11 +22,12 @@ package de.markusbordihn.easymodelentities;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelItemModelRenderer;
+import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.server.packs.PackType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +39,7 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
   @Override
   public void onInitializeClient() {
     log.info("Initializing {} (Fabric Client) ...", Constants.MOD_NAME);
+    EasyModelAnimationNetworkHandler.registerClient();
     EntityRendererRegistry.register(
         EasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     EntityRendererRegistry.register(
@@ -46,26 +48,23 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
         EasyModelEntityTypes.INSTANCE.aquaticEntityType(), EasyModelHostEntityRenderer::new);
     EntityRendererRegistry.register(
         EasyModelEntityTypes.INSTANCE.amphibiousEntityType(), EasyModelHostEntityRenderer::new);
-    BlockEntityRendererRegistry.register(
+    BlockEntityRenderers.register(
         EasyModelBlockEntityTypes.INSTANCE.staticBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
-    BlockEntityRendererRegistry.register(
+    BlockEntityRenderers.register(
         EasyModelBlockEntityTypes.INSTANCE.tickingBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
-    BlockEntityRendererRegistry.register(
+    BlockEntityRenderers.register(
         EasyModelBlockEntityTypes.INSTANCE.animatedBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
-    BlockEntityRendererRegistry.register(
+    BlockEntityRenderers.register(
         EasyModelBlockEntityTypes.INSTANCE.animatedRandomlyBlockEntityType(),
         EasyModelHostBlockEntityRenderer::new);
-    BuiltinItemRendererRegistry.INSTANCE.register(
-        EasyModelItems.ENTITY_SPAWN,
+    BuiltinItemRendererRegistry.DynamicItemRenderer itemRenderer =
         (stack, mode, poseStack, bufferSource, light, overlay) ->
-            EasyModelItemModelRenderer.render(stack, poseStack, bufferSource, light, overlay));
-    BuiltinItemRendererRegistry.INSTANCE.register(
-        EasyModelItems.BLOCK_SPAWN,
-        (stack, mode, poseStack, bufferSource, light, overlay) ->
-            EasyModelItemModelRenderer.render(stack, poseStack, bufferSource, light, overlay));
+            EasyModelItemModelRenderer.render(stack, poseStack, bufferSource, light, overlay);
+    BuiltinItemRendererRegistry.INSTANCE.register(EasyModelItems.ENTITY_SPAWN, itemRenderer);
+    BuiltinItemRendererRegistry.INSTANCE.register(EasyModelItems.BLOCK_SPAWN, itemRenderer);
     ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
         .registerReloadListener(new ModelRenderProfileReloadListenerWrapper());
   }
