@@ -73,6 +73,74 @@ public final class EasyModelBlockEntityRenderBackend {
         packedLight);
   }
 
+  public static void extractRenderState(
+      BlockEntity blockEntity,
+      EasyModelRuntimeContract contract,
+      EasyModelBlockEntityRenderState renderState,
+      float partialTick) {
+    extractRenderState(
+        blockEntity, contract, renderState, partialTick, EasyModelBlockEntityRenderOptions.DEFAULT);
+  }
+
+  public static void extractRenderState(
+      BlockEntity blockEntity,
+      EasyModelRuntimeContract contract,
+      EasyModelBlockEntityRenderState renderState,
+      float partialTick,
+      EasyModelBlockEntityRenderOptions options) {
+    Objects.requireNonNull(blockEntity, "blockEntity");
+    Objects.requireNonNull(contract, "contract");
+    Objects.requireNonNull(renderState, "renderState");
+
+    EasyModelBlockEntityRenderOptions safeOptions =
+        options == null ? EasyModelBlockEntityRenderOptions.DEFAULT : options;
+    renderState.easyModelRenderState = resolveRenderState(contract);
+    renderState.playbackFrame =
+        playbackFrame(blockEntity, renderState.easyModelRenderState, partialTick, safeOptions);
+    renderState.ageInTicks = renderState.playbackFrame.animationTicks();
+    renderState.partAnimator = safeOptions.partAnimator();
+    renderState.partAnimationMode = safeOptions.partAnimationMode();
+    renderState.scaleFactor = safeOptions.scale() == null ? 1.0f : safeOptions.scale();
+    renderState.yawDegrees = safeOptions.yawDegrees() == null ? 0.0f : safeOptions.yawDegrees();
+  }
+
+  public static void render(
+      EasyModelBlockEntityRenderState renderState,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    Objects.requireNonNull(renderState, "renderState");
+    Objects.requireNonNull(renderState.easyModelRenderState, "easyModelRenderState");
+    Objects.requireNonNull(poseStack, "poseStack");
+    Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
+
+    EasyModelRenderState easyModelRenderState = renderState.easyModelRenderState;
+    float scale = easyModelRenderState.scale() * renderState.scaleFactor;
+
+    poseStack.pushPose();
+    poseStack.translate(0.5f, 1.5f, 0.5f);
+    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.yawDegrees));
+    poseStack.scale(-scale, -scale, scale);
+
+    EasyModelBakedModelRenderer.render(
+        easyModelRenderState.bakedModel(),
+        easyModelRenderState,
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        EasyModelHeadLook.NONE,
+        renderState.playbackFrame,
+        renderState.partAnimator == null ? EasyModelPartAnimator.NONE : renderState.partAnimator,
+        renderState.partAnimationMode == null
+            ? EasyModelPartAnimationMode.ADD
+            : renderState.partAnimationMode,
+        poseStack,
+        submitNodeCollector,
+        packedLight);
+    poseStack.popPose();
+  }
+
   public static void render(
       EasyModelRenderState renderState,
       float ageInTicks,
@@ -150,24 +218,8 @@ public final class EasyModelBlockEntityRenderBackend {
 
     EasyModelBlockEntityRenderOptions safeOptions =
         options == null ? EasyModelBlockEntityRenderOptions.DEFAULT : options;
-    EasyModelAnimationSetting setting =
-        resolveSetting(safeOptions.animation(), animationSetting(blockEntity));
-    EasyModelAnimationPlaybackFrame playbackFrame;
-    if (safeOptions.animationTicks() != null) {
-      ANIMATION_PLAYBACK_TRACKER.clear(blockEntity);
-      playbackFrame =
-          EasyModelAnimationPlaybackFrame.single(
-              setting.animation(), safeOptions.animationTicks(), setting.loopOverride(), false);
-    } else {
-      playbackFrame =
-          ANIMATION_PLAYBACK_TRACKER.resolve(
-              blockEntity,
-              setting.animation(),
-              () -> EasyModelBakedModelRenderer.automaticClipName(renderState, 0.0f, 0.0f, 0.0f),
-              animationClock(blockEntity, partialTick),
-              renderState.bakedModel().animations());
-      playbackFrame = applySetting(playbackFrame, setting, blockEntity, partialTick);
-    }
+    EasyModelAnimationPlaybackFrame playbackFrame =
+        playbackFrame(blockEntity, renderState, partialTick, safeOptions);
     float yawDegrees = safeOptions.yawDegrees() == null ? 0.0f : safeOptions.yawDegrees();
     float scale =
         safeOptions.scale() == null
@@ -219,6 +271,31 @@ public final class EasyModelBlockEntityRenderBackend {
   public static void stopAnimation(
       BlockEntity blockEntity, EasyModelAnimationTransition transition) {
     ANIMATION_PLAYBACK_TRACKER.stop(blockEntity, transition);
+  }
+
+  private static EasyModelAnimationPlaybackFrame playbackFrame(
+      BlockEntity blockEntity,
+      EasyModelRenderState renderState,
+      float partialTick,
+      EasyModelBlockEntityRenderOptions options) {
+    EasyModelAnimationSetting setting =
+        resolveSetting(options.animation(), animationSetting(blockEntity));
+    if (options.animationTicks() != null) {
+      ANIMATION_PLAYBACK_TRACKER.clear(blockEntity);
+      return EasyModelAnimationPlaybackFrame.single(
+          setting.animation(), options.animationTicks(), setting.loopOverride(), false);
+    }
+
+    return applySetting(
+        ANIMATION_PLAYBACK_TRACKER.resolve(
+            blockEntity,
+            setting.animation(),
+            () -> EasyModelBakedModelRenderer.automaticClipName(renderState, 0.0f, 0.0f, 0.0f),
+            animationClock(blockEntity, partialTick),
+            renderState.bakedModel().animations()),
+        setting,
+        blockEntity,
+        partialTick);
   }
 
   private static EasyModelAnimationSetting resolveSetting(

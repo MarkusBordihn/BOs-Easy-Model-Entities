@@ -5,6 +5,13 @@
 This change log includes the summarized changes. For the full changelog, please go to
 the [GitHub History][history] instead.
 
+### 2.0.1
+
+- Fixed block entities `animation play`, `stop`, and `restart` never reached the screen.
+- Fixed the render options for scale and part animation being dropped by custom renderers.
+- Added `extractRenderState` and `submit` to both render delegates, so other mods can show manual
+  animations again.
+
 ### 2.0.0
 
 - Fixed the command auto-completion never offering the UUID of the entity in the crosshair.

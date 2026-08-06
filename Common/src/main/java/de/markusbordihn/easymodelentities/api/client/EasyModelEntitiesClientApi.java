@@ -29,6 +29,7 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationInfo
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlaybackMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelBounds;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelItemAnchor;
@@ -51,6 +52,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
@@ -85,6 +87,7 @@ public final class EasyModelEntitiesClientApi {
     if (renderState.isEmpty()) {
       return false;
     }
+
     EasyModelEntityRenderBackend.render(
         renderState.get(),
         yaw,
@@ -113,6 +116,7 @@ public final class EasyModelEntitiesClientApi {
     if (renderState.isEmpty()) {
       return false;
     }
+
     EasyModelEntityRenderBackend.render(
         entity,
         renderState.get(),
@@ -123,6 +127,104 @@ public final class EasyModelEntitiesClientApi {
         bufferSource,
         packedLight);
     return true;
+  }
+
+  public static boolean extractRenderState(
+      Entity entity,
+      Identifier profileId,
+      EasyModelEntityRenderStateHandle renderStateHandle,
+      float partialTick) {
+    return extractRenderState(
+        entity, profileId, renderStateHandle, partialTick, EasyModelEntityRenderOptions.DEFAULT);
+  }
+
+  public static boolean extractRenderState(
+      Entity entity,
+      Identifier profileId,
+      EasyModelEntityRenderStateHandle renderStateHandle,
+      float partialTick,
+      EasyModelEntityRenderOptions options) {
+    Objects.requireNonNull(entity, "entity");
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(renderStateHandle, "renderStateHandle");
+    Optional<EasyModelRuntimeContract> contract =
+        EasyModelEntityRenderBackend.resolveContract(profileId, EasyModelAnimationSetting.AUTO);
+    if (contract.isEmpty()) {
+      return false;
+    }
+
+    EasyModelEntityRenderBackend.extractRenderState(
+        entity,
+        contract.get(),
+        renderStateHandle.renderState(),
+        partialTick,
+        options == null ? EasyModelEntityRenderOptions.DEFAULT : options);
+    return true;
+  }
+
+  public static boolean extractRenderState(
+      BlockEntity blockEntity,
+      Identifier profileId,
+      EasyModelBlockEntityRenderStateHandle renderStateHandle,
+      float partialTick) {
+    return extractRenderState(
+        blockEntity,
+        profileId,
+        renderStateHandle,
+        partialTick,
+        EasyModelBlockEntityRenderOptions.DEFAULT);
+  }
+
+  public static boolean extractRenderState(
+      BlockEntity blockEntity,
+      Identifier profileId,
+      EasyModelBlockEntityRenderStateHandle renderStateHandle,
+      float partialTick,
+      EasyModelBlockEntityRenderOptions options) {
+    Objects.requireNonNull(blockEntity, "blockEntity");
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(renderStateHandle, "renderStateHandle");
+    Optional<EasyModelRuntimeContract> contract =
+        EasyModelEntityRenderBackend.resolveContract(profileId, EasyModelAnimationSetting.AUTO);
+    if (contract.isEmpty()) {
+      return false;
+    }
+
+    EasyModelBlockEntityRenderBackend.extractRenderState(
+        blockEntity,
+        contract.get(),
+        renderStateHandle.renderState(),
+        partialTick,
+        options == null ? EasyModelBlockEntityRenderOptions.DEFAULT : options);
+    return true;
+  }
+
+  public static void submit(
+      EasyModelEntityRenderStateHandle renderStateHandle,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    Objects.requireNonNull(renderStateHandle, "renderStateHandle");
+    if (!renderStateHandle.isExtracted()) {
+      return;
+    }
+
+    EasyModelEntityRenderBackend.render(
+        renderStateHandle.renderState(), poseStack, submitNodeCollector, packedLight);
+  }
+
+  public static void submit(
+      EasyModelBlockEntityRenderStateHandle renderStateHandle,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    Objects.requireNonNull(renderStateHandle, "renderStateHandle");
+    if (!renderStateHandle.isExtracted()) {
+      return;
+    }
+
+    EasyModelBlockEntityRenderBackend.render(
+        renderStateHandle.renderState(), poseStack, submitNodeCollector, packedLight);
   }
 
   public static Optional<EasyModelBounds> getModelBounds(Identifier profileId) {

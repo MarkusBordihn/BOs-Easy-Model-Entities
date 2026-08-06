@@ -85,6 +85,52 @@ public final class EasyModelEntityRenderBackend {
                 EasyModelRuntimeContract.fromRenderProfile(profileId, renderProfile, animation));
   }
 
+  public static void extractRenderState(
+      Entity entity,
+      EasyModelRuntimeContract contract,
+      EasyModelEntityRenderState renderState,
+      float partialTick) {
+    extractRenderState(
+        entity, contract, renderState, partialTick, EasyModelEntityRenderOptions.DEFAULT);
+  }
+
+  public static void extractRenderState(
+      Entity entity,
+      EasyModelRuntimeContract contract,
+      EasyModelEntityRenderState renderState,
+      float partialTick,
+      EasyModelEntityRenderOptions options) {
+    Objects.requireNonNull(entity, "entity");
+    Objects.requireNonNull(contract, "contract");
+    Objects.requireNonNull(renderState, "renderState");
+
+    EasyModelEntityRenderOptions safeOptions =
+        options == null ? EasyModelEntityRenderOptions.DEFAULT : options;
+    float limbSwingAmount = limbSwingAmount(entity, partialTick);
+    float airborneAmount = airborneAmount(entity);
+    float attackAmount = attackAmount(entity, partialTick);
+
+    renderState.easyModelRenderState = resolveRenderState(contract);
+    renderState.entityYaw = bodyYaw(entity, partialTick);
+    renderState.limbSwing = limbSwing(entity, partialTick);
+    renderState.limbSwingAmount = limbSwingAmount;
+    renderState.airborneAmount = airborneAmount;
+    renderState.attackAmount = attackAmount;
+    renderState.playbackFrame =
+        playbackFrame(
+            entity,
+            renderState.easyModelRenderState,
+            partialTick,
+            safeOptions,
+            limbSwingAmount,
+            airborneAmount,
+            attackAmount);
+    renderState.headLook = headLook(entity, renderState.entityYaw, partialTick, safeOptions);
+    renderState.partAnimator = safeOptions.partAnimator();
+    renderState.partAnimationMode = safeOptions.partAnimationMode();
+    renderState.scaleFactor = safeOptions.scale() == null ? 1.0f : safeOptions.scale();
+  }
+
   public static void render(
       EasyModelEntityRenderState renderState,
       PoseStack poseStack,
@@ -96,10 +142,10 @@ public final class EasyModelEntityRenderBackend {
     Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
 
     EasyModelRenderState easyModelRenderState = renderState.easyModelRenderState;
+    float scale = easyModelRenderState.scale() * renderState.scaleFactor;
     poseStack.pushPose();
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.entityYaw));
-    poseStack.scale(
-        -easyModelRenderState.scale(), -easyModelRenderState.scale(), easyModelRenderState.scale());
+    poseStack.scale(-scale, -scale, scale);
     poseStack.translate(0.0f, -1.501f, 0.0f);
 
     EasyModelBakedModelRenderer.render(
@@ -136,11 +182,11 @@ public final class EasyModelEntityRenderBackend {
 
     EasyModelRenderState easyModelRenderState = renderState.easyModelRenderState;
     CapturingPartPoseListener listener = new CapturingPartPoseListener(partName);
+    float scale = easyModelRenderState.scale() * renderState.scaleFactor;
 
     poseStack.pushPose();
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.entityYaw));
-    poseStack.scale(
-        -easyModelRenderState.scale(), -easyModelRenderState.scale(), easyModelRenderState.scale());
+    poseStack.scale(-scale, -scale, scale);
     poseStack.translate(0.0f, -1.501f, 0.0f);
     EasyModelBakedModelRenderer.render(
         easyModelRenderState.bakedModel(),
@@ -231,18 +277,6 @@ public final class EasyModelEntityRenderBackend {
         poseStack,
         bufferSource,
         packedLight);
-  }
-
-  static EasyModelAnimationPlaybackFrame playbackFrame(
-      Entity entity, EasyModelRenderState renderState, float partialTick) {
-    return playbackFrame(
-        entity,
-        renderState,
-        partialTick,
-        EasyModelEntityRenderOptions.DEFAULT,
-        limbSwingAmount(entity, partialTick),
-        airborneAmount(entity),
-        attackAmount(entity, partialTick));
   }
 
   private static EasyModelAnimationPlaybackFrame playbackFrame(
@@ -461,6 +495,12 @@ public final class EasyModelEntityRenderBackend {
         eyeHeight(entity),
         bodyType,
         animation);
+  }
+
+  private static float bodyYaw(Entity entity, float partialTick) {
+    return entity instanceof LivingEntity livingEntity
+        ? Mth.rotLerp(partialTick, livingEntity.yBodyRotO, livingEntity.yBodyRot)
+        : Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot());
   }
 
   private static float limbSwing(Entity entity, float partialTick) {

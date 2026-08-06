@@ -34,6 +34,7 @@ public class EasyModelEntityRenderState extends EntityRenderState {
   public EasyModelPartAnimator partAnimator = EasyModelPartAnimator.NONE;
   public EasyModelPartAnimationMode partAnimationMode = EasyModelPartAnimationMode.ADD;
   public EasyModelHeadLook headLook = EasyModelHeadLook.NONE;
+  public float scaleFactor = 1.0f;
   public float entityYaw;
   public float limbSwing;
   public float limbSwingAmount;

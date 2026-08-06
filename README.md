@@ -141,23 +141,37 @@ The client API can inspect and control the keyframe clips of an entity or block 
 ```java
 List<EasyModelAnimationInfo> animations = EasyModelEntitiesClientApi.listAnimations(profileId);
 
-EasyModelEntitiesClientApi.playAnimation(entity, EasyModelAnimation.named("wave"));
+EasyModelEntitiesClientApi.
 
-EasyModelEntitiesClientApi.playAnimation(
-    entity,
-    EasyModelAnimation.named("wave"),
-    EasyModelAnimationPlaybackMode.LOOP,
-    EasyModelAnimationTransition.DEFAULT);
+playAnimation(entity, EasyModelAnimation.named("wave"));
 
-EasyModelEntitiesClientApi.playAnimation(
-    entity,
-    EasyModelAnimation.named("wave"),
+  EasyModelEntitiesClientApi.
+
+playAnimation(
+  entity,
+  EasyModelAnimation.named("wave"),
+
+EasyModelAnimationPlaybackMode.LOOP,
+EasyModelAnimationTransition.DEFAULT);
+
+  EasyModelEntitiesClientApi.
+
+playAnimation(
+  entity,
+  EasyModelAnimation.named("wave"),
     EasyModelAnimationPlayback.DEFAULT
-        .withMode(EasyModelAnimationPlaybackMode.REPEAT)
-        .withRepeat(3),
-    EasyModelAnimationTransition.DEFAULT);
+      .
 
-EasyModelEntitiesClientApi.stopAnimation(entity);
+withMode(EasyModelAnimationPlaybackMode.REPEAT)
+        .
+
+withRepeat(3),
+
+EasyModelAnimationTransition.DEFAULT);
+
+  EasyModelEntitiesClientApi.
+
+stopAnimation(entity);
 ```
 
 `EasyModelAnimation` is a flat value type: use its constants for standard states,
