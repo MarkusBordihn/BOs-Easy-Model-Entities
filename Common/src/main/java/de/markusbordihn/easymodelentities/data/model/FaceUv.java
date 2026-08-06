@@ -21,6 +21,13 @@ package de.markusbordihn.easymodelentities.data.model;
 
 public record FaceUv(float minU, float minV, float maxU, float maxV) {
 
+  public FaceUv {
+    requireFinite(minU, "minU");
+    requireFinite(minV, "minV");
+    requireFinite(maxU, "maxU");
+    requireFinite(maxV, "maxV");
+  }
+
   public static FaceUv of(float[] uv) {
     if (uv == null || uv.length != 4) {
       throw new IllegalArgumentException("UV must have 4 values.");
@@ -29,8 +36,24 @@ public record FaceUv(float minU, float minV, float maxU, float maxV) {
     return new FaceUv(uv[0], uv[1], uv[2], uv[3]);
   }
 
+  private static void requireFinite(float value, String name) {
+    if (!Float.isFinite(value)) {
+      throw new IllegalArgumentException(name + " must be finite.");
+    }
+  }
+
   public FaceUv scale(float textureWidth, float textureHeight) {
+    if (!Float.isFinite(textureWidth) || textureWidth <= 0.0f) {
+      throw new IllegalArgumentException("textureWidth must be a finite positive value.");
+    }
+    if (!Float.isFinite(textureHeight) || textureHeight <= 0.0f) {
+      throw new IllegalArgumentException("textureHeight must be a finite positive value.");
+    }
     return new FaceUv(
         minU / textureWidth, minV / textureHeight, maxU / textureWidth, maxV / textureHeight);
+  }
+
+  public FaceUv mirrorU() {
+    return new FaceUv(this.maxU, this.minV, this.minU, this.maxV);
   }
 }

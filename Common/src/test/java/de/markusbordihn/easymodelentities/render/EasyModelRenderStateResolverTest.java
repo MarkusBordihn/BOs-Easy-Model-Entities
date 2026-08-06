@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.render.*;
@@ -37,11 +38,11 @@ import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderSettings
 import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -62,7 +63,14 @@ class EasyModelRenderStateResolverTest {
 
   private static EasyModelRuntimeContract contract(ModelBodyType bodyType, String version) {
     return new EasyModelRuntimeContract(
-        PROFILE_ID, PROFILE_ID, version, 0.6f, 1.8f, 1.62f, bodyType, EasyModelAnimationState.AUTO);
+        PROFILE_ID,
+        PROFILE_ID,
+        version,
+        0.6f,
+        1.8f,
+        1.62f,
+        bodyType,
+        EasyModelAnimationSetting.AUTO);
   }
 
   private static EasyModelRenderProfile renderProfile(ModelBodyType bodyType, String version) {
@@ -95,9 +103,14 @@ class EasyModelRenderStateResolverTest {
   }
 
   private static ResourceManager resourceManager(boolean includeTexture) throws IOException {
+    return resourceManager(fixture("static_explicit_root.bbmodel"), includeTexture);
+  }
+
+  private static ResourceManager resourceManager(byte[] model, boolean includeTexture)
+      throws IOException {
     ResourceManager resourceManager = mock(ResourceManager.class);
     when(resourceManager.getResource(ModelResourcePaths.modelResourceLocation(MODEL_ID)))
-        .thenReturn(Optional.of(resource(fixture("static_explicit_root.bbmodel"))));
+        .thenReturn(Optional.of(resource(model)));
     when(resourceManager.getResource(TEXTURE_ID))
         .thenReturn(includeTexture ? Optional.of(resource(new byte[] {1})) : Optional.empty());
     return resourceManager;
@@ -257,5 +270,32 @@ class EasyModelRenderStateResolverTest {
     assertFalse(renderState.fallbackModel());
     assertTrue(renderState.fallbackTexture());
     assertEquals(EasyModelRenderStateResolver.FALLBACK_TEXTURE, renderState.texture());
+  }
+
+  @Test
+  @DisplayName("A model decode failure renders its fallback and preserves the diagnostic")
+  void modelDecodeFailureRendersFallback() throws Exception {
+    EasyModelRenderProfile failedProfile =
+        renderProfile(ModelBodyType.STATIC, "fingerprint")
+            .withValidationIssues(
+                List.of(
+                    new ModelRenderProfileValidationIssue(
+                        ModelRenderProfileStatus.MODEL_DECODE_FAILED,
+                        "model",
+                        "Could not decode model.")));
+
+    assertTrue(failedProfile.canResolveRenderState());
+
+    EasyModelRenderState renderState =
+        EasyModelRenderStateResolver.resolve(
+            contract(ModelBodyType.STATIC, "fingerprint"),
+            renderProfileService(failedProfile),
+            ModelBakeService.createDefault(),
+            resourceManager("{}".getBytes(StandardCharsets.UTF_8), true));
+
+    assertTrue(renderState.fallbackModel());
+    assertEquals(
+        ModelRenderProfileStatus.MODEL_DECODE_FAILED,
+        renderState.validationIssues().get(0).status());
   }
 }

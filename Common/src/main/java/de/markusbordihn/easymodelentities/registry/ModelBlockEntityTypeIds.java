@@ -19,20 +19,19 @@
 
 package de.markusbordihn.easymodelentities.registry;
 
-import de.markusbordihn.easymodelentities.Constants;
 import java.util.Set;
 import net.minecraft.resources.Identifier;
 
 public final class ModelBlockEntityTypeIds {
 
   public static final Identifier STATIC_BLOCK_ENTITY =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "static_block_entity");
+      ModelResourcePaths.modIdentifier("static_block_entity");
   public static final Identifier TICKING_BLOCK_ENTITY =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "ticking_block_entity");
+      ModelResourcePaths.modIdentifier("ticking_block_entity");
   public static final Identifier ANIMATED_BLOCK_ENTITY =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "animated_block_entity");
+      ModelResourcePaths.modIdentifier("animated_block_entity");
   public static final Identifier ANIMATED_RANDOMLY_BLOCK_ENTITY =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "animated_randomly_block_entity");
+      ModelResourcePaths.modIdentifier("animated_randomly_block_entity");
   public static final Set<Identifier> SUPPORTED_HOST_BLOCK_ENTITY_TYPES =
       Set.of(
           STATIC_BLOCK_ENTITY,

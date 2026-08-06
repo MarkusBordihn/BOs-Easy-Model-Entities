@@ -25,16 +25,28 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public final class SchemaMigrations {
 
   public static final SchemaMigrations DEFAULT =
-      new SchemaMigrations(List.of(new ClientLinkRemovalMigration()));
+      new SchemaMigrations(List.of(new SchemaMigrationV0_1ToV0_2()));
 
   private final List<SchemaMigration> migrations;
 
   public SchemaMigrations(List<SchemaMigration> migrations) {
     this.migrations = List.copyOf(Objects.requireNonNull(migrations, "migrations"));
+  }
+
+  public List<String> supportedVersions(String currentVersion) {
+    Objects.requireNonNull(currentVersion, "currentVersion");
+    return Stream.concat(
+            this.migrations.stream()
+                .flatMap(migration -> Stream.of(migration.from(), migration.to())),
+            Stream.of(currentVersion))
+        .distinct()
+        .sorted()
+        .toList();
   }
 
   public Optional<JsonObject> migrate(JsonObject root, String fromVersion, String currentVersion) {
@@ -63,25 +75,5 @@ public final class SchemaMigrations {
     }
 
     return Objects.equals(current, currentVersion) ? Optional.of(working) : Optional.empty();
-  }
-
-  private static final class ClientLinkRemovalMigration implements SchemaMigration {
-
-    @Override
-    public String from() {
-      return "0.1.0";
-    }
-
-    @Override
-    public String to() {
-      return "0.2.0";
-    }
-
-    @Override
-    public JsonObject apply(JsonObject input) {
-      input.remove("client");
-      input.addProperty("schema_version", to());
-      return input;
-    }
   }
 }

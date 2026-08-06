@@ -54,8 +54,10 @@ dependencies {
   implementation project(":Common")
 }
 
+def commonProject = project(":Common")
+
 processResources {
-  from project(":Common").sourceSets.main.resources
+  from commonProject.sourceSets.main.resources
   def javaVersion = project.extensions
       .getByType(org.gradle.api.plugins.JavaPluginExtension)
       .toolchain
@@ -64,7 +66,8 @@ processResources {
       .asInt()
   def replaceProperties = [
       version                       : project.version,
-      fabric_loader_version_range   : ">=${project.fabric_loader_version}",
+      fabric_loader_version_range   : ">=${project.fabric_loader_min_version}",
+      fabric_api_version_range      : ">=${project.fabric_api_min_version}",
       fabric_minecraft_version_range: "~${project.minecraft_version}",
       java_version_range            : ">=${javaVersion}"
   ]
@@ -75,8 +78,8 @@ processResources {
   }
 }
 
-tasks.withType(JavaCompile).configureEach {
-  source(project(":Common").sourceSets.main.allSource)
+tasks.named('compileJava', JavaCompile).configure {
+  source(commonProject.sourceSets.main.allSource)
 }
 
 tasks.withType(Test).configureEach {

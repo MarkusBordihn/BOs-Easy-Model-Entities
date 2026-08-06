@@ -19,9 +19,9 @@
 
 package de.markusbordihn.easymodelentities.item;
 
-import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -43,7 +43,8 @@ public final class EasyModelItemTooltip {
     tooltip.accept(
         Component.literal(profileId.get().toString()).withStyle(ChatFormatting.DARK_GRAY));
 
-    Optional<EasyModelEntityProfile> profile = EasyModelEntitiesApi.getProfile(profileId.get());
+    Optional<EasyModelEntityProfile> profile =
+        EasyModelServices.profileService().getProfile(profileId.get());
     if (profile.isEmpty()) {
       return;
     }

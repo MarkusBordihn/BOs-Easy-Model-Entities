@@ -2,5 +2,10 @@
   "schema_version": "0.2.0",
   "model_type": "entity",
   "preset_type": "statue",
-  "version": "demo-text-example-v1"
+  "version": "demo-text-example-v2",
+  "dimensions": {
+    "width": 1.35,
+    "height": 0.4,
+    "eye_height": 0.2
+  }
 }

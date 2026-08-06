@@ -21,24 +21,38 @@ package de.markusbordihn.easymodelentities.api.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelBodyType;
+import de.markusbordihn.easymodelentities.api.data.EasyModelProfileType;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationInfo;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlaybackMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelBounds;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelItemAnchor;
+import de.markusbordihn.easymodelentities.client.render.EasyModelBlockEntityRenderBackend;
 import de.markusbordihn.easymodelentities.client.render.EasyModelEntityRenderBackend;
 import de.markusbordihn.easymodelentities.client.render.EasyModelItemAnchorResolver;
+import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
-import de.markusbordihn.easymodelentities.data.model.bake.ModelBounds;
-import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
@@ -69,10 +83,11 @@ public final class EasyModelEntitiesClientApi {
     Objects.requireNonNull(poseStack, "poseStack");
     Objects.requireNonNull(bufferSource, "bufferSource");
     Optional<EasyModelRenderState> renderState =
-        resolveRenderState(profileId, EasyModelAnimationState.AUTO);
+        resolveRenderState(profileId, EasyModelAnimationSetting.AUTO);
     if (renderState.isEmpty()) {
       return false;
     }
+
     EasyModelEntityRenderBackend.render(
         renderState.get(),
         yaw,
@@ -97,10 +112,11 @@ public final class EasyModelEntitiesClientApi {
     Objects.requireNonNull(poseStack, "poseStack");
     Objects.requireNonNull(bufferSource, "bufferSource");
     Optional<EasyModelRenderState> renderState =
-        resolveRenderState(profileId, EasyModelAnimationState.AUTO);
+        resolveRenderState(profileId, EasyModelAnimationSetting.AUTO);
     if (renderState.isEmpty()) {
       return false;
     }
+
     EasyModelEntityRenderBackend.render(
         entity,
         renderState.get(),
@@ -113,17 +129,117 @@ public final class EasyModelEntitiesClientApi {
     return true;
   }
 
-  public static Optional<ModelBounds> getModelBounds(Identifier profileId) {
-    Objects.requireNonNull(profileId, "profileId");
-    return resolveRenderState(profileId, EasyModelAnimationState.AUTO)
-        .map(EasyModelRenderState::bakedModel)
-        .map(BakedModel::bounds);
+  public static boolean extractRenderState(
+      Entity entity,
+      Identifier profileId,
+      EasyModelEntityRenderStateHandle renderStateHandle,
+      float partialTick) {
+    return extractRenderState(
+        entity, profileId, renderStateHandle, partialTick, EasyModelEntityRenderOptions.DEFAULT);
   }
 
-  public static Optional<ModelBounds> getDisplayedBounds(Identifier profileId) {
+  public static boolean extractRenderState(
+      Entity entity,
+      Identifier profileId,
+      EasyModelEntityRenderStateHandle renderStateHandle,
+      float partialTick,
+      EasyModelEntityRenderOptions options) {
+    Objects.requireNonNull(entity, "entity");
     Objects.requireNonNull(profileId, "profileId");
-    return resolveRenderState(profileId, EasyModelAnimationState.AUTO)
-        .map(renderState -> renderState.bakedModel().bounds().scaled(renderState.scale()));
+    Objects.requireNonNull(renderStateHandle, "renderStateHandle");
+    Optional<EasyModelRuntimeContract> contract =
+        EasyModelEntityRenderBackend.resolveContract(profileId, EasyModelAnimationSetting.AUTO);
+    if (contract.isEmpty()) {
+      return false;
+    }
+
+    EasyModelEntityRenderBackend.extractRenderState(
+        entity,
+        contract.get(),
+        renderStateHandle.renderState(),
+        partialTick,
+        options == null ? EasyModelEntityRenderOptions.DEFAULT : options);
+    return true;
+  }
+
+  public static boolean extractRenderState(
+      BlockEntity blockEntity,
+      Identifier profileId,
+      EasyModelBlockEntityRenderStateHandle renderStateHandle,
+      float partialTick) {
+    return extractRenderState(
+        blockEntity,
+        profileId,
+        renderStateHandle,
+        partialTick,
+        EasyModelBlockEntityRenderOptions.DEFAULT);
+  }
+
+  public static boolean extractRenderState(
+      BlockEntity blockEntity,
+      Identifier profileId,
+      EasyModelBlockEntityRenderStateHandle renderStateHandle,
+      float partialTick,
+      EasyModelBlockEntityRenderOptions options) {
+    Objects.requireNonNull(blockEntity, "blockEntity");
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(renderStateHandle, "renderStateHandle");
+    Optional<EasyModelRuntimeContract> contract =
+        EasyModelEntityRenderBackend.resolveContract(profileId, EasyModelAnimationSetting.AUTO);
+    if (contract.isEmpty()) {
+      return false;
+    }
+
+    EasyModelBlockEntityRenderBackend.extractRenderState(
+        blockEntity,
+        contract.get(),
+        renderStateHandle.renderState(),
+        partialTick,
+        options == null ? EasyModelBlockEntityRenderOptions.DEFAULT : options);
+    return true;
+  }
+
+  public static void submit(
+      EasyModelEntityRenderStateHandle renderStateHandle,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    Objects.requireNonNull(renderStateHandle, "renderStateHandle");
+    if (!renderStateHandle.isExtracted()) {
+      return;
+    }
+
+    EasyModelEntityRenderBackend.render(
+        renderStateHandle.renderState(), poseStack, submitNodeCollector, packedLight);
+  }
+
+  public static void submit(
+      EasyModelBlockEntityRenderStateHandle renderStateHandle,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    Objects.requireNonNull(renderStateHandle, "renderStateHandle");
+    if (!renderStateHandle.isExtracted()) {
+      return;
+    }
+
+    EasyModelBlockEntityRenderBackend.render(
+        renderStateHandle.renderState(), poseStack, submitNodeCollector, packedLight);
+  }
+
+  public static Optional<EasyModelBounds> getModelBounds(Identifier profileId) {
+    Objects.requireNonNull(profileId, "profileId");
+    return resolveRenderState(profileId, EasyModelAnimationSetting.AUTO)
+        .map(EasyModelRenderState::bakedModel)
+        .map(BakedModel::bounds)
+        .map(EasyModelApiMapper::bounds);
+  }
+
+  public static Optional<EasyModelBounds> getDisplayedBounds(Identifier profileId) {
+    Objects.requireNonNull(profileId, "profileId");
+    return resolveRenderState(profileId, EasyModelAnimationSetting.AUTO)
+        .map(renderState -> renderState.bakedModel().bounds().scaled(renderState.scale()))
+        .map(EasyModelApiMapper::bounds);
   }
 
   public static Optional<EasyModelItemAnchor> getItemAnchor(Identifier profileId, HumanoidArm arm) {
@@ -132,30 +248,252 @@ public final class EasyModelEntitiesClientApi {
     return EasyModelItemAnchorResolver.getItemAnchor(profileId, arm);
   }
 
-  public static Optional<ModelBodyType> getBodyType(Identifier profileId) {
+  public static Optional<EasyModelBodyType> getBodyType(Identifier profileId) {
     Objects.requireNonNull(profileId, "profileId");
-    return EasyModelEntityRenderBackend.resolveContract(profileId, EasyModelAnimationState.AUTO)
-        .map(EasyModelRuntimeContract::bodyType);
+    return EasyModelEntityRenderBackend.resolveContract(profileId, EasyModelAnimationSetting.AUTO)
+        .map(EasyModelRuntimeContract::bodyType)
+        .map(EasyModelApiMapper::bodyType);
+  }
+
+  public static List<EasyModelAnimationInfo> listAnimations(Identifier profileId) {
+    Objects.requireNonNull(profileId, "profileId");
+    return resolveRenderState(profileId, EasyModelAnimationSetting.AUTO)
+        .map(EasyModelRenderState::bakedModel)
+        .map(BakedModel::animations)
+        .map(EasyModelEntitiesClientApi::animationInfoFromClips)
+        .orElse(List.of());
+  }
+
+  public static Optional<EasyModelAnimationInfo> getAnimationInfo(
+      Identifier profileId, String animationName) {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(animationName, "animationName");
+    String normalizedName = ModelAnimationClips.normalize(animationName);
+    return listAnimations(profileId).stream()
+        .filter(animation -> animation.name().equals(normalizedName))
+        .findFirst();
+  }
+
+  static List<EasyModelAnimationInfo> animationInfoFromClips(
+      Map<String, ModelAnimationClip> clips) {
+    return clips.values().stream()
+        .sorted(Comparator.comparing(ModelAnimationClip::name))
+        .map(EasyModelEntitiesClientApi::animationInfo)
+        .toList();
+  }
+
+  private static EasyModelAnimationInfo animationInfo(ModelAnimationClip clip) {
+    int keyframeCount =
+        clip.boneTracks().values().stream()
+            .mapToInt(track -> track.rotationKeyframes().size() + track.positionKeyframes().size())
+            .sum();
+    int frameCount =
+        clip.framesPerSecond() > 0.0f ? (int) Math.ceil(clip.length() * clip.framesPerSecond()) : 0;
+    return new EasyModelAnimationInfo(
+        clip.name(),
+        clip.length(),
+        clip.length() * 20.0f,
+        clip.loop(),
+        clip.framesPerSecond(),
+        frameCount,
+        keyframeCount,
+        clip.boneTracks().size());
+  }
+
+  public static void playAnimation(Entity entity, EasyModelAnimation animation) {
+    playAnimation(
+        entity,
+        animation,
+        EasyModelAnimationPlayback.DEFAULT,
+        EasyModelAnimationTransition.DEFAULT);
+  }
+
+  public static void playAnimation(Entity entity, String animationName) {
+    playAnimation(entity, resolveAnimationName(animationName));
+  }
+
+  public static void playAnimation(
+      Entity entity, EasyModelAnimation animation, EasyModelAnimationTransition transition) {
+    playAnimation(entity, animation, EasyModelAnimationPlayback.DEFAULT, transition);
+  }
+
+  public static void playAnimation(
+      Entity entity,
+      EasyModelAnimation animation,
+      EasyModelAnimationPlayback playback,
+      EasyModelAnimationTransition transition) {
+    EasyModelEntityRenderBackend.playAnimation(
+        Objects.requireNonNull(entity, "entity"),
+        Objects.requireNonNull(animation, "animation"),
+        Objects.requireNonNull(playback, "playback"),
+        Objects.requireNonNull(transition, "transition"));
+  }
+
+  public static void playAnimation(
+      Entity entity,
+      EasyModelAnimation animation,
+      EasyModelAnimationPlaybackMode playbackMode,
+      EasyModelAnimationTransition transition) {
+    playAnimation(
+        entity,
+        animation,
+        new EasyModelAnimationPlayback(
+            Objects.requireNonNull(playbackMode, "playbackMode"), 1, 0.0f),
+        transition);
+  }
+
+  public static void playAnimation(
+      Entity entity, String animationName, EasyModelAnimationTransition transition) {
+    playAnimation(entity, resolveAnimationName(animationName), transition);
+  }
+
+  public static void playAnimation(
+      Entity entity,
+      String animationName,
+      EasyModelAnimationPlayback playback,
+      EasyModelAnimationTransition transition) {
+    playAnimation(entity, resolveAnimationName(animationName), playback, transition);
+  }
+
+  public static void playAnimation(
+      Entity entity,
+      String animationName,
+      EasyModelAnimationPlaybackMode playbackMode,
+      EasyModelAnimationTransition transition) {
+    playAnimation(entity, resolveAnimationName(animationName), playbackMode, transition);
+  }
+
+  public static void restartAnimation(Entity entity) {
+    EasyModelEntityRenderBackend.restartAnimation(Objects.requireNonNull(entity, "entity"));
+  }
+
+  public static void stopAnimation(Entity entity) {
+    stopAnimation(entity, EasyModelAnimationTransition.IMMEDIATE);
+  }
+
+  public static void stopAnimation(Entity entity, EasyModelAnimationTransition transition) {
+    EasyModelEntityRenderBackend.stopAnimation(
+        Objects.requireNonNull(entity, "entity"), Objects.requireNonNull(transition, "transition"));
+  }
+
+  public static void playAnimation(BlockEntity blockEntity, EasyModelAnimation animation) {
+    playAnimation(
+        blockEntity,
+        animation,
+        EasyModelAnimationPlayback.DEFAULT,
+        EasyModelAnimationTransition.DEFAULT);
+  }
+
+  public static void playAnimation(BlockEntity blockEntity, String animationName) {
+    playAnimation(blockEntity, resolveAnimationName(animationName));
+  }
+
+  public static void playAnimation(
+      BlockEntity blockEntity,
+      EasyModelAnimation animation,
+      EasyModelAnimationTransition transition) {
+    playAnimation(blockEntity, animation, EasyModelAnimationPlayback.DEFAULT, transition);
+  }
+
+  public static void playAnimation(
+      BlockEntity blockEntity,
+      EasyModelAnimation animation,
+      EasyModelAnimationPlayback playback,
+      EasyModelAnimationTransition transition) {
+    EasyModelBlockEntityRenderBackend.playAnimation(
+        Objects.requireNonNull(blockEntity, "blockEntity"),
+        Objects.requireNonNull(animation, "animation"),
+        Objects.requireNonNull(playback, "playback"),
+        Objects.requireNonNull(transition, "transition"));
+  }
+
+  public static void playAnimation(
+      BlockEntity blockEntity,
+      EasyModelAnimation animation,
+      EasyModelAnimationPlaybackMode playbackMode,
+      EasyModelAnimationTransition transition) {
+    playAnimation(
+        blockEntity,
+        animation,
+        new EasyModelAnimationPlayback(
+            Objects.requireNonNull(playbackMode, "playbackMode"), 1, 0.0f),
+        transition);
+  }
+
+  public static void playAnimation(
+      BlockEntity blockEntity, String animationName, EasyModelAnimationTransition transition) {
+    playAnimation(blockEntity, resolveAnimationName(animationName), transition);
+  }
+
+  public static void playAnimation(
+      BlockEntity blockEntity,
+      String animationName,
+      EasyModelAnimationPlayback playback,
+      EasyModelAnimationTransition transition) {
+    playAnimation(blockEntity, resolveAnimationName(animationName), playback, transition);
+  }
+
+  public static void playAnimation(
+      BlockEntity blockEntity,
+      String animationName,
+      EasyModelAnimationPlaybackMode playbackMode,
+      EasyModelAnimationTransition transition) {
+    playAnimation(blockEntity, resolveAnimationName(animationName), playbackMode, transition);
+  }
+
+  public static void restartAnimation(BlockEntity blockEntity) {
+    EasyModelBlockEntityRenderBackend.restartAnimation(
+        Objects.requireNonNull(blockEntity, "blockEntity"));
+  }
+
+  public static void stopAnimation(BlockEntity blockEntity) {
+    stopAnimation(blockEntity, EasyModelAnimationTransition.IMMEDIATE);
+  }
+
+  public static void stopAnimation(
+      BlockEntity blockEntity, EasyModelAnimationTransition transition) {
+    EasyModelBlockEntityRenderBackend.stopAnimation(
+        Objects.requireNonNull(blockEntity, "blockEntity"),
+        Objects.requireNonNull(transition, "transition"));
   }
 
   public static List<Identifier> listRenderableProfileIds() {
+    return renderableProfileIds(profileId -> true);
+  }
+
+  public static List<Identifier> listRenderableProfileIds(EasyModelProfileType modelType) {
+    Objects.requireNonNull(modelType, "modelType");
+    return renderableProfileIds(
+        profileId ->
+            EasyModelApiMapper.profileType(ModelType.fromProfileId(profileId)) == modelType);
+  }
+
+  public static List<Identifier> listRenderableEntityProfileIds() {
+    return listRenderableProfileIds(EasyModelProfileType.ENTITY);
+  }
+
+  public static List<Identifier> listRenderableBlockEntityProfileIds() {
+    return listRenderableProfileIds(EasyModelProfileType.BLOCK_ENTITY);
+  }
+
+  static EasyModelAnimation resolveAnimationName(String animationName) {
+    Objects.requireNonNull(animationName, "animationName");
+    return EasyModelAnimation.parse(animationName)
+        .orElseGet(() -> EasyModelAnimation.named(animationName));
+  }
+
+  private static List<Identifier> renderableProfileIds(Predicate<Identifier> profileFilter) {
     return EasyModelServices.renderProfileService().getRenderProfiles().stream()
         .filter(EasyModelRenderProfile::isRenderable)
         .map(EasyModelRenderProfile::id)
+        .filter(profileFilter)
         .sorted(Comparator.comparing(Identifier::toString))
         .toList();
   }
 
-  public static List<Identifier> listRenderableProfileIds(ModelType modelType) {
-    Objects.requireNonNull(modelType, "modelType");
-    return listRenderableProfileIds().stream()
-        .filter(id -> ModelType.fromProfileId(id) == modelType)
-        .toList();
-  }
-
   private static Optional<EasyModelRenderState> resolveRenderState(
-      Identifier profileId, EasyModelAnimationState animationState) {
-    return EasyModelEntityRenderBackend.resolveContract(profileId, animationState)
+      Identifier profileId, EasyModelAnimationSetting animation) {
+    return EasyModelEntityRenderBackend.resolveContract(profileId, animation)
         .map(EasyModelEntityRenderBackend::resolveRenderState);
   }
 }

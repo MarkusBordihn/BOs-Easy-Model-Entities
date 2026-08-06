@@ -19,12 +19,12 @@
 
 package de.markusbordihn.easymodelentities.renderprofile;
 
-import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
 import de.markusbordihn.easymodelentities.model.decoder.ModelDecoderRegistry;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
@@ -33,8 +33,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 public class ModelRenderProfileReloadListener
     extends SimplePreparableReloadListener<ModelRenderProfileReloadListener.ReloadState> {
 
-  public static final Identifier ID =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "render_profiles");
+  public static final Identifier ID = ModelResourcePaths.modIdentifier("render_profiles");
 
   @Override
   protected ReloadState prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {

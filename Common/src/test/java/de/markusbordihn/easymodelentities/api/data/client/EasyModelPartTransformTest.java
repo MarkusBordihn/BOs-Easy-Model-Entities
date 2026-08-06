@@ -101,4 +101,16 @@ class EasyModelPartTransformTest {
     assertEquals(base.scaleX(), hidden.scaleX());
     assertFalse(hidden.visible());
   }
+
+  @Test
+  void rejectsNonFiniteComponentsAtConstruction() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new EasyModelPartTransform(Float.NaN, 0.0f, 0.0f));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelPartTransform.NONE.withOffset(Float.POSITIVE_INFINITY, 0.0f, 0.0f));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelPartTransform.NONE.withScale(Float.NEGATIVE_INFINITY));
+  }
 }

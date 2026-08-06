@@ -29,6 +29,9 @@ public record ModelBounds(Vec3f min, Vec3f max) {
   public ModelBounds {
     Objects.requireNonNull(min, "min");
     Objects.requireNonNull(max, "max");
+    if (min.x() > max.x() || min.y() > max.y() || min.z() > max.z()) {
+      throw new IllegalArgumentException("Minimum bounds must not exceed maximum bounds.");
+    }
   }
 
   public float sizeX() {
@@ -55,6 +58,9 @@ public record ModelBounds(Vec3f min, Vec3f max) {
   }
 
   public ModelBounds scaled(float factor) {
+    if (!Float.isFinite(factor) || factor < 0.0f) {
+      throw new IllegalArgumentException("factor must be a finite non-negative value.");
+    }
     return factor == 1.0f ? this : new ModelBounds(this.min.scale(factor), this.max.scale(factor));
   }
 

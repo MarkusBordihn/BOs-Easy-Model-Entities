@@ -2,5 +2,10 @@
   "schema_version": "0.2.0",
   "model_type": "entity",
   "preset_type": "humanoid_wandering",
-  "version": "demo-little-explorer-v3"
+  "version": "demo-little-explorer-v4",
+  "dimensions": {
+    "width": 0.75,
+    "height": 1.75,
+    "eye_height": 1.6
+  }
 }

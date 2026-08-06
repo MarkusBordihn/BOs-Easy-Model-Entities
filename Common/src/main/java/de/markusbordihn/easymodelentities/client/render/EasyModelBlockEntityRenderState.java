@@ -19,12 +19,20 @@
 
 package de.markusbordihn.easymodelentities.client.render;
 
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 
 @SuppressWarnings("java:S1104")
 public class EasyModelBlockEntityRenderState extends BlockEntityRenderState {
   public EasyModelRenderState easyModelRenderState;
+  public EasyModelAnimationPlaybackFrame playbackFrame =
+      EasyModelAnimationPlaybackFrame.single(EasyModelAnimation.AUTO, 0.0f);
+  public EasyModelPartAnimator partAnimator = EasyModelPartAnimator.NONE;
+  public EasyModelPartAnimationMode partAnimationMode = EasyModelPartAnimationMode.ADD;
+  public float scaleFactor = 1.0f;
   public float ageInTicks;
   public float yawDegrees;
 }

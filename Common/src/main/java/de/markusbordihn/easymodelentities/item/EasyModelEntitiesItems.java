@@ -19,7 +19,7 @@
 
 package de.markusbordihn.easymodelentities.item;
 
-import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,13 +33,13 @@ import net.minecraft.world.item.component.CustomData;
 public final class EasyModelEntitiesItems {
 
   public static final Identifier ENTITY_SPAWN_ID =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "easy_model_entity_spawn");
+      ModelResourcePaths.modIdentifier("easy_model_entity_spawn");
   public static final Identifier BLOCK_SPAWN_ID =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "easy_model_block_spawn");
+      ModelResourcePaths.modIdentifier("easy_model_block_spawn");
   public static final Identifier ENTITIES_ICON_ID =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "easy_model_entities_icon");
+      ModelResourcePaths.modIdentifier("easy_model_entities_icon");
   public static final Identifier BLOCK_ENTITIES_ICON_ID =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "easy_model_block_entities_icon");
+      ModelResourcePaths.modIdentifier("easy_model_block_entities_icon");
 
   public static final String TAG_PROFILE_ID = "EasyModelProfileId";
 

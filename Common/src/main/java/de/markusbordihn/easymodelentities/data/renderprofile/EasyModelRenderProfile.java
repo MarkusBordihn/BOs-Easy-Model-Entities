@@ -116,6 +116,13 @@ public record EasyModelRenderProfile(
     return !usesFallbackModel();
   }
 
+  public boolean canResolveRenderState() {
+    return switch (this.status) {
+      case ACTIVE, MISSING_MODEL, MISSING_TEXTURE, MODEL_DECODE_FAILED, FALLBACK_ACTIVE -> true;
+      default -> false;
+    };
+  }
+
   public boolean usesFallbackModel() {
     return this.status != ModelRenderProfileStatus.ACTIVE
         && this.status != ModelRenderProfileStatus.MISSING_TEXTURE;

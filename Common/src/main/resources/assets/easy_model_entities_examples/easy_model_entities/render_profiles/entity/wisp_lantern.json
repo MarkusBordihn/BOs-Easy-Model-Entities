@@ -1,7 +1,7 @@
 {
   "schema_version": "0.2.0",
   "preset_type": "floating_still",
-  "version": "demo-wisp-lantern-v1",
+  "version": "demo-wisp-lantern-v2",
   "model": "easy_model_entities_examples:easy_model_entities/models/wisp_lantern",
   "texture": "easy_model_entities_examples:textures/entity/wisp_lantern.png",
   "rendering": {

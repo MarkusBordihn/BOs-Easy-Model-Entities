@@ -35,8 +35,17 @@ public class EasyModelStaticEntity extends EasyModelHostEntity {
   @Override
   public void tick() {
     super.tick();
-    this.getNavigation().stop();
-    this.setDeltaMovement(Vec3.ZERO);
+    if (!this.getNavigation().isDone()) {
+      this.getNavigation().stop();
+    }
+    if (!this.getDeltaMovement().equals(Vec3.ZERO)) {
+      this.setDeltaMovement(Vec3.ZERO);
+    }
+  }
+
+  @Override
+  public boolean isPushable() {
+    return false;
   }
 
   @Override

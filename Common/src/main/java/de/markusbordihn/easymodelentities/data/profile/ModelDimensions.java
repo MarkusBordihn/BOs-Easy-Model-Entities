@@ -19,4 +19,18 @@
 
 package de.markusbordihn.easymodelentities.data.profile;
 
-public record ModelDimensions(float width, float height, float eyeHeight) {}
+public record ModelDimensions(float width, float height, float eyeHeight) {
+
+  public ModelDimensions {
+    requireRange(width, 0.01f, 8.0f, "width");
+    requireRange(height, 0.01f, 8.0f, "height");
+    requireRange(eyeHeight, 0.0f, height, "eyeHeight");
+  }
+
+  private static void requireRange(float value, float minimum, float maximum, String name) {
+    if (!Float.isFinite(value) || value < minimum || value > maximum) {
+      throw new IllegalArgumentException(
+          name + " must be finite and between " + minimum + " and " + maximum + ".");
+    }
+  }
+}

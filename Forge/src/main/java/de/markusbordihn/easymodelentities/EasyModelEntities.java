@@ -22,6 +22,8 @@ package de.markusbordihn.easymodelentities;
 import de.markusbordihn.easymodelentities.command.EasyModelEntitiesCommand;
 import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
+import de.markusbordihn.easymodelentities.gametest.EasyModelGameTests;
+import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
@@ -57,6 +59,8 @@ public class EasyModelEntities {
     EasyModelBlockEntityTypes.register(modBusGroup);
     EasyModelItems.register(modBusGroup);
     EasyModelCreativeModeTabs.register(modBusGroup);
+    EasyModelAnimationNetworkHandler.register();
+    EasyModelGameTests.register(modBusGroup);
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(EasyModelEntityTypes.INSTANCE));
     EasyModelServices.setBlockEntityTypeProvider(EasyModelBlockEntityTypes.INSTANCE);

@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class EasyModelApiContractTest {
@@ -30,6 +31,8 @@ class EasyModelApiContractTest {
   @Test
   void exposesSchemaVersion() {
     assertEquals("0.2.0", EasyModelApiContract.schemaVersion());
+    assertEquals("2.0.0", EasyModelApiContract.apiVersion());
+    assertEquals(List.of("0.1.0", "0.2.0"), EasyModelApiContract.supportedSchemaVersions());
   }
 
   @Test
@@ -50,6 +53,13 @@ class EasyModelApiContractTest {
     assertTrue(EasyModelApiContract.movementTypes().contains("ground"));
     assertTrue(EasyModelApiContract.modelTypes().contains("block_entity"));
     assertTrue(EasyModelApiContract.animationModes().contains("automatic"));
+    assertFalse(EasyModelApiContract.animationStates().contains("inherit"));
+    assertTrue(EasyModelApiContract.animationStates().contains("attack"));
+    assertTrue(EasyModelApiContract.animationStates().contains("sit"));
+    assertEquals(
+        List.of("immediate", "after_current"), EasyModelApiContract.animationSwitchTimings());
+    assertEquals(List.of("once", "loop", "repeat"), EasyModelApiContract.playbackModes());
+    assertEquals(List.of("standard", "custom"), EasyModelApiContract.animationTypes());
     assertTrue(EasyModelApiContract.gaits().contains("natural"));
     assertTrue(EasyModelApiContract.presetTypes().contains("custom"));
     assertTrue(EasyModelApiContract.blockEntityPresetTypes().contains("ticking"));

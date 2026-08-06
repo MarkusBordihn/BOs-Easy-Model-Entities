@@ -22,13 +22,12 @@ package de.markusbordihn.easymodelentities.gametest;
 import de.markusbordihn.easymodelentities.Constants;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.gametest.GameTest;
 
-@SuppressWarnings("unused")
-public class SmokeTest {
+public final class SmokeTest {
 
-  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
-  public void testModRegistered(GameTestHelper helper) {
+  private SmokeTest() {}
+
+  public static void testModRegistered(GameTestHelper helper) {
     GameTestHelpers.assertTrue(
         helper, "Mod " + Constants.MOD_ID + " is not loaded!", ModList.isLoaded(Constants.MOD_ID));
     helper.succeed();

@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.api;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import net.minecraft.resources.Identifier;
 
 public interface EasyModelRenderable {
@@ -33,7 +34,7 @@ public interface EasyModelRenderable {
     return "";
   }
 
-  default int getEasyModelAnimationState() {
-    return EasyModelAnimationStates.AUTO;
+  default EasyModelAnimationSetting getEasyModelAnimationSetting() {
+    return EasyModelAnimationSetting.AUTO;
   }
 }

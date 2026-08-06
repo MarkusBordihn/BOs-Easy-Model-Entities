@@ -19,4 +19,16 @@
 
 package de.markusbordihn.easymodelentities.data.profile;
 
-public record ModelMovementSettings(float speed, float stepHeight, boolean gravity) {}
+public record ModelMovementSettings(float speed, float stepHeight, boolean gravity) {
+
+  public ModelMovementSettings {
+    requireRange(speed, "speed");
+    requireRange(stepHeight, "stepHeight");
+  }
+
+  private static void requireRange(float value, String name) {
+    if (!Float.isFinite(value) || value < 0.0f || value > 2.0f) {
+      throw new IllegalArgumentException(name + " must be finite and between 0.0 and 2.0.");
+    }
+  }
+}

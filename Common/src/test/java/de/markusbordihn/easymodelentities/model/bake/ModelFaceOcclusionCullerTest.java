@@ -131,6 +131,18 @@ class ModelFaceOcclusionCullerTest {
   }
 
   @Test
+  void touchingFacesWithinToleranceRemainIndexedTogether() {
+    BakedModelCube lower = cube(new Vec3f(0.0f, 0.0f, 0.0f), new Vec3f(8.0f, 8.0f, 8.0f));
+    BakedModelCube upper = cube(new Vec3f(0.0f, 8.0005f, 0.0f), new Vec3f(8.0f, 8.0f, 8.0f));
+
+    ModelFaceOcclusionCuller.Result result =
+        ModelFaceOcclusionCuller.cull(
+            List.of(part("root", List.of(lower, upper))), ModelBodyType.STATIC);
+
+    assertEquals(2, result.culledFaces());
+  }
+
+  @Test
   void rotatedPartBreaksRigidChain() {
     BakedModelCube lower = cube(new Vec3f(0.0f, 0.0f, 0.0f), new Vec3f(8.0f, 8.0f, 8.0f));
     BakedModelCube upper = cube(new Vec3f(0.0f, 8.0f, 0.0f), new Vec3f(8.0f, 8.0f, 8.0f));

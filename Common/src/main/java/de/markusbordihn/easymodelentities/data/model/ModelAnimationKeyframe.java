@@ -24,6 +24,9 @@ import java.util.Objects;
 public record ModelAnimationKeyframe(float time, Vec3f value, boolean step) {
 
   public ModelAnimationKeyframe {
+    if (!Float.isFinite(time) || time < 0.0f) {
+      throw new IllegalArgumentException("time must be a finite non-negative value.");
+    }
     Objects.requireNonNull(value, "value");
   }
 }

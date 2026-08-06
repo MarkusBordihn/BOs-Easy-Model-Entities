@@ -21,15 +21,10 @@ package de.markusbordihn.easymodelentities.api.data.client;
 
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import java.util.Objects;
 
-public record EasyModelEntityRenderOptions(
-    Float scale,
-    Float animationTicks,
-    EasyModelPartAnimator partAnimator,
-    EasyModelPartAnimationMode partAnimationMode,
-    EasyModelPartPoseListener partPoseListener,
-    Integer animationState,
-    EasyModelHeadLook headLook) {
+public final class EasyModelEntityRenderOptions {
 
   public static final EasyModelEntityRenderOptions DEFAULT =
       new EasyModelEntityRenderOptions(
@@ -41,115 +36,231 @@ public record EasyModelEntityRenderOptions(
           null,
           null);
 
-  public EasyModelEntityRenderOptions(Float animationTicks, EasyModelPartAnimator partAnimator) {
-    this(null, animationTicks, partAnimator, EasyModelPartAnimationMode.ADD);
-  }
+  private final Float scale;
+  private final Float animationTicks;
+  private final EasyModelPartAnimator partAnimator;
+  private final EasyModelPartAnimationMode partAnimationMode;
+  private final EasyModelPartPoseListener partPoseListener;
+  private final EasyModelAnimation animation;
+  private final EasyModelHeadLook headLook;
 
-  public EasyModelEntityRenderOptions(
-      Float animationTicks,
-      EasyModelPartAnimator partAnimator,
-      EasyModelPartAnimationMode partAnimationMode) {
-    this(null, animationTicks, partAnimator, partAnimationMode);
-  }
-
-  public EasyModelEntityRenderOptions(
+  private EasyModelEntityRenderOptions(
       Float scale,
       Float animationTicks,
       EasyModelPartAnimator partAnimator,
-      EasyModelPartAnimationMode partAnimationMode) {
-    this(
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
+      EasyModelAnimation animation,
+      EasyModelHeadLook headLook) {
+    this.scale = scale;
+    this.animationTicks = animationTicks;
+    this.partAnimator = Objects.requireNonNull(partAnimator, "partAnimator");
+    this.partAnimationMode = Objects.requireNonNull(partAnimationMode, "partAnimationMode");
+    this.partPoseListener = Objects.requireNonNull(partPoseListener, "partPoseListener");
+    this.animation = animation;
+    this.headLook = headLook;
+  }
+
+  private static EasyModelEntityRenderOptions copy(
+      Float scale,
+      Float animationTicks,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
+      EasyModelAnimation animation,
+      EasyModelHeadLook headLook) {
+    return new EasyModelEntityRenderOptions(
         scale,
         animationTicks,
         partAnimator,
         partAnimationMode,
-        EasyModelPartPoseListener.NONE,
-        null,
-        null);
+        partPoseListener,
+        animation,
+        headLook);
   }
 
-  public EasyModelEntityRenderOptions {
-    partAnimator = partAnimator == null ? EasyModelPartAnimator.NONE : partAnimator;
-    partAnimationMode =
-        partAnimationMode == null ? EasyModelPartAnimationMode.ADD : partAnimationMode;
-    partPoseListener = partPoseListener == null ? EasyModelPartPoseListener.NONE : partPoseListener;
+  private static void requirePositiveFinite(float value, String name) {
+    if (!Float.isFinite(value) || value <= 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite positive value.");
+    }
+  }
+
+  private static void requireNonNegativeFinite(float value, String name) {
+    if (!Float.isFinite(value) || value < 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite non-negative value.");
+    }
+  }
+
+  public Float scale() {
+    return this.scale;
+  }
+
+  public Float animationTicks() {
+    return this.animationTicks;
+  }
+
+  public EasyModelPartAnimator partAnimator() {
+    return this.partAnimator;
+  }
+
+  public EasyModelPartAnimationMode partAnimationMode() {
+    return this.partAnimationMode;
+  }
+
+  public EasyModelPartPoseListener partPoseListener() {
+    return this.partPoseListener;
+  }
+
+  public EasyModelAnimation animation() {
+    return this.animation;
+  }
+
+  public EasyModelHeadLook headLook() {
+    return this.headLook;
   }
 
   public EasyModelEntityRenderOptions withScale(float scale) {
-    return new EasyModelEntityRenderOptions(
+    requirePositiveFinite(scale, "scale");
+    return copy(
         scale,
         this.animationTicks,
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState,
+        this.animation,
         this.headLook);
   }
 
   public EasyModelEntityRenderOptions withAnimationTicks(float animationTicks) {
-    return new EasyModelEntityRenderOptions(
+    requireNonNegativeFinite(animationTicks, "animationTicks");
+    return copy(
         this.scale,
         animationTicks,
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState,
+        this.animation,
         this.headLook);
   }
 
   public EasyModelEntityRenderOptions withPartAnimator(EasyModelPartAnimator partAnimator) {
-    return new EasyModelEntityRenderOptions(
+    return copy(
         this.scale,
         this.animationTicks,
-        partAnimator,
+        Objects.requireNonNull(partAnimator, "partAnimator"),
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState,
+        this.animation,
         this.headLook);
   }
 
   public EasyModelEntityRenderOptions withPartAnimationMode(
       EasyModelPartAnimationMode partAnimationMode) {
-    return new EasyModelEntityRenderOptions(
+    return copy(
         this.scale,
         this.animationTicks,
         this.partAnimator,
-        partAnimationMode,
+        Objects.requireNonNull(partAnimationMode, "partAnimationMode"),
         this.partPoseListener,
-        this.animationState,
+        this.animation,
         this.headLook);
   }
 
   public EasyModelEntityRenderOptions withPartPoseListener(
       EasyModelPartPoseListener partPoseListener) {
-    return new EasyModelEntityRenderOptions(
+    return copy(
         this.scale,
         this.animationTicks,
         this.partAnimator,
         this.partAnimationMode,
-        partPoseListener,
-        this.animationState,
+        Objects.requireNonNull(partPoseListener, "partPoseListener"),
+        this.animation,
         this.headLook);
   }
 
-  public EasyModelEntityRenderOptions withAnimationState(int animationState) {
-    return new EasyModelEntityRenderOptions(
+  public EasyModelEntityRenderOptions withAnimation(EasyModelAnimation animation) {
+    return copy(
         this.scale,
         this.animationTicks,
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        animationState,
+        Objects.requireNonNull(animation, "animation"),
+        this.headLook);
+  }
+
+  public EasyModelEntityRenderOptions withAnimation(String animation) {
+    return withAnimation(EasyModelAnimation.named(animation));
+  }
+
+  public EasyModelEntityRenderOptions withoutAnimationOverride() {
+    return copy(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        null,
         this.headLook);
   }
 
   public EasyModelEntityRenderOptions withHeadLook(EasyModelHeadLook headLook) {
-    return new EasyModelEntityRenderOptions(
+    return copy(
         this.scale,
         this.animationTicks,
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animationState,
-        headLook);
+        this.animation,
+        Objects.requireNonNull(headLook, "headLook"));
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (this == object) {
+      return true;
+    }
+    if (!(object instanceof EasyModelEntityRenderOptions options)) {
+      return false;
+    }
+
+    return Objects.equals(this.scale, options.scale)
+        && Objects.equals(this.animationTicks, options.animationTicks)
+        && this.partAnimator.equals(options.partAnimator)
+        && this.partAnimationMode == options.partAnimationMode
+        && this.partPoseListener.equals(options.partPoseListener)
+        && Objects.equals(this.animation, options.animation)
+        && Objects.equals(this.headLook, options.headLook);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation,
+        this.headLook);
+  }
+
+  @Override
+  public String toString() {
+    return "EasyModelEntityRenderOptions[scale="
+        + this.scale
+        + ", animationTicks="
+        + this.animationTicks
+        + ", partAnimator="
+        + this.partAnimator
+        + ", partAnimationMode="
+        + this.partAnimationMode
+        + ", partPoseListener="
+        + this.partPoseListener
+        + ", animation="
+        + this.animation
+        + ", headLook="
+        + this.headLook
+        + "]";
   }
 }

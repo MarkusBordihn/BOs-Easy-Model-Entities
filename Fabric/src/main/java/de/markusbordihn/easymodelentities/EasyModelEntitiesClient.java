@@ -22,6 +22,7 @@ package de.markusbordihn.easymodelentities;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelSpawnItemSpecialRendererUnbaked;
+import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
@@ -38,6 +39,7 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
   @Override
   public void onInitializeClient() {
     log.info("Initializing {} (Fabric Client) ...", Constants.MOD_NAME);
+    EasyModelAnimationNetworkHandler.registerClient();
     EntityRendererRegistry.register(
         EasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     EntityRendererRegistry.register(

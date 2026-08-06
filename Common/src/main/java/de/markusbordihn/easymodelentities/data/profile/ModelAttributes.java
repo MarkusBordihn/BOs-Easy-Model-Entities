@@ -19,4 +19,17 @@
 
 package de.markusbordihn.easymodelentities.data.profile;
 
-public record ModelAttributes(float maxHealth, float movementSpeed, float followRange) {}
+public record ModelAttributes(float maxHealth, float movementSpeed, float followRange) {
+
+  public ModelAttributes {
+    requireNonNegative(maxHealth, "maxHealth");
+    requireNonNegative(movementSpeed, "movementSpeed");
+    requireNonNegative(followRange, "followRange");
+  }
+
+  private static void requireNonNegative(float value, String name) {
+    if (!Float.isFinite(value) || value < 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite non-negative value.");
+    }
+  }
+}

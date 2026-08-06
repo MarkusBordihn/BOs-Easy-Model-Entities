@@ -19,10 +19,11 @@
 
 package de.markusbordihn.easymodelentities.runtime;
 
-import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.util.Objects;
 import net.minecraft.resources.Identifier;
 
@@ -34,18 +35,27 @@ public record EasyModelRuntimeContract(
     float height,
     float eyeHeight,
     ModelBodyType bodyType,
-    EasyModelAnimationState animationState) {
+    EasyModelAnimationSetting animation) {
 
   public EasyModelRuntimeContract {
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(renderProfileId, "renderProfileId");
     Objects.requireNonNull(version, "version");
     Objects.requireNonNull(bodyType, "bodyType");
-    Objects.requireNonNull(animationState, "animationState");
+    Objects.requireNonNull(animation, "animation");
+    if (!Float.isFinite(width) || width <= 0.0f) {
+      throw new IllegalArgumentException("width must be a finite positive value.");
+    }
+    if (!Float.isFinite(height) || height <= 0.0f) {
+      throw new IllegalArgumentException("height must be a finite positive value.");
+    }
+    if (!Float.isFinite(eyeHeight) || eyeHeight < 0.0f || eyeHeight > height) {
+      throw new IllegalArgumentException("eyeHeight must be finite and between zero and height.");
+    }
   }
 
   public static EasyModelRuntimeContract fromProfile(
-      EasyModelEntityProfile profile, EasyModelAnimationState animationState) {
+      EasyModelEntityProfile profile, EasyModelAnimationSetting animation) {
     Objects.requireNonNull(profile, "profile");
     return new EasyModelRuntimeContract(
         profile.id(),
@@ -55,16 +65,16 @@ public record EasyModelRuntimeContract(
         profile.height(),
         profile.eyeHeight(),
         profile.bodyType(),
-        animationState);
+        animation);
   }
 
   public static EasyModelRuntimeContract fromRenderProfile(
       Identifier profileId,
       EasyModelRenderProfile renderProfile,
-      EasyModelAnimationState animationState) {
+      EasyModelAnimationSetting animation) {
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(renderProfile, "renderProfile");
-    EasyModelRuntimeContract fallback = fallback(profileId, animationState);
+    EasyModelRuntimeContract fallback = fallback(profileId, animation);
     return new EasyModelRuntimeContract(
         profileId,
         renderProfile.id(),
@@ -73,11 +83,11 @@ public record EasyModelRuntimeContract(
         fallback.height(),
         fallback.eyeHeight(),
         renderProfile.bodyType(),
-        animationState);
+        animation);
   }
 
   public static EasyModelRuntimeContract fallback(Identifier profileId) {
-    return fallback(profileId, EasyModelAnimationState.AUTO);
+    return fallback(profileId, EasyModelAnimationSetting.AUTO);
   }
 
   public static EasyModelRuntimeContract fallback(String profileId) {
@@ -85,11 +95,9 @@ public record EasyModelRuntimeContract(
   }
 
   public static EasyModelRuntimeContract fallback(
-      Identifier profileId, EasyModelAnimationState animationState) {
+      Identifier profileId, EasyModelAnimationSetting animation) {
     Identifier fallbackProfileId =
-        profileId == null
-            ? Identifier.fromNamespaceAndPath(Constants.MOD_ID, "missing")
-            : profileId;
+        profileId == null ? ModelResourcePaths.modIdentifier("missing") : profileId;
     return new EasyModelRuntimeContract(
         fallbackProfileId,
         fallbackProfileId,
@@ -98,6 +106,6 @@ public record EasyModelRuntimeContract(
         1.8f,
         1.62f,
         ModelBodyType.STATIC,
-        animationState);
+        animation);
   }
 }
