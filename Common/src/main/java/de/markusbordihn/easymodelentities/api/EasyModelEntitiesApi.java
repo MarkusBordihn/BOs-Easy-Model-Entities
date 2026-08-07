@@ -19,8 +19,10 @@
 
 package de.markusbordihn.easymodelentities.api;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelBodyType;
+import de.markusbordihn.easymodelentities.api.data.EasyModelProfileInfo;
+import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
-import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import java.util.List;
@@ -41,34 +43,30 @@ public final class EasyModelEntitiesApi {
         .hasProfile(Objects.requireNonNull(profileId, "profileId"));
   }
 
-  public static Optional<EasyModelEntityProfile> getProfile(Identifier profileId) {
+  public static Optional<EasyModelProfileInfo> getProfileInfo(Identifier profileId) {
     return EasyModelServices.profileService()
-        .getProfile(Objects.requireNonNull(profileId, "profileId"));
+        .getProfile(Objects.requireNonNull(profileId, "profileId"))
+        .map(EasyModelEntitiesApi::profileInfo);
   }
 
-  public static Optional<EntityDimensions> getProfileEntityDimensions(Identifier profileId) {
-    return getProfile(profileId)
-        .map(
-            profile ->
-                EntityDimensions.scalable(profile.width(), profile.height())
-                    .withEyeHeight(profile.eyeHeight()));
+  public static List<EasyModelProfileInfo> listProfileInfos() {
+    return EasyModelServices.profileService().getActiveProfiles().stream()
+        .map(EasyModelEntitiesApi::profileInfo)
+        .toList();
   }
 
-  public static Optional<Float> getProfileStandingEyeHeight(Identifier profileId) {
-    return getProfile(profileId).map(EasyModelEntityProfile::eyeHeight);
-  }
-
-  public static List<EasyModelEntityProfile> listProfiles() {
-    return List.copyOf(EasyModelServices.profileService().getActiveProfiles());
-  }
-
-  public static List<EasyModelEntityProfile> listProfiles(ModelBodyType bodyType) {
+  public static List<EasyModelProfileInfo> listProfileInfos(EasyModelBodyType bodyType) {
     Objects.requireNonNull(bodyType, "bodyType");
-    return List.copyOf(EasyModelServices.profileService().getActiveProfiles(bodyType));
+    return EasyModelServices.profileService().getActiveProfiles().stream()
+        .filter(profile -> EasyModelApiMapper.bodyType(profile.bodyType()) == bodyType)
+        .map(EasyModelEntitiesApi::profileInfo)
+        .toList();
   }
 
   public static List<Identifier> listProfileIds() {
-    return listProfiles().stream().map(EasyModelEntityProfile::id).toList();
+    return EasyModelServices.profileService().getActiveProfiles().stream()
+        .map(EasyModelEntityProfile::id)
+        .toList();
   }
 
   public static Optional<Entity> createEntity(Level level, Identifier profileId, Vec3 position) {
@@ -88,5 +86,15 @@ public final class EasyModelEntitiesApi {
     }
 
     return Optional.empty();
+  }
+
+  private static EasyModelProfileInfo profileInfo(EasyModelEntityProfile profile) {
+    return new EasyModelProfileInfo(
+        profile.id(),
+        EasyModelApiMapper.profileType(profile.modelType()),
+        EasyModelApiMapper.bodyType(profile.bodyType()),
+        EntityDimensions.scalable(profile.width(), profile.height())
+            .withEyeHeight(profile.eyeHeight()),
+        profile.eyeHeight());
   }
 }

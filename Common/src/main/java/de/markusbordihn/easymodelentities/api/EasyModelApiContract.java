@@ -20,21 +20,28 @@
 package de.markusbordihn.easymodelentities.api;
 
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
+import de.markusbordihn.easymodelentities.api.data.EasyModelBodyType;
+import de.markusbordihn.easymodelentities.api.data.EasyModelProfileType;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlaybackMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSwitchTiming;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationType;
 import de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnosticSeverity;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
 import de.markusbordihn.easymodelentities.data.profile.ModelBlockEntityPresetType;
-import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelMovementType;
 import de.markusbordihn.easymodelentities.data.profile.ModelPresetType;
 import de.markusbordihn.easymodelentities.data.profile.ModelProfileStatus;
-import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelGaitType;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.schema.SchemaMigrations;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public final class EasyModelApiContract {
 
@@ -46,6 +53,10 @@ public final class EasyModelApiContract {
 
   public static String apiVersion() {
     return Constants.API_VERSION;
+  }
+
+  public static List<String> supportedSchemaVersions() {
+    return SchemaMigrations.DEFAULT.supportedVersions(schemaVersion());
   }
 
   public static int maxModelFileSizeBytes() {
@@ -93,11 +104,15 @@ public final class EasyModelApiContract {
   }
 
   public static List<String> modelTypes() {
-    return Arrays.stream(ModelType.values()).map(ModelType::getSerializedName).toList();
+    return Arrays.stream(EasyModelProfileType.values())
+        .map(EasyModelProfileType::getSerializedName)
+        .toList();
   }
 
   public static List<String> bodyTypes() {
-    return Arrays.stream(ModelBodyType.values()).map(ModelBodyType::getSerializedName).toList();
+    return Arrays.stream(EasyModelBodyType.values())
+        .map(EasyModelBodyType::getSerializedName)
+        .toList();
   }
 
   public static List<String> movementTypes() {
@@ -130,6 +145,36 @@ public final class EasyModelApiContract {
 
   public static List<String> animationClips() {
     return ModelAnimationClips.STANDARD;
+  }
+
+  public static List<String> animationStates() {
+    return EasyModelAnimation.standardStates().stream()
+        .map(EasyModelAnimation::serializedName)
+        .toList();
+  }
+
+  public static List<String> animationLoops() {
+    return Arrays.stream(EasyModelAnimationLoop.values())
+        .map(EasyModelAnimationLoop::getSerializedName)
+        .toList();
+  }
+
+  public static List<String> animationSwitchTimings() {
+    return Arrays.stream(EasyModelAnimationSwitchTiming.values())
+        .map(timing -> timing.name().toLowerCase(Locale.ROOT))
+        .toList();
+  }
+
+  public static List<String> playbackModes() {
+    return Arrays.stream(EasyModelAnimationPlaybackMode.values())
+        .map(mode -> mode.name().toLowerCase(Locale.ROOT))
+        .toList();
+  }
+
+  public static List<String> animationTypes() {
+    return Arrays.stream(EasyModelAnimationType.values())
+        .map(type -> type.name().toLowerCase(Locale.ROOT))
+        .toList();
   }
 
   public static List<String> gaits() {

@@ -74,6 +74,33 @@ public final class EasyModelEntityRenderDelegate<T extends Entity & EasyModelRen
         packedLight);
   }
 
+  public void extractRenderState(
+      T entity, EasyModelEntityRenderStateHandle renderStateHandle, float partialTick) {
+    extractRenderState(
+        entity, renderStateHandle, partialTick, EasyModelEntityRenderOptions.DEFAULT);
+  }
+
+  public void extractRenderState(
+      T entity,
+      EasyModelEntityRenderStateHandle renderStateHandle,
+      float partialTick,
+      EasyModelEntityRenderOptions options) {
+    EasyModelEntityRenderBackend.extractRenderState(
+        entity, contract(entity), renderStateHandle.renderState(), partialTick, options);
+  }
+
+  public void submit(
+      EasyModelEntityRenderStateHandle renderStateHandle,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    if (renderStateHandle == null || !renderStateHandle.isExtracted()) {
+      return;
+    }
+    EasyModelEntityRenderBackend.render(
+        renderStateHandle.renderState(), poseStack, submitNodeCollector, packedLight);
+  }
+
   public Identifier getTextureLocation(T entity) {
     return EasyModelEntityRenderBackend.resolveRenderState(contract(entity)).texture();
   }

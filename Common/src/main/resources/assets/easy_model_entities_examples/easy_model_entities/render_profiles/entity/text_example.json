@@ -1,7 +1,7 @@
 {
   "schema_version": "0.2.0",
   "preset_type": "statue",
-  "version": "demo-text-example-v1",
+  "version": "demo-text-example-v2",
   "model": "easy_model_entities_examples:easy_model_entities/models/text_example",
   "texture": "easy_model_entities_examples:textures/entity/text_example.png",
   "rendering": {

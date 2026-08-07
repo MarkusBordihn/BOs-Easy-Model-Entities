@@ -1,0 +1,7 @@
+{
+  "type": "minecraft:function",
+  "function": "easy_model_entities:attributes_are_applied_from_profile",
+  "environment": "minecraft:default",
+  "structure": "easy_model_entities:gametest.3x3x3",
+  "max_ticks": 100
+}

@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.data.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,38 @@ class ModelAnimationClipTest {
   }
 
   @Test
+  void allocationFreeSampleMatchesVectorAccessors() {
+    ModelAnimationBoneTrack track =
+        new ModelAnimationBoneTrack(
+            List.of(
+                new ModelAnimationKeyframe(0.0f, new Vec3f(0.0f, 2.0f, 4.0f), false),
+                new ModelAnimationKeyframe(1.0f, new Vec3f(2.0f, 4.0f, 6.0f), false)),
+            List.of(
+                new ModelAnimationKeyframe(0.0f, new Vec3f(4.0f, 6.0f, 8.0f), false),
+                new ModelAnimationKeyframe(1.0f, new Vec3f(8.0f, 10.0f, 12.0f), false)));
+    float[] sample = new float[8];
+
+    track.sample(0.5f, sample, 1);
+
+    Vec3f rotation = track.rotationAt(0.5f);
+    Vec3f position = track.positionAt(0.5f);
+    assertEquals(rotation.x(), sample[1], DELTA);
+    assertEquals(rotation.y(), sample[2], DELTA);
+    assertEquals(rotation.z(), sample[3], DELTA);
+    assertEquals(position.x(), sample[4], DELTA);
+    assertEquals(position.y(), sample[5], DELTA);
+    assertEquals(position.z(), sample[6], DELTA);
+  }
+
+  @Test
+  void allocationFreeSampleRejectsAnInvalidDestinationRange() {
+    ModelAnimationBoneTrack track = new ModelAnimationBoneTrack(List.of(), List.of());
+
+    assertThrows(IllegalArgumentException.class, () -> track.sample(0.0f, new float[5], 0));
+    assertThrows(IllegalArgumentException.class, () -> track.sample(0.0f, new float[6], -1));
+  }
+
+  @Test
   void loopingClipWrapsTime() {
     ModelAnimationClip clip = new ModelAnimationClip("idle", 2.0f, true, Map.of());
 
@@ -102,5 +135,35 @@ class ModelAnimationClipTest {
     assertEquals(track, clip.track("body"));
     assertNull(clip.track("head"));
     assertNull(clip.track(null));
+  }
+
+  @Test
+  void rejectsInvalidClipAndKeyframeValues() {
+    assertThrows(
+        IllegalArgumentException.class, () -> new ModelAnimationClip(" ", 1.0f, true, Map.of()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new ModelAnimationClip("idle", -1.0f, true, Map.of()));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new ModelAnimationKeyframe(Float.NaN, Vec3f.ZERO, false));
+    assertThrows(
+        IllegalArgumentException.class, () -> new ModelAnimationKeyframe(-1.0f, Vec3f.ZERO, false));
+  }
+
+  @Test
+  void rejectsUnsortedTracksAndNonFiniteSamplingTimes() {
+    ModelAnimationKeyframe later = new ModelAnimationKeyframe(1.0f, Vec3f.ZERO, false);
+    ModelAnimationKeyframe earlier = new ModelAnimationKeyframe(0.0f, Vec3f.ZERO, false);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new ModelAnimationBoneTrack(List.of(later, earlier), List.of()));
+
+    ModelAnimationBoneTrack track = rotationTrack(earlier);
+    assertThrows(IllegalArgumentException.class, () -> track.rotationAt(Float.NaN));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> new ModelAnimationClip("idle", 1.0f, true, Map.of()).clipTime(Float.NaN));
   }
 }

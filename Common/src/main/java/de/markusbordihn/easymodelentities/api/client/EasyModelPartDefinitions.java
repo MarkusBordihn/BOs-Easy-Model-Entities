@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.api.client;
 
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartDefinition;
+import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +32,8 @@ final class EasyModelPartDefinitions {
   static EasyModelPartDefinition fromBakedPart(BakedModelPart part) {
     return new EasyModelPartDefinition(
         part.name(),
-        part.offset(),
-        part.rotation(),
+        EasyModelApiMapper.vector(part.offset()),
+        EasyModelApiMapper.vector(part.rotation()),
         part.children().stream().map(EasyModelPartDefinitions::fromBakedPart).toList());
   }
 

@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.runtime;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.ValueInput;
@@ -30,7 +31,7 @@ public final class EasyModelHostPersistence {
   public static final String RENDER_PROFILE_ID_TAG = "RenderProfileId";
   public static final String VERSION_TAG = "Version";
   public static final String BODY_TYPE_TAG = "BodyType";
-  public static final String ANIMATION_STATE_TAG = "AnimationState";
+  public static final String ANIMATION_TAG = "Animation";
 
   private EasyModelHostPersistence() {}
 
@@ -49,7 +50,7 @@ public final class EasyModelHostPersistence {
         parseResourceLocation(valueInput.getStringOr(RENDER_PROFILE_ID_TAG, null)),
         valueInput.getStringOr(VERSION_TAG, ""),
         ModelBodyType.bySerializedName(valueInput.getStringOr(BODY_TYPE_TAG, "")),
-        EasyModelAnimationState.bySerializedName(valueInput.getStringOr(ANIMATION_STATE_TAG, "")));
+        readAnimation(valueInput));
   }
 
   public static void write(
@@ -58,7 +59,7 @@ public final class EasyModelHostPersistence {
       Identifier renderProfileId,
       String version,
       ModelBodyType bodyType,
-      EasyModelAnimationState animationState) {
+      EasyModelAnimationSetting animation) {
     if (profileId != null) {
       valueOutput.putString(PROFILE_ID_TAG, profileId.toString());
     }
@@ -67,8 +68,20 @@ public final class EasyModelHostPersistence {
     }
     valueOutput.putString(VERSION_TAG, version != null ? version : "");
     valueOutput.putString(BODY_TYPE_TAG, bodyType != null ? bodyType.getSerializedName() : "");
-    valueOutput.putString(
-        ANIMATION_STATE_TAG, animationState != null ? animationState.getSerializedName() : "");
+    writeAnimation(valueOutput, animation);
+  }
+
+  public static void writeAnimation(ValueOutput valueOutput, EasyModelAnimationSetting animation) {
+    valueOutput.store(
+        ANIMATION_TAG,
+        EasyModelAnimationSetting.CODEC,
+        animation != null ? animation : EasyModelAnimationSetting.AUTO);
+  }
+
+  private static EasyModelAnimationSetting readAnimation(ValueInput valueInput) {
+    return valueInput
+        .read(ANIMATION_TAG, EasyModelAnimationSetting.CODEC)
+        .orElse(EasyModelAnimationSetting.AUTO);
   }
 
   public record State(
@@ -76,5 +89,5 @@ public final class EasyModelHostPersistence {
       Identifier renderProfileId,
       String version,
       ModelBodyType bodyType,
-      EasyModelAnimationState animationState) {}
+      EasyModelAnimationSetting animation) {}
 }

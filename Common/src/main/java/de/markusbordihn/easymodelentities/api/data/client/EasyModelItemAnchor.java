@@ -19,6 +19,16 @@
 
 package de.markusbordihn.easymodelentities.api.data.client;
 
-import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import de.markusbordihn.easymodelentities.api.data.EasyModelVec3f;
+import java.util.Objects;
 
-public record EasyModelItemAnchor(String partName, Vec3f localOffset) {}
+public record EasyModelItemAnchor(String partName, EasyModelVec3f localOffset) {
+
+  public EasyModelItemAnchor {
+    partName = Objects.requireNonNull(partName, "partName").trim();
+    if (partName.isEmpty()) {
+      throw new IllegalArgumentException("partName must not be blank.");
+    }
+    Objects.requireNonNull(localOffset, "localOffset");
+  }
+}

@@ -82,7 +82,7 @@ tasks.withType(ProcessResources).matching(notNeoTask).configureEach {
   def minecraftVersionParts = project.minecraft_version.tokenize('.')
   def replaceProperties = [
       file                   : [jarVersion: '${file.jarVersion}'],
-      neoforge_version_range : "[${project.neoforge_version},)",
+      neoforge_version_range : "[${project.neoforge_min_version},)",
       minecraft_version_range: "[${project.minecraft_version},${minecraftVersionParts[0]}.${(minecraftVersionParts[1] as int) + 1})"
   ]
   inputs.properties replaceProperties

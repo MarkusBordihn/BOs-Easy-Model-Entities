@@ -78,6 +78,43 @@ public final class EasyModelBlockEntityRenderDelegate<T extends BlockEntity & Ea
         packedLight);
   }
 
+  public void extractRenderState(
+      T blockEntity, EasyModelBlockEntityRenderStateHandle renderStateHandle, float partialTick) {
+    extractRenderState(
+        blockEntity, renderStateHandle, partialTick, EasyModelBlockEntityRenderOptions.DEFAULT);
+  }
+
+  public void extractRenderState(
+      T blockEntity,
+      EasyModelBlockEntityRenderStateHandle renderStateHandle,
+      float partialTick,
+      EasyModelBlockEntityRenderOptions options) {
+    EasyModelRuntimeContract contract = contract(blockEntity);
+    EasyModelBlockEntityRenderBackend.extractRenderState(
+        blockEntity,
+        contract,
+        renderStateHandle.renderState(),
+        partialTick,
+        resolveOptions(
+            blockEntity,
+            EasyModelBlockEntityRenderBackend.resolveRenderState(contract),
+            partialTick,
+            options));
+  }
+
+  public void submit(
+      EasyModelBlockEntityRenderStateHandle renderStateHandle,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    if (renderStateHandle == null || !renderStateHandle.isExtracted()) {
+      return;
+    }
+
+    EasyModelBlockEntityRenderBackend.render(
+        renderStateHandle.renderState(), poseStack, submitNodeCollector, packedLight);
+  }
+
   public List<EasyModelPartDefinition> rootModelParts(T blockEntity) {
     EasyModelRenderState renderState =
         EasyModelBlockEntityRenderBackend.resolveRenderState(contract(blockEntity));

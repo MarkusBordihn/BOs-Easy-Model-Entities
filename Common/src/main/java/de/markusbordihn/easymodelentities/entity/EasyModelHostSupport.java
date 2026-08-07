@@ -19,14 +19,14 @@
 
 package de.markusbordihn.easymodelentities.entity;
 
-import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.event.EasyModelReloadDispatcher;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.ArrayList;
@@ -52,8 +52,7 @@ public final class EasyModelHostSupport {
   public static final float FALLBACK_WIDTH = 0.6f;
   public static final float FALLBACK_HEIGHT = 1.8f;
   public static final float FALLBACK_EYE_HEIGHT = 1.62f;
-  public static final Identifier MISSING_PROFILE_ID =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "missing");
+  public static final Identifier MISSING_PROFILE_ID = ModelResourcePaths.modIdentifier("missing");
   private static final Map<Mob, EasyModelHostFields> LOADED_HOSTS =
       Collections.synchronizedMap(new WeakHashMap<>());
 
@@ -79,12 +78,11 @@ public final class EasyModelHostSupport {
         continue;
       }
       Identifier profileId = getProfileId(entity.getEntityData(), entry.getValue());
-      EasyModelAnimationState animationState =
-          getAnimationState(entity.getEntityData(), entry.getValue());
+      EasyModelAnimationSetting animation = getAnimation(entity.getEntityData(), entry.getValue());
       activeProfile(profileId)
           .ifPresentOrElse(
-              profile -> applyProfile(entity, entry.getValue(), profile, animationState),
-              () -> applyFallback(entity, entry.getValue(), profileId, animationState));
+              profile -> applyProfile(entity, entry.getValue(), profile, animation),
+              () -> applyFallback(entity, entry.getValue(), profileId, animation));
     }
   }
 
@@ -112,7 +110,9 @@ public final class EasyModelHostSupport {
     builder.define(fields.height(), contract.height());
     builder.define(fields.eyeHeight(), contract.eyeHeight());
     builder.define(fields.bodyType(), contract.bodyType());
-    builder.define(fields.animationState(), contract.animationState());
+    builder.define(fields.animation(), contract.animation());
+    builder.define(fields.lookAtPlayers(), false);
+    builder.define(fields.randomStroll(), false);
   }
 
   public static EntityDimensions getDimensions(
@@ -130,7 +130,7 @@ public final class EasyModelHostSupport {
         Identifier.tryParse(entityData.get(fields.renderProfileId())),
         entityData.get(fields.version()),
         entityData.get(fields.bodyType()),
-        entityData.get(fields.animationState()));
+        entityData.get(fields.animation()));
   }
 
   public static void readAdditionalSaveData(
@@ -140,16 +140,16 @@ public final class EasyModelHostSupport {
     Identifier renderProfileId = state.renderProfileId();
     String version = state.version();
     ModelBodyType bodyType = state.bodyType();
-    EasyModelAnimationState animationState = state.animationState();
+    EasyModelAnimationSetting animation = state.animation();
 
     if (profileId == null) {
-      applyFallback(entity, fields, MISSING_PROFILE_ID, animationState);
+      applyFallback(entity, fields, MISSING_PROFILE_ID, animation);
       return;
     }
 
     Optional<EasyModelEntityProfile> profile = activeProfile(profileId);
     if (profile.isPresent()) {
-      applyProfile(entity, fields, profile.get(), animationState);
+      applyProfile(entity, fields, profile.get(), animation);
       return;
     }
 
@@ -164,7 +164,7 @@ public final class EasyModelHostSupport {
             FALLBACK_HEIGHT,
             FALLBACK_EYE_HEIGHT,
             bodyType,
-            animationState));
+            animation));
   }
 
   public static Identifier getProfileId(SynchedEntityData entityData, EasyModelHostFields fields) {
@@ -174,23 +174,23 @@ public final class EasyModelHostSupport {
 
   public static void setProfileId(Mob entity, EasyModelHostFields fields, Identifier profileId) {
     Objects.requireNonNull(profileId, "profileId");
-    EasyModelAnimationState animationState = entity.getEntityData().get(fields.animationState());
+    EasyModelAnimationSetting animation = entity.getEntityData().get(fields.animation());
     Optional<EasyModelEntityProfile> profile = activeProfile(profileId);
     if (profile.isPresent()) {
-      applyProfile(entity, fields, profile.get(), animationState);
+      applyProfile(entity, fields, profile.get(), animation);
       entity.setHealth(entity.getMaxHealth());
       return;
     }
 
-    applyFallback(entity, fields, profileId, animationState);
+    applyFallback(entity, fields, profileId, animation);
   }
 
   private static void applyFallback(
       Mob entity,
       EasyModelHostFields fields,
       Identifier profileId,
-      EasyModelAnimationState animationState) {
-    applyFallback(entity, fields, EasyModelRuntimeContract.fallback(profileId, animationState));
+      EasyModelAnimationSetting animation) {
+    applyFallback(entity, fields, EasyModelRuntimeContract.fallback(profileId, animation));
   }
 
   private static void applyFallback(
@@ -220,17 +220,16 @@ public final class EasyModelHostSupport {
     return entityData.get(fields.version());
   }
 
-  public static EasyModelAnimationState getAnimationState(
+  public static EasyModelAnimationSetting getAnimation(
       SynchedEntityData entityData, EasyModelHostFields fields) {
-    return entityData.get(fields.animationState());
+    return entityData.get(fields.animation());
   }
 
-  public static void setAnimationState(
+  public static void setAnimation(
       SynchedEntityData entityData,
       EasyModelHostFields fields,
-      EasyModelAnimationState animationState) {
-    entityData.set(
-        fields.animationState(), Objects.requireNonNull(animationState, "animationState"));
+      EasyModelAnimationSetting animation) {
+    entityData.set(fields.animation(), Objects.requireNonNull(animation, "animation"));
   }
 
   public static EasyModelRuntimeContract getRuntimeContract(
@@ -243,33 +242,31 @@ public final class EasyModelHostSupport {
         entityData.get(fields.height()),
         entityData.get(fields.eyeHeight()),
         entityData.get(fields.bodyType()),
-        getAnimationState(entityData, fields));
+        getAnimation(entityData, fields));
   }
 
   public static boolean shouldLookAtPlayers(
       SynchedEntityData entityData, EasyModelHostFields fields) {
-    return activeProfile(getProfileId(entityData, fields))
-        .map(profile -> profile.behavior().lookAtPlayers())
-        .orElse(false);
+    return entityData.get(fields.lookAtPlayers());
   }
 
   public static boolean shouldRandomStroll(
       SynchedEntityData entityData, EasyModelHostFields fields) {
-    return activeProfile(getProfileId(entityData, fields))
-        .map(
-            profile ->
-                profile.behavior().mode() == ModelBehaviorMode.AMBIENT
-                    && profile.behavior().randomStroll())
-        .orElse(false);
+    return entityData.get(fields.randomStroll());
   }
 
   public static void applyProfile(
       Mob entity,
       EasyModelHostFields fields,
       EasyModelEntityProfile profile,
-      EasyModelAnimationState animationState) {
-    applyRuntimeContract(
-        entity, fields, EasyModelRuntimeContract.fromProfile(profile, animationState));
+      EasyModelAnimationSetting animation) {
+    applyRuntimeContract(entity, fields, EasyModelRuntimeContract.fromProfile(profile, animation));
+    SynchedEntityData entityData = entity.getEntityData();
+    entityData.set(fields.lookAtPlayers(), profile.behavior().lookAtPlayers());
+    entityData.set(
+        fields.randomStroll(),
+        profile.behavior().mode() == ModelBehaviorMode.AMBIENT
+            && profile.behavior().randomStroll());
     entity.setNoGravity(!profile.movement().gravity());
 
     setBaseAttribute(entity, Attributes.MOVEMENT_SPEED, profile.movement().speed());
@@ -287,7 +284,9 @@ public final class EasyModelHostSupport {
     entityData.set(fields.height(), contract.height());
     entityData.set(fields.eyeHeight(), contract.eyeHeight());
     entityData.set(fields.bodyType(), contract.bodyType());
-    entityData.set(fields.animationState(), contract.animationState());
+    entityData.set(fields.animation(), contract.animation());
+    entityData.set(fields.lookAtPlayers(), false);
+    entityData.set(fields.randomStroll(), false);
     entity.refreshDimensions();
   }
 }

@@ -20,7 +20,9 @@
 package de.markusbordihn.easymodelentities.data.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
 import org.junit.jupiter.api.Test;
 
 class ModelCubeFaceTest {
@@ -33,5 +35,26 @@ class ModelCubeFaceTest {
     assertEquals("west", ModelCubeFace.WEST.getTagName());
     assertEquals("up", ModelCubeFace.UP.getTagName());
     assertEquals("down", ModelCubeFace.DOWN.getTagName());
+  }
+
+  @Test
+  void bakedCubeNormalizesMirroredUvsOnce() {
+    ModelCubeFaceUvs faceUvs =
+        new ModelCubeFaceUvs(
+            new FaceUv(1.0f, 2.0f, 3.0f, 4.0f),
+            new FaceUv(5.0f, 6.0f, 7.0f, 8.0f),
+            new FaceUv(9.0f, 10.0f, 11.0f, 12.0f),
+            new FaceUv(13.0f, 14.0f, 15.0f, 16.0f),
+            new FaceUv(17.0f, 18.0f, 19.0f, 20.0f),
+            new FaceUv(21.0f, 22.0f, 23.0f, 24.0f));
+
+    BakedModelCube cube =
+        new BakedModelCube(
+            new int[] {0, 0}, faceUvs, Vec3f.ZERO, new Vec3f(1.0f, 1.0f, 1.0f), true);
+
+    assertFalse(cube.mirror());
+    assertEquals(faceUvs.mirrorU(), cube.faceUvs());
+    assertEquals(new FaceUv(15.0f, 14.0f, 13.0f, 16.0f), cube.faceUvs().east());
+    assertEquals(new FaceUv(7.0f, 6.0f, 5.0f, 8.0f), cube.faceUvs().west());
   }
 }

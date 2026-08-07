@@ -142,6 +142,7 @@ class ModelRenderProfileManagerTest {
         manager.getRenderProfile(RENDER_PROFILE_ID).orElseThrow();
     assertEquals(ModelRenderProfileStatus.MISSING_MODEL, renderProfile.status());
     assertTrue(renderProfile.usesFallbackModel());
+    assertTrue(renderProfile.canResolveRenderState());
     assertFalse(renderProfile.isActive());
   }
 
@@ -169,5 +170,6 @@ class ModelRenderProfileManagerTest {
         manager.getRenderProfile(RENDER_PROFILE_ID).orElseThrow();
     assertEquals(ModelRenderProfileStatus.MODEL_DECODE_FAILED, renderProfile.status());
     assertTrue(renderProfile.usesFallbackModel());
+    assertTrue(renderProfile.canResolveRenderState());
   }
 }

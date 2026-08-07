@@ -17,61 +17,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.runtime;
+package de.markusbordihn.easymodelentities.api.data;
 
-import de.markusbordihn.easymodelentities.api.EasyModelAnimationStates;
 import java.util.Locale;
+import java.util.Optional;
 
-public enum EasyModelAnimationState {
-  AUTO(EasyModelAnimationStates.AUTO),
-  IDLE(EasyModelAnimationStates.IDLE),
-  WALK(EasyModelAnimationStates.WALK),
-  RUN(EasyModelAnimationStates.RUN),
-  HURT(EasyModelAnimationStates.HURT),
-  DEATH(EasyModelAnimationStates.DEATH),
-  SWIM(EasyModelAnimationStates.SWIM),
-  FLY(EasyModelAnimationStates.FLY),
-  ATTACK(EasyModelAnimationStates.ATTACK);
-
-  private static final EasyModelAnimationState[] VALUES = values();
+public enum EasyModelBodyType {
+  STATIC,
+  BIPED,
+  QUADRUPED,
+  AQUATIC,
+  AMPHIBIOUS,
+  WINGED,
+  WINGED_HUMANOID,
+  ARTHROPOD,
+  CUBOID,
+  FLOATING;
 
   private final String serializedName = this.name().toLowerCase(Locale.ROOT);
-  private final int apiState;
 
-  EasyModelAnimationState(int apiState) {
-    this.apiState = apiState;
-  }
-
-  public static EasyModelAnimationState bySerializedName(String serializedName) {
+  public static Optional<EasyModelBodyType> fromSerializedName(String serializedName) {
     if (serializedName == null) {
-      return AUTO;
+      return Optional.empty();
     }
 
-    String normalizedName = serializedName.toLowerCase(Locale.ROOT);
-    for (EasyModelAnimationState animationState : VALUES) {
-      if (animationState.getSerializedName().equals(normalizedName)) {
-        return animationState;
+    for (EasyModelBodyType bodyType : values()) {
+      if (bodyType.serializedName.equalsIgnoreCase(serializedName)) {
+        return Optional.of(bodyType);
       }
     }
 
-    return AUTO;
-  }
-
-  public static EasyModelAnimationState byApiState(int animationState) {
-    for (EasyModelAnimationState state : VALUES) {
-      if (state.apiState == animationState) {
-        return state;
-      }
-    }
-
-    return AUTO;
+    return Optional.empty();
   }
 
   public String getSerializedName() {
     return this.serializedName;
-  }
-
-  public int getApiState() {
-    return this.apiState;
   }
 }

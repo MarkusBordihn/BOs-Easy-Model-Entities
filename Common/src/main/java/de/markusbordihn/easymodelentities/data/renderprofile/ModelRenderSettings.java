@@ -29,8 +29,24 @@ public record ModelRenderSettings(
     Vec3f visibleBoundsOffset) {
 
   public ModelRenderSettings {
+    requirePositiveFinite(scale, "scale");
+    requireNonNegativeFinite(shadowRadius, "shadowRadius");
+    requireNonNegativeFinite(visibleBoundsWidth, "visibleBoundsWidth");
+    requireNonNegativeFinite(visibleBoundsHeight, "visibleBoundsHeight");
     if (visibleBoundsOffset == null) {
       visibleBoundsOffset = Vec3f.ZERO;
+    }
+  }
+
+  private static void requirePositiveFinite(float value, String name) {
+    if (!Float.isFinite(value) || value <= 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite positive value.");
+    }
+  }
+
+  private static void requireNonNegativeFinite(float value, String name) {
+    if (!Float.isFinite(value) || value < 0.0f) {
+      throw new IllegalArgumentException(name + " must be a finite non-negative value.");
     }
   }
 

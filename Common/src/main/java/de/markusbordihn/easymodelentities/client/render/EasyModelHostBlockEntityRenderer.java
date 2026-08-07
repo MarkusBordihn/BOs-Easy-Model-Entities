@@ -47,11 +47,8 @@ public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity
       ModelFeatureRenderer.CrumblingOverlay crumblingOverlay) {
     BlockEntityRenderer.super.extractRenderState(
         blockEntity, renderState, partialTick, cameraPos, crumblingOverlay);
-    renderState.easyModelRenderState =
-        EasyModelBlockEntityRenderBackend.resolveRenderState(
-            blockEntity.getEasyModelRuntimeContract());
-    renderState.ageInTicks = blockEntity.getEasyModelAnimationTicks(partialTick);
-    renderState.yawDegrees = 0.0f;
+    EasyModelBlockEntityRenderBackend.extractRenderState(
+        blockEntity, blockEntity.getEasyModelRuntimeContract(), renderState, partialTick);
   }
 
   @Override
@@ -64,11 +61,6 @@ public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity
       return;
     }
     EasyModelBlockEntityRenderBackend.render(
-        renderState.easyModelRenderState,
-        renderState.ageInTicks,
-        renderState.yawDegrees,
-        poseStack,
-        submitNodeCollector,
-        renderState.lightCoords);
+        renderState, poseStack, submitNodeCollector, renderState.lightCoords);
   }
 }

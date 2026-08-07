@@ -19,11 +19,11 @@
 
 package de.markusbordihn.easymodelentities.item;
 
-import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
+import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.resources.Identifier;
@@ -32,10 +32,9 @@ import net.minecraft.world.item.ItemStack;
 
 public final class EasyModelCreativeTabs {
 
-  public static final Identifier ENTITIES_TAB_ID =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "entities");
+  public static final Identifier ENTITIES_TAB_ID = ModelResourcePaths.modIdentifier("entities");
   public static final Identifier BLOCK_ENTITIES_TAB_ID =
-      Identifier.fromNamespaceAndPath(Constants.MOD_ID, "block_entities");
+      ModelResourcePaths.modIdentifier("block_entities");
 
   private EasyModelCreativeTabs() {}
 

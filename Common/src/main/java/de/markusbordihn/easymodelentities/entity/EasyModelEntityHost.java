@@ -19,7 +19,7 @@
 
 package de.markusbordihn.easymodelentities.entity;
 
-import de.markusbordihn.easymodelentities.runtime.EasyModelAnimationState;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import net.minecraft.resources.Identifier;
 
@@ -33,9 +33,9 @@ public interface EasyModelEntityHost {
 
   String getEasyModelVersion();
 
-  EasyModelAnimationState getEasyModelAnimationState();
+  EasyModelAnimationSetting getEasyModelAnimationSetting();
 
-  void setEasyModelAnimationState(EasyModelAnimationState animationState);
+  void setEasyModelAnimation(EasyModelAnimationSetting animation);
 
   EasyModelRuntimeContract getEasyModelRuntimeContract();
 

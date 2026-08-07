@@ -1,7 +1,7 @@
 {
   "schema_version": "0.2.0",
   "preset_type": "cuboid_hopping",
-  "version": "demo-rune-cube-v1",
+  "version": "demo-rune-cube-v2",
   "model": "easy_model_entities_examples:easy_model_entities/models/rune_cube",
   "texture": "easy_model_entities_examples:textures/entity/rune_cube.png",
   "animation": {

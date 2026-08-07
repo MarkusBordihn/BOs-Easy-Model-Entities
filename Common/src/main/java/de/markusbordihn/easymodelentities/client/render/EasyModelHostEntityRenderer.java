@@ -27,9 +27,7 @@ import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 
 public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
@@ -38,12 +36,6 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
   public EasyModelHostEntityRenderer(EntityRendererProvider.Context context) {
     super(context);
     this.shadowRadius = 0.3f;
-  }
-
-  private static float bodyYaw(Entity entity, float partialTick) {
-    return entity instanceof LivingEntity livingEntity
-        ? Mth.rotLerp(partialTick, livingEntity.yBodyRotO, livingEntity.yBodyRot)
-        : Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot());
   }
 
   @Override
@@ -55,20 +47,8 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
   public void extractRenderState(
       T entity, EasyModelEntityRenderState renderState, float partialTick) {
     super.extractRenderState(entity, renderState, partialTick);
-    renderState.easyModelRenderState =
-        EasyModelEntityRenderBackend.resolveRenderState(entity.getEasyModelRuntimeContract());
-    renderState.animationState = entity.getEasyModelAnimationState();
-    renderState.entityYaw = bodyYaw(entity, partialTick);
-    renderState.limbSwing =
-        entity instanceof LivingEntity le ? le.walkAnimation.position(partialTick) : 0.0f;
-    renderState.limbSwingAmount =
-        entity instanceof LivingEntity le
-            ? Math.min(le.walkAnimation.speed(partialTick), 1.0f)
-            : 0.0f;
-    renderState.airborneAmount = EasyModelEntityRenderBackend.airborneAmount(entity);
-    renderState.attackAmount = EasyModelEntityRenderBackend.attackAmount(entity, partialTick);
-    renderState.headLook =
-        EasyModelEntityRenderBackend.headLook(entity, renderState.entityYaw, partialTick);
+    EasyModelEntityRenderBackend.extractRenderState(
+        entity, entity.getEasyModelRuntimeContract(), renderState, partialTick);
   }
 
   protected float getShadowRadius(EasyModelEntityRenderState renderState) {
@@ -86,6 +66,7 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
     if (renderState.easyModelRenderState == null) {
       return;
     }
+
     EasyModelEntityRenderBackend.render(
         renderState, poseStack, submitNodeCollector, renderState.lightCoords);
   }
@@ -97,12 +78,15 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
     if (!easyModelRenderState.hasVisibleBounds()) {
       return super.shouldRender(entity, frustum, camX, camY, camZ);
     }
+
     if (!entity.shouldRender(camX, camY, camZ)) {
       return false;
     }
+
     if (!affectedByCulling(entity)) {
       return true;
     }
+
     Vec3f offset = easyModelRenderState.visibleBoundsOffset();
     double halfWidth = easyModelRenderState.visibleBoundsWidth() / 2.0;
     double height = easyModelRenderState.visibleBoundsHeight();

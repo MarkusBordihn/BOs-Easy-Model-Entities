@@ -21,8 +21,9 @@ package de.markusbordihn.easymodelentities.api.data.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import org.junit.jupiter.api.Test;
 
 class EasyModelEntityRenderOptionsTest {
@@ -30,6 +31,7 @@ class EasyModelEntityRenderOptionsTest {
   @Test
   void defaultHasNullScale() {
     assertNull(EasyModelEntityRenderOptions.DEFAULT.scale());
+    assertNull(EasyModelEntityRenderOptions.DEFAULT.animation());
   }
 
   @Test
@@ -46,18 +48,69 @@ class EasyModelEntityRenderOptionsTest {
   }
 
   @Test
-  void legacyConstructorsLeaveScaleNull() {
-    assertNull(new EasyModelEntityRenderOptions(4.0f, EasyModelPartAnimator.NONE).scale());
-    assertNull(
-        new EasyModelEntityRenderOptions(
-                4.0f, EasyModelPartAnimator.NONE, EasyModelPartAnimationMode.REPLACE)
-            .scale());
+  void withAnimationUsesSingleTypedSelection() {
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT.withAnimation("talk");
+
+    assertEquals(EasyModelAnimation.named("talk"), options.animation());
   }
 
   @Test
-  void nullAnimatorAndModeFallBackToDefaults() {
-    EasyModelEntityRenderOptions options = new EasyModelEntityRenderOptions(null, null, null, null);
-    assertEquals(EasyModelPartAnimator.NONE, options.partAnimator());
-    assertEquals(EasyModelPartAnimationMode.ADD, options.partAnimationMode());
+  void withAnimationRejectsBlanks() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withAnimation(""));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withAnimation("   "));
+  }
+
+  @Test
+  void withAnimationOverwritesPreviousAnimation() {
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT.withAnimation("talk").withAnimation("wait");
+
+    assertEquals(EasyModelAnimation.named("wait"), options.animation());
+  }
+
+  @Test
+  void animationOverrideCanBeRemovedExplicitly() {
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT
+            .withAnimation(EasyModelAnimation.ATTACK)
+            .withoutAnimationOverride();
+
+    assertNull(options.animation());
+  }
+
+  @Test
+  void rejectsInvalidNumericOptions() {
+    assertThrows(
+        IllegalArgumentException.class, () -> EasyModelEntityRenderOptions.DEFAULT.withScale(0.0f));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withScale(Float.NaN));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withAnimationTicks(-1.0f));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withAnimationTicks(Float.POSITIVE_INFINITY));
+  }
+
+  @Test
+  void rejectsNullCollaboratorsAndOverrides() {
+    assertThrows(
+        NullPointerException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withPartAnimator(null));
+    assertThrows(
+        NullPointerException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withPartAnimationMode(null));
+    assertThrows(
+        NullPointerException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withPartPoseListener(null));
+    assertThrows(
+        NullPointerException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withAnimation((EasyModelAnimation) null));
   }
 }

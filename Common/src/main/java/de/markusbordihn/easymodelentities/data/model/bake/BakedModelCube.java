@@ -39,6 +39,10 @@ public record BakedModelCube(
     Objects.requireNonNull(dimensions, "dimensions");
     Objects.requireNonNull(faceVisibility, "faceVisibility");
     uvOffset = Objects.requireNonNull(uvOffset, "uvOffset").clone();
+    if (mirror) {
+      faceUvs = faceUvs.mirrorU();
+      mirror = false;
+    }
   }
 
   public BakedModelCube(

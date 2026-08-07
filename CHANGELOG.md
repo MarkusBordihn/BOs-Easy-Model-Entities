@@ -5,6 +5,40 @@
 This change log includes the summarized changes. For the full changelog, please go to
 the [GitHub History][history] instead.
 
+### 2.0.1
+
+- Fixed block entities `animation play`, `stop`, and `restart` never reached the screen.
+- Fixed the render options for scale and part animation being dropped by custom renderers.
+- Added `extractRenderState` and `submit` to both render delegates, so other mods can show manual
+  animations again.
+
+### 2.0.0
+
+- Fixed the command auto-completion never offering the UUID of the entity in the crosshair.
+- Changed the command auto-completion to drop `@a`, `@p`, `@r` and player names, which can never
+  select a model entity.
+- Changed every public signature to use stable API types and enums instead of internal classes.
+- Changed the numeric animation states and named clips into the type-safe `EasyModelAnimation`.
+- Changed the animation of an entity or block entity into saved, synchronized state, so it survives
+  a reload and reaches players who arrive later.
+- Changed render and model values to reject invalid input before it reaches rendering.
+- Changed an invalid transform to show a reloadable placeholder instead of dropping the model.
+- Changed the minimum Forge, Fabric Loader, and Fabric API versions; older loaders are rejected.
+- Changed animations to keep their own clock, so a finished animation no longer jumps back.
+- Removed `set_animation`; use `animation set entity <targets> <state>`, which does the same and
+  also accepts named clips and `loop` or `once`.
+- Added `behavior set` to freeze the movement of a host entity, so a `sit` or `death` animation no
+  longer plays while the entity walks away.
+- Added named Blockbench clips and host hooks for custom animations without a fixed state.
+- Added `sit` as a standard animation state and Blockbench clip for all body types.
+- Added animation discovery and metadata to list the clips of a model with their length.
+- Added playback modes, transitions, repeats, and duration limits for controlled animations.
+- Added `animation set` to give a lasting animation, with `clip`, `loop`, or `once` deciding whether
+  it repeats.
+- Added `animation play`, `stop`, and `restart` for one-off animations on everyone watching.
+- Improved the migration from schema `0.1.0` to `0.2.0` to keep the existing render profile.
+- Improved playback queues, missing-clip warnings, and loops to stay bounded in long sessions.
+
 ### 1.7.0
 
 - Fixed the head of an entity never turning towards what it looks at.
