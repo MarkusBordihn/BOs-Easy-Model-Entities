@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.api.data.client;
 
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import java.util.Objects;
 
 public record EasyModelAnimationInfo(
@@ -58,5 +59,13 @@ public record EasyModelAnimationInfo(
 
   public EasyModelAnimationType type() {
     return EasyModelAnimationType.fromName(this.name);
+  }
+
+  public String baseName() {
+    return ModelAnimationClips.baseName(this.name);
+  }
+
+  public boolean isVariant() {
+    return !this.baseName().equals(this.name);
   }
 }

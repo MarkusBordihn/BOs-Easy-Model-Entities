@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
@@ -49,6 +50,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ModelTextureResolverTest {
@@ -159,6 +161,37 @@ class ModelTextureResolverTest {
 
     assertEquals(derived, resolved.textures().get(1));
     assertFalse(hasMissingTexture(resolved));
+  }
+
+  @Test
+  @DisplayName("Slot names address a texture index by name, so a command needs no bake knowledge")
+  void mapsSlotNamesToTextureIndices() throws IOException {
+    ResourceLocation derived = new ResourceLocation("minecraft", "textures/block/screen.png");
+    DecodedModel model =
+        decodedModel(
+            new DecodedTexture(1, "minecraft", "block", "screen.png", "Screen Face.png", 16, 16));
+    ResourceManager resourceManager = resourceManager(DEFAULT_TEXTURE, derived);
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of()), model, resourceManager);
+
+    assertEquals(
+        Map.of(EasyModelTextureSetting.DEFAULT_SLOT, 0, "model_a", 0, "screen_face", 1),
+        resolved.slotNames());
+  }
+
+  @Test
+  @DisplayName("A duplicate texture name keeps the lowest index instead of overwriting it")
+  void slotNamesAreDeduplicated() throws IOException {
+    DecodedModel model =
+        decodedModel(new DecodedTexture(1, "", "block", "model_a.png", "model_a.png", 16, 16));
+    ResourceManager resourceManager = resourceManager(DEFAULT_TEXTURE);
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of()), model, resourceManager);
+
+    assertEquals(
+        Map.of(EasyModelTextureSetting.DEFAULT_SLOT, 0, "model_a", 0), resolved.slotNames());
   }
 
   @Test

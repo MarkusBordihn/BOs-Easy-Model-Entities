@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.entity;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
@@ -64,6 +65,9 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
       SynchedEntityData.defineId(EasyModelHostEntity.class, EntityDataSerializers.BOOLEAN);
   private static final EntityDataAccessor<Boolean> RANDOM_STROLL =
       SynchedEntityData.defineId(EasyModelHostEntity.class, EntityDataSerializers.BOOLEAN);
+  private static final EntityDataAccessor<EasyModelTextureSetting> TEXTURE =
+      SynchedEntityData.defineId(
+          EasyModelHostEntity.class, EasyModelEntityDataSerializers.TEXTURE_SETTING);
 
   private static final EasyModelHostFields FIELDS =
       new EasyModelHostFields(
@@ -76,7 +80,8 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
           BODY_TYPE,
           ANIMATION_STATE,
           LOOK_AT_PLAYERS,
-          RANDOM_STROLL);
+          RANDOM_STROLL,
+          TEXTURE);
 
   private EasyModelRuntimeContract runtimeContract;
 
@@ -146,6 +151,16 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
   @Override
   public void setEasyModelAnimation(EasyModelAnimationSetting animation) {
     EasyModelHostSupport.setAnimation(this.entityData, FIELDS, animation);
+  }
+
+  @Override
+  public EasyModelTextureSetting getEasyModelTextureSetting() {
+    return EasyModelHostSupport.getTexture(this.entityData, FIELDS);
+  }
+
+  @Override
+  public void setEasyModelTexture(EasyModelTextureSetting texture) {
+    EasyModelHostSupport.setTexture(this.entityData, FIELDS, texture);
   }
 
   @Override

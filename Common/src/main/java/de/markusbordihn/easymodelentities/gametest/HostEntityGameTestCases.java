@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.gametest;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.command.EasyModelBehaviorCommand;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
@@ -34,6 +35,7 @@ import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelBlockIds;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
+import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.io.StringReader;
 import java.util.List;
@@ -195,6 +197,59 @@ public final class HostEntityGameTestCases {
         || contract.animation().animation() != EasyModelAnimation.RUN
         || contract.bodyType() != ModelBodyType.QUADRUPED) {
       helper.fail("NBT load did not preserve the persisted runtime contract fields.");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  public static void nbtPreservesTextureSetting(GameTestHelper helper) {
+    installProfiles();
+    Optional<Entity> entity =
+        EasyModelServices.entityFactory()
+            .createEntity(helper.getLevel(), GROUND_PROFILE_ID, Vec3.ZERO);
+    if (entity.isEmpty() || !(entity.get() instanceof EasyModelHostEntity hostEntity)) {
+      helper.fail("Could not create host entity for texture round trip.");
+      return;
+    }
+
+    CompoundTag emptyTag = new CompoundTag();
+    hostEntity.addAdditionalSaveData(emptyTag);
+    if (emptyTag.contains(EasyModelHostPersistence.TEXTURE_TAG)) {
+      helper.fail("An empty texture setting was written to NBT.");
+      return;
+    }
+
+    ResourceLocation texture =
+        ModelResourcePaths.resourceLocation("example", "textures/entity/screen_sad.png");
+    hostEntity.setEasyModelTexture(EasyModelTextureSetting.of("screen", texture));
+    if (!Optional.of(texture).equals(hostEntity.getEasyModelTextureSetting().texture("screen"))) {
+      helper.fail("Synched data did not return the texture setting.");
+      return;
+    }
+
+    CompoundTag compoundTag = new CompoundTag();
+    hostEntity.addAdditionalSaveData(compoundTag);
+
+    Optional<Entity> loadedEntity =
+        EasyModelServices.entityFactory()
+            .createEntity(helper.getLevel(), GROUND_PROFILE_ID, Vec3.ZERO);
+    if (loadedEntity.isEmpty()
+        || !(loadedEntity.get() instanceof EasyModelHostEntity loadedHostEntity)) {
+      helper.fail("Could not create host entity for texture load.");
+      return;
+    }
+
+    loadedHostEntity.readAdditionalSaveData(compoundTag);
+    if (!Optional.of(texture)
+        .equals(loadedHostEntity.getEasyModelTextureSetting().texture("screen"))) {
+      helper.fail("NBT load did not preserve the texture setting.");
+      return;
+    }
+
+    loadedHostEntity.setEasyModelTexture(EasyModelTextureSetting.EMPTY);
+    if (!loadedHostEntity.getEasyModelTextureSetting().isEmpty()) {
+      helper.fail("Clearing the texture setting did not reset the synched data.");
       return;
     }
 

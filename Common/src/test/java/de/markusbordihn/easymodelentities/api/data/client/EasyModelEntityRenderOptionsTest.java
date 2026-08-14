@@ -20,13 +20,20 @@
 package de.markusbordihn.easymodelentities.api.data.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 class EasyModelEntityRenderOptionsTest {
+
+  private static final ResourceLocation SCREEN =
+      new ResourceLocation("example", "textures/entity/echo/screen_sad.png");
 
   @Test
   void defaultHasNullScale() {
@@ -112,5 +119,45 @@ class EasyModelEntityRenderOptionsTest {
     assertThrows(
         NullPointerException.class,
         () -> EasyModelEntityRenderOptions.DEFAULT.withAnimation((EasyModelAnimation) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withTextureSetting(null));
+  }
+
+  @Test
+  void defaultHasNoTextureOverride() {
+    assertTrue(EasyModelEntityRenderOptions.DEFAULT.textureSetting().isEmpty());
+  }
+
+  @Test
+  void withTextureAddsSlotAndPreservesOtherComponents() {
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT
+            .withAnimation("talk")
+            .withScale(2.0f)
+            .withTexture("screen", SCREEN);
+
+    assertEquals(SCREEN, options.textureSetting().texture("screen").orElse(null));
+    assertEquals(EasyModelAnimation.named("talk"), options.animation());
+    assertEquals(2.0f, options.scale());
+  }
+
+  @Test
+  void textureOverrideCanBeRemovedExplicitly() {
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT.withTexture("screen", SCREEN).withoutTextureOverride();
+
+    assertTrue(options.textureSetting().isEmpty());
+  }
+
+  @Test
+  void optionsWithTheSameTextureOverrideAreEqual() {
+    assertEquals(
+        EasyModelEntityRenderOptions.DEFAULT.withTexture("screen", SCREEN),
+        EasyModelEntityRenderOptions.DEFAULT.withTextureSetting(
+            EasyModelTextureSetting.of("screen", SCREEN)));
+    assertNotEquals(
+        EasyModelEntityRenderOptions.DEFAULT.withTexture("screen", SCREEN),
+        EasyModelEntityRenderOptions.DEFAULT);
   }
 }

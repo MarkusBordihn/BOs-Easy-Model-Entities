@@ -26,8 +26,6 @@ public enum EasyModelAnimationType {
   CUSTOM;
 
   public static EasyModelAnimationType fromName(String animationName) {
-    return ModelAnimationClips.STANDARD_NAMES.contains(ModelAnimationClips.normalize(animationName))
-        ? STANDARD
-        : CUSTOM;
+    return ModelAnimationClips.isStandardBase(animationName) ? STANDARD : CUSTOM;
   }
 }

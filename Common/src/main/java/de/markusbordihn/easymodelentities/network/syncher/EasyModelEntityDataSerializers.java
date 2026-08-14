@@ -22,6 +22,7 @@ package de.markusbordihn.easymodelentities.network.syncher;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
 import net.minecraft.network.FriendlyByteBuf;
@@ -60,6 +61,25 @@ public final class EasyModelEntityDataSerializers {
           return animation;
         }
       };
+  public static final EntityDataSerializer<EasyModelTextureSetting> TEXTURE_SETTING =
+      new EntityDataSerializer<>() {
+
+        @Override
+        public void write(FriendlyByteBuf buffer, EasyModelTextureSetting textureSetting) {
+          buffer.writeNbt(textureSetting.createTag());
+        }
+
+        @Override
+        public EasyModelTextureSetting read(FriendlyByteBuf buffer) {
+          return EasyModelTextureSetting.fromTag(buffer.readNbt())
+              .orElse(EasyModelTextureSetting.EMPTY);
+        }
+
+        @Override
+        public EasyModelTextureSetting copy(EasyModelTextureSetting textureSetting) {
+          return textureSetting;
+        }
+      };
 
   private static boolean registered = false;
 
@@ -72,6 +92,7 @@ public final class EasyModelEntityDataSerializers {
 
     registerSerializer(BODY_TYPE);
     registerSerializer(ANIMATION_SETTING);
+    registerSerializer(TEXTURE_SETTING);
     registered = true;
   }
 

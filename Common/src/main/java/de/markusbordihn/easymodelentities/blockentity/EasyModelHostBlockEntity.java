@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.blockentity;
 
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
@@ -65,6 +66,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   private EasyModelRuntimeContract runtimeContract;
+  private EasyModelTextureSetting textureSetting = EasyModelTextureSetting.EMPTY;
   private int animationTicks = 0;
   private int randomIdleTicks = 0;
   private int randomIdleBurstTicks = 0;
@@ -141,6 +143,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     String version = state.version();
     ModelBodyType bodyType = state.bodyType();
     EasyModelAnimationSetting animation = state.animation();
+    this.textureSetting = state.texture();
 
     if (profileId == null) {
       applyRuntimeContract(fallbackRuntimeContract(MISSING_PROFILE_ID, animation), false);
@@ -179,6 +182,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
         EasyModelHostPersistence.BODY_TYPE_TAG,
         this.runtimeContract.bodyType().getSerializedName());
     EasyModelHostPersistence.writeAnimation(compoundTag, this.runtimeContract.animation());
+    EasyModelHostPersistence.writeTexture(compoundTag, this.textureSetting);
   }
 
   @Override
@@ -237,6 +241,22 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
             this.runtimeContract.bodyType(),
             Objects.requireNonNull(animation, "animationState")),
         true);
+  }
+
+  @Override
+  public EasyModelTextureSetting getEasyModelTextureSetting() {
+    return this.textureSetting;
+  }
+
+  public void setEasyModelTexture(EasyModelTextureSetting texture) {
+    EasyModelTextureSetting updated = Objects.requireNonNull(texture, "texture");
+    if (updated.equals(this.textureSetting)) {
+      return;
+    }
+
+    this.textureSetting = updated;
+    setChanged();
+    syncBlockEntity();
   }
 
   public int getEasyModelAnimationTicks() {

@@ -31,7 +31,7 @@ class EasyModelApiContractTest {
   @Test
   void exposesSchemaVersion() {
     assertEquals("0.2.0", EasyModelApiContract.schemaVersion());
-    assertEquals("2.0.0", EasyModelApiContract.apiVersion());
+    assertEquals("2.1.0", EasyModelApiContract.apiVersion());
     assertEquals(List.of("0.1.0", "0.2.0"), EasyModelApiContract.supportedSchemaVersions());
   }
 
@@ -44,7 +44,9 @@ class EasyModelApiContractTest {
     assertTrue(
         EasyModelApiContract.maxModelFileSizeBytes()
             > EasyModelApiContract.softModelFileSizeBytes());
-    assertEquals(16, EasyModelApiContract.maxAnimationCount());
+    assertEquals(64, EasyModelApiContract.maxAnimationCount());
+    assertTrue(
+        EasyModelApiContract.maxAnimationCount() > EasyModelApiContract.softAnimationCount());
   }
 
   @Test
@@ -60,6 +62,7 @@ class EasyModelApiContractTest {
         List.of("immediate", "after_current"), EasyModelApiContract.animationSwitchTimings());
     assertEquals(List.of("once", "loop", "repeat"), EasyModelApiContract.playbackModes());
     assertEquals(List.of("standard", "custom"), EasyModelApiContract.animationTypes());
+    assertEquals(List.of("cutout", "translucent"), EasyModelApiContract.textureBlends());
     assertTrue(EasyModelApiContract.gaits().contains("natural"));
     assertTrue(EasyModelApiContract.presetTypes().contains("custom"));
     assertTrue(EasyModelApiContract.blockEntityPresetTypes().contains("ticking"));

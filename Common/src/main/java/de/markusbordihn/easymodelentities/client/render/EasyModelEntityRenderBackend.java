@@ -24,6 +24,7 @@ import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
@@ -41,6 +42,7 @@ import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileSe
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
@@ -53,8 +55,14 @@ public final class EasyModelEntityRenderBackend {
   private static final float AIRBORNE_MOTION_RANGE = 0.4f;
   private static final EasyModelAnimationPlaybackTracker<Entity> ANIMATION_PLAYBACK_TRACKER =
       new EasyModelAnimationPlaybackTracker<>();
+  private static final EasyModelAnimationVariantTracker<Entity> ANIMATION_VARIANT_TRACKER =
+      new EasyModelAnimationVariantTracker<>();
 
   private EasyModelEntityRenderBackend() {}
+
+  static void clearAnimationVariants() {
+    ANIMATION_VARIANT_TRACKER.clearAll();
+  }
 
   public static EasyModelRenderState resolveRenderState(EasyModelRuntimeContract contract) {
     return EasyModelRenderStateCache.resolve(contract);
@@ -122,22 +130,38 @@ public final class EasyModelEntityRenderBackend {
     float airborneAmount = airborneAmount(entity);
     float attackAmount = attackAmount(entity, partialTick);
     EasyModelAnimationPlaybackFrame playbackFrame;
+    EasyModelAnimationVariantFrame variantFrame = EasyModelAnimationVariantFrame.NONE;
     if (safeOptions.animationTicks() != null) {
       ANIMATION_PLAYBACK_TRACKER.clear(entity);
+      ANIMATION_VARIANT_TRACKER.clear(entity);
       playbackFrame =
           EasyModelAnimationPlaybackFrame.single(
               setting.animation(), safeOptions.animationTicks(), setting.loopOverride(), false);
     } else {
+      double animationClock = entity.tickCount + partialTick;
+      Supplier<String> automaticClipName =
+          new EasyModelAutomaticClipName(
+              renderState, limbSwingAmount, airborneAmount, attackAmount);
       playbackFrame =
-          ANIMATION_PLAYBACK_TRACKER.resolve(
+          applySetting(
+              ANIMATION_PLAYBACK_TRACKER.resolve(
+                  entity,
+                  setting.animation(),
+                  automaticClipName,
+                  animationClock,
+                  renderState.bakedModel().animations()),
+              setting);
+      variantFrame =
+          ANIMATION_VARIANT_TRACKER.resolve(
               entity,
-              setting.animation(),
-              () ->
-                  EasyModelBakedModelRenderer.automaticClipName(
-                      renderState, limbSwingAmount, airborneAmount, attackAmount),
-              entity.tickCount + partialTick,
-              renderState.bakedModel().animations());
-      playbackFrame = applySetting(playbackFrame, setting);
+              entity.getId(),
+              renderState.bakedModel(),
+              renderState.animation().variantMode(),
+              playbackFrame,
+              automaticClipName,
+              animationClock,
+              EasyModelBakedModelRenderer.walkCycles(renderState, limbSwing),
+              attackAmount);
     }
 
     render(
@@ -146,10 +170,12 @@ public final class EasyModelEntityRenderBackend {
         limbSwing,
         limbSwingAmount,
         playbackFrame,
+        variantFrame,
         airborneAmount,
         attackAmount,
         headLook(entity, entityYaw, partialTick, safeOptions),
         safeOptions,
+        resolveTextureSetting(safeOptions.textureSetting(), textureSetting(entity)),
         poseStack,
         bufferSource,
         packedLight);
@@ -183,6 +209,7 @@ public final class EasyModelEntityRenderBackend {
         0.0f,
         safeOptions.headLook() == null ? EasyModelHeadLook.NONE : safeOptions.headLook(),
         safeOptions,
+        safeOptions.textureSetting(),
         poseStack,
         bufferSource,
         packedLight);
@@ -198,6 +225,39 @@ public final class EasyModelEntityRenderBackend {
       float attackAmount,
       EasyModelHeadLook headLook,
       EasyModelEntityRenderOptions options,
+      EasyModelTextureSetting textureSetting,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight) {
+    render(
+        renderState,
+        yaw,
+        limbSwing,
+        limbSwingAmount,
+        playbackFrame,
+        EasyModelAnimationVariantFrame.NONE,
+        airborneAmount,
+        attackAmount,
+        headLook,
+        options,
+        textureSetting,
+        poseStack,
+        bufferSource,
+        packedLight);
+  }
+
+  private static void render(
+      EasyModelRenderState renderState,
+      float yaw,
+      float limbSwing,
+      float limbSwingAmount,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelHeadLook headLook,
+      EasyModelEntityRenderOptions options,
+      EasyModelTextureSetting textureSetting,
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
@@ -217,6 +277,8 @@ public final class EasyModelEntityRenderBackend {
         attackAmount,
         headLook,
         playbackFrame,
+        variantFrame,
+        textureSetting,
         options.partAnimator(),
         options.partAnimationMode(),
         options.partPoseListener(),
@@ -276,6 +338,26 @@ public final class EasyModelEntityRenderBackend {
     }
 
     return EasyModelAnimationSetting.AUTO;
+  }
+
+  private static EasyModelTextureSetting resolveTextureSetting(
+      EasyModelTextureSetting requested, EasyModelTextureSetting fallback) {
+    if (requested != null && !requested.isEmpty()) {
+      return requested;
+    }
+
+    return fallback == null ? EasyModelTextureSetting.EMPTY : fallback;
+  }
+
+  private static EasyModelTextureSetting textureSetting(Entity entity) {
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      return hostEntity.getEasyModelTextureSetting();
+    }
+    if (entity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelTextureSetting();
+    }
+
+    return EasyModelTextureSetting.EMPTY;
   }
 
   private static EasyModelAnimationPlaybackFrame applySetting(

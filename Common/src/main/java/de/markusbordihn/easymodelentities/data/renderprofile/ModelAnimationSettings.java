@@ -26,14 +26,31 @@ public record ModelAnimationSettings(
     float swingSpeed,
     float walkSpeedMultiplier,
     float idleStrength,
-    ModelGaitType gait) {
+    ModelGaitType gait,
+    ModelAnimationVariantMode variantMode) {
 
   public ModelAnimationSettings {
     Objects.requireNonNull(mode, "mode");
     Objects.requireNonNull(gait, "gait");
+    Objects.requireNonNull(variantMode, "variantMode");
     requireNonNegativeFinite(swingSpeed, "swingSpeed");
     requireNonNegativeFinite(walkSpeedMultiplier, "walkSpeedMultiplier");
     requireNonNegativeFinite(idleStrength, "idleStrength");
+  }
+
+  public ModelAnimationSettings(
+      ModelAnimationMode mode,
+      float swingSpeed,
+      float walkSpeedMultiplier,
+      float idleStrength,
+      ModelGaitType gait) {
+    this(
+        mode,
+        swingSpeed,
+        walkSpeedMultiplier,
+        idleStrength,
+        gait,
+        ModelAnimationVariantMode.DEFAULT);
   }
 
   public ModelAnimationSettings(

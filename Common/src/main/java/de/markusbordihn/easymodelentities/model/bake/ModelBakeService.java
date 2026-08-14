@@ -162,7 +162,10 @@ public final class ModelBakeService implements EasyModelBakeService {
   }
 
   private static BakedModel bakeDecoded(
-      ModelBodyType bodyType, DecodedModel decodedModel, Map<Integer, ResourceLocation> textures) {
+      ModelBodyType bodyType,
+      DecodedModel decodedModel,
+      Map<Integer, ResourceLocation> textures,
+      Map<String, Integer> slotNames) {
     float textureWidth = decodedModel.textureWidth();
     float textureHeight = decodedModel.textureHeight();
     List<BakedModelPart> rootParts =
@@ -214,7 +217,8 @@ public final class ModelBakeService implements EasyModelBakeService {
         textures,
         cullBackfaces,
         decodedModel.animations(),
-        ModelBoundsCalculator.compute(rootParts));
+        ModelBoundsCalculator.compute(rootParts),
+        slotNames);
   }
 
   private static BakedModelPart bakePart(
@@ -435,7 +439,11 @@ public final class ModelBakeService implements EasyModelBakeService {
 
       return ModelBakeResult.success(
           cacheKey,
-          bakeDecoded(renderProfile.bodyType(), decodedModel, resolvedTextures.textures()),
+          bakeDecoded(
+              renderProfile.bodyType(),
+              decodedModel,
+              resolvedTextures.textures(),
+              resolvedTextures.slotNames()),
           issues);
     } catch (EasyModelDecodeException exception) {
       return failure(

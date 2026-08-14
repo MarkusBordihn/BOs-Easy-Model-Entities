@@ -22,11 +22,16 @@ package de.markusbordihn.easymodelentities.api.data.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 class EasyModelBlockEntityRenderOptionsTest {
+
+  private static final ResourceLocation SCREEN =
+      new ResourceLocation("example", "textures/block/lantern/screen_sad.png");
 
   @Test
   void buildsValidatedOptions() {
@@ -71,5 +76,25 @@ class EasyModelBlockEntityRenderOptionsTest {
     assertThrows(
         NullPointerException.class,
         () -> EasyModelBlockEntityRenderOptions.DEFAULT.withAnimation((EasyModelAnimation) null));
+    assertThrows(
+        NullPointerException.class,
+        () -> EasyModelBlockEntityRenderOptions.DEFAULT.withTextureSetting(null));
+  }
+
+  @Test
+  void defaultHasNoTextureOverride() {
+    assertTrue(EasyModelBlockEntityRenderOptions.DEFAULT.textureSetting().isEmpty());
+  }
+
+  @Test
+  void withTextureAddsSlotAndPreservesOtherComponents() {
+    EasyModelBlockEntityRenderOptions options =
+        EasyModelBlockEntityRenderOptions.DEFAULT
+            .withYawDegrees(90.0f)
+            .withTexture("screen", SCREEN);
+
+    assertEquals(SCREEN, options.textureSetting().texture("screen").orElse(null));
+    assertEquals(90.0f, options.yawDegrees());
+    assertTrue(options.withoutTextureOverride().textureSetting().isEmpty());
   }
 }

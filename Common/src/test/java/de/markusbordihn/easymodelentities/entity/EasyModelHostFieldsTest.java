@@ -46,6 +46,7 @@ class EasyModelHostFieldsTest {
         accessor(),
         accessor(),
         accessor(),
+        accessor(),
         accessor());
   }
 
@@ -63,6 +64,7 @@ class EasyModelHostFieldsTest {
     assertTrue(fields.isRuntimeContractField(fields.animation()));
     assertFalse(fields.isRuntimeContractField(fields.lookAtPlayers()));
     assertFalse(fields.isRuntimeContractField(fields.randomStroll()));
+    assertFalse(fields.isRuntimeContractField(fields.texture()));
     assertFalse(fields.isRuntimeContractField(accessor()));
   }
 
@@ -74,6 +76,7 @@ class EasyModelHostFieldsTest {
     assertTrue(fields.isDimensionsField(fields.height()));
     assertTrue(fields.isDimensionsField(fields.eyeHeight()));
     assertFalse(fields.isDimensionsField(fields.profileId()));
+    assertFalse(fields.isDimensionsField(fields.texture()));
     assertFalse(fields.isDimensionsField(accessor()));
   }
 
