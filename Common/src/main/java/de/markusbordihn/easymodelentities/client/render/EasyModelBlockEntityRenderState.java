@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.client.render;
 
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
@@ -30,6 +31,8 @@ public class EasyModelBlockEntityRenderState extends BlockEntityRenderState {
   public EasyModelRenderState easyModelRenderState;
   public EasyModelAnimationPlaybackFrame playbackFrame =
       EasyModelAnimationPlaybackFrame.single(EasyModelAnimation.AUTO, 0.0f);
+  public EasyModelAnimationVariantFrame variantFrame = EasyModelAnimationVariantFrame.NONE;
+  public EasyModelTextureSetting textureSetting = EasyModelTextureSetting.EMPTY;
   public EasyModelPartAnimator partAnimator = EasyModelPartAnimator.NONE;
   public EasyModelPartAnimationMode partAnimationMode = EasyModelPartAnimationMode.ADD;
   public float scaleFactor = 1.0f;

@@ -52,6 +52,11 @@ public class HostEntityGameTest {
   }
 
   @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
+  public void nbtPreservesTextureSetting(GameTestHelper helper) {
+    HostEntityGameTestCases.nbtPreservesTextureSetting(helper);
+  }
+
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void invalidNbtResourceLocationsFallBackSafely(GameTestHelper helper) {
     HostEntityGameTestCases.invalidNbtResourceLocationsFallBackSafely(helper);
   }

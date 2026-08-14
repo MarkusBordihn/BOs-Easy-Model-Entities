@@ -24,6 +24,7 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
 import de.markusbordihn.easymodelentities.api.data.EasyModelBodyType;
 import de.markusbordihn.easymodelentities.api.data.EasyModelProfileType;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureBlend;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlaybackMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSwitchTiming;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationType;
@@ -36,6 +37,7 @@ import de.markusbordihn.easymodelentities.data.profile.ModelMovementType;
 import de.markusbordihn.easymodelentities.data.profile.ModelPresetType;
 import de.markusbordihn.easymodelentities.data.profile.ModelProfileStatus;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationVariantMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelGaitType;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
 import de.markusbordihn.easymodelentities.schema.SchemaMigrations;
@@ -103,6 +105,10 @@ public final class EasyModelApiContract {
     return ModelAssetBudgets.MAX_ANIMATION_COUNT;
   }
 
+  public static int softAnimationCount() {
+    return ModelAssetBudgets.SOFT_ANIMATION_COUNT;
+  }
+
   public static List<String> modelTypes() {
     return Arrays.stream(EasyModelProfileType.values())
         .map(EasyModelProfileType::getSerializedName)
@@ -143,6 +149,12 @@ public final class EasyModelApiContract {
         .toList();
   }
 
+  public static List<String> animationVariantModes() {
+    return Arrays.stream(ModelAnimationVariantMode.values())
+        .map(ModelAnimationVariantMode::getSerializedName)
+        .toList();
+  }
+
   public static List<String> animationClips() {
     return ModelAnimationClips.STANDARD;
   }
@@ -175,6 +187,10 @@ public final class EasyModelApiContract {
     return Arrays.stream(EasyModelAnimationType.values())
         .map(type -> type.name().toLowerCase(Locale.ROOT))
         .toList();
+  }
+
+  public static List<String> textureBlends() {
+    return EasyModelTextureBlend.serializedNames();
   }
 
   public static List<String> gaits() {

@@ -22,6 +22,8 @@ package de.markusbordihn.easymodelentities.data.model;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelPart;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class ModelAnimationClips {
 
@@ -38,9 +40,50 @@ public final class ModelAnimationClips {
       List.of(IDLE, WALK, SWIM, FLY, HURT, DEATH, ATTACK, SIT);
   public static final Set<String> STANDARD_NAMES = Set.copyOf(STANDARD);
 
+  private static final Pattern VARIANT_SUFFIX = Pattern.compile("^(.+?)[_ ]([1-9][0-9]*)$");
+
   private ModelAnimationClips() {}
 
   public static String normalize(String name) {
     return name == null ? "" : DecodedModelPart.normalizeName(name);
+  }
+
+  public static String baseName(String name) {
+    if (name == null) {
+      return "";
+    }
+    Matcher matcher = VARIANT_SUFFIX.matcher(name);
+    return matcher.matches() ? matcher.group(1) : name;
+  }
+
+  public static int variantIndex(String name) {
+    if (name == null) {
+      return 0;
+    }
+    Matcher matcher = VARIANT_SUFFIX.matcher(name);
+    if (!matcher.matches()) {
+      return 0;
+    }
+
+    try {
+      return Integer.parseInt(matcher.group(2));
+    } catch (NumberFormatException exception) {
+      return Integer.MAX_VALUE;
+    }
+  }
+
+  public static boolean isStandardBase(String name) {
+    return STANDARD_NAMES.contains(baseName(normalize(name)));
+  }
+
+  public static ModelAnimationFamily familyOf(String baseName) {
+    if (WALK.equals(baseName) || SWIM.equals(baseName)) {
+      return ModelAnimationFamily.MOVEMENT;
+    }
+    if (ATTACK.equals(baseName)) {
+      return ModelAnimationFamily.ATTACK;
+    }
+
+    return ModelAnimationFamily.AGE;
   }
 }

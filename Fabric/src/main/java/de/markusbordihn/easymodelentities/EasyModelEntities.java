@@ -53,6 +53,9 @@ public class EasyModelEntities implements ModInitializer {
     FabricEntityDataRegistry.register(
         Identifier.fromNamespaceAndPath(Constants.MOD_ID, "animation_setting"),
         EasyModelEntityDataSerializers.ANIMATION_SETTING);
+    FabricEntityDataRegistry.register(
+        Identifier.fromNamespaceAndPath(Constants.MOD_ID, "texture_setting"),
+        EasyModelEntityDataSerializers.TEXTURE_SETTING);
     EasyModelEntityTypes.register();
     EasyModelBlockEntityTypes.register();
     EasyModelItems.register();

@@ -56,6 +56,7 @@ public final class ContractApiDocument {
     budgets.addProperty("max_hierarchy_depth", EasyModelApiContract.maxHierarchyDepth());
     budgets.addProperty("soft_hierarchy_depth", EasyModelApiContract.softHierarchyDepth());
     budgets.addProperty("max_animation_count", EasyModelApiContract.maxAnimationCount());
+    budgets.addProperty("soft_animation_count", EasyModelApiContract.softAnimationCount());
     root.add("budgets", budgets);
 
     JsonObject enums = new JsonObject();
@@ -66,12 +67,14 @@ public final class ContractApiDocument {
     enums.add("preset_types", toArray(EasyModelApiContract.presetTypes()));
     enums.add("block_entity_preset_types", toArray(EasyModelApiContract.blockEntityPresetTypes()));
     enums.add("animation_modes", toArray(EasyModelApiContract.animationModes()));
+    enums.add("animation_variant_modes", toArray(EasyModelApiContract.animationVariantModes()));
     enums.add("animation_states", toArray(EasyModelApiContract.animationStates()));
     enums.add("animation_clips", toArray(EasyModelApiContract.animationClips()));
     enums.add("animation_loops", toArray(EasyModelApiContract.animationLoops()));
     enums.add("animation_switch_timings", toArray(EasyModelApiContract.animationSwitchTimings()));
     enums.add("playback_modes", toArray(EasyModelApiContract.playbackModes()));
     enums.add("animation_types", toArray(EasyModelApiContract.animationTypes()));
+    enums.add("texture_blends", toArray(EasyModelApiContract.textureBlends()));
     enums.add("gaits", toArray(EasyModelApiContract.gaits()));
     root.add("enums", enums);
 

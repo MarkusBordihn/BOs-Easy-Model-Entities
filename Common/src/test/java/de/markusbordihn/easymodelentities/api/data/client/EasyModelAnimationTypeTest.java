@@ -47,4 +47,13 @@ class EasyModelAnimationTypeTest {
     assertEquals(EasyModelAnimationType.CUSTOM, EasyModelAnimationType.fromName("wave"));
     assertEquals(EasyModelAnimationType.CUSTOM, EasyModelAnimationType.fromName(""));
   }
+
+  @Test
+  @DisplayName("A variant is classified by its base name")
+  void variantsInheritTheClassificationOfTheirBase() {
+    assertEquals(EasyModelAnimationType.STANDARD, EasyModelAnimationType.fromName("idle_2"));
+    assertEquals(EasyModelAnimationType.STANDARD, EasyModelAnimationType.fromName("Attack 3"));
+    assertEquals(EasyModelAnimationType.CUSTOM, EasyModelAnimationType.fromName("wave_2"));
+    assertEquals(EasyModelAnimationType.CUSTOM, EasyModelAnimationType.fromName("idle_special"));
+  }
 }

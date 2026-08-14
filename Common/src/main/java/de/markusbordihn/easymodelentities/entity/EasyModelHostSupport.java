@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.entity;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
@@ -113,6 +114,7 @@ public final class EasyModelHostSupport {
     builder.define(fields.animation(), contract.animation());
     builder.define(fields.lookAtPlayers(), false);
     builder.define(fields.randomStroll(), false);
+    builder.define(fields.texture(), EasyModelTextureSetting.EMPTY);
   }
 
   public static EntityDimensions getDimensions(
@@ -130,7 +132,8 @@ public final class EasyModelHostSupport {
         Identifier.tryParse(entityData.get(fields.renderProfileId())),
         entityData.get(fields.version()),
         entityData.get(fields.bodyType()),
-        entityData.get(fields.animation()));
+        entityData.get(fields.animation()),
+        entityData.get(fields.texture()));
   }
 
   public static void readAdditionalSaveData(
@@ -141,6 +144,7 @@ public final class EasyModelHostSupport {
     String version = state.version();
     ModelBodyType bodyType = state.bodyType();
     EasyModelAnimationSetting animation = state.animation();
+    setTexture(entity.getEntityData(), fields, state.texture());
 
     if (profileId == null) {
       applyFallback(entity, fields, MISSING_PROFILE_ID, animation);
@@ -230,6 +234,16 @@ public final class EasyModelHostSupport {
       EasyModelHostFields fields,
       EasyModelAnimationSetting animation) {
     entityData.set(fields.animation(), Objects.requireNonNull(animation, "animation"));
+  }
+
+  public static EasyModelTextureSetting getTexture(
+      SynchedEntityData entityData, EasyModelHostFields fields) {
+    return entityData.get(fields.texture());
+  }
+
+  public static void setTexture(
+      SynchedEntityData entityData, EasyModelHostFields fields, EasyModelTextureSetting texture) {
+    entityData.set(fields.texture(), Objects.requireNonNull(texture, "texture"));
   }
 
   public static EasyModelRuntimeContract getRuntimeContract(
