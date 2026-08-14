@@ -22,6 +22,7 @@ package de.markusbordihn.easymodelentities.network.syncher;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -53,6 +54,14 @@ public final class EasyModelEntityDataSerializers {
                 return new EasyModelAnimationSetting(
                     animation, buffer.readEnum(EasyModelAnimationLoop.class));
               }));
+  public static final EntityDataSerializer<EasyModelTextureSetting> TEXTURE_SETTING =
+      EntityDataSerializer.forValueType(
+          StreamCodec.of(
+              (RegistryFriendlyByteBuf buffer, EasyModelTextureSetting textureSetting) ->
+                  buffer.writeNbt(textureSetting.createTag()),
+              buffer ->
+                  EasyModelTextureSetting.fromTag(buffer.readNbt())
+                      .orElse(EasyModelTextureSetting.EMPTY)));
 
   private static boolean registered = false;
 
@@ -65,6 +74,7 @@ public final class EasyModelEntityDataSerializers {
 
     registerSerializer(BODY_TYPE);
     registerSerializer(ANIMATION_SETTING);
+    registerSerializer(TEXTURE_SETTING);
     registered = true;
   }
 

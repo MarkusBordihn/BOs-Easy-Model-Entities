@@ -5,6 +5,23 @@
 This change log includes the summarized changes. For the full changelog, please go to
 the [GitHub History][history] instead.
 
+### 2.1.0
+
+- Fixed a model whose only clips are numbered variants, such as `idle_2` and `idle_3`, silently
+  falling back to the procedural animation.
+- Changed the clip limit of a model from 16 to 64, with a warning above 32.
+- Changed numbered clips to rotate by default; `animation.variant_mode: none` keeps one clip.
+- Changed a numbered variant such as `walk_2` to count as a standard clip, not a custom one.
+- Added `texture set`, `clear` and `query` to swap the texture of a single model slot at runtime.
+- Added the texture override as saved, synchronized state, so it survives a reload and relog.
+- Added a texture option to the render options, so a mod can swap a slot without a command.
+- Added `texture blend … translucent` so a half-transparent texture is no longer drawn opaque.
+- Added client API calls to list the texture slots of a model and the textures next to a slot.
+- Added random clip variants: clips named `idle`, `idle_2`, `idle_3` form one group and EME picks a
+  different one each cycle, controlled by `animation.variant_mode` in the render profile.
+- Added `animation play … random "<clips>"` to pick one clip of a list on the server, so every
+  player sees the same animation.
+
 ### 2.0.1
 
 - Fixed block entities `animation play`, `stop`, and `restart` never reached the screen.

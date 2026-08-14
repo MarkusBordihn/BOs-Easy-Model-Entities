@@ -66,6 +66,8 @@ public final class EasyModelGameTests {
         "nbt_preserves_runtime_contract_data",
         HostEntityGameTestCases::nbtPreservesRuntimeContractData);
     registerTest(
+        "nbt_preserves_texture_setting", HostEntityGameTestCases::nbtPreservesTextureSetting);
+    registerTest(
         "invalid_nbt_resource_locations_fall_back_safely",
         HostEntityGameTestCases::invalidNbtResourceLocationsFallBackSafely);
     registerTest(

@@ -120,6 +120,7 @@ public final class EasyModelEntitiesCommand {
                                 Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
                                     .executes(EasyModelEntitiesCommand::placeBlock))))
             .then(EasyModelAnimationCommand.register())
+            .then(EasyModelTextureCommand.register())
             .then(EasyModelBehaviorCommand.register()));
   }
 

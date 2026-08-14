@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.runtime;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.ValueInput;
@@ -32,6 +33,7 @@ public final class EasyModelHostPersistence {
   public static final String VERSION_TAG = "Version";
   public static final String BODY_TYPE_TAG = "BodyType";
   public static final String ANIMATION_TAG = "Animation";
+  public static final String TEXTURE_TAG = "Texture";
 
   private EasyModelHostPersistence() {}
 
@@ -50,7 +52,8 @@ public final class EasyModelHostPersistence {
         parseResourceLocation(valueInput.getStringOr(RENDER_PROFILE_ID_TAG, null)),
         valueInput.getStringOr(VERSION_TAG, ""),
         ModelBodyType.bySerializedName(valueInput.getStringOr(BODY_TYPE_TAG, "")),
-        readAnimation(valueInput));
+        readAnimation(valueInput),
+        readTexture(valueInput));
   }
 
   public static void write(
@@ -59,7 +62,8 @@ public final class EasyModelHostPersistence {
       Identifier renderProfileId,
       String version,
       ModelBodyType bodyType,
-      EasyModelAnimationSetting animation) {
+      EasyModelAnimationSetting animation,
+      EasyModelTextureSetting texture) {
     if (profileId != null) {
       valueOutput.putString(PROFILE_ID_TAG, profileId.toString());
     }
@@ -69,6 +73,7 @@ public final class EasyModelHostPersistence {
     valueOutput.putString(VERSION_TAG, version != null ? version : "");
     valueOutput.putString(BODY_TYPE_TAG, bodyType != null ? bodyType.getSerializedName() : "");
     writeAnimation(valueOutput, animation);
+    writeTexture(valueOutput, texture);
   }
 
   public static void writeAnimation(ValueOutput valueOutput, EasyModelAnimationSetting animation) {
@@ -78,10 +83,25 @@ public final class EasyModelHostPersistence {
         animation != null ? animation : EasyModelAnimationSetting.AUTO);
   }
 
+  public static void writeTexture(ValueOutput valueOutput, EasyModelTextureSetting texture) {
+    if (texture == null || texture.isEmpty()) {
+      valueOutput.discard(TEXTURE_TAG);
+      return;
+    }
+
+    valueOutput.store(TEXTURE_TAG, EasyModelTextureSetting.CODEC, texture);
+  }
+
   private static EasyModelAnimationSetting readAnimation(ValueInput valueInput) {
     return valueInput
         .read(ANIMATION_TAG, EasyModelAnimationSetting.CODEC)
         .orElse(EasyModelAnimationSetting.AUTO);
+  }
+
+  private static EasyModelTextureSetting readTexture(ValueInput valueInput) {
+    return valueInput
+        .read(TEXTURE_TAG, EasyModelTextureSetting.CODEC)
+        .orElse(EasyModelTextureSetting.EMPTY);
   }
 
   public record State(
@@ -89,5 +109,6 @@ public final class EasyModelHostPersistence {
       Identifier renderProfileId,
       String version,
       ModelBodyType bodyType,
-      EasyModelAnimationSetting animation) {}
+      EasyModelAnimationSetting animation,
+      EasyModelTextureSetting texture) {}
 }

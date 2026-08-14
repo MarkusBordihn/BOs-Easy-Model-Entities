@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.command.EasyModelEntitiesCommand;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
@@ -65,6 +66,13 @@ public class EasyModelEntities {
       ANIMATION_SETTING_SERIALIZER =
           ENTITY_DATA_SERIALIZERS.register(
               "animation_setting", () -> EasyModelEntityDataSerializers.ANIMATION_SETTING);
+
+  @SuppressWarnings("unused")
+  public static final DeferredHolder<
+          EntityDataSerializer<?>, EntityDataSerializer<EasyModelTextureSetting>>
+      TEXTURE_SETTING_SERIALIZER =
+          ENTITY_DATA_SERIALIZERS.register(
+              "texture_setting", () -> EasyModelEntityDataSerializers.TEXTURE_SETTING);
 
   public EasyModelEntities(IEventBus modEventBus) {
     log.info("Initializing {} (NeoForge) ...", Constants.MOD_NAME);
