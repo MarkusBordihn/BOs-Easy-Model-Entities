@@ -22,7 +22,10 @@ package de.markusbordihn.easymodelentities.api.data.client;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureBlend;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import java.util.Objects;
+import net.minecraft.resources.ResourceLocation;
 
 public final class EasyModelBlockEntityRenderOptions {
 
@@ -34,7 +37,8 @@ public final class EasyModelBlockEntityRenderOptions {
           EasyModelPartAnimator.NONE,
           EasyModelPartAnimationMode.ADD,
           EasyModelPartPoseListener.NONE,
-          null);
+          null,
+          EasyModelTextureSetting.EMPTY);
 
   private final Float yawDegrees;
   private final Float scale;
@@ -43,6 +47,7 @@ public final class EasyModelBlockEntityRenderOptions {
   private final EasyModelPartAnimationMode partAnimationMode;
   private final EasyModelPartPoseListener partPoseListener;
   private final EasyModelAnimation animation;
+  private final EasyModelTextureSetting textureSetting;
 
   private EasyModelBlockEntityRenderOptions(
       Float yawDegrees,
@@ -51,7 +56,8 @@ public final class EasyModelBlockEntityRenderOptions {
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode,
       EasyModelPartPoseListener partPoseListener,
-      EasyModelAnimation animation) {
+      EasyModelAnimation animation,
+      EasyModelTextureSetting textureSetting) {
     this.yawDegrees = yawDegrees;
     this.scale = scale;
     this.animationTicks = animationTicks;
@@ -59,6 +65,7 @@ public final class EasyModelBlockEntityRenderOptions {
     this.partAnimationMode = Objects.requireNonNull(partAnimationMode, "partAnimationMode");
     this.partPoseListener = Objects.requireNonNull(partPoseListener, "partPoseListener");
     this.animation = animation;
+    this.textureSetting = Objects.requireNonNull(textureSetting, "textureSetting");
   }
 
   private static EasyModelBlockEntityRenderOptions copy(
@@ -68,7 +75,8 @@ public final class EasyModelBlockEntityRenderOptions {
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode,
       EasyModelPartPoseListener partPoseListener,
-      EasyModelAnimation animation) {
+      EasyModelAnimation animation,
+      EasyModelTextureSetting textureSetting) {
     return new EasyModelBlockEntityRenderOptions(
         yawDegrees,
         scale,
@@ -76,7 +84,8 @@ public final class EasyModelBlockEntityRenderOptions {
         partAnimator,
         partAnimationMode,
         partPoseListener,
-        animation);
+        animation,
+        textureSetting);
   }
 
   private static void requireFinite(float value, String name) {
@@ -125,6 +134,10 @@ public final class EasyModelBlockEntityRenderOptions {
     return this.animation;
   }
 
+  public EasyModelTextureSetting textureSetting() {
+    return this.textureSetting;
+  }
+
   public EasyModelBlockEntityRenderOptions withYawDegrees(float yawDegrees) {
     requireFinite(yawDegrees, "yawDegrees");
     return copy(
@@ -134,7 +147,8 @@ public final class EasyModelBlockEntityRenderOptions {
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animation);
+        this.animation,
+        this.textureSetting);
   }
 
   public EasyModelBlockEntityRenderOptions withScale(float scale) {
@@ -146,7 +160,8 @@ public final class EasyModelBlockEntityRenderOptions {
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animation);
+        this.animation,
+        this.textureSetting);
   }
 
   public EasyModelBlockEntityRenderOptions withAnimationTicks(float animationTicks) {
@@ -158,7 +173,8 @@ public final class EasyModelBlockEntityRenderOptions {
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animation);
+        this.animation,
+        this.textureSetting);
   }
 
   public EasyModelBlockEntityRenderOptions withPartAnimator(EasyModelPartAnimator partAnimator) {
@@ -169,7 +185,8 @@ public final class EasyModelBlockEntityRenderOptions {
         Objects.requireNonNull(partAnimator, "partAnimator"),
         this.partAnimationMode,
         this.partPoseListener,
-        this.animation);
+        this.animation,
+        this.textureSetting);
   }
 
   public EasyModelBlockEntityRenderOptions withPartAnimationMode(
@@ -181,7 +198,8 @@ public final class EasyModelBlockEntityRenderOptions {
         this.partAnimator,
         Objects.requireNonNull(partAnimationMode, "partAnimationMode"),
         this.partPoseListener,
-        this.animation);
+        this.animation,
+        this.textureSetting);
   }
 
   public EasyModelBlockEntityRenderOptions withPartPoseListener(
@@ -193,7 +211,8 @@ public final class EasyModelBlockEntityRenderOptions {
         this.partAnimator,
         this.partAnimationMode,
         Objects.requireNonNull(partPoseListener, "partPoseListener"),
-        this.animation);
+        this.animation,
+        this.textureSetting);
   }
 
   public EasyModelBlockEntityRenderOptions withAnimation(EasyModelAnimation animation) {
@@ -204,7 +223,8 @@ public final class EasyModelBlockEntityRenderOptions {
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        Objects.requireNonNull(animation, "animation"));
+        Objects.requireNonNull(animation, "animation"),
+        this.textureSetting);
   }
 
   public EasyModelBlockEntityRenderOptions withAnimation(String animation) {
@@ -219,7 +239,39 @@ public final class EasyModelBlockEntityRenderOptions {
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        null);
+        null,
+        this.textureSetting);
+  }
+
+  public EasyModelBlockEntityRenderOptions withTextureSetting(
+      EasyModelTextureSetting textureSetting) {
+    return copy(
+        this.yawDegrees,
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation,
+        Objects.requireNonNull(textureSetting, "textureSetting"));
+  }
+
+  public EasyModelBlockEntityRenderOptions withTexture(String slot, ResourceLocation texture) {
+    return this.withTextureSetting(this.textureSetting.withSlot(slot, texture));
+  }
+
+  public EasyModelBlockEntityRenderOptions withTexture(
+      String slot, ResourceLocation texture, EasyModelTextureBlend blend) {
+    return this.withTextureSetting(this.textureSetting.withSlot(slot, texture, blend));
+  }
+
+  public EasyModelBlockEntityRenderOptions withTextureBlend(
+      String slot, EasyModelTextureBlend blend) {
+    return this.withTextureSetting(this.textureSetting.withBlend(slot, blend));
+  }
+
+  public EasyModelBlockEntityRenderOptions withoutTextureOverride() {
+    return this.withTextureSetting(EasyModelTextureSetting.EMPTY);
   }
 
   @Override
@@ -237,7 +289,8 @@ public final class EasyModelBlockEntityRenderOptions {
         && this.partAnimator.equals(options.partAnimator)
         && this.partAnimationMode == options.partAnimationMode
         && this.partPoseListener.equals(options.partPoseListener)
-        && Objects.equals(this.animation, options.animation);
+        && Objects.equals(this.animation, options.animation)
+        && this.textureSetting.equals(options.textureSetting);
   }
 
   @Override
@@ -249,7 +302,8 @@ public final class EasyModelBlockEntityRenderOptions {
         this.partAnimator,
         this.partAnimationMode,
         this.partPoseListener,
-        this.animation);
+        this.animation,
+        this.textureSetting);
   }
 
   @Override
@@ -268,6 +322,8 @@ public final class EasyModelBlockEntityRenderOptions {
         + this.partPoseListener
         + ", animation="
         + this.animation
+        + ", textureSetting="
+        + this.textureSetting
         + "]";
   }
 }

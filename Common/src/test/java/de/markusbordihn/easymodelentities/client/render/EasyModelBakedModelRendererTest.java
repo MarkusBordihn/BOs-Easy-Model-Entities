@@ -55,6 +55,7 @@ import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelGaitType;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,6 +63,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
@@ -369,10 +371,28 @@ class EasyModelBakedModelRendererTest {
     return context.get().automaticTransform().xRotation();
   }
 
+  private static BakedModel variantModel(float length, boolean loop, String... clipNames) {
+    Map<String, ModelAnimationClip> clips = new HashMap<>();
+    for (String clipName : clipNames) {
+      clips.put(clipName, new ModelAnimationClip(clipName, length, loop, Map.of()));
+    }
+
+    return new BakedModel(
+        ResourceLocation.fromNamespaceAndPath("example", "variants"),
+        64,
+        64,
+        List.of(new BakedModelPart("body", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())),
+        Map.of(),
+        false,
+        clips,
+        null);
+  }
+
   @Test
   void playbackLoopOverrideControlsGenericClipSampling() {
     BakedModel bakedModel =
-        new BakedModel(ResourceLocation.fromNamespaceAndPath("example", "sampling"), 16, 16, List.of());
+        new BakedModel(
+            ResourceLocation.fromNamespaceAndPath("example", "sampling"), 16, 16, List.of());
     EasyModelRenderState renderState = renderState(bakedModel);
     ModelAnimationClip looping = new ModelAnimationClip("wave", 2.0f, true, Map.of());
     ModelAnimationClip once = new ModelAnimationClip("wave", 2.0f, false, Map.of());
@@ -726,6 +746,56 @@ class EasyModelBakedModelRendererTest {
     assertEquals(
         0.5f, forcedClipRotation(ModelAnimationClips.ATTACK, EasyModelAnimation.ATTACK, 0.5f));
     assertEquals(0.3f, forcedClipRotation(ModelAnimationClips.SIT, EasyModelAnimation.SIT, 0.3f));
+  }
+
+  @Test
+  @DisplayName("A forced state finds its clip even when only numbered variants exist")
+  void forcedStatesResolveVariantOnlyGroups() {
+    BakedModel bakedModel = variantModel(1.0f, true, "idle_2", "idle_3");
+
+    assertEquals(
+        ModelAnimationClips.IDLE,
+        EasyModelBakedModelRenderer.forcedClipName(EasyModelAnimation.IDLE));
+    assertEquals(
+        "idle_2",
+        EasyModelBakedModelRenderer.groupClip(bakedModel, ModelAnimationClips.IDLE).name());
+  }
+
+  @Test
+  @DisplayName("A walk variant stays driven by the limb swing instead of the animation clock")
+  void movementVariantsKeepTheLimbSwingClock() {
+    BakedModel bakedModel = variantModel(1.0f, true, "walk", "walk_2");
+    EasyModelRenderState renderState =
+        renderState(bakedModel, ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC);
+    ModelAnimationClip walk = bakedModel.animations().get(ModelAnimationClips.WALK);
+    ModelAnimationClip walkVariant = bakedModel.animations().get("walk_2");
+
+    assertEquals(
+        EasyModelBakedModelRenderer.clipTime(
+            walk, renderState, EasyModelAnimation.AUTO, 3.0f, 999.0f, 0.0f, null),
+        EasyModelBakedModelRenderer.clipTime(
+            walkVariant, renderState, EasyModelAnimation.AUTO, 3.0f, 0.0f, 0.0f, null),
+        0.0001f);
+  }
+
+  @Test
+  @DisplayName("An attack variant stays scrubbed by the attack progress")
+  void attackVariantsKeepTheAttackClock() {
+    BakedModel bakedModel = variantModel(2.0f, false, "attack", "attack_2");
+    EasyModelRenderState renderState =
+        renderState(bakedModel, ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC);
+
+    assertEquals(
+        0.5f,
+        EasyModelBakedModelRenderer.clipTime(
+            bakedModel.animations().get("attack_2"),
+            renderState,
+            EasyModelAnimation.AUTO,
+            0.0f,
+            999.0f,
+            0.25f,
+            null),
+        0.0001f);
   }
 
   @Test

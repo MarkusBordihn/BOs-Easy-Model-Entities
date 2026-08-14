@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.runtime;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -31,6 +32,7 @@ public final class EasyModelHostPersistence {
   public static final String VERSION_TAG = "Version";
   public static final String BODY_TYPE_TAG = "BodyType";
   public static final String ANIMATION_TAG = "Animation";
+  public static final String TEXTURE_TAG = "Texture";
 
   private EasyModelHostPersistence() {}
 
@@ -52,11 +54,21 @@ public final class EasyModelHostPersistence {
         parseResourceLocation(compoundTag.getString(RENDER_PROFILE_ID_TAG)),
         compoundTag.getString(VERSION_TAG),
         ModelBodyType.bySerializedName(compoundTag.getString(BODY_TYPE_TAG)),
-        readAnimation(compoundTag));
+        readAnimation(compoundTag),
+        readTexture(compoundTag));
   }
 
   public static void writeAnimation(CompoundTag compoundTag, EasyModelAnimationSetting animation) {
     compoundTag.put(ANIMATION_TAG, animation.createTag());
+  }
+
+  public static void writeTexture(CompoundTag compoundTag, EasyModelTextureSetting texture) {
+    if (texture.isEmpty()) {
+      compoundTag.remove(TEXTURE_TAG);
+      return;
+    }
+
+    compoundTag.put(TEXTURE_TAG, texture.createTag());
   }
 
   private static EasyModelAnimationSetting readAnimation(CompoundTag compoundTag) {
@@ -64,10 +76,16 @@ public final class EasyModelHostPersistence {
         .orElse(EasyModelAnimationSetting.AUTO);
   }
 
+  private static EasyModelTextureSetting readTexture(CompoundTag compoundTag) {
+    return EasyModelTextureSetting.fromTag(compoundTag.get(TEXTURE_TAG))
+        .orElse(EasyModelTextureSetting.EMPTY);
+  }
+
   public record State(
       ResourceLocation profileId,
       ResourceLocation renderProfileId,
       String version,
       ModelBodyType bodyType,
-      EasyModelAnimationSetting animation) {}
+      EasyModelAnimationSetting animation,
+      EasyModelTextureSetting texture) {}
 }

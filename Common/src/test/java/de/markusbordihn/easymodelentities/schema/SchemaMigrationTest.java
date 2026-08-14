@@ -103,7 +103,8 @@ class SchemaMigrationTest {
 
   @Test
   void legacyServerProfileKeepsItsExplicitRenderProfileLink() {
-    ResourceLocation legacyRenderProfile = ResourceLocation.fromNamespaceAndPath("example", "legacy_model");
+    ResourceLocation legacyRenderProfile =
+        ResourceLocation.fromNamespaceAndPath("example", "legacy_model");
     String json =
         """
         {
@@ -180,7 +181,8 @@ class SchemaMigrationTest {
   void legacyRenderProfileKeepsItsModelAndTexture() {
     ResourceLocation model =
         ResourceLocation.fromNamespaceAndPath("example", "easy_model_entities/models/legacy_model");
-    ResourceLocation texture = ResourceLocation.fromNamespaceAndPath("example", "textures/entity/legacy_model.png");
+    ResourceLocation texture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/legacy_model.png");
     String json =
         """
         {

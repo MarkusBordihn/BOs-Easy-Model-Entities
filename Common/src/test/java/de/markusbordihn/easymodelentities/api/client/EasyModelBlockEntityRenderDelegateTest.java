@@ -360,7 +360,8 @@ class EasyModelBlockEntityRenderDelegateTest {
         mock(RenderableBlockEntity.class, Answers.CALLS_REAL_METHODS);
     when(blockEntity.getEasyModelAnimationSetting()).thenReturn(null);
     BakedModel bakedModel =
-        new BakedModel(ResourceLocation.fromNamespaceAndPath("example", "empty"), 64, 64, List.of());
+        new BakedModel(
+            ResourceLocation.fromNamespaceAndPath("example", "empty"), 64, 64, List.of());
     MultiBufferSource bufferSource = mock(MultiBufferSource.class);
     when(bufferSource.getBuffer(any()))
         .thenReturn(mock(VertexConsumer.class, Answers.RETURNS_SELF));

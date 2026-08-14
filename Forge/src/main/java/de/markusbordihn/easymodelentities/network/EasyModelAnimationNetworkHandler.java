@@ -46,8 +46,7 @@ public final class EasyModelAnimationNetworkHandler {
 
   public static void register() {
     CHANNEL
-        .messageBuilder(
-            ClientboundEasyModelAnimationPacket.class, NetworkDirection.PLAY_TO_CLIENT)
+        .messageBuilder(ClientboundEasyModelAnimationPacket.class, NetworkDirection.PLAY_TO_CLIENT)
         .encoder(ClientboundEasyModelAnimationPacket::encode)
         .decoder(ClientboundEasyModelAnimationPacket::decode)
         .consumerMainThread(EasyModelAnimationNetworkHandler::handle)

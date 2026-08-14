@@ -25,6 +25,7 @@ import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets
 import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_HIERARCHY_DEPTH;
 import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_MODEL_FILE_SIZE_BYTES;
 import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_TEXTURE_SIZE;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_ANIMATION_COUNT;
 import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_BONE_COUNT;
 import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_CUBE_COUNT;
 import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_HIERARCHY_DEPTH;
@@ -37,12 +38,14 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.data.model.CubeFaceVisibility;
 import de.markusbordihn.easymodelentities.data.model.FaceUv;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationBoneTrack;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationKeyframe;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationVariants;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
@@ -62,9 +65,12 @@ import java.util.Map;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public abstract class AbstractBbModelParser {
 
+  private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
   private static final float MAX_ABSOLUTE_MODEL_VALUE = 100_000.0f;
   private static final int BUFFER_SIZE = 8192;
 
@@ -121,7 +127,9 @@ public abstract class AbstractBbModelParser {
     return new int[] {width, height};
   }
 
-  private static void validateAnimationBudget(JsonObject root) throws EasyModelDecodeException {
+  private static void validateAnimationBudget(
+      JsonObject root, List<ModelRenderProfileValidationIssue> issues)
+      throws EasyModelDecodeException {
     JsonElement animationsElement = root.get("animations");
     if (animationsElement == null || animationsElement.isJsonNull()) {
       return;
@@ -129,9 +137,21 @@ public abstract class AbstractBbModelParser {
     if (!animationsElement.isJsonArray()) {
       throw new EasyModelDecodeException("Field animations must be an array.");
     }
-    if (animationsElement.getAsJsonArray().size() > MAX_ANIMATION_COUNT) {
+
+    int animationCount = animationsElement.getAsJsonArray().size();
+    if (animationCount > MAX_ANIMATION_COUNT) {
       throw new EasyModelDecodeException(
           "Animation count exceeds the reserved limit of " + MAX_ANIMATION_COUNT + ".");
+    }
+    if (animationCount > SOFT_ANIMATION_COUNT) {
+      issues.add(
+          warning(
+              "animations",
+              "Animation count "
+                  + animationCount
+                  + " is larger than the recommended "
+                  + SOFT_ANIMATION_COUNT
+                  + " clips."));
     }
   }
 
@@ -160,7 +180,7 @@ public abstract class AbstractBbModelParser {
       if (clipName.isEmpty()) {
         continue;
       }
-      boolean customName = !ModelAnimationClips.STANDARD_NAMES.contains(clipName);
+      boolean customName = !ModelAnimationClips.isStandardBase(clipName);
       try {
         ModelAnimationClip clip = parseAnimationClip(clipName, animationObject, groupsByUuid);
         if (clip != null) {
@@ -187,6 +207,7 @@ public abstract class AbstractBbModelParser {
                   + String.join(", ", ModelAnimationClips.STANDARD)
                   + " are played automatically; custom clips are played by name via the API."));
     }
+    logAnimationVariants(clips);
 
     return clips;
   }
@@ -637,6 +658,23 @@ public abstract class AbstractBbModelParser {
     }
   }
 
+  private static void logAnimationVariants(Map<String, ModelAnimationClip> clips) {
+    if (!log.isDebugEnabled()) {
+      return;
+    }
+
+    List<String> groups =
+        ModelAnimationVariants.of(clips).groups().entrySet().stream()
+            .filter(entry -> entry.getValue().size() > 1)
+            .map(entry -> entry.getKey() + " (" + String.join(", ", entry.getValue()) + ")")
+            .toList();
+    if (groups.isEmpty()) {
+      return;
+    }
+
+    log.debug("Detected animation variants {}.", String.join(", ", groups));
+  }
+
   protected static ModelRenderProfileValidationIssue warning(String field, String message) {
     return new ModelRenderProfileValidationIssue(ModelRenderProfileStatus.ACTIVE, field, message);
   }
@@ -896,7 +934,7 @@ public abstract class AbstractBbModelParser {
     JsonArray elementsArray = requiredArray(root, "elements");
     JsonArray groupsArray = requiredArray(root, "groups");
     JsonArray outlinerArray = requiredArray(root, "outliner");
-    validateAnimationBudget(root);
+    validateAnimationBudget(root, issues);
     validateSourceBudgets(groupsArray.size(), elementsArray.size());
 
     Map<String, RawElement> elementsByUuid = parseElements(elementsArray, issues);

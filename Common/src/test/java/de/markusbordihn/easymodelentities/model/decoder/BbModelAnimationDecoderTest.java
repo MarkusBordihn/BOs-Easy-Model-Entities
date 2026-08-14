@@ -19,10 +19,13 @@
 
 package de.markusbordihn.easymodelentities.model.decoder;
 
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.MAX_ANIMATION_COUNT;
+import static de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets.SOFT_ANIMATION_COUNT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -37,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class BbModelAnimationDecoderTest {
@@ -83,6 +87,31 @@ class BbModelAnimationDecoderTest {
   private static DecodedModel decodeAnimations(String animationsJson) throws Exception {
     return new BlockbenchBbModelDecoder()
         .decode(MODEL_ID, resource(modelWithAnimations(animationsJson)));
+  }
+
+  private static String[] clipNames(int count) {
+    String[] clipNames = new String[count];
+    for (int index = 0; index < count; index++) {
+      clipNames[index] = "clip" + index;
+    }
+
+    return clipNames;
+  }
+
+  private static String clips(String... clipNames) throws IOException {
+    String template = animationsFixture("attack_clip.json");
+    StringBuilder animations = new StringBuilder("[");
+    for (int index = 0; index < clipNames.length; index++) {
+      animations
+          .append(index == 0 ? "" : ",")
+          .append(
+              template
+                  .substring(template.indexOf('{'), template.lastIndexOf('}') + 1)
+                  .replace("a-attack", "a-" + clipNames[index])
+                  .replace("\"name\": \"attack\"", "\"name\": \"" + clipNames[index] + "\""));
+    }
+
+    return animations.append("]").toString();
   }
 
   @Test
@@ -174,5 +203,70 @@ class BbModelAnimationDecoderTest {
     DecodedModel model = decode("idle_uppercase_name.json");
 
     assertNotNull(model.animations().get("idle"));
+  }
+
+  @Test
+  @DisplayName("A numbered variant is not reported as an unplayable custom clip")
+  void variantsAreNotReportedAsCustomClips() throws Exception {
+    DecodedModel model = decodeAnimations(clips("idle", "idle_2", "idle_3", "wave"));
+
+    assertTrue(
+        model.validationIssues().stream()
+            .noneMatch(
+                issue ->
+                    issue.message().contains("Kept custom") && issue.message().contains("idle_2")));
+    assertTrue(
+        model.validationIssues().stream()
+            .anyMatch(
+                issue ->
+                    issue.message().contains("Kept custom") && issue.message().contains("wave")));
+  }
+
+  @Test
+  @DisplayName("Clip variants do not raise a validation issue")
+  void variantsDoNotRaiseValidationIssue() throws Exception {
+    DecodedModel model = decodeAnimations(clips("idle", "idle_2", "idle_3"));
+
+    assertTrue(
+        model.validationIssues().stream().noneMatch(issue -> issue.message().contains("variant")));
+  }
+
+  @Test
+  void decodesMoreThanSixteenClips() throws Exception {
+    assertEquals(20, decodeAnimations(clips(clipNames(20))).animations().size());
+  }
+
+  @Test
+  @DisplayName("Above the recommended clip count the model still decodes, with a warning")
+  void moreThanThirtyTwoClipsWarnWithoutFailing() throws Exception {
+    DecodedModel model = decodeAnimations(clips(clipNames(SOFT_ANIMATION_COUNT + 1)));
+
+    assertEquals(SOFT_ANIMATION_COUNT + 1, model.animations().size());
+    assertTrue(
+        model.validationIssues().stream()
+            .anyMatch(issue -> issue.message().contains("larger than the recommended")));
+  }
+
+  @Test
+  void theRecommendedClipCountItselfDoesNotWarn() throws Exception {
+    DecodedModel model = decodeAnimations(clips(clipNames(SOFT_ANIMATION_COUNT)));
+
+    assertTrue(
+        model.validationIssues().stream()
+            .noneMatch(issue -> issue.message().contains("larger than the recommended")));
+  }
+
+  @Test
+  void moreThanSixtyFourClipsAreRejected() {
+    assertThrows(
+        EasyModelDecodeException.class,
+        () -> decodeAnimations(clips(clipNames(MAX_ANIMATION_COUNT + 1))));
+  }
+
+  @Test
+  void theClipLimitItselfIsAccepted() throws Exception {
+    assertEquals(
+        MAX_ANIMATION_COUNT,
+        decodeAnimations(clips(clipNames(MAX_ANIMATION_COUNT))).animations().size());
   }
 }

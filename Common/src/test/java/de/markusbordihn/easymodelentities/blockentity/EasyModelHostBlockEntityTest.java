@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
@@ -65,6 +66,8 @@ class EasyModelHostBlockEntityTest {
       ResourceLocation.fromNamespaceAndPath("example", "lantern");
   private static final ResourceLocation RENDER_PROFILE_ID =
       ResourceLocation.fromNamespaceAndPath("example", "lantern_render");
+  private static final ResourceLocation SCREEN_TEXTURE =
+      ResourceLocation.fromNamespaceAndPath("example", "textures/entity/lantern/screen_sad.png");
 
   @BeforeAll
   static void bootstrapMinecraft() {
@@ -200,6 +203,56 @@ class EasyModelHostBlockEntityTest {
         EasyModelAnimationSetting.of(EasyModelAnimation.IDLE),
         clientBlockEntity.getEasyModelAnimationSetting());
     assertEquals(ModelBodyType.BIPED, clientBlockEntity.getEasyModelRuntimeContract().bodyType());
+  }
+
+  @Test
+  void persistsTextureOverrideAcrossSaveAndLoad() {
+    EasyModelServices.setProfileService(profileService(profile()));
+    TestBlockEntity blockEntity = new TestBlockEntity();
+
+    blockEntity.setEasyModelProfileId(PROFILE_ID);
+    blockEntity.setEasyModelTexture(EasyModelTextureSetting.of("screen", SCREEN_TEXTURE));
+    CompoundTag savedTag = new CompoundTag();
+    blockEntity.saveAdditional(savedTag, null);
+
+    TestBlockEntity loadedBlockEntity = new TestBlockEntity();
+    loadedBlockEntity.loadAdditional(savedTag, null);
+
+    assertEquals(
+        Optional.of(SCREEN_TEXTURE),
+        loadedBlockEntity.getEasyModelTextureSetting().texture("screen"));
+  }
+
+  @Test
+  void syncsTextureOverrideThroughClientUpdateTag() {
+    EasyModelServices.setProfileService(profileService(profile()));
+    TestBlockEntity serverBlockEntity = new TestBlockEntity();
+
+    serverBlockEntity.setEasyModelProfileId(PROFILE_ID);
+    serverBlockEntity.setEasyModelTexture(EasyModelTextureSetting.of("screen", SCREEN_TEXTURE));
+
+    TestBlockEntity clientBlockEntity = new TestBlockEntity();
+    clientBlockEntity.loadAdditional(serverBlockEntity.getUpdateTag(null), null);
+
+    assertEquals(
+        Optional.of(SCREEN_TEXTURE),
+        clientBlockEntity.getEasyModelTextureSetting().texture("screen"));
+  }
+
+  @Test
+  @DisplayName("A block entity without a texture override loads as empty")
+  void withoutATextureOverrideTheSettingStaysEmpty() {
+    EasyModelServices.setProfileService(profileService(profile()));
+    TestBlockEntity blockEntity = new TestBlockEntity();
+
+    blockEntity.setEasyModelProfileId(PROFILE_ID);
+    CompoundTag savedTag = new CompoundTag();
+    blockEntity.saveAdditional(savedTag, null);
+
+    TestBlockEntity loadedBlockEntity = new TestBlockEntity();
+    loadedBlockEntity.loadAdditional(savedTag, null);
+
+    assertEquals(EasyModelTextureSetting.EMPTY, loadedBlockEntity.getEasyModelTextureSetting());
   }
 
   @Test
