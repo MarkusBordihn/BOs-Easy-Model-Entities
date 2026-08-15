@@ -25,6 +25,7 @@ import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
@@ -40,6 +41,7 @@ import de.markusbordihn.easymodelentities.profile.EasyModelProfileService;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
+import java.util.function.Supplier;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -48,8 +50,14 @@ public final class EasyModelBlockEntityRenderBackend {
 
   private static final EasyModelAnimationPlaybackTracker<BlockEntity> ANIMATION_PLAYBACK_TRACKER =
       new EasyModelAnimationPlaybackTracker<>();
+  private static final EasyModelAnimationVariantTracker<BlockEntity> ANIMATION_VARIANT_TRACKER =
+      new EasyModelAnimationVariantTracker<>();
 
   private EasyModelBlockEntityRenderBackend() {}
+
+  static void clearAnimationVariants() {
+    ANIMATION_VARIANT_TRACKER.clearAll();
+  }
 
   public static EasyModelRenderState resolveRenderState(EasyModelRuntimeContract contract) {
     return EasyModelRenderStateCache.resolve(contract);
@@ -94,8 +102,12 @@ public final class EasyModelBlockEntityRenderBackend {
     EasyModelBlockEntityRenderOptions safeOptions =
         options == null ? EasyModelBlockEntityRenderOptions.DEFAULT : options;
     renderState.easyModelRenderState = resolveRenderState(contract);
-    renderState.playbackFrame =
-        playbackFrame(blockEntity, renderState.easyModelRenderState, partialTick, safeOptions);
+    AnimationFrames animationFrames =
+        animationFrames(blockEntity, renderState.easyModelRenderState, partialTick, safeOptions);
+    renderState.playbackFrame = animationFrames.playbackFrame();
+    renderState.variantFrame = animationFrames.variantFrame();
+    renderState.textureSetting =
+        resolveTextureSetting(safeOptions.textureSetting(), textureSetting(blockEntity));
     renderState.ageInTicks = renderState.playbackFrame.animationTicks();
     renderState.partAnimator = safeOptions.partAnimator();
     renderState.partAnimationMode = safeOptions.partAnimationMode();
@@ -130,6 +142,8 @@ public final class EasyModelBlockEntityRenderBackend {
         0.0f,
         EasyModelHeadLook.NONE,
         renderState.playbackFrame,
+        renderState.variantFrame,
+        renderState.textureSetting,
         renderState.partAnimator == null ? EasyModelPartAnimator.NONE : renderState.partAnimator,
         renderState.partAnimationMode == null
             ? EasyModelPartAnimationMode.ADD
@@ -186,8 +200,8 @@ public final class EasyModelBlockEntityRenderBackend {
 
     EasyModelBlockEntityRenderOptions safeOptions =
         options == null ? EasyModelBlockEntityRenderOptions.DEFAULT : options;
-    EasyModelAnimationPlaybackFrame playbackFrame =
-        playbackFrame(blockEntity, renderState, partialTick, safeOptions);
+    AnimationFrames animationFrames =
+        animationFrames(blockEntity, renderState, partialTick, safeOptions);
     float yawDegrees = safeOptions.yawDegrees() == null ? 0.0f : safeOptions.yawDegrees();
     float scale =
         safeOptions.scale() == null
@@ -207,7 +221,9 @@ public final class EasyModelBlockEntityRenderBackend {
         0.0f,
         0.0f,
         EasyModelHeadLook.NONE,
-        playbackFrame,
+        animationFrames.playbackFrame(),
+        animationFrames.variantFrame(),
+        resolveTextureSetting(safeOptions.textureSetting(), textureSetting(blockEntity)),
         safeOptions.partAnimator(),
         safeOptions.partAnimationMode(),
         safeOptions.partPoseListener(),
@@ -241,7 +257,7 @@ public final class EasyModelBlockEntityRenderBackend {
     ANIMATION_PLAYBACK_TRACKER.stop(blockEntity, transition);
   }
 
-  private static EasyModelAnimationPlaybackFrame playbackFrame(
+  private static AnimationFrames animationFrames(
       BlockEntity blockEntity,
       EasyModelRenderState renderState,
       float partialTick,
@@ -250,21 +266,42 @@ public final class EasyModelBlockEntityRenderBackend {
         resolveSetting(options.animation(), animationSetting(blockEntity));
     if (options.animationTicks() != null) {
       ANIMATION_PLAYBACK_TRACKER.clear(blockEntity);
-      return EasyModelAnimationPlaybackFrame.single(
-          setting.animation(), options.animationTicks(), setting.loopOverride(), false);
+      ANIMATION_VARIANT_TRACKER.clear(blockEntity);
+      return new AnimationFrames(
+          EasyModelAnimationPlaybackFrame.single(
+              setting.animation(), options.animationTicks(), setting.loopOverride(), false),
+          EasyModelAnimationVariantFrame.NONE);
     }
 
-    return applySetting(
-        ANIMATION_PLAYBACK_TRACKER.resolve(
+    Supplier<String> automaticClipName =
+        new EasyModelAutomaticClipName(renderState, 0.0f, 0.0f, 0.0f);
+    EasyModelAnimationPlaybackFrame playbackFrame =
+        applySetting(
+            ANIMATION_PLAYBACK_TRACKER.resolve(
+                blockEntity,
+                setting.animation(),
+                automaticClipName,
+                animationClock(blockEntity, partialTick),
+                renderState.bakedModel().animations()),
+            setting,
             blockEntity,
-            setting.animation(),
-            () -> EasyModelBakedModelRenderer.automaticClipName(renderState, 0.0f, 0.0f, 0.0f),
-            animationClock(blockEntity, partialTick),
-            renderState.bakedModel().animations()),
-        setting,
-        blockEntity,
-        partialTick);
+            partialTick);
+    return new AnimationFrames(
+        playbackFrame,
+        ANIMATION_VARIANT_TRACKER.resolve(
+            blockEntity,
+            Objects.hashCode(blockEntity.getBlockPos()),
+            renderState.bakedModel(),
+            renderState.animation().variantMode(),
+            playbackFrame,
+            automaticClipName,
+            playbackFrame.animationTicks(),
+            0.0f,
+            0.0f));
   }
+
+  private record AnimationFrames(
+      EasyModelAnimationPlaybackFrame playbackFrame, EasyModelAnimationVariantFrame variantFrame) {}
 
   private static EasyModelAnimationSetting resolveSetting(
       EasyModelAnimation requestedAnimation, EasyModelAnimationSetting fallback) {
@@ -277,6 +314,21 @@ public final class EasyModelBlockEntityRenderBackend {
     return blockEntity instanceof EasyModelRenderable renderable
         ? renderable.getEasyModelAnimationSetting()
         : EasyModelAnimationSetting.AUTO;
+  }
+
+  private static EasyModelTextureSetting resolveTextureSetting(
+      EasyModelTextureSetting requested, EasyModelTextureSetting fallback) {
+    if (requested != null && !requested.isEmpty()) {
+      return requested;
+    }
+
+    return fallback == null ? EasyModelTextureSetting.EMPTY : fallback;
+  }
+
+  private static EasyModelTextureSetting textureSetting(BlockEntity blockEntity) {
+    return blockEntity instanceof EasyModelRenderable renderable
+        ? renderable.getEasyModelTextureSetting()
+        : EasyModelTextureSetting.EMPTY;
   }
 
   private static EasyModelAnimationPlaybackFrame applySetting(

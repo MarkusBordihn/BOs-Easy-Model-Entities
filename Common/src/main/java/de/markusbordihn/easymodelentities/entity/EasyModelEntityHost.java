@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.entity;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import net.minecraft.resources.Identifier;
 
@@ -36,6 +37,10 @@ public interface EasyModelEntityHost {
   EasyModelAnimationSetting getEasyModelAnimationSetting();
 
   void setEasyModelAnimation(EasyModelAnimationSetting animation);
+
+  EasyModelTextureSetting getEasyModelTextureSetting();
+
+  void setEasyModelTexture(EasyModelTextureSetting texture);
 
   EasyModelRuntimeContract getEasyModelRuntimeContract();
 

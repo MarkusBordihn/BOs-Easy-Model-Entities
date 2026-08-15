@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.model.bake;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.contract.ModelAssetBudgets;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelCube;
@@ -37,6 +38,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeSet;
@@ -64,10 +66,12 @@ public final class ModelTextureResolver {
       DecodedModel decodedModel,
       ResourceManager resourceManager) {
     Map<Integer, DecodedTexture> decodedTextures = decodedTexturesByIndex(decodedModel);
+    TreeSet<Integer> usedIndices = usedTextureIndices(decodedModel);
     Map<Integer, Identifier> textures = new LinkedHashMap<>();
     List<ModelRenderProfileValidationIssue> issues = new ArrayList<>();
-    for (int index : usedTextureIndices(decodedModel)) {
-      Identifier candidate = candidateTexture(renderProfile, index, decodedTextures.get(index));
+    for (int index : usedIndices) {
+      Identifier candidate =
+          candidateTexture(renderProfile, index, decodedTextures.get(index));
       if (candidate == null) {
         textures.put(index, FALLBACK_TEXTURE);
         issues.add(
@@ -88,7 +92,106 @@ public final class ModelTextureResolver {
       issues.addAll(textureIssues);
     }
 
-    return new ResolvedTextures(textures, issues);
+    return new ResolvedTextures(textures, slotNames(decodedTextures, usedIndices), issues);
+  }
+
+  private static Map<String, Integer> slotNames(
+      Map<Integer, DecodedTexture> decodedTextures, TreeSet<Integer> usedIndices) {
+    Map<String, Integer> slotNames = new LinkedHashMap<>();
+    slotNames.put(EasyModelTextureSetting.DEFAULT_SLOT, 0);
+    for (int index : usedIndices) {
+      DecodedTexture decodedTexture = decodedTextures.get(index);
+      if (decodedTexture == null) {
+        continue;
+      }
+      String slotName = normalizeSlotName(decodedTexture.name());
+      if (!slotName.isEmpty()) {
+        slotNames.putIfAbsent(slotName, index);
+      }
+    }
+
+    return Map.copyOf(slotNames);
+  }
+
+  private static String normalizeSlotName(String textureName) {
+    if (textureName == null) {
+      return "";
+    }
+
+    String name = textureName.trim().toLowerCase(Locale.ROOT);
+    int suffixStart = name.length() - PNG_SUFFIX.length();
+    if (suffixStart > 0 && name.startsWith(PNG_SUFFIX, suffixStart)) {
+      name = name.substring(0, suffixStart);
+    }
+    StringBuilder slotName = new StringBuilder(name.length());
+    for (int i = 0; i < name.length(); i++) {
+      char character = name.charAt(i);
+      boolean allowed =
+          (character >= 'a' && character <= 'z')
+              || (character >= '0' && character <= '9')
+              || character == '_'
+              || character == '-';
+      slotName.append(allowed ? character : '_');
+    }
+    return EasyModelTextureSetting.normalizeSlot(slotName.toString()).orElse("");
+  }
+
+  public static Optional<ModelRenderProfileValidationIssue> validateTextureDimensions(
+      Identifier textureResourceLocation, ResourceManager resourceManager) {
+    Optional<Resource> textureResource = resourceManager.getResource(textureResourceLocation);
+    if (textureResource.isEmpty()) {
+      return Optional.of(
+          new ModelRenderProfileValidationIssue(
+              ModelRenderProfileStatus.MISSING_TEXTURE,
+              "texture",
+              "Missing texture asset " + textureResourceLocation + "."));
+    }
+
+    try (InputStream inputStream = textureResource.get().open();
+        ImageInputStream imageInputStream = ImageIO.createImageInputStream(inputStream)) {
+      if (imageInputStream == null) {
+        return Optional.of(undecodableTexture(textureResourceLocation));
+      }
+      Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInputStream);
+      if (!readers.hasNext()) {
+        return Optional.of(undecodableTexture(textureResourceLocation));
+      }
+
+      ImageReader reader = readers.next();
+      try {
+        reader.setInput(imageInputStream, true, true);
+        if (reader.getWidth(0) > MAX_TEXTURE_SIZE || reader.getHeight(0) > MAX_TEXTURE_SIZE) {
+          return Optional.of(
+              new ModelRenderProfileValidationIssue(
+                  ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
+                  "texture",
+                  "Texture asset "
+                      + textureResourceLocation
+                      + " exceeds the 2048x2048 asset budget."));
+        }
+      } finally {
+        reader.dispose();
+      }
+
+      return Optional.empty();
+    } catch (IOException exception) {
+      return Optional.of(
+          new ModelRenderProfileValidationIssue(
+              ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
+              "texture",
+              "Could not read texture asset "
+                  + textureResourceLocation
+                  + ": "
+                  + exception.getMessage()));
+    }
+  }
+
+  private static ModelRenderProfileValidationIssue undecodableTexture(
+      Identifier textureResourceLocation) {
+    return new ModelRenderProfileValidationIssue(
+        ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
+        "texture",
+        "Texture asset " + textureResourceLocation + " could not be decoded.");
   }
 
   private static Identifier candidateTexture(
@@ -267,10 +370,13 @@ public final class ModelTextureResolver {
   }
 
   public record ResolvedTextures(
-      Map<Integer, Identifier> textures, List<ModelRenderProfileValidationIssue> issues) {
+      Map<Integer, Identifier> textures,
+      Map<String, Integer> slotNames,
+      List<ModelRenderProfileValidationIssue> issues) {
 
     public ResolvedTextures {
       textures = Map.copyOf(textures);
+      slotNames = Map.copyOf(slotNames);
       issues = List.copyOf(issues);
     }
   }

@@ -36,6 +36,8 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelItemAnchor;
 import de.markusbordihn.easymodelentities.client.render.EasyModelBlockEntityRenderBackend;
 import de.markusbordihn.easymodelentities.client.render.EasyModelEntityRenderBackend;
 import de.markusbordihn.easymodelentities.client.render.EasyModelItemAnchorResolver;
+import de.markusbordihn.easymodelentities.client.render.EasyModelTextureOverrides;
+import de.markusbordihn.easymodelentities.client.render.EasyModelTextureVariants;
 import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
@@ -51,8 +53,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -271,6 +275,51 @@ public final class EasyModelEntitiesClientApi {
     return listAnimations(profileId).stream()
         .filter(animation -> animation.name().equals(normalizedName))
         .findFirst();
+  }
+
+  public static List<String> listAnimationVariants(Identifier profileId, String baseName) {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(baseName, "baseName");
+    return resolveRenderState(profileId, EasyModelAnimationSetting.AUTO)
+        .map(EasyModelRenderState::bakedModel)
+        .map(bakedModel -> animationVariants(bakedModel, baseName))
+        .orElse(List.of());
+  }
+
+  public static List<String> listTextureSlots(Identifier profileId) {
+    Objects.requireNonNull(profileId, "profileId");
+    return resolveRenderState(profileId, EasyModelAnimationSetting.AUTO)
+        .map(EasyModelRenderState::bakedModel)
+        .map(EasyModelEntitiesClientApi::textureSlots)
+        .orElse(List.of());
+  }
+
+  public static List<Identifier> listTextureVariants(
+      Identifier profileId, String slot) {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(slot, "slot");
+    return resolveRenderState(profileId, EasyModelAnimationSetting.AUTO)
+        .map(
+            renderState ->
+                textureVariants(renderState, slot, Minecraft.getInstance().getResourceManager()))
+        .orElse(List.of());
+  }
+
+  static List<String> animationVariants(BakedModel bakedModel, String baseName) {
+    return bakedModel
+        .animationVariants()
+        .variantsOf(ModelAnimationClips.baseName(ModelAnimationClips.normalize(baseName)));
+  }
+
+  static List<String> textureSlots(BakedModel bakedModel) {
+    return bakedModel.textureNames().keySet().stream().sorted().toList();
+  }
+
+  static List<Identifier> textureVariants(
+      EasyModelRenderState renderState, String slot, ResourceManager resourceManager) {
+    return EasyModelTextureOverrides.baseTexture(renderState, slot)
+        .map(baseTexture -> EasyModelTextureVariants.variants(baseTexture, resourceManager))
+        .orElse(List.of());
   }
 
   static List<EasyModelAnimationInfo> animationInfoFromClips(

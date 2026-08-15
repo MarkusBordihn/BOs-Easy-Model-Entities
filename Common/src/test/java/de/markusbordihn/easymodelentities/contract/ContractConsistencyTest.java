@@ -44,7 +44,8 @@ class ContractConsistencyTest {
     assertEquals(384, EasyModelApiContract.softCubeCount());
     assertEquals(32, EasyModelApiContract.maxHierarchyDepth());
     assertEquals(24, EasyModelApiContract.softHierarchyDepth());
-    assertEquals(16, EasyModelApiContract.maxAnimationCount());
+    assertEquals(64, EasyModelApiContract.maxAnimationCount());
+    assertEquals(32, EasyModelApiContract.softAnimationCount());
   }
 
   @Test
@@ -118,9 +119,17 @@ class ContractConsistencyTest {
     assertEquals(
         Set.of("automatic", "random_idle", "none"),
         Set.copyOf(EasyModelApiContract.animationModes()));
+    assertEquals(
+        Set.of("random", "sequential", "none"),
+        Set.copyOf(EasyModelApiContract.animationVariantModes()));
     assertEquals(Set.of("natural", "feline", "ungulate"), Set.copyOf(EasyModelApiContract.gaits()));
     assertEquals(
         Set.of("once", "loop", "repeat"), Set.copyOf(EasyModelApiContract.playbackModes()));
+  }
+
+  @Test
+  void textureBlendSetMatchesDocumentedContract() {
+    assertEquals(Set.of("cutout", "translucent"), Set.copyOf(EasyModelApiContract.textureBlends()));
   }
 
   @Test

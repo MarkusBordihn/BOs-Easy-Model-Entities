@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.data.model.bake;
 
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationVariants;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,7 +34,9 @@ public record BakedModel(
     Map<Integer, Identifier> textures,
     boolean cullBackfaces,
     Map<String, ModelAnimationClip> animations,
-    ModelBounds bounds) {
+    ModelBounds bounds,
+    ModelAnimationVariants animationVariants,
+    Map<String, Integer> textureNames) {
 
   public BakedModel {
     Objects.requireNonNull(modelId, "modelId");
@@ -44,6 +47,53 @@ public record BakedModel(
     textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
     animations = Map.copyOf(Objects.requireNonNull(animations, "animations"));
     bounds = bounds == null ? ModelBounds.EMPTY : bounds;
+    animationVariants =
+        animationVariants == null ? ModelAnimationVariants.of(animations) : animationVariants;
+    textureNames = textureNames == null ? Map.of() : Map.copyOf(textureNames);
+  }
+
+  public BakedModel(
+      Identifier modelId,
+      int textureWidth,
+      int textureHeight,
+      List<BakedModelPart> rootParts,
+      Map<Integer, Identifier> textures,
+      boolean cullBackfaces,
+      Map<String, ModelAnimationClip> animations,
+      ModelBounds bounds,
+      Map<String, Integer> textureNames) {
+    this(
+        modelId,
+        textureWidth,
+        textureHeight,
+        rootParts,
+        textures,
+        cullBackfaces,
+        animations,
+        bounds,
+        null,
+        textureNames);
+  }
+
+  public BakedModel(
+      Identifier modelId,
+      int textureWidth,
+      int textureHeight,
+      List<BakedModelPart> rootParts,
+      Map<Integer, Identifier> textures,
+      boolean cullBackfaces,
+      Map<String, ModelAnimationClip> animations,
+      ModelBounds bounds) {
+    this(
+        modelId,
+        textureWidth,
+        textureHeight,
+        rootParts,
+        textures,
+        cullBackfaces,
+        animations,
+        bounds,
+        Map.of());
   }
 
   public BakedModel(

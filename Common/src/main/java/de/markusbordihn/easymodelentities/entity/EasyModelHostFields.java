@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.entity;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import java.util.Objects;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -34,7 +35,8 @@ public record EasyModelHostFields(
     EntityDataAccessor<ModelBodyType> bodyType,
     EntityDataAccessor<EasyModelAnimationSetting> animation,
     EntityDataAccessor<Boolean> lookAtPlayers,
-    EntityDataAccessor<Boolean> randomStroll) {
+    EntityDataAccessor<Boolean> randomStroll,
+    EntityDataAccessor<EasyModelTextureSetting> texture) {
 
   public EasyModelHostFields {
     Objects.requireNonNull(profileId, "profileId");
@@ -47,6 +49,7 @@ public record EasyModelHostFields(
     Objects.requireNonNull(animation, "animation");
     Objects.requireNonNull(lookAtPlayers, "lookAtPlayers");
     Objects.requireNonNull(randomStroll, "randomStroll");
+    Objects.requireNonNull(texture, "texture");
   }
 
   public boolean isRuntimeContractField(EntityDataAccessor<?> entityDataAccessor) {

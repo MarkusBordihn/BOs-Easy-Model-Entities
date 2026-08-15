@@ -31,7 +31,8 @@ public final class ModelAssetBudgets {
   public static final int SOFT_CUBE_COUNT = 384;
   public static final int MAX_HIERARCHY_DEPTH = 32;
   public static final int SOFT_HIERARCHY_DEPTH = 24;
-  public static final int MAX_ANIMATION_COUNT = 16;
+  public static final int MAX_ANIMATION_COUNT = 64;
+  public static final int SOFT_ANIMATION_COUNT = 32;
 
   private ModelAssetBudgets() {}
 }

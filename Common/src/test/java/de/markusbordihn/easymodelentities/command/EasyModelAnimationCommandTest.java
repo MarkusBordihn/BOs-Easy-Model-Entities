@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.command;
 
+import static java.util.stream.Collectors.joining;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,8 +29,11 @@ import static org.mockito.Mockito.when;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import java.util.List;
+import java.util.stream.IntStream;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelAnimationCommandTest {
@@ -45,6 +49,10 @@ class EasyModelAnimationCommandTest {
 
     assertFalse(result.getReader().canRead(), result.getReader().getRemaining());
     assertTrue(result.getExceptions().isEmpty(), result.getExceptions().toString());
+  }
+
+  private static String clipList(int count) {
+    return IntStream.range(0, count).mapToObj(index -> "clip" + index).collect(joining(","));
   }
 
   @Test
@@ -68,5 +76,28 @@ class EasyModelAnimationCommandTest {
         EasyModelAnimation.named("wave"),
         EasyModelAnimationCommand.parseAnimation("named:wave").orElseThrow());
     assertTrue(EasyModelAnimationCommand.parseAnimation("named:").isEmpty());
+  }
+
+  @Test
+  void parsesRandomPlaybackCommands() {
+    assertParses("easy_model_entities animation play entity @e random \"idle_2,idle_3\"");
+    assertParses(
+        "easy_model_entities animation play entity @e random \"idle_2,idle_3\" loop after_current 5");
+    assertParses("easy_model_entities animation play block 1 64 -3 random \"wave,bow\" once");
+    assertParses("easy_model_entities animation play entity @e random idle_2");
+  }
+
+  @Test
+  @DisplayName("A clip list is trimmed, deduplicated and capped")
+  void parsesClipLists() {
+    assertEquals(
+        List.of(
+            EasyModelAnimation.named("idle_2"),
+            EasyModelAnimation.named("idle_3"),
+            EasyModelAnimation.ATTACK),
+        EasyModelAnimationCommand.parseAnimations(" idle_2 , idle_3 ,idle_2,, attack "));
+    assertEquals(16, EasyModelAnimationCommand.parseAnimations(clipList(20)).size());
+    assertTrue(EasyModelAnimationCommand.parseAnimations(" , ").isEmpty());
+    assertTrue(EasyModelAnimationCommand.parseAnimations(null).isEmpty());
   }
 }

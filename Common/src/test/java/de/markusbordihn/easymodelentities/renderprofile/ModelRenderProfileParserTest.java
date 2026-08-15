@@ -314,6 +314,33 @@ class ModelRenderProfileParserTest {
   }
 
   @Test
+  void defaultsVariantModeToRandom() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"quadruped_wandering\"}");
+
+    assertEquals(ModelAnimationVariantMode.RANDOM, renderProfile.animation().variantMode());
+  }
+
+  @Test
+  void parsesVariantMode() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            "{\"preset_type\":\"quadruped_wandering\",\"animation\":{\"variant_mode\":\"none\"}}");
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(ModelAnimationVariantMode.NONE, renderProfile.animation().variantMode());
+  }
+
+  @Test
+  void rejectsInvalidVariantMode() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            "{\"preset_type\":\"quadruped_wandering\",\"animation\":{\"variant_mode\":\"shuffle\"}}");
+
+    assertEquals(ModelRenderProfileStatus.INVALID_ANIMATION_MODE, renderProfile.status());
+    assertEquals(ModelAnimationVariantMode.RANDOM, renderProfile.animation().variantMode());
+  }
+
+  @Test
   void customRenderProfileRequiresBodyType() {
     EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"custom\"}");
 

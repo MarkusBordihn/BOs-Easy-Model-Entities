@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.api;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import net.minecraft.resources.Identifier;
 
 public interface EasyModelRenderable {
@@ -36,5 +37,9 @@ public interface EasyModelRenderable {
 
   default EasyModelAnimationSetting getEasyModelAnimationSetting() {
     return EasyModelAnimationSetting.AUTO;
+  }
+
+  default EasyModelTextureSetting getEasyModelTextureSetting() {
+    return EasyModelTextureSetting.EMPTY;
   }
 }
