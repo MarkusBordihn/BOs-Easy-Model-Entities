@@ -37,7 +37,12 @@ final class ModelFaceOcclusionCuller {
 
   private ModelFaceOcclusionCuller() {}
 
-  static Result cull(List<BakedModelPart> rootParts, ModelBodyType bodyType) {
+  static Result cull(
+      List<BakedModelPart> rootParts, ModelBodyType bodyType, boolean opaqueTextures) {
+    if (!opaqueTextures) {
+      return new Result(rootParts, 0);
+    }
+
     List<List<Entry>> buckets = new ArrayList<>();
     if (bodyType == ModelBodyType.STATIC) {
       List<Entry> rootBucket = newBucket(buckets);

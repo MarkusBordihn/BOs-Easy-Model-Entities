@@ -1,7 +1,51 @@
 apply plugin: 'java'
 
-def ghostRefScript = file(findProperty('ghostRefIndex') ?: '')
-if (ghostRefScript.exists()) apply from: ghostRefScript
+String ghostRefIndexPath = (findProperty('ghostRefIndex') ?: '').toString().trim()
+File ghostRefScript = ghostRefIndexPath ? file(ghostRefIndexPath) : null
+if (ghostRefScript?.isFile()) apply from: ghostRefScript
+
+ext.ghostRefReleaseResourcesConfig = [
+    sourceProjectPath: ':Common',
+    resourceIncludes: [
+        'assets/easy_model_entities_examples/**',
+        'data/easy_model_entities_examples/**',
+    ],
+    requiredEntries: [
+        'data/easy_model_entities/structures/gametest.3x3x3.nbt',
+        'de/markusbordihn/easymodelentities/gametest/GameTestHelpers.class',
+        'de/markusbordihn/easymodelentities/gametest/HostEntityGameTestCases.class',
+    ],
+    loaderRequiredEntries: [
+        'de/markusbordihn/easymodelentities/gametest/HostEntityGameTest.class',
+        'de/markusbordihn/easymodelentities/gametest/SmokeTest.class',
+    ],
+    forbiddenManifestAttributes: ['Implementation-Timestamp'],
+    archives: [
+        [projectPath: ':Common', archiveTaskName: 'jar', buildTaskName: 'jar', loaderArchive: false],
+        [projectPath: ':Fabric', archiveTaskName: 'remapJar', buildTaskName: 'remapJar', loaderArchive: true],
+        [projectPath: ':Forge', archiveTaskName: 'jar', buildTaskName: 'reobfJar', loaderArchive: true],
+    ],
+]
+
+File ghostRefReleaseScript = ghostRefScript?.parentFile == null
+    ? null
+    : new File(ghostRefScript.parentFile, 'ghost-ref-release-resources.gradle')
+if (ghostRefReleaseScript?.isFile()) apply from: ghostRefReleaseScript
+
+def requireGhostRefReleaseTooling = tasks.register('requireGhostRefReleaseTooling') {
+  group = 'publishing'
+  description = 'Requires and verifies the private Ghost Reference Index release tooling.'
+  if (rootProject.ext.has('ghostRefReleaseToolingLoaded')) {
+    dependsOn 'fullCheck'
+  }
+
+  doLast {
+    if (!rootProject.ext.has('ghostRefReleaseToolingLoaded')) {
+      throw new GradleException(
+          'Official publishing requires ghost-ref-release-resources.gradle from the Ghost Reference Index.')
+    }
+  }
+}
 
 subprojects {
 
@@ -44,6 +88,10 @@ subprojects {
     enabled = false
   }
 
+  tasks.matching { it.name == 'modrinth' || it.name == 'curseforge' }.configureEach {
+    dependsOn rootProject.tasks.named('requireGhostRefReleaseTooling')
+  }
+
   tasks.register("prepareKotlinBuildScriptModel") {}
 }
 
@@ -62,7 +110,7 @@ tasks.register('fullCheck') {
 tasks.register('publishModrinth') {
   group = 'publishing'
   description = 'Publishes Forge and Fabric to Modrinth.'
-  dependsOn ':Forge:modrinth', ':Fabric:modrinth'
+  dependsOn ':Forge:modrinth', ':Fabric:modrinth', requireGhostRefReleaseTooling
   mustRunAfter 'fullCheck'
 }
 
@@ -78,7 +126,7 @@ tasks.register('publishDelay') {
 tasks.register('publishCurseForge') {
   group = 'publishing'
   description = 'Publishes Forge and Fabric to CurseForge.'
-  dependsOn ':Forge:curseforge', ':Fabric:curseforge'
+  dependsOn ':Forge:curseforge', ':Fabric:curseforge', requireGhostRefReleaseTooling
   mustRunAfter 'publishDelay'
 }
 

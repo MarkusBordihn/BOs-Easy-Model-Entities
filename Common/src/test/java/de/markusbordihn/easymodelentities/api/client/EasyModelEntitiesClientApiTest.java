@@ -125,17 +125,17 @@ class EasyModelEntitiesClientApiTest {
     return resourceManager;
   }
 
-  @BeforeEach
-  void resetTextureVariantCache() {
-    EasyModelTextureVariants.clear();
-  }
-
   private static EasyModelRenderProfile renderProfile(
       ResourceLocation profileId, boolean renderable) {
     EasyModelRenderProfile renderProfile = mock(EasyModelRenderProfile.class);
     when(renderProfile.id()).thenReturn(profileId);
     when(renderProfile.isRenderable()).thenReturn(renderable);
     return renderProfile;
+  }
+
+  @BeforeEach
+  void resetTextureVariantCache() {
+    EasyModelTextureVariants.clear();
   }
 
   @AfterEach

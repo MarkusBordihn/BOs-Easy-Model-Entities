@@ -20,18 +20,17 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.phys.AABB;
 
 public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
     extends EntityRenderer<T> {
@@ -39,12 +38,27 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
   public EasyModelHostEntityRenderer(EntityRendererProvider.Context context) {
     super(context);
     this.shadowRadius = 0.3f;
+    EasyModelEntityCullingCompat.register();
   }
 
   private static float bodyYaw(Entity entity, float entityYaw, float partialTick) {
     return entity instanceof LivingEntity livingEntity
         ? Mth.rotLerp(partialTick, livingEntity.yBodyRotO, livingEntity.yBodyRot)
         : Mth.rotLerp(partialTick, entity.yRotO, entity.getYRot());
+  }
+
+  private static float cullingYaw(Entity entity) {
+    return entity instanceof LivingEntity livingEntity ? livingEntity.yBodyRot : entity.getYRot();
+  }
+
+  private static int packedOverlay(Entity entity) {
+    if (!(entity instanceof LivingEntity livingEntity)) {
+      return OverlayTexture.NO_OVERLAY;
+    }
+
+    return OverlayTexture.pack(
+        OverlayTexture.u(0.0f),
+        OverlayTexture.v(livingEntity.hurtTime > 0 || livingEntity.deathTime > 0));
   }
 
   @Override
@@ -64,7 +78,8 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
         partialTick,
         poseStack,
         bufferSource,
-        packedLight);
+        packedLight,
+        packedOverlay(entity));
     super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
   }
 
@@ -77,23 +92,16 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
     if (!entity.shouldRender(camX, camY, camZ)) {
       return false;
     }
-    return entity.noCulling || frustum.isVisible(visibleBounds(entity, renderState));
-  }
-
-  private AABB visibleBounds(T entity, EasyModelRenderState renderState) {
-    Vec3f offset = renderState.visibleBoundsOffset();
-    double halfWidth = renderState.visibleBoundsWidth() / 2.0;
-    double height = renderState.visibleBoundsHeight();
-    double centerX = entity.getX() + offset.x();
-    double centerZ = entity.getZ() + offset.z();
-    double baseY = entity.getY() + offset.y();
-    return new AABB(
-        centerX - halfWidth,
-        baseY,
-        centerZ - halfWidth,
-        centerX + halfWidth,
-        baseY + height,
-        centerZ + halfWidth);
+    return entity.noCulling
+        || frustum.isVisible(
+            EasyModelCullingBounds.visibleBounds(
+                entity.getX(),
+                entity.getY(),
+                entity.getZ(),
+                renderState.visibleBoundsWidth(),
+                renderState.visibleBoundsHeight(),
+                renderState.visibleBoundsOffset(),
+                cullingYaw(entity)));
   }
 
   @Override
