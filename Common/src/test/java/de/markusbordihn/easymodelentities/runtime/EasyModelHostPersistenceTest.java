@@ -66,8 +66,7 @@ class EasyModelHostPersistenceTest {
             .contains(EasyModelHostPersistence.TEXTURE_TAG));
 
     assertFalse(
-        writeTexture(EasyModelTextureSetting.EMPTY)
-            .contains(EasyModelHostPersistence.TEXTURE_TAG));
+        writeTexture(EasyModelTextureSetting.EMPTY).contains(EasyModelHostPersistence.TEXTURE_TAG));
   }
 
   @Test

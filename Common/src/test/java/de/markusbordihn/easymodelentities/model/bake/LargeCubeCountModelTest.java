@@ -211,14 +211,14 @@ class LargeCubeCountModelTest {
   }
 
   @Test
-  @DisplayName("A solid cube stack keeps every visible cube and drops only fully hidden ones")
-  void solidStackDropsOnlyFullyHiddenCubes() throws Exception {
+  @DisplayName("A cube stack keeps every cube when textures can contain transparency")
+  void solidStackKeepsCubesForTransparentTextures() throws Exception {
     ModelBakeResult result =
         ModelBakeService.createDefault()
             .bake(renderProfile("solid"), resourceManager(solidBlockModel(4)));
 
     assertTrue(result.successful(), () -> "Bake failed: " + result.validationIssues());
-    assertEquals(64 - 8, cubeCount(result.bakedModel().rootParts()));
+    assertEquals(64, cubeCount(result.bakedModel().rootParts()));
   }
 
   @Test

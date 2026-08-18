@@ -27,8 +27,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import net.minecraft.resources.Identifier;
 
-public record EasyModelTextureSlot(
-    Optional<Identifier> texture, EasyModelTextureBlend blend) {
+public record EasyModelTextureSlot(Optional<Identifier> texture, EasyModelTextureBlend blend) {
 
   public static final Codec<EasyModelTextureSlot> OBJECT_CODEC =
       RecordCodecBuilder.create(

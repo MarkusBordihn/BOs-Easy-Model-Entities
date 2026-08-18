@@ -26,6 +26,7 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 
 @SuppressWarnings("java:S1104")
 public class EasyModelEntityRenderState extends EntityRenderState {
@@ -37,6 +38,7 @@ public class EasyModelEntityRenderState extends EntityRenderState {
   public EasyModelPartAnimator partAnimator = EasyModelPartAnimator.NONE;
   public EasyModelPartAnimationMode partAnimationMode = EasyModelPartAnimationMode.ADD;
   public EasyModelHeadLook headLook = EasyModelHeadLook.NONE;
+  public int packedOverlay = OverlayTexture.NO_OVERLAY;
   public float scaleFactor = 1.0f;
   public float entityYaw;
   public float limbSwing;

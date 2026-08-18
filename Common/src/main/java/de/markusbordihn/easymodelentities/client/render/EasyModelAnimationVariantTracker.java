@@ -69,9 +69,8 @@ final class EasyModelAnimationVariantTracker<T> {
     } else {
       variant.rollCounter++;
       int index =
-          (int)
-              Math.floorMod(
-                  mix(roll.seed(), roll.baseName().hashCode(), variant.rollCounter), size);
+        Math.floorMod(
+            mix(roll.seed(), roll.baseName().hashCode(), variant.rollCounter), size);
       variant.index = index == variant.index ? (index + 1) % size : index;
     }
     variant.clipName = roll.clipNames().get(variant.index);

@@ -43,7 +43,7 @@ public final class EasyModelEntityTypes implements EasyModelHostEntityTypeProvid
       Registry.register(
           BuiltInRegistries.ENTITY_TYPE,
           ModelEntityTypeIds.GROUND_ENTITY,
-          EntityType.Builder.<EasyModelGroundEntity>of(
+          EntityType.Builder.of(
                   EasyModelGroundEntity::new, MobCategory.CREATURE)
               .sized(EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
               .clientTrackingRange(10)
@@ -53,7 +53,7 @@ public final class EasyModelEntityTypes implements EasyModelHostEntityTypeProvid
       Registry.register(
           BuiltInRegistries.ENTITY_TYPE,
           ModelEntityTypeIds.STATIC_ENTITY,
-          EntityType.Builder.<EasyModelStaticEntity>of(EasyModelStaticEntity::new, MobCategory.MISC)
+          EntityType.Builder.of(EasyModelStaticEntity::new, MobCategory.MISC)
               .sized(EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
               .clientTrackingRange(10)
               .build(ResourceKey.create(Registries.ENTITY_TYPE, ModelEntityTypeIds.STATIC_ENTITY)));
@@ -62,7 +62,7 @@ public final class EasyModelEntityTypes implements EasyModelHostEntityTypeProvid
       Registry.register(
           BuiltInRegistries.ENTITY_TYPE,
           ModelEntityTypeIds.AQUATIC_ENTITY,
-          EntityType.Builder.<EasyModelAquaticEntity>of(
+          EntityType.Builder.of(
                   EasyModelAquaticEntity::new, MobCategory.WATER_CREATURE)
               .sized(0.7f, 0.4f)
               .clientTrackingRange(10)
@@ -73,7 +73,7 @@ public final class EasyModelEntityTypes implements EasyModelHostEntityTypeProvid
       Registry.register(
           BuiltInRegistries.ENTITY_TYPE,
           ModelEntityTypeIds.AMPHIBIOUS_ENTITY,
-          EntityType.Builder.<EasyModelAmphibiousEntity>of(
+          EntityType.Builder.of(
                   EasyModelAmphibiousEntity::new, MobCategory.CREATURE)
               .sized(0.9f, 0.6f)
               .clientTrackingRange(10)

@@ -63,6 +63,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.apache.logging.log4j.LogManager;
@@ -333,6 +334,42 @@ public final class EasyModelBakedModelRenderer {
       PoseStack poseStack,
       SubmitNodeCollector submitNodeCollector,
       int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        airborneAmount,
+        attackAmount,
+        headLook,
+        playbackFrame,
+        variantFrame,
+        textureSetting,
+        partAnimator,
+        partAnimationMode,
+        poseStack,
+        submitNodeCollector,
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      EasyModelTextureSetting textureSetting,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay) {
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
     boolean cullBackfaces = bakedModel.cullBackfaces();
@@ -362,6 +399,7 @@ public final class EasyModelBakedModelRenderer {
                 innerStack,
                 renderTextureIndex -> renderTextureIndex == textureIndex ? vertexConsumer : null,
                 packedLight,
+                packedOverlay,
                 partAnimator,
                 partAnimationMode,
                 EasyModelPartPoseListener.NONE);
@@ -511,6 +549,44 @@ public final class EasyModelBakedModelRenderer {
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        ageInTicks,
+        airborneAmount,
+        attackAmount,
+        headLook,
+        animation,
+        textureSetting,
+        partAnimator,
+        partAnimationMode,
+        partPoseListener,
+        poseStack,
+        bufferSource,
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float ageInTicks,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelHeadLook headLook,
+      EasyModelAnimation animation,
+      EasyModelTextureSetting textureSetting,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      int packedOverlay) {
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(bufferSource, "bufferSource");
     boolean cullBackfaces = bakedModel.cullBackfaces();
@@ -535,6 +611,7 @@ public final class EasyModelBakedModelRenderer {
         poseStack,
         bufferProvider,
         packedLight,
+        packedOverlay,
         partAnimator,
         partAnimationMode,
         partPoseListener);
@@ -659,6 +736,44 @@ public final class EasyModelBakedModelRenderer {
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        airborneAmount,
+        attackAmount,
+        headLook,
+        playbackFrame,
+        variantFrame,
+        textureSetting,
+        partAnimator,
+        partAnimationMode,
+        partPoseListener,
+        poseStack,
+        bufferSource,
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
+  }
+
+  static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      EasyModelTextureSetting textureSetting,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      int packedOverlay) {
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(bufferSource, "bufferSource");
     boolean cullBackfaces = bakedModel.cullBackfaces();
@@ -683,6 +798,7 @@ public final class EasyModelBakedModelRenderer {
         poseStack,
         bufferProvider,
         packedLight,
+        packedOverlay,
         partAnimator,
         partAnimationMode,
         partPoseListener);
@@ -795,6 +911,7 @@ public final class EasyModelBakedModelRenderer {
         poseStack,
         bufferProvider,
         packedLight,
+        OverlayTexture.NO_OVERLAY,
         partAnimator,
         partAnimationMode,
         partPoseListener);
@@ -813,6 +930,42 @@ public final class EasyModelBakedModelRenderer {
       PoseStack poseStack,
       IntFunction<VertexConsumer> bufferProvider,
       int packedLight,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        airborneAmount,
+        attackAmount,
+        headLook,
+        playbackFrame,
+        variantFrame,
+        poseStack,
+        bufferProvider,
+        packedLight,
+        OverlayTexture.NO_OVERLAY,
+        partAnimator,
+        partAnimationMode,
+        partPoseListener);
+  }
+
+  static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      PoseStack poseStack,
+      IntFunction<VertexConsumer> bufferProvider,
+      int packedLight,
+      int packedOverlay,
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode,
       EasyModelPartPoseListener partPoseListener) {
@@ -870,7 +1023,7 @@ public final class EasyModelBakedModelRenderer {
                 playbackFrame.previousAnimationTicks(),
                 attackAmount,
                 playbackFrame.previousLoopOverride());
-    VertexSinks sinks = new VertexSinks(bufferProvider, poseStack, packedLight);
+    VertexSinks sinks = new VertexSinks(bufferProvider, poseStack, packedLight, packedOverlay);
     float[] animationSample = ANIMATION_SAMPLE.get();
     for (BakedModelPart part : bakedModel.rootParts()) {
       renderPart(
@@ -1829,21 +1982,29 @@ public final class EasyModelBakedModelRenderer {
     private final IntFunction<VertexConsumer> bufferProvider;
     private final PoseStack poseStack;
     private final int packedLight;
+    private final int packedOverlay;
     private int lastTextureIndex = -1;
     private EasyModelVertexSink lastSink;
 
     private VertexSinks(
-        IntFunction<VertexConsumer> bufferProvider, PoseStack poseStack, int packedLight) {
+        IntFunction<VertexConsumer> bufferProvider,
+        PoseStack poseStack,
+        int packedLight,
+        int packedOverlay) {
       this.bufferProvider = bufferProvider;
       this.poseStack = poseStack;
       this.packedLight = packedLight;
+      this.packedOverlay = packedOverlay;
     }
 
     private EasyModelVertexSink sink(int textureIndex) {
       if (this.lastSink == null || textureIndex != this.lastTextureIndex) {
         this.lastSink =
             new EasyModelVertexSink(
-                this.bufferProvider.apply(textureIndex), this.poseStack, this.packedLight);
+                this.bufferProvider.apply(textureIndex),
+                this.poseStack,
+                this.packedLight,
+                this.packedOverlay);
         this.lastTextureIndex = textureIndex;
       }
       return this.lastSink;

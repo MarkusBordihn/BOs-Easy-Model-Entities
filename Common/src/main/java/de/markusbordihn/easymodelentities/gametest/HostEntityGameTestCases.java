@@ -226,8 +226,7 @@ public final class HostEntityGameTestCases {
       return;
     }
 
-    Identifier texture =
-        ModelResourcePaths.identifier("example", "textures/entity/screen_sad.png");
+    Identifier texture = ModelResourcePaths.identifier("example", "textures/entity/screen_sad.png");
     hostEntity.setEasyModelTexture(EasyModelTextureSetting.of("screen", texture));
     if (!Optional.of(texture).equals(hostEntity.getEasyModelTextureSetting().texture("screen"))) {
       helper.fail("Synched data did not return the texture setting.");

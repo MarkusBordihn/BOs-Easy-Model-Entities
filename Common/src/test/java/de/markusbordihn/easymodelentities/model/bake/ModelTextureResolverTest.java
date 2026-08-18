@@ -167,8 +167,7 @@ class ModelTextureResolverTest {
   @Test
   @DisplayName("Slot names address a texture index by name, so a command needs no bake knowledge")
   void mapsSlotNamesToTextureIndices() throws IOException {
-    Identifier derived =
-        Identifier.fromNamespaceAndPath("minecraft", "textures/block/screen.png");
+    Identifier derived = Identifier.fromNamespaceAndPath("minecraft", "textures/block/screen.png");
     DecodedModel model =
         decodedModel(
             new DecodedTexture(1, "minecraft", "block", "screen.png", "Screen Face.png", 16, 16));
