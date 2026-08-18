@@ -44,6 +44,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -101,10 +102,31 @@ public final class EasyModelEntityRenderBackend {
         renderState,
         entityYaw,
         partialTick,
+        poseStack,
+        bufferSource,
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
+  }
+
+  public static void render(
+      Entity entity,
+      EasyModelRenderState renderState,
+      float entityYaw,
+      float partialTick,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      int packedOverlay) {
+    render(
+        entity,
+        renderState,
+        entityYaw,
+        partialTick,
         EasyModelEntityRenderOptions.DEFAULT,
         poseStack,
         bufferSource,
-        packedLight);
+        packedLight,
+        packedOverlay);
   }
 
   public static void render(
@@ -116,6 +138,28 @@ public final class EasyModelEntityRenderBackend {
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight) {
+    render(
+        entity,
+        renderState,
+        entityYaw,
+        partialTick,
+        options,
+        poseStack,
+        bufferSource,
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
+  }
+
+  public static void render(
+      Entity entity,
+      EasyModelRenderState renderState,
+      float entityYaw,
+      float partialTick,
+      EasyModelEntityRenderOptions options,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      int packedOverlay) {
     Objects.requireNonNull(entity, "entity");
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(poseStack, "poseStack");
@@ -178,7 +222,8 @@ public final class EasyModelEntityRenderBackend {
         resolveTextureSetting(safeOptions.textureSetting(), textureSetting(entity)),
         poseStack,
         bufferSource,
-        packedLight);
+        packedLight,
+        packedOverlay);
   }
 
   public static void render(
@@ -212,7 +257,8 @@ public final class EasyModelEntityRenderBackend {
         safeOptions.textureSetting(),
         poseStack,
         bufferSource,
-        packedLight);
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
   }
 
   private static void render(
@@ -228,7 +274,8 @@ public final class EasyModelEntityRenderBackend {
       EasyModelTextureSetting textureSetting,
       PoseStack poseStack,
       MultiBufferSource bufferSource,
-      int packedLight) {
+      int packedLight,
+      int packedOverlay) {
     render(
         renderState,
         yaw,
@@ -243,7 +290,8 @@ public final class EasyModelEntityRenderBackend {
         textureSetting,
         poseStack,
         bufferSource,
-        packedLight);
+        packedLight,
+        packedOverlay);
   }
 
   private static void render(
@@ -260,7 +308,8 @@ public final class EasyModelEntityRenderBackend {
       EasyModelTextureSetting textureSetting,
       PoseStack poseStack,
       MultiBufferSource bufferSource,
-      int packedLight) {
+      int packedLight,
+      int packedOverlay) {
     float scale = renderState.scale() * (options.scale() == null ? 1.0f : options.scale());
 
     poseStack.pushPose();
@@ -284,7 +333,8 @@ public final class EasyModelEntityRenderBackend {
         options.partPoseListener(),
         poseStack,
         bufferSource,
-        packedLight);
+        packedLight,
+        packedOverlay);
     poseStack.popPose();
   }
 

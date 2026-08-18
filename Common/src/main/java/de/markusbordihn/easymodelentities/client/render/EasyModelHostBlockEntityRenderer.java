@@ -29,7 +29,9 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity>
     implements BlockEntityRenderer<T> {
 
-  public EasyModelHostBlockEntityRenderer(BlockEntityRendererProvider.Context context) {}
+  public EasyModelHostBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
+    EasyModelEntityCullingCompat.register();
+  }
 
   @Override
   public void render(
@@ -43,6 +45,11 @@ public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity
         EasyModelBlockEntityRenderBackend.resolveRenderState(
             blockEntity.getEasyModelRuntimeContract());
     EasyModelBlockEntityRenderBackend.render(
-        blockEntity, renderState, partialTick, poseStack, bufferSource, packedLight);
+        blockEntity, renderState, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+  }
+
+  @Override
+  public boolean shouldRenderOffScreen(T blockEntity) {
+    return true;
   }
 }

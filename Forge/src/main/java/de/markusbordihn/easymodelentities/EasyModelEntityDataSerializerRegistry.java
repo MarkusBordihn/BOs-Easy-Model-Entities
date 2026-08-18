@@ -17,34 +17,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package de.markusbordihn.easymodelentities.client.render;
+package de.markusbordihn.easymodelentities;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
+import net.minecraft.network.syncher.EntityDataSerializer;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
 
-final class EasyModelVertexSink {
+public final class EasyModelEntityDataSerializerRegistry {
 
-  private final VertexConsumer vertexConsumer;
-  private final PoseStack poseStack;
-  private final int packedLight;
-  private final int packedOverlay;
+  private static final DeferredRegister<EntityDataSerializer<?>> SERIALIZERS =
+      DeferredRegister.create(ForgeRegistries.Keys.ENTITY_DATA_SERIALIZERS, Constants.MOD_ID);
 
-  EasyModelVertexSink(
-      VertexConsumer vertexConsumer, PoseStack poseStack, int packedLight, int packedOverlay) {
-    this.vertexConsumer = vertexConsumer;
-    this.poseStack = poseStack;
-    this.packedLight = packedLight;
-    this.packedOverlay = packedOverlay;
+  static {
+    SERIALIZERS.register("body_type", () -> EasyModelEntityDataSerializers.BODY_TYPE);
+    SERIALIZERS.register(
+        "animation_setting", () -> EasyModelEntityDataSerializers.ANIMATION_SETTING);
+    SERIALIZERS.register("texture_setting", () -> EasyModelEntityDataSerializers.TEXTURE_SETTING);
   }
 
-  void vertex(
-      float x, float y, float z, float u, float v, float normalX, float normalY, float normalZ) {
-    PoseStack.Pose pose = this.poseStack.last();
-    this.vertexConsumer.addVertex(pose.pose(), x, y, z);
-    this.vertexConsumer.setColor(255, 255, 255, 255);
-    this.vertexConsumer.setUv(u, v);
-    this.vertexConsumer.setOverlay(this.packedOverlay);
-    this.vertexConsumer.setLight(this.packedLight);
-    this.vertexConsumer.setNormal(pose, normalX, normalY, normalZ);
+  private EasyModelEntityDataSerializerRegistry() {}
+
+  public static void register(IEventBus modEventBus) {
+    SERIALIZERS.register(modEventBus);
   }
 }

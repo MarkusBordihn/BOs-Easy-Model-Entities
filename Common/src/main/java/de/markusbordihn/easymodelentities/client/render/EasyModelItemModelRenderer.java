@@ -22,8 +22,11 @@ package de.markusbordihn.easymodelentities.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.ModelBounds;
@@ -86,11 +89,17 @@ public final class EasyModelItemModelRenderer {
         0.0f,
         0.0f,
         0.0f,
+        0.0f,
+        EasyModelHeadLook.NONE,
+        EasyModelAnimation.AUTO,
+        EasyModelTextureSetting.EMPTY,
         EasyModelPartAnimator.NONE,
         EasyModelPartAnimationMode.ADD,
+        EasyModelPartPoseListener.NONE,
         poseStack,
         bufferSource,
-        LightTexture.FULL_BRIGHT);
+        LightTexture.FULL_BRIGHT,
+        packedOverlay);
     poseStack.popPose();
   }
 }

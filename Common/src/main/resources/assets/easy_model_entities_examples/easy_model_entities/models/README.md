@@ -1,7 +1,7 @@
 # Models Notice
 
-This directory contains model files that are included only for reference, development, preview, and
-project integration.
+This directory contains demo model files that are intentionally bundled with official Easy Model
+Entities releases for in-game preview, testing, development, and project integration.
 
 ## License Status
 
@@ -12,20 +12,23 @@ remain with the author.
 
 ## Restrictions
 
-You may not use these files outside of this repository without explicit written permission.
+You may use these files as part of an unmodified official Easy Model Entities distribution. You may
+not extract or use them separately without explicit written permission.
 
 This includes, but is not limited to:
 
-- copying or redistributing the models
-- reuploading the models
+- copying or redistributing the models separately
+- reuploading the models separately
 - using the models in other projects, mods, games, or repositories
 - modifying and publishing the models
 - treating the models as open source or freely reusable assets
 
 ## Allowed Use
 
-These files may only be used as part of this repository for:
+These files may be used for:
 
+- using the bundled demos through an installed Easy Model Entities release
+- distributing them as part of an unmodified official Easy Model Entities release
 - reference
 - local development
 - testing

@@ -66,7 +66,7 @@ class ModelFaceOcclusionCullerTest {
     BakedModelPart root = part("root", List.of(lower, upper));
 
     ModelFaceOcclusionCuller.Result result =
-        ModelFaceOcclusionCuller.cull(List.of(root), ModelBodyType.STATIC);
+        ModelFaceOcclusionCuller.cull(List.of(root), ModelBodyType.STATIC, true);
 
     assertEquals(2, result.culledFaces());
     BakedModelPart culled = result.rootParts().get(0);
@@ -84,7 +84,7 @@ class ModelFaceOcclusionCullerTest {
         part("tower", List.of(cube(new Vec3f(0.0f, 8.0f, 0.0f), new Vec3f(8.0f, 8.0f, 8.0f))));
 
     ModelFaceOcclusionCuller.Result result =
-        ModelFaceOcclusionCuller.cull(List.of(lower, upper), ModelBodyType.STATIC);
+        ModelFaceOcclusionCuller.cull(List.of(lower, upper), ModelBodyType.STATIC, true);
 
     assertEquals(2, result.culledFaces());
   }
@@ -97,7 +97,7 @@ class ModelFaceOcclusionCullerTest {
         part("left_leg", List.of(cube(new Vec3f(0.0f, 8.0f, 0.0f), new Vec3f(8.0f, 8.0f, 8.0f))));
 
     ModelFaceOcclusionCuller.Result result =
-        ModelFaceOcclusionCuller.cull(List.of(body, leg), ModelBodyType.QUADRUPED);
+        ModelFaceOcclusionCuller.cull(List.of(body, leg), ModelBodyType.QUADRUPED, true);
 
     assertEquals(0, result.culledFaces());
     assertEquals(List.of(body, leg), result.rootParts());
@@ -110,7 +110,7 @@ class ModelFaceOcclusionCullerTest {
     BakedModelPart leg = part("left_leg", List.of(lower, upper));
 
     ModelFaceOcclusionCuller.Result result =
-        ModelFaceOcclusionCuller.cull(List.of(leg), ModelBodyType.QUADRUPED);
+        ModelFaceOcclusionCuller.cull(List.of(leg), ModelBodyType.QUADRUPED, true);
 
     assertEquals(2, result.culledFaces());
   }
@@ -122,7 +122,7 @@ class ModelFaceOcclusionCullerTest {
     BakedModelPart root = part("root", List.of(lower, upper));
 
     ModelFaceOcclusionCuller.Result result =
-        ModelFaceOcclusionCuller.cull(List.of(root), ModelBodyType.STATIC);
+        ModelFaceOcclusionCuller.cull(List.of(root), ModelBodyType.STATIC, true);
 
     assertEquals(1, result.culledFaces());
     BakedModelPart culled = result.rootParts().get(0);
@@ -137,7 +137,7 @@ class ModelFaceOcclusionCullerTest {
 
     ModelFaceOcclusionCuller.Result result =
         ModelFaceOcclusionCuller.cull(
-            List.of(part("root", List.of(lower, upper))), ModelBodyType.STATIC);
+            List.of(part("root", List.of(lower, upper))), ModelBodyType.STATIC, true);
 
     assertEquals(2, result.culledFaces());
   }
@@ -152,8 +152,24 @@ class ModelFaceOcclusionCullerTest {
     BakedModelPart root = part("root", List.of(lower), List.of(rotated));
 
     ModelFaceOcclusionCuller.Result result =
-        ModelFaceOcclusionCuller.cull(List.of(root), ModelBodyType.STATIC);
+        ModelFaceOcclusionCuller.cull(List.of(root), ModelBodyType.STATIC, true);
 
     assertEquals(0, result.culledFaces());
+  }
+
+  @Test
+  void nonOpaqueTexturesKeepTouchingFaces() {
+    BakedModelPart root =
+        part(
+            "root",
+            List.of(
+                cube(new Vec3f(0.0f, 0.0f, 0.0f), new Vec3f(8.0f, 8.0f, 8.0f)),
+                cube(new Vec3f(0.0f, 8.0f, 0.0f), new Vec3f(8.0f, 8.0f, 8.0f))));
+
+    ModelFaceOcclusionCuller.Result result =
+        ModelFaceOcclusionCuller.cull(List.of(root), ModelBodyType.STATIC, false);
+
+    assertEquals(0, result.culledFaces());
+    assertEquals(List.of(root), result.rootParts());
   }
 }

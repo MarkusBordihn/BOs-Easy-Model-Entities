@@ -23,7 +23,6 @@ import de.markusbordihn.easymodelentities.command.EasyModelEntitiesCommand;
 import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
 import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
-import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.minecraftforge.api.distmarker.Dist;
@@ -52,7 +51,7 @@ public class EasyModelEntities {
     Constants.GAME_DIR = FMLPaths.GAMEDIR.get();
     Constants.CONFIG_DIR = FMLPaths.CONFIGDIR.get();
 
-    EasyModelEntityDataSerializers.register();
+    EasyModelEntityDataSerializerRegistry.register(modEventBus);
     EasyModelEntityTypes.register(modEventBus);
     EasyModelBlockEntityTypes.register(modEventBus);
     EasyModelItems.register(modEventBus);
