@@ -1,6 +1,14 @@
 name: Java CI with Gradle
 
-on: [ push, pull_request ]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      refresh-cache:
+        description: 'Discard the restored Gradle cache and write a fresh one'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -29,6 +37,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
+          cache-overwrite-existing: ${{ inputs.refresh-cache == true }}
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
