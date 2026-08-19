@@ -389,8 +389,7 @@ final class EasyModelTextureCommand {
 
   private static String textureLine(
       String targetName, String slot, EasyModelTextureSlot textureSlot) {
-    String texture =
-        textureSlot.texture().map(Identifier::toString).orElse("original texture");
+    String texture = textureSlot.texture().map(Identifier::toString).orElse("original texture");
     if (textureSlot.blend() == EasyModelTextureBlend.DEFAULT) {
       return targetName + " " + slot + ": " + texture;
     }

@@ -53,6 +53,9 @@ public final class EasyModelGameTests {
 
   static {
     registerTest("mod_registered", SmokeTest::testModRegistered);
+    registerTest(
+        "entity_data_serializers_are_registered",
+        EntityDataSerializerGameTest::serializersAreNeoForgeRegistered);
 
     registerTest("ground_entity_can_be_created", HostEntityGameTestCases::groundEntityCanBeCreated);
     registerTest("static_entity_can_be_created", HostEntityGameTestCases::staticEntityCanBeCreated);

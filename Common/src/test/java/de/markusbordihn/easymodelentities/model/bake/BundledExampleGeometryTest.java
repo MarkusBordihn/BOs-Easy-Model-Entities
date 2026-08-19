@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.model.bake;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -84,7 +85,7 @@ class BundledExampleGeometryTest {
     for (ExpectedPart expectedPart : expectedParts) {
       String partPath = path + "/" + expectedPart.name();
       BakedModelPart bakedPart = bakedByName.get(expectedPart.name());
-      assertTrue(bakedPart != null, partPath + " missing baked part");
+      assertNotNull(bakedPart, partPath + " missing baked part");
 
       assertVec(expectedPart.offset(), bakedPart.offset(), DELTA, partPath + " offset");
       assertVec(expectedPart.rotation(), bakedPart.rotation(), DELTA, partPath + " rotation");

@@ -48,8 +48,7 @@ public final class NeoForgeEasyModelEntityTypes implements EasyModelHostEntityTy
           ENTITY_TYPES.register(
               ModelEntityTypeIds.GROUND_ENTITY.getPath(),
               () ->
-                  EntityType.Builder.<EasyModelGroundEntity>of(
-                          EasyModelGroundEntity::new, MobCategory.CREATURE)
+                  EntityType.Builder.of(EasyModelGroundEntity::new, MobCategory.CREATURE)
                       .sized(
                           EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
                       .clientTrackingRange(10)
@@ -62,8 +61,7 @@ public final class NeoForgeEasyModelEntityTypes implements EasyModelHostEntityTy
           ENTITY_TYPES.register(
               ModelEntityTypeIds.STATIC_ENTITY.getPath(),
               () ->
-                  EntityType.Builder.<EasyModelStaticEntity>of(
-                          EasyModelStaticEntity::new, MobCategory.MISC)
+                  EntityType.Builder.of(EasyModelStaticEntity::new, MobCategory.MISC)
                       .sized(
                           EasyModelHostEntity.FALLBACK_WIDTH, EasyModelHostEntity.FALLBACK_HEIGHT)
                       .clientTrackingRange(10)
@@ -76,8 +74,7 @@ public final class NeoForgeEasyModelEntityTypes implements EasyModelHostEntityTy
           ENTITY_TYPES.register(
               ModelEntityTypeIds.AQUATIC_ENTITY.getPath(),
               () ->
-                  EntityType.Builder.<EasyModelAquaticEntity>of(
-                          EasyModelAquaticEntity::new, MobCategory.WATER_CREATURE)
+                  EntityType.Builder.of(EasyModelAquaticEntity::new, MobCategory.WATER_CREATURE)
                       .sized(0.7f, 0.4f)
                       .clientTrackingRange(10)
                       .build(
@@ -89,8 +86,7 @@ public final class NeoForgeEasyModelEntityTypes implements EasyModelHostEntityTy
           ENTITY_TYPES.register(
               ModelEntityTypeIds.AMPHIBIOUS_ENTITY.getPath(),
               () ->
-                  EntityType.Builder.<EasyModelAmphibiousEntity>of(
-                          EasyModelAmphibiousEntity::new, MobCategory.CREATURE)
+                  EntityType.Builder.of(EasyModelAmphibiousEntity::new, MobCategory.CREATURE)
                       .sized(0.9f, 0.6f)
                       .clientTrackingRange(10)
                       .build(

@@ -70,8 +70,7 @@ public final class ModelTextureResolver {
     Map<Integer, Identifier> textures = new LinkedHashMap<>();
     List<ModelRenderProfileValidationIssue> issues = new ArrayList<>();
     for (int index : usedIndices) {
-      Identifier candidate =
-          candidateTexture(renderProfile, index, decodedTextures.get(index));
+      Identifier candidate = candidateTexture(renderProfile, index, decodedTextures.get(index));
       if (candidate == null) {
         textures.put(index, FALLBACK_TEXTURE);
         issues.add(

@@ -19,36 +19,24 @@
 
 package de.markusbordihn.easymodelentities.client.render;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 
-final class EasyModelVertexSink {
+class EasyModelVertexSinkTest {
 
-  private final VertexConsumer vertexConsumer;
-  private final PoseStack poseStack;
-  private final int packedLight;
-  private final int packedOverlay;
+  @Test
+  void forwardsPackedLightAndOverlay() {
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    EasyModelVertexSink sink =
+        new EasyModelVertexSink(vertexConsumer, new PoseStack(), 0x00120034, 0x00560078);
+    sink.vertex(1.0f, 2.0f, 3.0f, 0.25f, 0.75f, 0.0f, 1.0f, 0.0f);
 
-  EasyModelVertexSink(
-      VertexConsumer vertexConsumer, PoseStack poseStack, int packedLight, int packedOverlay) {
-    this.vertexConsumer = vertexConsumer;
-    this.poseStack = poseStack;
-    this.packedLight = packedLight;
-    this.packedOverlay = packedOverlay;
-  }
-
-  void vertex(
-      float x, float y, float z, float u, float v, float normalX, float normalY, float normalZ) {
-    if (this.vertexConsumer == null) {
-      return;
-    }
-
-    PoseStack.Pose pose = this.poseStack.last();
-    this.vertexConsumer.addVertex(pose.pose(), x, y, z);
-    this.vertexConsumer.setColor(255, 255, 255, 255);
-    this.vertexConsumer.setUv(u, v);
-    this.vertexConsumer.setOverlay(this.packedOverlay);
-    this.vertexConsumer.setLight(this.packedLight);
-    this.vertexConsumer.setNormal(pose, normalX, normalY, normalZ);
+    verify(vertexConsumer).setLight(0x00120034);
+    verify(vertexConsumer).setOverlay(0x00560078);
   }
 }

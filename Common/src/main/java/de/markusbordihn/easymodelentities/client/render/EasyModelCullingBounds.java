@@ -19,36 +19,36 @@
 
 package de.markusbordihn.easymodelentities.client.render;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import net.minecraft.world.phys.AABB;
 
-final class EasyModelVertexSink {
+final class EasyModelCullingBounds {
 
-  private final VertexConsumer vertexConsumer;
-  private final PoseStack poseStack;
-  private final int packedLight;
-  private final int packedOverlay;
+  private EasyModelCullingBounds() {}
 
-  EasyModelVertexSink(
-      VertexConsumer vertexConsumer, PoseStack poseStack, int packedLight, int packedOverlay) {
-    this.vertexConsumer = vertexConsumer;
-    this.poseStack = poseStack;
-    this.packedLight = packedLight;
-    this.packedOverlay = packedOverlay;
-  }
-
-  void vertex(
-      float x, float y, float z, float u, float v, float normalX, float normalY, float normalZ) {
-    if (this.vertexConsumer == null) {
-      return;
-    }
-
-    PoseStack.Pose pose = this.poseStack.last();
-    this.vertexConsumer.addVertex(pose.pose(), x, y, z);
-    this.vertexConsumer.setColor(255, 255, 255, 255);
-    this.vertexConsumer.setUv(u, v);
-    this.vertexConsumer.setOverlay(this.packedOverlay);
-    this.vertexConsumer.setLight(this.packedLight);
-    this.vertexConsumer.setNormal(pose, normalX, normalY, normalZ);
+  static AABB visibleBounds(
+      double entityX,
+      double entityY,
+      double entityZ,
+      float width,
+      float height,
+      Vec3f offset,
+      float yawDegrees) {
+    double yaw = Math.toRadians(yawDegrees);
+    double sin = Math.sin(yaw);
+    double cos = Math.cos(yaw);
+    double rotatedX = offset.x() * cos - offset.z() * sin;
+    double rotatedZ = offset.x() * sin + offset.z() * cos;
+    double halfWidth = width / 2.0;
+    double centerX = entityX + rotatedX;
+    double centerZ = entityZ + rotatedZ;
+    double baseY = entityY + offset.y();
+    return new AABB(
+        centerX - halfWidth,
+        baseY,
+        centerZ - halfWidth,
+        centerX + halfWidth,
+        baseY + height,
+        centerZ + halfWidth);
   }
 }

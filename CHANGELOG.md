@@ -5,6 +5,16 @@
 This change log includes the summarized changes. For the full changelog, please go to
 the [GitHub History][history] instead.
 
+### 2.2.0
+
+- Fixed Forge entity data serializers using load-order-dependent IDs when other mods register their
+  own serializers.
+- Fixed hurt, flash, and shader overlays being dropped by entity, block entity, and item renderers.
+- Fixed offset or rotated models being culled with incorrect visibility bounds.
+- Fixed touching faces disappearing from models whose textures can contain transparent pixels.
+- Improved compatibility with EntityCulling for entities and block entities using extended model
+  bounds.
+
 ### 2.1.0
 
 - Fixed a model whose only clips are numbered variants, such as `idle_2` and `idle_3`, silently

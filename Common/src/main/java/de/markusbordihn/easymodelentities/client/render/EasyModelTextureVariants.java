@@ -38,8 +38,7 @@ public final class EasyModelTextureVariants {
       Collections.synchronizedMap(
           new LinkedHashMap<>(64, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(
-                Map.Entry<Identifier, List<Identifier>> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<Identifier, List<Identifier>> eldest) {
               return size() > MAX_CACHE_ENTRIES;
             }
           });
@@ -50,8 +49,7 @@ public final class EasyModelTextureVariants {
 
   private EasyModelTextureVariants() {}
 
-  public static List<Identifier> variants(
-      Identifier baseTexture, ResourceManager resourceManager) {
+  public static List<Identifier> variants(Identifier baseTexture, ResourceManager resourceManager) {
     if (baseTexture == null || resourceManager == null) {
       return List.of();
     }

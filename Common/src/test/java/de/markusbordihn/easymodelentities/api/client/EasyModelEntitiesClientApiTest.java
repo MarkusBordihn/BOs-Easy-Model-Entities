@@ -62,8 +62,7 @@ import org.junit.jupiter.api.Test;
 
 class EasyModelEntitiesClientApiTest {
 
-  private static final Identifier MODEL_ID =
-      Identifier.fromNamespaceAndPath("example", "echo");
+  private static final Identifier MODEL_ID = Identifier.fromNamespaceAndPath("example", "echo");
   private static final String TEXTURE_DIRECTORY = "textures/entity/echo";
   private static final Identifier BODY =
       Identifier.fromNamespaceAndPath("example", TEXTURE_DIRECTORY + "/body.png");
@@ -126,8 +125,7 @@ class EasyModelEntitiesClientApiTest {
     return resourceManager;
   }
 
-  private static EasyModelRenderProfile renderProfile(
-      Identifier profileId, boolean renderable) {
+  private static EasyModelRenderProfile renderProfile(Identifier profileId, boolean renderable) {
     EasyModelRenderProfile renderProfile = mock(EasyModelRenderProfile.class);
     when(renderProfile.id()).thenReturn(profileId);
     when(renderProfile.isRenderable()).thenReturn(renderable);
