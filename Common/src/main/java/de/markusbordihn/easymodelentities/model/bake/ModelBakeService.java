@@ -185,7 +185,8 @@ public final class ModelBakeService implements EasyModelBakeService {
                   rootParts));
     }
 
-    ModelFaceOcclusionCuller.Result occlusion = ModelFaceOcclusionCuller.cull(rootParts, bodyType);
+    ModelFaceOcclusionCuller.Result occlusion =
+        ModelFaceOcclusionCuller.cull(rootParts, bodyType, false);
     rootParts = occlusion.rootParts();
     ModelEmptyCubePruner.Result pruned = ModelEmptyCubePruner.prune(rootParts);
     rootParts = pruned.rootParts();

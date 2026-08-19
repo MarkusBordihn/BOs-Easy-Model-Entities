@@ -31,7 +31,9 @@ import net.minecraft.world.phys.Vec3;
 public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity>
     implements BlockEntityRenderer<T, EasyModelBlockEntityRenderState> {
 
-  public EasyModelHostBlockEntityRenderer(BlockEntityRendererProvider.Context context) {}
+  public EasyModelHostBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
+    EasyModelEntityCullingCompat.register();
+  }
 
   @Override
   public EasyModelBlockEntityRenderState createRenderState() {
@@ -62,5 +64,10 @@ public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity
     }
     EasyModelBlockEntityRenderBackend.render(
         renderState, poseStack, submitNodeCollector, renderState.lightCoords);
+  }
+
+  @Override
+  public boolean shouldRenderOffScreen() {
+    return true;
   }
 }

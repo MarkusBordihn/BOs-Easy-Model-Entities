@@ -34,6 +34,9 @@ public final class EasyModelGameTests {
 
   static {
     TEST_FUNCTIONS.register("mod_registered", () -> SmokeTest::testModRegistered);
+    TEST_FUNCTIONS.register(
+        "entity_data_serializers_are_registered",
+        () -> EntityDataSerializerGameTest::serializersAreForgeRegistered);
 
     TEST_FUNCTIONS.register(
         "ground_entity_can_be_created", () -> HostEntityGameTestCases::groundEntityCanBeCreated);
@@ -49,8 +52,7 @@ public final class EasyModelGameTests {
         "nbt_preserves_runtime_contract_data",
         () -> HostEntityGameTestCases::nbtPreservesRuntimeContractData);
     TEST_FUNCTIONS.register(
-        "nbt_preserves_texture_setting",
-        () -> HostEntityGameTestCases::nbtPreservesTextureSetting);
+        "nbt_preserves_texture_setting", () -> HostEntityGameTestCases::nbtPreservesTextureSetting);
     TEST_FUNCTIONS.register(
         "invalid_nbt_resource_locations_fall_back_safely",
         () -> HostEntityGameTestCases::invalidNbtResourceLocationsFallBackSafely);

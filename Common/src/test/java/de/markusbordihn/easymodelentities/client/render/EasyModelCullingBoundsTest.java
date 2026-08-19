@@ -19,36 +19,33 @@
 
 package de.markusbordihn.easymodelentities.client.render;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-final class EasyModelVertexSink {
+import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import net.minecraft.world.phys.AABB;
+import org.junit.jupiter.api.Test;
 
-  private final VertexConsumer vertexConsumer;
-  private final PoseStack poseStack;
-  private final int packedLight;
-  private final int packedOverlay;
+class EasyModelCullingBoundsTest {
 
-  EasyModelVertexSink(
-      VertexConsumer vertexConsumer, PoseStack poseStack, int packedLight, int packedOverlay) {
-    this.vertexConsumer = vertexConsumer;
-    this.poseStack = poseStack;
-    this.packedLight = packedLight;
-    this.packedOverlay = packedOverlay;
+  private static void assertBounds(
+      AABB bounds, double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
+    assertEquals(minX, bounds.minX, 1.0e-6);
+    assertEquals(minY, bounds.minY, 1.0e-6);
+    assertEquals(minZ, bounds.minZ, 1.0e-6);
+    assertEquals(maxX, bounds.maxX, 1.0e-6);
+    assertEquals(maxY, bounds.maxY, 1.0e-6);
+    assertEquals(maxZ, bounds.maxZ, 1.0e-6);
   }
 
-  void vertex(
-      float x, float y, float z, float u, float v, float normalX, float normalY, float normalZ) {
-    if (this.vertexConsumer == null) {
-      return;
-    }
+  @Test
+  void rotatesVisibleBoundsOffsetWithEntityYaw() {
+    Vec3f offset = new Vec3f(2.0f, 1.0f, 3.0f);
+    AABB unrotated =
+        EasyModelCullingBounds.visibleBounds(10.0, 20.0, 30.0, 4.0f, 5.0f, offset, 0.0f);
+    AABB quarterTurn =
+        EasyModelCullingBounds.visibleBounds(10.0, 20.0, 30.0, 4.0f, 5.0f, offset, 90.0f);
 
-    PoseStack.Pose pose = this.poseStack.last();
-    this.vertexConsumer.addVertex(pose.pose(), x, y, z);
-    this.vertexConsumer.setColor(255, 255, 255, 255);
-    this.vertexConsumer.setUv(u, v);
-    this.vertexConsumer.setOverlay(this.packedOverlay);
-    this.vertexConsumer.setLight(this.packedLight);
-    this.vertexConsumer.setNormal(pose, normalX, normalY, normalZ);
+    assertBounds(unrotated, 10.0, 21.0, 31.0, 14.0, 26.0, 35.0);
+    assertBounds(quarterTurn, 5.0, 21.0, 30.0, 9.0, 26.0, 34.0);
   }
 }

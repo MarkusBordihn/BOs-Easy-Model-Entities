@@ -43,6 +43,7 @@ import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.util.Objects;
 import java.util.function.Supplier;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -74,10 +75,29 @@ public final class EasyModelBlockEntityRenderBackend {
         blockEntity,
         renderState,
         partialTick,
+        poseStack,
+        submitNodeCollector,
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
+  }
+
+  public static void render(
+      BlockEntity blockEntity,
+      EasyModelRenderState renderState,
+      float partialTick,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay) {
+    render(
+        blockEntity,
+        renderState,
+        partialTick,
         EasyModelBlockEntityRenderOptions.DEFAULT,
         poseStack,
         submitNodeCollector,
-        packedLight);
+        packedLight,
+        packedOverlay);
   }
 
   public static void extractRenderState(
@@ -193,6 +213,26 @@ public final class EasyModelBlockEntityRenderBackend {
       PoseStack poseStack,
       SubmitNodeCollector submitNodeCollector,
       int packedLight) {
+    render(
+        blockEntity,
+        renderState,
+        partialTick,
+        options,
+        poseStack,
+        submitNodeCollector,
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
+  }
+
+  public static void render(
+      BlockEntity blockEntity,
+      EasyModelRenderState renderState,
+      float partialTick,
+      EasyModelBlockEntityRenderOptions options,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay) {
     Objects.requireNonNull(blockEntity, "blockEntity");
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(poseStack, "poseStack");
@@ -229,7 +269,8 @@ public final class EasyModelBlockEntityRenderBackend {
         safeOptions.partPoseListener(),
         poseStack,
         submitNodeCollector,
-        packedLight);
+        packedLight,
+        packedOverlay);
     poseStack.popPose();
   }
 
@@ -299,9 +340,6 @@ public final class EasyModelBlockEntityRenderBackend {
             0.0f,
             0.0f));
   }
-
-  private record AnimationFrames(
-      EasyModelAnimationPlaybackFrame playbackFrame, EasyModelAnimationVariantFrame variantFrame) {}
 
   private static EasyModelAnimationSetting resolveSetting(
       EasyModelAnimation requestedAnimation, EasyModelAnimationSetting fallback) {
@@ -404,4 +442,7 @@ public final class EasyModelBlockEntityRenderBackend {
         bodyType,
         animation);
   }
+
+  private record AnimationFrames(
+      EasyModelAnimationPlaybackFrame playbackFrame, EasyModelAnimationVariantFrame variantFrame) {}
 }

@@ -55,8 +55,7 @@ import org.junit.jupiter.api.Test;
 
 class EasyModelTextureOverridesTest {
 
-  private static final Identifier MODEL_ID =
-      Identifier.fromNamespaceAndPath("example", "echo");
+  private static final Identifier MODEL_ID = Identifier.fromNamespaceAndPath("example", "echo");
   private static final Identifier BODY =
       Identifier.fromNamespaceAndPath("example", "textures/entity/echo.png");
   private static final Identifier SCREEN =

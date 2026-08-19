@@ -48,6 +48,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -141,6 +142,17 @@ public final class EasyModelEntityRenderBackend {
     renderState.partAnimator = safeOptions.partAnimator();
     renderState.partAnimationMode = safeOptions.partAnimationMode();
     renderState.scaleFactor = safeOptions.scale() == null ? 1.0f : safeOptions.scale();
+    renderState.packedOverlay = packedOverlay(entity);
+  }
+
+  public static int packedOverlay(Entity entity) {
+    if (!(entity instanceof LivingEntity livingEntity)) {
+      return OverlayTexture.NO_OVERLAY;
+    }
+
+    return OverlayTexture.pack(
+        OverlayTexture.u(0.0f),
+        OverlayTexture.v(livingEntity.hurtTime > 0 || livingEntity.deathTime > 0));
   }
 
   public static void render(
@@ -177,7 +189,8 @@ public final class EasyModelEntityRenderBackend {
             : renderState.partAnimationMode,
         poseStack,
         submitNodeCollector,
-        packedLight);
+        packedLight,
+        renderState.packedOverlay);
     poseStack.popPose();
   }
 
@@ -245,10 +258,31 @@ public final class EasyModelEntityRenderBackend {
         renderState,
         entityYaw,
         partialTick,
+        poseStack,
+        submitNodeCollector,
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
+  }
+
+  public static void render(
+      Entity entity,
+      EasyModelRenderState renderState,
+      float entityYaw,
+      float partialTick,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay) {
+    render(
+        entity,
+        renderState,
+        entityYaw,
+        partialTick,
         EasyModelEntityRenderOptions.DEFAULT,
         poseStack,
         submitNodeCollector,
-        packedLight);
+        packedLight,
+        packedOverlay);
   }
 
   public static void render(
@@ -260,6 +294,28 @@ public final class EasyModelEntityRenderBackend {
       PoseStack poseStack,
       SubmitNodeCollector submitNodeCollector,
       int packedLight) {
+    render(
+        entity,
+        renderState,
+        entityYaw,
+        partialTick,
+        options,
+        poseStack,
+        submitNodeCollector,
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
+  }
+
+  public static void render(
+      Entity entity,
+      EasyModelRenderState renderState,
+      float entityYaw,
+      float partialTick,
+      EasyModelEntityRenderOptions options,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay) {
     Objects.requireNonNull(entity, "entity");
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(poseStack, "poseStack");
@@ -296,7 +352,8 @@ public final class EasyModelEntityRenderBackend {
         resolveTextureSetting(safeOptions.textureSetting(), textureSetting(entity)),
         poseStack,
         submitNodeCollector,
-        packedLight);
+        packedLight,
+        packedOverlay);
   }
 
   private static AnimationFrames animationFrames(
@@ -345,9 +402,6 @@ public final class EasyModelEntityRenderBackend {
             attackAmount));
   }
 
-  private record AnimationFrames(
-      EasyModelAnimationPlaybackFrame playbackFrame, EasyModelAnimationVariantFrame variantFrame) {}
-
   public static void render(
       EasyModelRenderState renderState,
       float yaw,
@@ -379,7 +433,8 @@ public final class EasyModelEntityRenderBackend {
         safeOptions.textureSetting(),
         poseStack,
         submitNodeCollector,
-        packedLight);
+        packedLight,
+        OverlayTexture.NO_OVERLAY);
   }
 
   private static void render(
@@ -395,7 +450,8 @@ public final class EasyModelEntityRenderBackend {
       EasyModelTextureSetting textureSetting,
       PoseStack poseStack,
       SubmitNodeCollector submitNodeCollector,
-      int packedLight) {
+      int packedLight,
+      int packedOverlay) {
     render(
         renderState,
         yaw,
@@ -410,7 +466,8 @@ public final class EasyModelEntityRenderBackend {
         textureSetting,
         poseStack,
         submitNodeCollector,
-        packedLight);
+        packedLight,
+        packedOverlay);
   }
 
   private static void render(
@@ -427,7 +484,8 @@ public final class EasyModelEntityRenderBackend {
       EasyModelTextureSetting textureSetting,
       PoseStack poseStack,
       SubmitNodeCollector submitNodeCollector,
-      int packedLight) {
+      int packedLight,
+      int packedOverlay) {
     float scale = renderState.scale() * (options.scale() == null ? 1.0f : options.scale());
 
     poseStack.pushPose();
@@ -451,7 +509,8 @@ public final class EasyModelEntityRenderBackend {
         options.partPoseListener(),
         poseStack,
         submitNodeCollector,
-        packedLight);
+        packedLight,
+        packedOverlay);
     poseStack.popPose();
   }
 
@@ -631,6 +690,9 @@ public final class EasyModelEntityRenderBackend {
         ? entity.getEyeHeight()
         : EasyModelHostEntity.FALLBACK_EYE_HEIGHT;
   }
+
+  private record AnimationFrames(
+      EasyModelAnimationPlaybackFrame playbackFrame, EasyModelAnimationVariantFrame variantFrame) {}
 
   private static final class CapturingPartPoseListener implements EasyModelPartPoseListener {
 

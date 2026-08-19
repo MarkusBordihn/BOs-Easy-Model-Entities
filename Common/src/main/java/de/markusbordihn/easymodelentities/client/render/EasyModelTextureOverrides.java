@@ -55,8 +55,7 @@ public final class EasyModelTextureOverrides {
               new LinkedHashMap<>(64, 0.75f, true) {
                 @Override
                 protected boolean removeEldestEntry(
-                    Map.Entry<Identifier, Optional<ModelRenderProfileValidationIssue>>
-                        eldest) {
+                    Map.Entry<Identifier, Optional<ModelRenderProfileValidationIssue>> eldest) {
                   return size() > MAX_CACHE_ENTRIES;
                 }
               });
@@ -107,8 +106,7 @@ public final class EasyModelTextureOverrides {
     VALIDATED_TEXTURES.clear();
   }
 
-  public static Optional<Identifier> baseTexture(
-      EasyModelRenderState renderState, String slot) {
+  public static Optional<Identifier> baseTexture(EasyModelRenderState renderState, String slot) {
     if (renderState == null) {
       return Optional.empty();
     }

@@ -20,7 +20,6 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -28,7 +27,7 @@ import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.phys.AABB;
+import net.minecraft.world.entity.LivingEntity;
 
 public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
     extends EntityRenderer<T, EasyModelEntityRenderState> {
@@ -36,6 +35,11 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
   public EasyModelHostEntityRenderer(EntityRendererProvider.Context context) {
     super(context);
     this.shadowRadius = 0.3f;
+    EasyModelEntityCullingCompat.register();
+  }
+
+  private static float cullingYaw(Entity entity) {
+    return entity instanceof LivingEntity livingEntity ? livingEntity.yBodyRot : entity.getYRot();
   }
 
   @Override
@@ -87,19 +91,14 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
       return true;
     }
 
-    Vec3f offset = easyModelRenderState.visibleBoundsOffset();
-    double halfWidth = easyModelRenderState.visibleBoundsWidth() / 2.0;
-    double height = easyModelRenderState.visibleBoundsHeight();
-    double centerX = entity.getX() + offset.x();
-    double centerZ = entity.getZ() + offset.z();
-    double baseY = entity.getY() + offset.y();
     return frustum.isVisible(
-        new AABB(
-            centerX - halfWidth,
-            baseY,
-            centerZ - halfWidth,
-            centerX + halfWidth,
-            baseY + height,
-            centerZ + halfWidth));
+        EasyModelCullingBounds.visibleBounds(
+            entity.getX(),
+            entity.getY(),
+            entity.getZ(),
+            easyModelRenderState.visibleBoundsWidth(),
+            easyModelRenderState.visibleBoundsHeight(),
+            easyModelRenderState.visibleBoundsOffset(),
+            cullingYaw(entity)));
   }
 }

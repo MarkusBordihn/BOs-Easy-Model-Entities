@@ -24,6 +24,8 @@ import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
@@ -63,11 +65,16 @@ public final class EasyModelItemModelRenderer {
                 0.0f,
                 0.0f,
                 0.0f,
+                EasyModelHeadLook.NONE,
+                EasyModelAnimationPlaybackFrame.single(EasyModelAnimation.AUTO, 0.0f),
+                EasyModelAnimationVariantFrame.NONE,
+                EasyModelTextureSetting.EMPTY,
                 EasyModelPartAnimator.NONE,
                 EasyModelPartAnimationMode.ADD,
                 innerPoseStack,
                 submitNodeCollector,
-                LightCoordsUtil.FULL_BRIGHT));
+                LightCoordsUtil.FULL_BRIGHT,
+                packedOverlay));
   }
 
   private static void render(ItemStack stack, PoseStack poseStack, ModelRenderCallback callback) {

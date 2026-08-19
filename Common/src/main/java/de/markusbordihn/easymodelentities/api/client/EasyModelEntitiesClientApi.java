@@ -294,8 +294,7 @@ public final class EasyModelEntitiesClientApi {
         .orElse(List.of());
   }
 
-  public static List<Identifier> listTextureVariants(
-      Identifier profileId, String slot) {
+  public static List<Identifier> listTextureVariants(Identifier profileId, String slot) {
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(slot, "slot");
     return resolveRenderState(profileId, EasyModelAnimationSetting.AUTO)
