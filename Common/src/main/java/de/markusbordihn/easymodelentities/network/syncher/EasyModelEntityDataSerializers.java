@@ -33,6 +33,7 @@ public final class EasyModelEntityDataSerializers {
 
   public static final EntityDataSerializer<String> STRING = EntityDataSerializers.STRING;
   public static final EntityDataSerializer<Float> FLOAT = EntityDataSerializers.FLOAT;
+  public static final EntityDataSerializer<Integer> INT = EntityDataSerializers.INT;
   public static final EntityDataSerializer<ModelBodyType> BODY_TYPE =
       enumSerializer(ModelBodyType.class);
   public static final EntityDataSerializer<EasyModelAnimationSetting> ANIMATION_SETTING =

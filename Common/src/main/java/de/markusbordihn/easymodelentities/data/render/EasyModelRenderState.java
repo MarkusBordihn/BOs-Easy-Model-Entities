@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.data.render;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
@@ -42,7 +43,8 @@ public record EasyModelRenderState(
     ModelAnimationSettings animation,
     boolean fallbackModel,
     boolean fallbackTexture,
-    List<ModelRenderProfileValidationIssue> validationIssues) {
+    List<ModelRenderProfileValidationIssue> validationIssues,
+    float opacity) {
 
   public EasyModelRenderState {
     Objects.requireNonNull(bakedModel, "bakedModel");
@@ -53,6 +55,7 @@ public record EasyModelRenderState(
     requireNonNegativeFinite(shadowRadius, "shadowRadius");
     requireNonNegativeFinite(visibleBoundsWidth, "visibleBoundsWidth");
     requireNonNegativeFinite(visibleBoundsHeight, "visibleBoundsHeight");
+    EasyModelDisplaySettings.requireOpacity(opacity);
     if (visibleBoundsOffset == null) {
       visibleBoundsOffset = Vec3f.ZERO;
     }
@@ -83,7 +86,39 @@ public record EasyModelRenderState(
         animation,
         fallbackModel,
         fallbackTexture,
-        validationIssues);
+        validationIssues,
+        EasyModelDisplaySettings.DEFAULT_OPACITY);
+  }
+
+  public EasyModelRenderState(
+      BakedModel bakedModel,
+      ResourceLocation texture,
+      Map<Integer, ResourceLocation> textures,
+      float scale,
+      float shadowRadius,
+      float visibleBoundsWidth,
+      float visibleBoundsHeight,
+      Vec3f visibleBoundsOffset,
+      ModelBodyType bodyType,
+      ModelAnimationSettings animation,
+      boolean fallbackModel,
+      boolean fallbackTexture,
+      List<ModelRenderProfileValidationIssue> validationIssues) {
+    this(
+        bakedModel,
+        texture,
+        textures,
+        scale,
+        shadowRadius,
+        visibleBoundsWidth,
+        visibleBoundsHeight,
+        visibleBoundsOffset,
+        bodyType,
+        animation,
+        fallbackModel,
+        fallbackTexture,
+        validationIssues,
+        EasyModelDisplaySettings.DEFAULT_OPACITY);
   }
 
   private static void requirePositiveFinite(float value, String name) {

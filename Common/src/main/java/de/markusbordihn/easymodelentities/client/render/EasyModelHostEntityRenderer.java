@@ -26,7 +26,6 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -51,16 +50,6 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
     return entity instanceof LivingEntity livingEntity ? livingEntity.yBodyRot : entity.getYRot();
   }
 
-  private static int packedOverlay(Entity entity) {
-    if (!(entity instanceof LivingEntity livingEntity)) {
-      return OverlayTexture.NO_OVERLAY;
-    }
-
-    return OverlayTexture.pack(
-        OverlayTexture.u(0.0f),
-        OverlayTexture.v(livingEntity.hurtTime > 0 || livingEntity.deathTime > 0));
-  }
-
   @Override
   public void render(
       T entity,
@@ -78,8 +67,7 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
         partialTick,
         poseStack,
         bufferSource,
-        packedLight,
-        packedOverlay(entity));
+        packedLight);
     super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
   }
 

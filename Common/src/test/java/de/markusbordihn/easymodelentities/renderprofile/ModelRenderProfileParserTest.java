@@ -160,6 +160,47 @@ class ModelRenderProfileParserTest {
   }
 
   @Test
+  void parsesOpacity() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            """
+            {
+              "preset_type": "statue",
+              "rendering": {
+                "opacity": 0.4
+              }
+            }
+            """);
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(0.4f, renderProfile.opacity());
+  }
+
+  @Test
+  void defaultsToFullOpacity() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"static\"}");
+
+    assertEquals(1.0f, renderProfile.opacity());
+  }
+
+  @Test
+  void rejectsOpacityOutsideTheAllowedRangeWithoutKeepingIt() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            """
+            {
+              "preset_type": "statue",
+              "rendering": {
+                "opacity": 1.5
+              }
+            }
+            """);
+
+    assertEquals(ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, renderProfile.status());
+    assertEquals(1.0f, renderProfile.opacity());
+  }
+
+  @Test
   void settingsRecordsRejectInvalidDirectConstruction() {
     assertThrows(
         IllegalArgumentException.class,

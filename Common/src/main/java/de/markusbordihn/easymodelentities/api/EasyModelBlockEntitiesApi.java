@@ -19,6 +19,8 @@
 
 package de.markusbordihn.easymodelentities.api;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,6 +48,59 @@ public final class EasyModelBlockEntitiesApi {
     Objects.requireNonNull(profileId, "profileId");
     if (blockEntity instanceof EasyModelHostBlockEntity hostBlockEntity) {
       hostBlockEntity.setEasyModelProfileId(profileId);
+      return true;
+    }
+
+    return false;
+  }
+
+  public static EasyModelTextureSetting getTextureSetting(BlockEntity blockEntity) {
+    Objects.requireNonNull(blockEntity, "blockEntity");
+    if (blockEntity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelTextureSetting();
+    }
+
+    return EasyModelTextureSetting.EMPTY;
+  }
+
+  public static float getOpacity(BlockEntity blockEntity) {
+    Objects.requireNonNull(blockEntity, "blockEntity");
+    if (blockEntity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelOpacity();
+    }
+
+    return EasyModelDisplaySettings.NO_OPACITY;
+  }
+
+  public static boolean setOpacity(BlockEntity blockEntity, float opacity) {
+    Objects.requireNonNull(blockEntity, "blockEntity");
+    if (opacity != EasyModelDisplaySettings.NO_OPACITY) {
+      EasyModelDisplaySettings.requireOpacity(opacity);
+    }
+    if (blockEntity instanceof EasyModelHostBlockEntity hostBlockEntity) {
+      hostBlockEntity.setEasyModelOpacity(opacity);
+      return true;
+    }
+
+    return false;
+  }
+
+  public static int getLightLevel(BlockEntity blockEntity) {
+    Objects.requireNonNull(blockEntity, "blockEntity");
+    if (blockEntity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelLightLevel();
+    }
+
+    return EasyModelDisplaySettings.NO_LIGHT_LEVEL;
+  }
+
+  public static boolean setLightLevel(BlockEntity blockEntity, int lightLevel) {
+    Objects.requireNonNull(blockEntity, "blockEntity");
+    if (lightLevel != EasyModelDisplaySettings.NO_LIGHT_LEVEL) {
+      EasyModelDisplaySettings.requireLightLevel(lightLevel);
+    }
+    if (blockEntity instanceof EasyModelHostBlockEntity hostBlockEntity) {
+      hostBlockEntity.setEasyModelLightLevel(lightLevel);
       return true;
     }
 
