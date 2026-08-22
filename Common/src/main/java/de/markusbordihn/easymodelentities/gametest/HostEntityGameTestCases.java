@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.gametest;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.command.EasyModelBehaviorCommand;
@@ -258,6 +259,67 @@ public final class HostEntityGameTestCases {
     loadedHostEntity.setEasyModelTexture(EasyModelTextureSetting.EMPTY);
     if (!loadedHostEntity.getEasyModelTextureSetting().isEmpty()) {
       helper.fail("Clearing the texture setting did not reset the synched data.");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  public static void nbtPreservesDisplaySettings(GameTestHelper helper) {
+    installProfiles();
+    Optional<Entity> entity =
+        EasyModelServices.entityFactory()
+            .createEntity(helper.getLevel(), GROUND_PROFILE_ID, Vec3.ZERO);
+    if (entity.isEmpty() || !(entity.get() instanceof EasyModelHostEntity hostEntity)) {
+      helper.fail("Could not create host entity for display setting round trip.");
+      return;
+    }
+
+    TagValueOutput emptyOutput = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+    hostEntity.addAdditionalSaveData(emptyOutput);
+    CompoundTag emptyTag = emptyOutput.buildResult();
+    if (emptyTag.contains(EasyModelHostPersistence.OPACITY_TAG)
+        || emptyTag.contains(EasyModelHostPersistence.LIGHT_LEVEL_TAG)) {
+      helper.fail("An unset display setting was written to NBT.");
+      return;
+    }
+
+    hostEntity.setEasyModelOpacity(0.4f);
+    hostEntity.setEasyModelLightLevel(12);
+    if (Math.abs(hostEntity.getEasyModelOpacity() - 0.4f) > 0.0001f
+        || hostEntity.getEasyModelLightLevel() != 12) {
+      helper.fail("Synched data did not return the display settings.");
+      return;
+    }
+
+    TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+    hostEntity.addAdditionalSaveData(output);
+    CompoundTag compoundTag = output.buildResult();
+
+    Optional<Entity> loadedEntity =
+        EasyModelServices.entityFactory()
+            .createEntity(helper.getLevel(), GROUND_PROFILE_ID, Vec3.ZERO);
+    if (loadedEntity.isEmpty()
+        || !(loadedEntity.get() instanceof EasyModelHostEntity loadedHostEntity)) {
+      helper.fail("Could not create host entity for display setting load.");
+      return;
+    }
+
+    loadedHostEntity.readAdditionalSaveData(
+        TagValueInput.create(
+            ProblemReporter.DISCARDING, helper.getLevel().registryAccess(), compoundTag));
+    if (Math.abs(loadedHostEntity.getEasyModelOpacity() - 0.4f) > 0.0001f
+        || loadedHostEntity.getEasyModelLightLevel() != 12) {
+      helper.fail("NBT load did not preserve the display settings.");
+      return;
+    }
+
+    loadedHostEntity.setEasyModelOpacity(EasyModelDisplaySettings.NO_OPACITY);
+    loadedHostEntity.setEasyModelLightLevel(EasyModelDisplaySettings.NO_LIGHT_LEVEL);
+    if (EasyModelDisplaySettings.hasOpacityOverride(loadedHostEntity.getEasyModelOpacity())
+        || EasyModelDisplaySettings.hasLightLevelOverride(
+            loadedHostEntity.getEasyModelLightLevel())) {
+      helper.fail("Clearing the display settings did not reset the synched data.");
       return;
     }
 

@@ -160,4 +160,69 @@ class EasyModelEntityRenderOptionsTest {
         EasyModelEntityRenderOptions.DEFAULT.withTexture("screen", SCREEN),
         EasyModelEntityRenderOptions.DEFAULT);
   }
+
+  @Test
+  void defaultHasNoDisplayOverrides() {
+    assertNull(EasyModelEntityRenderOptions.DEFAULT.opacity());
+    assertNull(EasyModelEntityRenderOptions.DEFAULT.lightLevel());
+    assertNull(EasyModelEntityRenderOptions.DEFAULT.packedOverlay());
+  }
+
+  @Test
+  void withOpacityKeepsOtherComponents() {
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT.withScale(2.0f).withOpacity(0.4f);
+
+    assertEquals(0.4f, options.opacity());
+    assertEquals(2.0f, options.scale());
+  }
+
+  @Test
+  void rejectsOpacityOutsideTheAllowedRange() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withOpacity(-0.1f));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withOpacity(1.1f));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withOpacity(Float.NaN));
+  }
+
+  @Test
+  void rejectsLightLevelOutsideTheAllowedRange() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withLightLevel(-1));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelEntityRenderOptions.DEFAULT.withLightLevel(16));
+  }
+
+  @Test
+  void displayOverridesCanBeRemovedExplicitly() {
+    EasyModelEntityRenderOptions options =
+        EasyModelEntityRenderOptions.DEFAULT
+            .withOpacity(0.4f)
+            .withLightLevel(15)
+            .withOverlay(0x00560078)
+            .withoutOpacityOverride()
+            .withoutLightLevelOverride()
+            .withoutOverlayOverride();
+
+    assertNull(options.opacity());
+    assertNull(options.lightLevel());
+    assertNull(options.packedOverlay());
+  }
+
+  @Test
+  void optionsWithTheSameDisplayOverridesAreEqual() {
+    assertEquals(
+        EasyModelEntityRenderOptions.DEFAULT.withOpacity(0.4f).withLightLevel(15),
+        EasyModelEntityRenderOptions.DEFAULT.withOpacity(0.4f).withLightLevel(15));
+    assertNotEquals(
+        EasyModelEntityRenderOptions.DEFAULT.withOpacity(0.4f),
+        EasyModelEntityRenderOptions.DEFAULT.withOpacity(0.5f));
+  }
 }

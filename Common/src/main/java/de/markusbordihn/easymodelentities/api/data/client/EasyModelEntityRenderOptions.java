@@ -22,6 +22,7 @@ package de.markusbordihn.easymodelentities.api.data.client;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureBlend;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import java.util.Objects;
@@ -38,7 +39,10 @@ public final class EasyModelEntityRenderOptions {
           EasyModelPartPoseListener.NONE,
           null,
           null,
-          EasyModelTextureSetting.EMPTY);
+          EasyModelTextureSetting.EMPTY,
+          null,
+          null,
+          null);
 
   private final Float scale;
   private final Float animationTicks;
@@ -48,6 +52,9 @@ public final class EasyModelEntityRenderOptions {
   private final EasyModelAnimation animation;
   private final EasyModelHeadLook headLook;
   private final EasyModelTextureSetting textureSetting;
+  private final Float opacity;
+  private final Integer lightLevel;
+  private final Integer packedOverlay;
 
   private EasyModelEntityRenderOptions(
       Float scale,
@@ -57,7 +64,10 @@ public final class EasyModelEntityRenderOptions {
       EasyModelPartPoseListener partPoseListener,
       EasyModelAnimation animation,
       EasyModelHeadLook headLook,
-      EasyModelTextureSetting textureSetting) {
+      EasyModelTextureSetting textureSetting,
+      Float opacity,
+      Integer lightLevel,
+      Integer packedOverlay) {
     this.scale = scale;
     this.animationTicks = animationTicks;
     this.partAnimator = Objects.requireNonNull(partAnimator, "partAnimator");
@@ -66,6 +76,9 @@ public final class EasyModelEntityRenderOptions {
     this.animation = animation;
     this.headLook = headLook;
     this.textureSetting = Objects.requireNonNull(textureSetting, "textureSetting");
+    this.opacity = opacity;
+    this.lightLevel = lightLevel;
+    this.packedOverlay = packedOverlay;
   }
 
   private static EasyModelEntityRenderOptions copy(
@@ -76,7 +89,10 @@ public final class EasyModelEntityRenderOptions {
       EasyModelPartPoseListener partPoseListener,
       EasyModelAnimation animation,
       EasyModelHeadLook headLook,
-      EasyModelTextureSetting textureSetting) {
+      EasyModelTextureSetting textureSetting,
+      Float opacity,
+      Integer lightLevel,
+      Integer packedOverlay) {
     return new EasyModelEntityRenderOptions(
         scale,
         animationTicks,
@@ -85,7 +101,10 @@ public final class EasyModelEntityRenderOptions {
         partPoseListener,
         animation,
         headLook,
-        textureSetting);
+        textureSetting,
+        opacity,
+        lightLevel,
+        packedOverlay);
   }
 
   private static void requirePositiveFinite(float value, String name) {
@@ -132,6 +151,18 @@ public final class EasyModelEntityRenderOptions {
     return this.textureSetting;
   }
 
+  public Float opacity() {
+    return this.opacity;
+  }
+
+  public Integer lightLevel() {
+    return this.lightLevel;
+  }
+
+  public Integer packedOverlay() {
+    return this.packedOverlay;
+  }
+
   public EasyModelEntityRenderOptions withScale(float scale) {
     requirePositiveFinite(scale, "scale");
     return copy(
@@ -142,7 +173,10 @@ public final class EasyModelEntityRenderOptions {
         this.partPoseListener,
         this.animation,
         this.headLook,
-        this.textureSetting);
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   public EasyModelEntityRenderOptions withAnimationTicks(float animationTicks) {
@@ -155,7 +189,10 @@ public final class EasyModelEntityRenderOptions {
         this.partPoseListener,
         this.animation,
         this.headLook,
-        this.textureSetting);
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   public EasyModelEntityRenderOptions withPartAnimator(EasyModelPartAnimator partAnimator) {
@@ -167,7 +204,10 @@ public final class EasyModelEntityRenderOptions {
         this.partPoseListener,
         this.animation,
         this.headLook,
-        this.textureSetting);
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   public EasyModelEntityRenderOptions withPartAnimationMode(
@@ -180,7 +220,10 @@ public final class EasyModelEntityRenderOptions {
         this.partPoseListener,
         this.animation,
         this.headLook,
-        this.textureSetting);
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   public EasyModelEntityRenderOptions withPartPoseListener(
@@ -193,7 +236,10 @@ public final class EasyModelEntityRenderOptions {
         Objects.requireNonNull(partPoseListener, "partPoseListener"),
         this.animation,
         this.headLook,
-        this.textureSetting);
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   public EasyModelEntityRenderOptions withAnimation(EasyModelAnimation animation) {
@@ -205,7 +251,10 @@ public final class EasyModelEntityRenderOptions {
         this.partPoseListener,
         Objects.requireNonNull(animation, "animation"),
         this.headLook,
-        this.textureSetting);
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   public EasyModelEntityRenderOptions withAnimation(String animation) {
@@ -221,7 +270,10 @@ public final class EasyModelEntityRenderOptions {
         this.partPoseListener,
         null,
         this.headLook,
-        this.textureSetting);
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   public EasyModelEntityRenderOptions withHeadLook(EasyModelHeadLook headLook) {
@@ -233,7 +285,10 @@ public final class EasyModelEntityRenderOptions {
         this.partPoseListener,
         this.animation,
         Objects.requireNonNull(headLook, "headLook"),
-        this.textureSetting);
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   public EasyModelEntityRenderOptions withTextureSetting(EasyModelTextureSetting textureSetting) {
@@ -245,7 +300,10 @@ public final class EasyModelEntityRenderOptions {
         this.partPoseListener,
         this.animation,
         this.headLook,
-        Objects.requireNonNull(textureSetting, "textureSetting"));
+        Objects.requireNonNull(textureSetting, "textureSetting"),
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   public EasyModelEntityRenderOptions withTexture(String slot, Identifier texture) {
@@ -265,6 +323,98 @@ public final class EasyModelEntityRenderOptions {
     return this.withTextureSetting(EasyModelTextureSetting.EMPTY);
   }
 
+  public EasyModelEntityRenderOptions withOpacity(float opacity) {
+    EasyModelDisplaySettings.requireOpacity(opacity);
+    return copy(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation,
+        this.headLook,
+        this.textureSetting,
+        opacity,
+        this.lightLevel,
+        this.packedOverlay);
+  }
+
+  public EasyModelEntityRenderOptions withoutOpacityOverride() {
+    return copy(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation,
+        this.headLook,
+        this.textureSetting,
+        null,
+        this.lightLevel,
+        this.packedOverlay);
+  }
+
+  public EasyModelEntityRenderOptions withLightLevel(int lightLevel) {
+    EasyModelDisplaySettings.requireLightLevel(lightLevel);
+    return copy(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation,
+        this.headLook,
+        this.textureSetting,
+        this.opacity,
+        lightLevel,
+        this.packedOverlay);
+  }
+
+  public EasyModelEntityRenderOptions withoutLightLevelOverride() {
+    return copy(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation,
+        this.headLook,
+        this.textureSetting,
+        this.opacity,
+        null,
+        this.packedOverlay);
+  }
+
+  public EasyModelEntityRenderOptions withOverlay(int packedOverlay) {
+    return copy(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation,
+        this.headLook,
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        packedOverlay);
+  }
+
+  public EasyModelEntityRenderOptions withoutOverlayOverride() {
+    return copy(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation,
+        this.headLook,
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        null);
+  }
+
   @Override
   public boolean equals(Object object) {
     if (this == object) {
@@ -281,7 +431,10 @@ public final class EasyModelEntityRenderOptions {
         && this.partPoseListener.equals(options.partPoseListener)
         && Objects.equals(this.animation, options.animation)
         && Objects.equals(this.headLook, options.headLook)
-        && this.textureSetting.equals(options.textureSetting);
+        && this.textureSetting.equals(options.textureSetting)
+        && Objects.equals(this.opacity, options.opacity)
+        && Objects.equals(this.lightLevel, options.lightLevel)
+        && Objects.equals(this.packedOverlay, options.packedOverlay);
   }
 
   @Override
@@ -294,7 +447,10 @@ public final class EasyModelEntityRenderOptions {
         this.partPoseListener,
         this.animation,
         this.headLook,
-        this.textureSetting);
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay);
   }
 
   @Override
@@ -315,6 +471,12 @@ public final class EasyModelEntityRenderOptions {
         + this.headLook
         + ", textureSetting="
         + this.textureSetting
+        + ", opacity="
+        + this.opacity
+        + ", lightLevel="
+        + this.lightLevel
+        + ", packedOverlay="
+        + this.packedOverlay
         + "]";
   }
 }

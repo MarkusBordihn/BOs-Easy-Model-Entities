@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.data.renderprofile;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 
 public record ModelRenderSettings(
@@ -26,16 +27,33 @@ public record ModelRenderSettings(
     float shadowRadius,
     float visibleBoundsWidth,
     float visibleBoundsHeight,
-    Vec3f visibleBoundsOffset) {
+    Vec3f visibleBoundsOffset,
+    float opacity) {
 
   public ModelRenderSettings {
     requirePositiveFinite(scale, "scale");
     requireNonNegativeFinite(shadowRadius, "shadowRadius");
     requireNonNegativeFinite(visibleBoundsWidth, "visibleBoundsWidth");
     requireNonNegativeFinite(visibleBoundsHeight, "visibleBoundsHeight");
+    EasyModelDisplaySettings.requireOpacity(opacity);
     if (visibleBoundsOffset == null) {
       visibleBoundsOffset = Vec3f.ZERO;
     }
+  }
+
+  public ModelRenderSettings(
+      float scale,
+      float shadowRadius,
+      float visibleBoundsWidth,
+      float visibleBoundsHeight,
+      Vec3f visibleBoundsOffset) {
+    this(
+        scale,
+        shadowRadius,
+        visibleBoundsWidth,
+        visibleBoundsHeight,
+        visibleBoundsOffset,
+        EasyModelDisplaySettings.DEFAULT_OPACITY);
   }
 
   private static void requirePositiveFinite(float value, String name) {

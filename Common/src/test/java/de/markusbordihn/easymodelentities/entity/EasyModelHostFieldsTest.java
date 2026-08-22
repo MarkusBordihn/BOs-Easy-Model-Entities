@@ -47,6 +47,8 @@ class EasyModelHostFieldsTest {
         accessor(),
         accessor(),
         accessor(),
+        accessor(),
+        accessor(),
         accessor());
   }
 
@@ -65,6 +67,8 @@ class EasyModelHostFieldsTest {
     assertFalse(fields.isRuntimeContractField(fields.lookAtPlayers()));
     assertFalse(fields.isRuntimeContractField(fields.randomStroll()));
     assertFalse(fields.isRuntimeContractField(fields.texture()));
+    assertFalse(fields.isRuntimeContractField(fields.opacity()));
+    assertFalse(fields.isRuntimeContractField(fields.lightLevel()));
     assertFalse(fields.isRuntimeContractField(accessor()));
   }
 

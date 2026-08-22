@@ -26,6 +26,7 @@ import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
@@ -143,7 +144,12 @@ public final class EasyModelEntityRenderBackend {
     renderState.partAnimator = safeOptions.partAnimator();
     renderState.partAnimationMode = safeOptions.partAnimationMode();
     renderState.scaleFactor = safeOptions.scale() == null ? 1.0f : safeOptions.scale();
-    renderState.packedOverlay = packedOverlay(entity);
+    renderState.packedOverlay =
+        resolveOverlay(safeOptions.packedOverlay(), packedOverlay(entity), entity);
+    renderState.opacity =
+        resolveOpacity(
+            safeOptions.opacity(), opacity(entity), renderState.easyModelRenderState.opacity());
+    renderState.lightLevel = resolveLightLevel(safeOptions.lightLevel(), lightLevel(entity));
   }
 
   public static int packedOverlay(Entity entity) {
@@ -191,7 +197,9 @@ public final class EasyModelEntityRenderBackend {
         poseStack,
         submitNodeCollector,
         packedLight,
-        renderState.packedOverlay);
+        renderState.packedOverlay,
+        renderState.opacity,
+        renderState.lightLevel);
     poseStack.popPose();
   }
 
@@ -354,7 +362,9 @@ public final class EasyModelEntityRenderBackend {
         poseStack,
         bufferSource,
         packedLight,
-        packedOverlay);
+        resolveOverlay(safeOptions.packedOverlay(), packedOverlay, entity),
+        resolveOpacity(safeOptions.opacity(), opacity(entity), renderState.opacity()),
+        resolveLightLevel(safeOptions.lightLevel(), lightLevel(entity)));
   }
 
   private static AnimationFrames animationFrames(
@@ -435,7 +445,10 @@ public final class EasyModelEntityRenderBackend {
         poseStack,
         bufferSource,
         packedLight,
-        OverlayTexture.NO_OVERLAY);
+        resolveOverlay(safeOptions.packedOverlay(), OverlayTexture.NO_OVERLAY),
+        resolveOpacity(
+            safeOptions.opacity(), EasyModelDisplaySettings.NO_OPACITY, renderState.opacity()),
+        resolveLightLevel(safeOptions.lightLevel(), EasyModelDisplaySettings.NO_LIGHT_LEVEL));
   }
 
   private static void render(
@@ -452,7 +465,9 @@ public final class EasyModelEntityRenderBackend {
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight,
-      int packedOverlay) {
+      int packedOverlay,
+      float opacity,
+      int lightLevel) {
     render(
         renderState,
         yaw,
@@ -468,7 +483,9 @@ public final class EasyModelEntityRenderBackend {
         poseStack,
         bufferSource,
         packedLight,
-        packedOverlay);
+        packedOverlay,
+        opacity,
+        lightLevel);
   }
 
   private static void render(
@@ -486,7 +503,9 @@ public final class EasyModelEntityRenderBackend {
       PoseStack poseStack,
       MultiBufferSource bufferSource,
       int packedLight,
-      int packedOverlay) {
+      int packedOverlay,
+      float opacity,
+      int lightLevel) {
     float scale = renderState.scale() * (options.scale() == null ? 1.0f : options.scale());
 
     poseStack.pushPose();
@@ -511,7 +530,9 @@ public final class EasyModelEntityRenderBackend {
         poseStack,
         bufferSource,
         packedLight,
-        packedOverlay);
+        packedOverlay,
+        opacity,
+        lightLevel);
     poseStack.popPose();
   }
 
@@ -591,6 +612,68 @@ public final class EasyModelEntityRenderBackend {
     }
 
     return EasyModelTextureSetting.EMPTY;
+  }
+
+  private static float resolveOpacity(Float requested, float hostOpacity, float profileOpacity) {
+    if (requested != null) {
+      return EasyModelDisplaySettings.clampOpacity(requested);
+    }
+    if (EasyModelDisplaySettings.hasOpacityOverride(hostOpacity)) {
+      return EasyModelDisplaySettings.clampOpacity(hostOpacity);
+    }
+
+    return EasyModelDisplaySettings.clampOpacity(profileOpacity);
+  }
+
+  private static float opacity(Entity entity) {
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      return hostEntity.getEasyModelOpacity();
+    }
+    if (entity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelOpacity();
+    }
+
+    return EasyModelDisplaySettings.NO_OPACITY;
+  }
+
+  private static int resolveLightLevel(Integer requested, int fallback) {
+    return EasyModelDisplaySettings.clampLightLevel(requested == null ? fallback : requested);
+  }
+
+  private static int lightLevel(Entity entity) {
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      return hostEntity.getEasyModelLightLevel();
+    }
+    if (entity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelLightLevel();
+    }
+
+    return EasyModelDisplaySettings.NO_LIGHT_LEVEL;
+  }
+
+  private static int resolveOverlay(Integer requested, int packedOverlay) {
+    return requested == null ? packedOverlay : requested;
+  }
+
+  private static int resolveOverlay(Integer requested, int packedOverlay, Entity entity) {
+    if (requested != null) {
+      return requested;
+    }
+    if (packedOverlay != OverlayTexture.NO_OVERLAY) {
+      return packedOverlay;
+    }
+
+    return hurtOverlay(entity);
+  }
+
+  public static int hurtOverlay(Entity entity) {
+    if (!(entity instanceof LivingEntity livingEntity)) {
+      return OverlayTexture.NO_OVERLAY;
+    }
+
+    return OverlayTexture.pack(
+        OverlayTexture.u(0.0f),
+        OverlayTexture.v(livingEntity.hurtTime > 0 || livingEntity.deathTime > 0));
   }
 
   private static EasyModelAnimationPlaybackFrame applySetting(

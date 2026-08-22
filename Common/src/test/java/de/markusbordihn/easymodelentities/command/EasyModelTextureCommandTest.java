@@ -87,8 +87,8 @@ class EasyModelTextureCommandTest {
   }
 
   @Test
-  void parsesEntityAndBlockQueryCommands() {
-    assertParses("easy_model_entities texture query entity @e");
-    assertParses("easy_model_entities texture query block 1 64 -3");
+  void parsesEntityAndBlockGetCommands() {
+    assertParses("easy_model_entities texture get entity @e");
+    assertParses("easy_model_entities texture get block 1 64 -3");
   }
 }

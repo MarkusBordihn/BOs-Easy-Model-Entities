@@ -36,7 +36,9 @@ public record EasyModelHostFields(
     EntityDataAccessor<EasyModelAnimationSetting> animation,
     EntityDataAccessor<Boolean> lookAtPlayers,
     EntityDataAccessor<Boolean> randomStroll,
-    EntityDataAccessor<EasyModelTextureSetting> texture) {
+    EntityDataAccessor<EasyModelTextureSetting> texture,
+    EntityDataAccessor<Float> opacity,
+    EntityDataAccessor<Integer> lightLevel) {
 
   public EasyModelHostFields {
     Objects.requireNonNull(profileId, "profileId");
@@ -50,6 +52,8 @@ public record EasyModelHostFields(
     Objects.requireNonNull(lookAtPlayers, "lookAtPlayers");
     Objects.requireNonNull(randomStroll, "randomStroll");
     Objects.requireNonNull(texture, "texture");
+    Objects.requireNonNull(opacity, "opacity");
+    Objects.requireNonNull(lightLevel, "lightLevel");
   }
 
   public boolean isRuntimeContractField(EntityDataAccessor<?> entityDataAccessor) {

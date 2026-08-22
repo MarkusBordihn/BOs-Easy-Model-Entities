@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.api;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import net.minecraft.resources.Identifier;
 
@@ -41,5 +42,13 @@ public interface EasyModelRenderable {
 
   default EasyModelTextureSetting getEasyModelTextureSetting() {
     return EasyModelTextureSetting.EMPTY;
+  }
+
+  default float getEasyModelOpacity() {
+    return EasyModelDisplaySettings.NO_OPACITY;
+  }
+
+  default int getEasyModelLightLevel() {
+    return EasyModelDisplaySettings.NO_LIGHT_LEVEL;
   }
 }

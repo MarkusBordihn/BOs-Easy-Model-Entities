@@ -31,7 +31,7 @@ class EasyModelApiContractTest {
   @Test
   void exposesSchemaVersion() {
     assertEquals("0.2.0", EasyModelApiContract.schemaVersion());
-    assertEquals("2.1.0", EasyModelApiContract.apiVersion());
+    assertEquals("2.3.0", EasyModelApiContract.apiVersion());
     assertEquals(List.of("0.1.0", "0.2.0"), EasyModelApiContract.supportedSchemaVersions());
   }
 

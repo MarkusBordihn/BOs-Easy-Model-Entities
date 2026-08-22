@@ -54,6 +54,9 @@ public final class EasyModelGameTests {
     TEST_FUNCTIONS.register(
         "nbt_preserves_texture_setting", () -> HostEntityGameTestCases::nbtPreservesTextureSetting);
     TEST_FUNCTIONS.register(
+        "nbt_preserves_display_settings",
+        () -> HostEntityGameTestCases::nbtPreservesDisplaySettings);
+    TEST_FUNCTIONS.register(
         "invalid_nbt_resource_locations_fall_back_safely",
         () -> HostEntityGameTestCases::invalidNbtResourceLocationsFallBackSafely);
     TEST_FUNCTIONS.register(
