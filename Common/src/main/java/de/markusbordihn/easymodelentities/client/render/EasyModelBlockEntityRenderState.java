@@ -21,10 +21,12 @@ package de.markusbordihn.easymodelentities.client.render;
 
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 
 @SuppressWarnings("java:S1104")
 public class EasyModelBlockEntityRenderState extends BlockEntityRenderState {
@@ -35,6 +37,9 @@ public class EasyModelBlockEntityRenderState extends BlockEntityRenderState {
   public EasyModelTextureSetting textureSetting = EasyModelTextureSetting.EMPTY;
   public EasyModelPartAnimator partAnimator = EasyModelPartAnimator.NONE;
   public EasyModelPartAnimationMode partAnimationMode = EasyModelPartAnimationMode.ADD;
+  public int packedOverlay = OverlayTexture.NO_OVERLAY;
+  public float opacity = EasyModelDisplaySettings.DEFAULT_OPACITY;
+  public int lightLevel = EasyModelDisplaySettings.NO_LIGHT_LEVEL;
   public float scaleFactor = 1.0f;
   public float ageInTicks;
   public float yawDegrees;

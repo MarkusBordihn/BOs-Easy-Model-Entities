@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.client.render;
 
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
@@ -39,6 +40,8 @@ public class EasyModelEntityRenderState extends EntityRenderState {
   public EasyModelPartAnimationMode partAnimationMode = EasyModelPartAnimationMode.ADD;
   public EasyModelHeadLook headLook = EasyModelHeadLook.NONE;
   public int packedOverlay = OverlayTexture.NO_OVERLAY;
+  public float opacity = EasyModelDisplaySettings.DEFAULT_OPACITY;
+  public int lightLevel = EasyModelDisplaySettings.NO_LIGHT_LEVEL;
   public float scaleFactor = 1.0f;
   public float entityYaw;
   public float limbSwing;

@@ -20,9 +20,12 @@
 package de.markusbordihn.easymodelentities.api;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelBodyType;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelProfileInfo;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
+import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import java.util.List;
@@ -86,6 +89,68 @@ public final class EasyModelEntitiesApi {
     }
 
     return Optional.empty();
+  }
+
+  public static float getOpacity(Entity entity) {
+    Objects.requireNonNull(entity, "entity");
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      return hostEntity.getEasyModelOpacity();
+    }
+    if (entity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelOpacity();
+    }
+
+    return EasyModelDisplaySettings.NO_OPACITY;
+  }
+
+  public static boolean setOpacity(Entity entity, float opacity) {
+    Objects.requireNonNull(entity, "entity");
+    if (opacity != EasyModelDisplaySettings.NO_OPACITY) {
+      EasyModelDisplaySettings.requireOpacity(opacity);
+    }
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      hostEntity.setEasyModelOpacity(opacity);
+      return true;
+    }
+
+    return false;
+  }
+
+  public static int getLightLevel(Entity entity) {
+    Objects.requireNonNull(entity, "entity");
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      return hostEntity.getEasyModelLightLevel();
+    }
+    if (entity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelLightLevel();
+    }
+
+    return EasyModelDisplaySettings.NO_LIGHT_LEVEL;
+  }
+
+  public static boolean setLightLevel(Entity entity, int lightLevel) {
+    Objects.requireNonNull(entity, "entity");
+    if (lightLevel != EasyModelDisplaySettings.NO_LIGHT_LEVEL) {
+      EasyModelDisplaySettings.requireLightLevel(lightLevel);
+    }
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      hostEntity.setEasyModelLightLevel(lightLevel);
+      return true;
+    }
+
+    return false;
+  }
+
+  public static EasyModelTextureSetting getTextureSetting(Entity entity) {
+    Objects.requireNonNull(entity, "entity");
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      return hostEntity.getEasyModelTextureSetting();
+    }
+    if (entity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelTextureSetting();
+    }
+
+    return EasyModelTextureSetting.EMPTY;
   }
 
   private static EasyModelProfileInfo profileInfo(EasyModelEntityProfile profile) {

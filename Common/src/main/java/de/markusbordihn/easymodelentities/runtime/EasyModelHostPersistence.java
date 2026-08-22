@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.runtime;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import net.minecraft.resources.Identifier;
@@ -34,6 +35,8 @@ public final class EasyModelHostPersistence {
   public static final String BODY_TYPE_TAG = "BodyType";
   public static final String ANIMATION_TAG = "Animation";
   public static final String TEXTURE_TAG = "Texture";
+  public static final String OPACITY_TAG = "Opacity";
+  public static final String LIGHT_LEVEL_TAG = "LightLevel";
 
   private EasyModelHostPersistence() {}
 
@@ -53,7 +56,9 @@ public final class EasyModelHostPersistence {
         valueInput.getStringOr(VERSION_TAG, ""),
         ModelBodyType.bySerializedName(valueInput.getStringOr(BODY_TYPE_TAG, "")),
         readAnimation(valueInput),
-        readTexture(valueInput));
+        readTexture(valueInput),
+        readOpacity(valueInput),
+        readLightLevel(valueInput));
   }
 
   public static void write(
@@ -63,7 +68,9 @@ public final class EasyModelHostPersistence {
       String version,
       ModelBodyType bodyType,
       EasyModelAnimationSetting animation,
-      EasyModelTextureSetting texture) {
+      EasyModelTextureSetting texture,
+      float opacity,
+      int lightLevel) {
     if (profileId != null) {
       valueOutput.putString(PROFILE_ID_TAG, profileId.toString());
     }
@@ -74,6 +81,8 @@ public final class EasyModelHostPersistence {
     valueOutput.putString(BODY_TYPE_TAG, bodyType != null ? bodyType.getSerializedName() : "");
     writeAnimation(valueOutput, animation);
     writeTexture(valueOutput, texture);
+    writeOpacity(valueOutput, opacity);
+    writeLightLevel(valueOutput, lightLevel);
   }
 
   public static void writeAnimation(ValueOutput valueOutput, EasyModelAnimationSetting animation) {
@@ -90,6 +99,34 @@ public final class EasyModelHostPersistence {
     }
 
     valueOutput.store(TEXTURE_TAG, EasyModelTextureSetting.CODEC, texture);
+  }
+
+  public static void writeOpacity(ValueOutput valueOutput, float opacity) {
+    if (!EasyModelDisplaySettings.hasOpacityOverride(opacity)) {
+      valueOutput.discard(OPACITY_TAG);
+      return;
+    }
+
+    valueOutput.putFloat(OPACITY_TAG, EasyModelDisplaySettings.clampOpacityOverride(opacity));
+  }
+
+  public static void writeLightLevel(ValueOutput valueOutput, int lightLevel) {
+    if (lightLevel <= EasyModelDisplaySettings.NO_LIGHT_LEVEL) {
+      valueOutput.discard(LIGHT_LEVEL_TAG);
+      return;
+    }
+
+    valueOutput.putInt(LIGHT_LEVEL_TAG, EasyModelDisplaySettings.clampLightLevel(lightLevel));
+  }
+
+  private static float readOpacity(ValueInput valueInput) {
+    return EasyModelDisplaySettings.clampOpacityOverride(
+        valueInput.getFloatOr(OPACITY_TAG, EasyModelDisplaySettings.NO_OPACITY));
+  }
+
+  private static int readLightLevel(ValueInput valueInput) {
+    return EasyModelDisplaySettings.clampLightLevel(
+        valueInput.getIntOr(LIGHT_LEVEL_TAG, EasyModelDisplaySettings.NO_LIGHT_LEVEL));
   }
 
   private static EasyModelAnimationSetting readAnimation(ValueInput valueInput) {
@@ -110,5 +147,7 @@ public final class EasyModelHostPersistence {
       String version,
       ModelBodyType bodyType,
       EasyModelAnimationSetting animation,
-      EasyModelTextureSetting texture) {}
+      EasyModelTextureSetting texture,
+      float opacity,
+      int lightLevel) {}
 }

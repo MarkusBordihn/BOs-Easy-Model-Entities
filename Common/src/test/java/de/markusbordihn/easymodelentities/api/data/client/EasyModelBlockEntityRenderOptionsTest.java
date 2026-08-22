@@ -97,4 +97,39 @@ class EasyModelBlockEntityRenderOptionsTest {
     assertEquals(90.0f, options.yawDegrees());
     assertTrue(options.withoutTextureOverride().textureSetting().isEmpty());
   }
+
+  @Test
+  void defaultHasNoDisplayOverrides() {
+    assertNull(EasyModelBlockEntityRenderOptions.DEFAULT.opacity());
+    assertNull(EasyModelBlockEntityRenderOptions.DEFAULT.lightLevel());
+    assertNull(EasyModelBlockEntityRenderOptions.DEFAULT.packedOverlay());
+  }
+
+  @Test
+  void withDisplayOverridesKeepsOtherComponents() {
+    EasyModelBlockEntityRenderOptions options =
+        EasyModelBlockEntityRenderOptions.DEFAULT
+            .withYawDegrees(90.0f)
+            .withOpacity(0.4f)
+            .withLightLevel(15);
+
+    assertEquals(0.4f, options.opacity());
+    assertEquals(15, options.lightLevel());
+    assertEquals(90.0f, options.yawDegrees());
+    assertNull(options.withoutOpacityOverride().opacity());
+    assertNull(options.withoutLightLevelOverride().lightLevel());
+  }
+
+  @Test
+  void rejectsDisplayValuesOutsideTheAllowedRange() {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelBlockEntityRenderOptions.DEFAULT.withOpacity(1.1f));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelBlockEntityRenderOptions.DEFAULT.withOpacity(Float.NaN));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> EasyModelBlockEntityRenderOptions.DEFAULT.withLightLevel(16));
+  }
 }

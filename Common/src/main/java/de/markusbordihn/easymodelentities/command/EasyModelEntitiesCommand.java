@@ -19,7 +19,11 @@
 
 package de.markusbordihn.easymodelentities.command;
 
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.POSITION_ARGUMENT;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.blockPosition;
+
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.markusbordihn.easymodelentities.Constants;
@@ -56,7 +60,6 @@ import net.minecraft.world.level.block.state.BlockState;
 public final class EasyModelEntitiesCommand {
 
   private static final String PROFILE_ID_ARGUMENT = "profile_id";
-  private static final String POSITION_ARGUMENT = "pos";
 
   private EasyModelEntitiesCommand() {}
 
@@ -76,52 +79,26 @@ public final class EasyModelEntitiesCommand {
                     .requires(
                         source ->
                             source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
-                    .then(
-                        Commands.argument(PROFILE_ID_ARGUMENT, IdentifierArgument.id())
-                            .suggests(
-                                (context, builder) -> {
-                                  EasyModelServices.profileService()
-                                      .getProfileIds()
-                                      .forEach(profileId -> builder.suggest(profileId.toString()));
-                                  return builder.buildFuture();
-                                })
-                            .executes(EasyModelEntitiesCommand::debugProfile)))
+                    .then(profileIdArgument().executes(EasyModelEntitiesCommand::debugProfile)))
             .then(
                 Commands.literal("summon")
                     .requires(
                         source ->
                             source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
-                    .then(
-                        Commands.argument(PROFILE_ID_ARGUMENT, IdentifierArgument.id())
-                            .suggests(
-                                (context, builder) -> {
-                                  EasyModelServices.profileService()
-                                      .getProfileIds()
-                                      .forEach(profileId -> builder.suggest(profileId.toString()));
-                                  return builder.buildFuture();
-                                })
-                            .executes(EasyModelEntitiesCommand::summon)))
+                    .then(profileIdArgument().executes(EasyModelEntitiesCommand::summon)))
             .then(
                 Commands.literal("place_block")
                     .requires(
                         source ->
                             source.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER))
                     .then(
-                        Commands.argument(PROFILE_ID_ARGUMENT, IdentifierArgument.id())
-                            .suggests(
-                                (context, builder) -> {
-                                  EasyModelServices.profileService()
-                                      .getProfileIds()
-                                      .forEach(profileId -> builder.suggest(profileId.toString()));
-                                  return builder.buildFuture();
-                                })
+                        profileIdArgument()
                             .executes(EasyModelEntitiesCommand::placeBlock)
-                            .then(
-                                Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                                    .executes(EasyModelEntitiesCommand::placeBlock))))
+                            .then(blockPosition().executes(EasyModelEntitiesCommand::placeBlock))))
             .then(EasyModelAnimationCommand.register())
             .then(EasyModelTextureCommand.register())
-            .then(EasyModelBehaviorCommand.register()));
+            .then(EasyModelBehaviorCommand.register())
+            .then(EasyModelDisplayCommand.register()));
   }
 
   static List<String> listProfileLines() {
@@ -311,6 +288,17 @@ public final class EasyModelEntitiesCommand {
     source.sendSuccess(
         () -> Component.literal("Placed " + blockId + " with profile " + profileId + "."), true);
     return 1;
+  }
+
+  private static ArgumentBuilder<CommandSourceStack, ?> profileIdArgument() {
+    return Commands.argument(PROFILE_ID_ARGUMENT, IdentifierArgument.id())
+        .suggests(
+            (context, builder) -> {
+              EasyModelServices.profileService()
+                  .getProfileIds()
+                  .forEach(profileId -> builder.suggest(profileId.toString()));
+              return builder.buildFuture();
+            });
   }
 
   private static Identifier parseProfileId(CommandContext<CommandSourceStack> context) {
