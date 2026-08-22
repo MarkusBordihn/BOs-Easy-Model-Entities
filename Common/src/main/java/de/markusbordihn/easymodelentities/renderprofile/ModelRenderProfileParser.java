@@ -26,6 +26,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelPresetType;
@@ -64,6 +65,7 @@ public final class ModelRenderProfileParser {
   private static final String VISIBLE_BOUNDS_WIDTH_FIELD = "visible_bounds_width";
   private static final String VISIBLE_BOUNDS_HEIGHT_FIELD = "visible_bounds_height";
   private static final String VISIBLE_BOUNDS_OFFSET_FIELD = "visible_bounds_offset";
+  private static final String OPACITY_FIELD = "opacity";
   private static final String ANIMATION_FIELD = "animation";
   private static final String MODE_FIELD = "mode";
   private static final String SWING_SPEED_FIELD = "swing_speed";
@@ -80,6 +82,7 @@ public final class ModelRenderProfileParser {
       RENDERING_FIELD + "." + VISIBLE_BOUNDS_HEIGHT_FIELD;
   private static final String RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD =
       RENDERING_FIELD + "." + VISIBLE_BOUNDS_OFFSET_FIELD;
+  private static final String RENDERING_OPACITY_FIELD = RENDERING_FIELD + "." + OPACITY_FIELD;
   private static final String ANIMATION_MODE_FIELD = ANIMATION_FIELD + "." + MODE_FIELD;
   private static final String ANIMATION_SWING_SPEED_FIELD =
       ANIMATION_FIELD + "." + SWING_SPEED_FIELD;
@@ -108,7 +111,8 @@ public final class ModelRenderProfileParser {
           SHADOW_RADIUS_FIELD,
           VISIBLE_BOUNDS_WIDTH_FIELD,
           VISIBLE_BOUNDS_HEIGHT_FIELD,
-          VISIBLE_BOUNDS_OFFSET_FIELD);
+          VISIBLE_BOUNDS_OFFSET_FIELD,
+          OPACITY_FIELD);
   private static final Set<String> ANIMATION_FIELDS =
       Set.of(
           MODE_FIELD,
@@ -270,6 +274,12 @@ public final class ModelRenderProfileParser {
             defaults.visibleBoundsHeight(),
             RENDERING_VISIBLE_BOUNDS_HEIGHT_FIELD,
             issues);
+    float opacity =
+        optionalFloat(
+            rawRendering == null ? null : rawRendering.opacity,
+            defaults.opacity(),
+            RENDERING_OPACITY_FIELD,
+            issues);
 
     return new ModelRenderSettings(
         positiveOrDefault(scale, defaults.scale(), RENDERING_SCALE_FIELD, issues),
@@ -288,7 +298,8 @@ public final class ModelRenderProfileParser {
         parseVisibleBoundsOffset(
             rawRendering == null ? null : rawRendering.visibleBoundsOffset,
             defaults.visibleBoundsOffset(),
-            issues));
+            issues),
+        opacityOrDefault(opacity, defaults.opacity(), RENDERING_OPACITY_FIELD, issues));
   }
 
   private static Vec3f parseVisibleBoundsOffset(
@@ -393,6 +404,30 @@ public final class ModelRenderProfileParser {
         ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
         field,
         "Field " + field + " must not be negative.");
+    return defaultValue;
+  }
+
+  private static float opacityOrDefault(
+      float value,
+      float defaultValue,
+      String field,
+      List<ModelRenderProfileValidationIssue> issues) {
+    if (Float.isFinite(value)
+        && value >= EasyModelDisplaySettings.MIN_OPACITY
+        && value <= EasyModelDisplaySettings.MAX_OPACITY) {
+      return value;
+    }
+    addIssue(
+        issues,
+        ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
+        field,
+        "Field "
+            + field
+            + " must be between "
+            + EasyModelDisplaySettings.MIN_OPACITY
+            + " and "
+            + EasyModelDisplaySettings.MAX_OPACITY
+            + ".");
     return defaultValue;
   }
 
@@ -779,6 +814,9 @@ public final class ModelRenderProfileParser {
 
     @SerializedName(VISIBLE_BOUNDS_OFFSET_FIELD)
     JsonElement visibleBoundsOffset;
+
+    @SerializedName(OPACITY_FIELD)
+    JsonElement opacity;
   }
 
   private static class RawAnimation {

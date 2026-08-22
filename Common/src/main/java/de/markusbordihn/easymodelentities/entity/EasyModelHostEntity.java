@@ -68,6 +68,10 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
   private static final EntityDataAccessor<EasyModelTextureSetting> TEXTURE =
       SynchedEntityData.defineId(
           EasyModelHostEntity.class, EasyModelEntityDataSerializers.TEXTURE_SETTING);
+  private static final EntityDataAccessor<Float> OPACITY =
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
+  private static final EntityDataAccessor<Integer> LIGHT_LEVEL =
+      SynchedEntityData.defineId(EasyModelHostEntity.class, EasyModelEntityDataSerializers.INT);
 
   private static final EasyModelHostFields FIELDS =
       new EasyModelHostFields(
@@ -81,7 +85,9 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
           ANIMATION_STATE,
           LOOK_AT_PLAYERS,
           RANDOM_STROLL,
-          TEXTURE);
+          TEXTURE,
+          OPACITY,
+          LIGHT_LEVEL);
 
   private EasyModelRuntimeContract runtimeContract;
 
@@ -156,6 +162,26 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
   @Override
   public void setEasyModelTexture(EasyModelTextureSetting texture) {
     EasyModelHostSupport.setTexture(this.entityData, FIELDS, texture);
+  }
+
+  @Override
+  public float getEasyModelOpacity() {
+    return EasyModelHostSupport.getOpacity(this.entityData, FIELDS);
+  }
+
+  @Override
+  public void setEasyModelOpacity(float opacity) {
+    EasyModelHostSupport.setOpacity(this.entityData, FIELDS, opacity);
+  }
+
+  @Override
+  public int getEasyModelLightLevel() {
+    return EasyModelHostSupport.getLightLevel(this.entityData, FIELDS);
+  }
+
+  @Override
+  public void setEasyModelLightLevel(int lightLevel) {
+    EasyModelHostSupport.setLightLevel(this.entityData, FIELDS, lightLevel);
   }
 
   @Override

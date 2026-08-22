@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.entity;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import net.minecraft.resources.ResourceLocation;
@@ -41,6 +42,18 @@ public interface EasyModelEntityHost {
   EasyModelTextureSetting getEasyModelTextureSetting();
 
   void setEasyModelTexture(EasyModelTextureSetting texture);
+
+  default float getEasyModelOpacity() {
+    return EasyModelDisplaySettings.NO_OPACITY;
+  }
+
+  default void setEasyModelOpacity(float opacity) {}
+
+  default int getEasyModelLightLevel() {
+    return EasyModelDisplaySettings.NO_LIGHT_LEVEL;
+  }
+
+  default void setEasyModelLightLevel(int lightLevel) {}
 
   EasyModelRuntimeContract getEasyModelRuntimeContract();
 

@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -60,5 +61,76 @@ class EasyModelHostPersistenceTest {
   void missingTextureTagReadsAsEmpty() {
     assertEquals(
         EasyModelTextureSetting.EMPTY, EasyModelHostPersistence.read(new CompoundTag()).texture());
+  }
+
+  @Test
+  void opacityRoundTripsThroughTheSaveTag() {
+    CompoundTag compoundTag = new CompoundTag();
+
+    EasyModelHostPersistence.writeOpacity(compoundTag, 0.4f);
+
+    assertEquals(0.4f, EasyModelHostPersistence.read(compoundTag).opacity(), 0.0001f);
+  }
+
+  @Test
+  @DisplayName("A fully opaque override survives the save tag instead of reading as no override")
+  void fullyOpaqueOverrideRoundTrips() {
+    CompoundTag compoundTag = new CompoundTag();
+
+    EasyModelHostPersistence.writeOpacity(compoundTag, EasyModelDisplaySettings.MAX_OPACITY);
+
+    assertTrue(compoundTag.contains(EasyModelHostPersistence.OPACITY_TAG));
+    assertEquals(
+        EasyModelDisplaySettings.MAX_OPACITY,
+        EasyModelHostPersistence.read(compoundTag).opacity(),
+        0.0001f);
+  }
+
+  @Test
+  @DisplayName("Clearing the opacity leaves no tag behind, so old saves stay untouched")
+  void clearedOpacityWritesNoTag() {
+    CompoundTag compoundTag = new CompoundTag();
+    EasyModelHostPersistence.writeOpacity(compoundTag, 0.4f);
+    assertTrue(compoundTag.contains(EasyModelHostPersistence.OPACITY_TAG));
+
+    EasyModelHostPersistence.writeOpacity(compoundTag, EasyModelDisplaySettings.NO_OPACITY);
+
+    assertFalse(compoundTag.contains(EasyModelHostPersistence.OPACITY_TAG));
+  }
+
+  @Test
+  void missingOpacityTagReadsAsNoOverride() {
+    assertEquals(
+        EasyModelDisplaySettings.NO_OPACITY,
+        EasyModelHostPersistence.read(new CompoundTag()).opacity(),
+        0.0001f);
+  }
+
+  @Test
+  void lightLevelRoundTripsThroughTheSaveTag() {
+    CompoundTag compoundTag = new CompoundTag();
+
+    EasyModelHostPersistence.writeLightLevel(compoundTag, 12);
+
+    assertEquals(12, EasyModelHostPersistence.read(compoundTag).lightLevel());
+  }
+
+  @Test
+  @DisplayName("Clearing the light level leaves no tag behind, so old saves stay untouched")
+  void clearedLightLevelWritesNoTag() {
+    CompoundTag compoundTag = new CompoundTag();
+    EasyModelHostPersistence.writeLightLevel(compoundTag, 12);
+    assertTrue(compoundTag.contains(EasyModelHostPersistence.LIGHT_LEVEL_TAG));
+
+    EasyModelHostPersistence.writeLightLevel(compoundTag, EasyModelDisplaySettings.NO_LIGHT_LEVEL);
+
+    assertFalse(compoundTag.contains(EasyModelHostPersistence.LIGHT_LEVEL_TAG));
+  }
+
+  @Test
+  void missingLightLevelTagReadsAsNoOverride() {
+    assertEquals(
+        EasyModelDisplaySettings.NO_LIGHT_LEVEL,
+        EasyModelHostPersistence.read(new CompoundTag()).lightLevel());
   }
 }

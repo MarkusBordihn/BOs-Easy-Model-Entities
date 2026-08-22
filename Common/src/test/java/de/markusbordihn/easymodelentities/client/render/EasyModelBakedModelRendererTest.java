@@ -27,12 +27,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
@@ -60,6 +63,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
@@ -386,6 +393,30 @@ class EasyModelBakedModelRendererTest {
         false,
         clips,
         null);
+  }
+
+  private static void renderWithOpacity(
+      BakedModel bakedModel, MultiBufferSource bufferSource, float opacity) {
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        EasyModelHeadLook.NONE,
+        EasyModelAnimation.AUTO,
+        EasyModelTextureSetting.EMPTY,
+        EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        EasyModelPartPoseListener.NONE,
+        new PoseStack(),
+        bufferSource,
+        0,
+        OverlayTexture.NO_OVERLAY,
+        opacity,
+        EasyModelDisplaySettings.NO_LIGHT_LEVEL);
   }
 
   @Test
@@ -1214,6 +1245,98 @@ class EasyModelBakedModelRendererTest {
 
     assertEquals(0, bufferProvider.droppedVertices, "no vertices may be written to a stale buffer");
     assertEquals(4 * 24, bufferProvider.recordedVertices, "all four cubes must be rendered");
+  }
+
+  @Test
+  void opacityReachesTheVertexColor() {
+    BakedModel bakedModel = singleCubeModel();
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);
+
+    renderWithOpacity(bakedModel, bufferSource, 0.4f);
+
+    verify(vertexConsumer, times(24)).setColor(255, 255, 255, 102);
+  }
+
+  @Test
+  void fullOpacityKeepsTheOpaqueVertexColor() {
+    BakedModel bakedModel = singleCubeModel();
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    when(bufferSource.getBuffer(any())).thenReturn(vertexConsumer);
+
+    renderWithOpacity(bakedModel, bufferSource, EasyModelDisplaySettings.MAX_OPACITY);
+
+    verify(vertexConsumer, times(24)).setColor(255, 255, 255, 255);
+  }
+
+  @Test
+  @DisplayName("A cutout render type would drop the alpha, so a faded model must turn translucent")
+  void partialOpacityForcesATranslucentRenderType() {
+    BakedModel bakedModel = singleCubeModel();
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+    when(bufferSource.getBuffer(any()))
+        .thenReturn(mock(VertexConsumer.class, Answers.RETURNS_SELF));
+    ArgumentCaptor<RenderType> renderTypeCaptor = ArgumentCaptor.forClass(RenderType.class);
+
+    renderWithOpacity(bakedModel, bufferSource, 0.4f);
+
+    verify(bufferSource).getBuffer(renderTypeCaptor.capture());
+    assertEquals(
+        RenderType.entityTranslucent(
+            ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png")),
+        renderTypeCaptor.getValue());
+  }
+
+  @Test
+  void fullOpacityKeepsTheCutoutRenderType() {
+    BakedModel bakedModel = singleCubeModel();
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+    when(bufferSource.getBuffer(any()))
+        .thenReturn(mock(VertexConsumer.class, Answers.RETURNS_SELF));
+    ArgumentCaptor<RenderType> renderTypeCaptor = ArgumentCaptor.forClass(RenderType.class);
+
+    renderWithOpacity(bakedModel, bufferSource, EasyModelDisplaySettings.MAX_OPACITY);
+
+    verify(bufferSource).getBuffer(renderTypeCaptor.capture());
+    assertEquals(
+        RenderType.entityCutoutNoCull(
+            ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png")),
+        renderTypeCaptor.getValue());
+  }
+
+  @Test
+  void zeroOpacityDrawsNothing() {
+    BakedModel bakedModel = singleCubeModel();
+    MultiBufferSource bufferSource = mock(MultiBufferSource.class);
+
+    renderWithOpacity(bakedModel, bufferSource, EasyModelDisplaySettings.MIN_OPACITY);
+
+    verify(bufferSource, never()).getBuffer(any());
+  }
+
+  @Test
+  @DisplayName("The light level override raises the block light without touching the sky light")
+  void lightLevelOverrideRaisesOnlyTheBlockLight() {
+    int packedLight = LightTexture.pack(2, 11);
+
+    int packedLightWithOverride =
+        EasyModelBakedModelRenderer.packedLightWithOverride(packedLight, 9);
+
+    assertEquals(9, LightTexture.block(packedLightWithOverride));
+    assertEquals(11, LightTexture.sky(packedLightWithOverride));
+  }
+
+  @Test
+  void lightLevelOverrideNeverDarkensTheModel() {
+    int packedLight = LightTexture.pack(13, 4);
+
+    assertEquals(packedLight, EasyModelBakedModelRenderer.packedLightWithOverride(packedLight, 9));
+    assertEquals(
+        packedLight,
+        EasyModelBakedModelRenderer.packedLightWithOverride(
+            packedLight, EasyModelDisplaySettings.NO_LIGHT_LEVEL));
   }
 
   private static final class SharedBuilderBufferProvider

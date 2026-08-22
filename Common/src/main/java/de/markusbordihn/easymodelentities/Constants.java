@@ -28,7 +28,7 @@ public final class Constants {
   public static final String MOD_NAME = "Easy Model Entities";
   public static final String MOD_COMMAND = "easy_model_entities";
   public static final String SCHEMA_VERSION = "0.2.0";
-  public static final String API_VERSION = "2.1.0";
+  public static final String API_VERSION = "2.3.0";
   public static final String LOG_NAME = "EasyModelEntities";
 
   public static Path GAME_DIR = Paths.get("").toAbsolutePath();

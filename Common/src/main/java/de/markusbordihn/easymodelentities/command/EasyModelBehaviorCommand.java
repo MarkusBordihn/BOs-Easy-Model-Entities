@@ -19,6 +19,11 @@
 
 package de.markusbordihn.easymodelentities.command;
 
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.HOST_ENTITY;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.TARGETS_ARGUMENT;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.entityTargets;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.sendEntityResult;
+
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -26,14 +31,11 @@ import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.phys.Vec3;
 
 public final class EasyModelBehaviorCommand {
-
-  private static final String TARGETS_ARGUMENT = "targets";
 
   private EasyModelBehaviorCommand() {}
 
@@ -45,13 +47,7 @@ public final class EasyModelBehaviorCommand {
                 .then(
                     Commands.literal("entity")
                         .then(
-                            Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
-                                .suggests(
-                                    (context, builder) ->
-                                        EasyModelCommandSuggestions.suggestEntities(
-                                            context,
-                                            builder,
-                                            entity -> entity instanceof EasyModelEntityHost))
+                            entityTargets(HOST_ENTITY)
                                 .then(
                                     Commands.literal("auto")
                                         .executes(context -> set(context, false)))
@@ -75,28 +71,14 @@ public final class EasyModelBehaviorCommand {
 
   private static int set(CommandContext<CommandSourceStack> context, boolean frozen)
       throws CommandSyntaxException {
-    int updatedEntities = 0;
+    int updated = 0;
     for (Entity entity : EntityArgument.getEntities(context, TARGETS_ARGUMENT)) {
       if (entity instanceof EasyModelEntityHost && entity instanceof Mob hostEntity) {
         setFrozen(hostEntity, frozen);
-        updatedEntities++;
+        updated++;
       }
     }
-
-    CommandSourceStack source = context.getSource();
-    if (updatedEntities == 0) {
-      source.sendFailure(Component.literal("No Easy Model host entities in the selection."));
-      return 0;
-    }
-
-    int updateCount = updatedEntities;
-    source.sendSuccess(
-        () ->
-            Component.literal(
-                (frozen ? "Froze " : "Restored profile behavior for ")
-                    + updateCount
-                    + (updateCount == 1 ? " entity." : " entities.")),
-        true);
-    return updatedEntities;
+    return sendEntityResult(
+        context.getSource(), frozen ? "Froze movement" : "Restored profile behavior", updated);
   }
 }

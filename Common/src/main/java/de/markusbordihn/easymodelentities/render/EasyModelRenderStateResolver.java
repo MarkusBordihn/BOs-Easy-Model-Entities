@@ -120,7 +120,8 @@ public final class EasyModelRenderStateResolver {
         renderProfile.animation(),
         bakeResult.fallback(),
         fallbackTexture,
-        bakeResult.validationIssues());
+        bakeResult.validationIssues(),
+        renderProfile.opacity());
   }
 
   private static EasyModelRenderState fallback(

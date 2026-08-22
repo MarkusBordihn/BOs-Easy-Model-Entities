@@ -24,6 +24,7 @@ import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
@@ -198,7 +199,9 @@ public final class EasyModelBlockEntityRenderBackend {
         poseStack,
         bufferSource,
         packedLight,
-        packedOverlay);
+        safeOptions.packedOverlay() == null ? packedOverlay : safeOptions.packedOverlay(),
+        resolveOpacity(safeOptions.opacity(), opacity(blockEntity), renderState.opacity()),
+        resolveLightLevel(safeOptions.lightLevel(), lightLevel(blockEntity)));
     poseStack.popPose();
   }
 
@@ -252,6 +255,33 @@ public final class EasyModelBlockEntityRenderBackend {
     return blockEntity instanceof EasyModelRenderable renderable
         ? renderable.getEasyModelTextureSetting()
         : EasyModelTextureSetting.EMPTY;
+  }
+
+  private static float resolveOpacity(Float requested, float hostOpacity, float profileOpacity) {
+    if (requested != null) {
+      return EasyModelDisplaySettings.clampOpacity(requested);
+    }
+    if (EasyModelDisplaySettings.hasOpacityOverride(hostOpacity)) {
+      return EasyModelDisplaySettings.clampOpacity(hostOpacity);
+    }
+
+    return EasyModelDisplaySettings.clampOpacity(profileOpacity);
+  }
+
+  private static float opacity(BlockEntity blockEntity) {
+    return blockEntity instanceof EasyModelRenderable renderable
+        ? renderable.getEasyModelOpacity()
+        : EasyModelDisplaySettings.NO_OPACITY;
+  }
+
+  private static int resolveLightLevel(Integer requested, int fallback) {
+    return EasyModelDisplaySettings.clampLightLevel(requested == null ? fallback : requested);
+  }
+
+  private static int lightLevel(BlockEntity blockEntity) {
+    return blockEntity instanceof EasyModelRenderable renderable
+        ? renderable.getEasyModelLightLevel()
+        : EasyModelDisplaySettings.NO_LIGHT_LEVEL;
   }
 
   private static EasyModelAnimationPlaybackFrame applySetting(

@@ -77,6 +77,12 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
   private static final EntityDataAccessor<EasyModelTextureSetting> TEXTURE =
       SynchedEntityData.defineId(
           EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.TEXTURE_SETTING);
+  private static final EntityDataAccessor<Float> OPACITY =
+      SynchedEntityData.defineId(
+          EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.FLOAT);
+  private static final EntityDataAccessor<Integer> LIGHT_LEVEL =
+      SynchedEntityData.defineId(
+          EasyModelWaterHostEntity.class, EasyModelEntityDataSerializers.INT);
 
   private static final EasyModelHostFields FIELDS =
       new EasyModelHostFields(
@@ -90,7 +96,9 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
           ANIMATION_STATE,
           LOOK_AT_PLAYERS,
           RANDOM_STROLL,
-          TEXTURE);
+          TEXTURE,
+          OPACITY,
+          LIGHT_LEVEL);
 
   private EasyModelRuntimeContract runtimeContract;
 
@@ -185,6 +193,26 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
   @Override
   public void setEasyModelTexture(EasyModelTextureSetting texture) {
     EasyModelHostSupport.setTexture(this.entityData, FIELDS, texture);
+  }
+
+  @Override
+  public float getEasyModelOpacity() {
+    return EasyModelHostSupport.getOpacity(this.entityData, FIELDS);
+  }
+
+  @Override
+  public void setEasyModelOpacity(float opacity) {
+    EasyModelHostSupport.setOpacity(this.entityData, FIELDS, opacity);
+  }
+
+  @Override
+  public int getEasyModelLightLevel() {
+    return EasyModelHostSupport.getLightLevel(this.entityData, FIELDS);
+  }
+
+  @Override
+  public void setEasyModelLightLevel(int lightLevel) {
+    EasyModelHostSupport.setLightLevel(this.entityData, FIELDS, lightLevel);
   }
 
   @Override

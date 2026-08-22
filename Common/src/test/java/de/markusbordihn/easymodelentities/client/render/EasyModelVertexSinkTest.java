@@ -33,10 +33,21 @@ class EasyModelVertexSinkTest {
   void forwardsPackedLightAndOverlay() {
     VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
     EasyModelVertexSink sink =
-        new EasyModelVertexSink(vertexConsumer, new PoseStack(), 0x00120034, 0x00560078);
+        new EasyModelVertexSink(vertexConsumer, new PoseStack(), 0x00120034, 0x00560078, 255);
     sink.vertex(1.0f, 2.0f, 3.0f, 0.25f, 0.75f, 0.0f, 1.0f, 0.0f);
 
     verify(vertexConsumer).setLight(0x00120034);
     verify(vertexConsumer).setOverlay(0x00560078);
+    verify(vertexConsumer).setColor(255, 255, 255, 255);
+  }
+
+  @Test
+  void forwardsAlpha() {
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    EasyModelVertexSink sink =
+        new EasyModelVertexSink(vertexConsumer, new PoseStack(), 0x00120034, 0x00560078, 102);
+    sink.vertex(1.0f, 2.0f, 3.0f, 0.25f, 0.75f, 0.0f, 1.0f, 0.0f);
+
+    verify(vertexConsumer).setColor(255, 255, 255, 102);
   }
 }

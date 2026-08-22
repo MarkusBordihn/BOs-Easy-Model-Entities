@@ -28,20 +28,26 @@ final class EasyModelVertexSink {
   private final PoseStack poseStack;
   private final int packedLight;
   private final int packedOverlay;
+  private final int alpha;
 
   EasyModelVertexSink(
-      VertexConsumer vertexConsumer, PoseStack poseStack, int packedLight, int packedOverlay) {
+      VertexConsumer vertexConsumer,
+      PoseStack poseStack,
+      int packedLight,
+      int packedOverlay,
+      int alpha) {
     this.vertexConsumer = vertexConsumer;
     this.poseStack = poseStack;
     this.packedLight = packedLight;
     this.packedOverlay = packedOverlay;
+    this.alpha = alpha;
   }
 
   void vertex(
       float x, float y, float z, float u, float v, float normalX, float normalY, float normalZ) {
     PoseStack.Pose pose = this.poseStack.last();
     this.vertexConsumer.addVertex(pose.pose(), x, y, z);
-    this.vertexConsumer.setColor(255, 255, 255, 255);
+    this.vertexConsumer.setColor(255, 255, 255, this.alpha);
     this.vertexConsumer.setUv(u, v);
     this.vertexConsumer.setOverlay(this.packedOverlay);
     this.vertexConsumer.setLight(this.packedLight);

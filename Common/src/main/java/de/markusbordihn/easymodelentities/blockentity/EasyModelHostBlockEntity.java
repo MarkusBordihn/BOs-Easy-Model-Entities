@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.blockentity;
 
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
@@ -68,6 +69,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
 
   private EasyModelRuntimeContract runtimeContract;
   private EasyModelTextureSetting textureSetting = EasyModelTextureSetting.EMPTY;
+  private float opacity = EasyModelDisplaySettings.NO_OPACITY;
+  private int lightLevel = EasyModelDisplaySettings.NO_LIGHT_LEVEL;
   private int animationTicks = 0;
   private int randomIdleTicks = 0;
   private int randomIdleBurstTicks = 0;
@@ -145,6 +148,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     ModelBodyType bodyType = state.bodyType();
     EasyModelAnimationSetting animation = state.animation();
     this.textureSetting = state.texture();
+    this.opacity = state.opacity();
+    this.lightLevel = state.lightLevel();
 
     if (profileId == null) {
       applyRuntimeContract(fallbackRuntimeContract(MISSING_PROFILE_ID, animation), false);
@@ -184,6 +189,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
         this.runtimeContract.bodyType().getSerializedName());
     EasyModelHostPersistence.writeAnimation(compoundTag, this.runtimeContract.animation());
     EasyModelHostPersistence.writeTexture(compoundTag, this.textureSetting);
+    EasyModelHostPersistence.writeOpacity(compoundTag, this.opacity);
+    EasyModelHostPersistence.writeLightLevel(compoundTag, this.lightLevel);
   }
 
   @Override
@@ -256,6 +263,38 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     }
 
     this.textureSetting = updated;
+    setChanged();
+    syncBlockEntity();
+  }
+
+  @Override
+  public float getEasyModelOpacity() {
+    return this.opacity;
+  }
+
+  public void setEasyModelOpacity(float opacity) {
+    float updated = EasyModelDisplaySettings.clampOpacityOverride(opacity);
+    if (updated == this.opacity) {
+      return;
+    }
+
+    this.opacity = updated;
+    setChanged();
+    syncBlockEntity();
+  }
+
+  @Override
+  public int getEasyModelLightLevel() {
+    return this.lightLevel;
+  }
+
+  public void setEasyModelLightLevel(int lightLevel) {
+    int updated = EasyModelDisplaySettings.clampLightLevel(lightLevel);
+    if (updated == this.lightLevel) {
+      return;
+    }
+
+    this.lightLevel = updated;
     setChanged();
     syncBlockEntity();
   }

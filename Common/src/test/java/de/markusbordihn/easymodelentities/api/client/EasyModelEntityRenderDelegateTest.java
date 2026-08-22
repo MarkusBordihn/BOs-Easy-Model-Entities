@@ -32,6 +32,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
@@ -258,6 +259,8 @@ class EasyModelEntityRenderDelegateTest {
     Entity entity = mock(Entity.class, withSettings().extraInterfaces(EasyModelRenderable.class));
     when(((EasyModelRenderable) entity).getEasyModelAnimationSetting())
         .thenReturn(EasyModelAnimationSetting.of(EasyModelAnimation.named(animation)));
+    when(((EasyModelRenderable) entity).getEasyModelOpacity())
+        .thenReturn(EasyModelDisplaySettings.NO_OPACITY);
     return entity;
   }
 
@@ -395,6 +398,8 @@ class EasyModelEntityRenderDelegateTest {
     when(((EasyModelRenderable) entity).getEasyModelAnimationSetting())
         .thenAnswer(
             call -> EasyModelAnimationSetting.of(EasyModelAnimation.named(animation.get())));
+    when(((EasyModelRenderable) entity).getEasyModelOpacity())
+        .thenReturn(EasyModelDisplaySettings.NO_OPACITY);
     BakedModel bakedModel = timedAnimatedBakedModel();
 
     entity.tickCount = 100;
