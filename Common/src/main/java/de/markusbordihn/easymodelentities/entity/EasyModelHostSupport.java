@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.entity;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
@@ -115,6 +116,8 @@ public final class EasyModelHostSupport {
     builder.define(fields.lookAtPlayers(), false);
     builder.define(fields.randomStroll(), false);
     builder.define(fields.texture(), EasyModelTextureSetting.EMPTY);
+    builder.define(fields.opacity(), EasyModelDisplaySettings.NO_OPACITY);
+    builder.define(fields.lightLevel(), EasyModelDisplaySettings.NO_LIGHT_LEVEL);
   }
 
   public static EntityDimensions getDimensions(
@@ -133,7 +136,9 @@ public final class EasyModelHostSupport {
         entityData.get(fields.version()),
         entityData.get(fields.bodyType()),
         entityData.get(fields.animation()),
-        entityData.get(fields.texture()));
+        entityData.get(fields.texture()),
+        entityData.get(fields.opacity()),
+        entityData.get(fields.lightLevel()));
   }
 
   public static void readAdditionalSaveData(
@@ -145,6 +150,8 @@ public final class EasyModelHostSupport {
     ModelBodyType bodyType = state.bodyType();
     EasyModelAnimationSetting animation = state.animation();
     setTexture(entity.getEntityData(), fields, state.texture());
+    setOpacity(entity.getEntityData(), fields, state.opacity());
+    setLightLevel(entity.getEntityData(), fields, state.lightLevel());
 
     if (profileId == null) {
       applyFallback(entity, fields, MISSING_PROFILE_ID, animation);
@@ -244,6 +251,24 @@ public final class EasyModelHostSupport {
   public static void setTexture(
       SynchedEntityData entityData, EasyModelHostFields fields, EasyModelTextureSetting texture) {
     entityData.set(fields.texture(), Objects.requireNonNull(texture, "texture"));
+  }
+
+  public static float getOpacity(SynchedEntityData entityData, EasyModelHostFields fields) {
+    return entityData.get(fields.opacity());
+  }
+
+  public static void setOpacity(
+      SynchedEntityData entityData, EasyModelHostFields fields, float opacity) {
+    entityData.set(fields.opacity(), EasyModelDisplaySettings.clampOpacityOverride(opacity));
+  }
+
+  public static int getLightLevel(SynchedEntityData entityData, EasyModelHostFields fields) {
+    return entityData.get(fields.lightLevel());
+  }
+
+  public static void setLightLevel(
+      SynchedEntityData entityData, EasyModelHostFields fields, int lightLevel) {
+    entityData.set(fields.lightLevel(), EasyModelDisplaySettings.clampLightLevel(lightLevel));
   }
 
   public static EasyModelRuntimeContract getRuntimeContract(

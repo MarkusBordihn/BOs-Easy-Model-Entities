@@ -19,12 +19,11 @@
 
 package de.markusbordihn.easymodelentities.command;
 
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.BlockTarget;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.POSITION_ARGUMENT;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.TARGETS_ARGUMENT;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.blockTarget;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.isRenderableEntity;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.sendResult;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.HOST_ENTITY;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.RENDERABLE_ENTITY;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.targetBranches;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.updateHosts;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.updateRenderables;
 
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -32,7 +31,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
@@ -40,14 +38,11 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlay
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlaybackMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSwitchTiming;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
-import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
-import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationPacketOperation;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -55,8 +50,6 @@ import java.util.stream.Stream;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.Entity;
@@ -70,6 +63,7 @@ final class EasyModelAnimationCommand {
   private static final String REPEAT_COUNT_ARGUMENT = "count";
   private static final String BLEND_TICKS_ARGUMENT = "blend_ticks";
   private static final String DURATION_TICKS_ARGUMENT = "duration_ticks";
+  private static final String INVALID_ANIMATION_MESSAGE = "Invalid animation name.";
 
   private EasyModelAnimationCommand() {}
 
@@ -83,23 +77,13 @@ final class EasyModelAnimationCommand {
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> playCommand() {
-    return Commands.literal("play")
-        .then(
-            Commands.literal("entity")
-                .then(
-                    Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
-                        .suggests(
-                            (context, builder) ->
-                                EasyModelCommandSuggestions.suggestEntities(
-                                    context, builder, EasyModelCommandTargets::isRenderableEntity))
-                        .then(playAnimationArgument(false, false))
-                        .then(Commands.literal("random").then(playAnimationArgument(false, true)))))
-        .then(
-            Commands.literal("block")
-                .then(
-                    Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .then(playAnimationArgument(true, false))
-                        .then(Commands.literal("random").then(playAnimationArgument(true, true)))));
+    return targetBranches(
+        Commands.literal("play"),
+        RENDERABLE_ENTITY,
+        (target, blockTarget) ->
+            target
+                .then(playAnimationArgument(blockTarget, false))
+                .then(Commands.literal("random").then(playAnimationArgument(blockTarget, true))));
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> playAnimationArgument(
@@ -234,39 +218,21 @@ final class EasyModelAnimationCommand {
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> stopCommand() {
-    return Commands.literal("stop")
-        .then(
-            Commands.literal("entity")
+    return targetBranches(
+        Commands.literal("stop"),
+        RENDERABLE_ENTITY,
+        (target, blockTarget) ->
+            target
+                .executes(
+                    context -> stop(context, blockTarget, EasyModelAnimationTransition.IMMEDIATE))
                 .then(
-                    Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
-                        .suggests(
-                            (context, builder) ->
-                                EasyModelCommandSuggestions.suggestEntities(
-                                    context, builder, EasyModelCommandTargets::isRenderableEntity))
-                        .executes(
-                            context -> stop(context, false, EasyModelAnimationTransition.IMMEDIATE))
-                        .then(
-                            stopTimingBranch(
-                                "immediate", EasyModelAnimationSwitchTiming.IMMEDIATE, false))
-                        .then(
-                            stopTimingBranch(
-                                "after_current",
-                                EasyModelAnimationSwitchTiming.AFTER_CURRENT,
-                                false))))
-        .then(
-            Commands.literal("block")
+                    stopTimingBranch(
+                        "immediate", EasyModelAnimationSwitchTiming.IMMEDIATE, blockTarget))
                 .then(
-                    Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .executes(
-                            context -> stop(context, true, EasyModelAnimationTransition.IMMEDIATE))
-                        .then(
-                            stopTimingBranch(
-                                "immediate", EasyModelAnimationSwitchTiming.IMMEDIATE, true))
-                        .then(
-                            stopTimingBranch(
-                                "after_current",
-                                EasyModelAnimationSwitchTiming.AFTER_CURRENT,
-                                true))));
+                    stopTimingBranch(
+                        "after_current",
+                        EasyModelAnimationSwitchTiming.AFTER_CURRENT,
+                        blockTarget)));
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> stopTimingBranch(
@@ -280,41 +246,17 @@ final class EasyModelAnimationCommand {
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> restartCommand() {
-    return Commands.literal("restart")
-        .then(
-            Commands.literal("entity")
-                .then(
-                    Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
-                        .suggests(
-                            (context, builder) ->
-                                EasyModelCommandSuggestions.suggestEntities(
-                                    context, builder, EasyModelCommandTargets::isRenderableEntity))
-                        .executes(context -> restart(context, false))))
-        .then(
-            Commands.literal("block")
-                .then(
-                    Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .executes(context -> restart(context, true))));
+    return targetBranches(
+        Commands.literal("restart"),
+        RENDERABLE_ENTITY,
+        (target, blockTarget) -> target.executes(context -> restart(context, blockTarget)));
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> setCommand() {
-    return Commands.literal("set")
-        .then(
-            Commands.literal("entity")
-                .then(
-                    Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
-                        .suggests(
-                            (context, builder) ->
-                                EasyModelCommandSuggestions.suggestEntities(
-                                    context,
-                                    builder,
-                                    entity -> entity instanceof EasyModelEntityHost))
-                        .then(stateArgument(false))))
-        .then(
-            Commands.literal("block")
-                .then(
-                    Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .then(stateArgument(true))));
+    return targetBranches(
+        Commands.literal("set"),
+        HOST_ENTITY,
+        (target, blockTarget) -> target.then(stateArgument(blockTarget)));
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> stateArgument(boolean blockTarget) {
@@ -349,13 +291,25 @@ final class EasyModelAnimationCommand {
             : parseAnimation(StringArgumentType.getString(context, ANIMATION_ARGUMENT)).stream()
                 .toList();
     if (candidates.isEmpty()) {
-      context.getSource().sendFailure(Component.literal("Invalid animation name."));
+      context.getSource().sendFailure(Component.literal(INVALID_ANIMATION_MESSAGE));
       return 0;
     }
 
-    return blockTarget
-        ? playBlockEntity(context, pick(context, candidates), playback, transition)
-        : playEntities(context, candidates, playback, transition);
+    return updateRenderables(
+        context,
+        blockTarget,
+        "Started animation",
+        target ->
+            EasyModelAnimationNetwork.send(
+                target.level(),
+                target.blockPos(),
+                ClientboundEasyModelAnimationPacket.playBlockEntity(
+                    target.blockPos(), pick(context, candidates), playback, transition)),
+        entity ->
+            EasyModelAnimationNetwork.send(
+                entity,
+                ClientboundEasyModelAnimationPacket.playEntity(
+                    entity.getId(), pick(context, candidates), playback, transition)));
   }
 
   private static EasyModelAnimation pick(
@@ -365,117 +319,51 @@ final class EasyModelAnimationCommand {
         : candidates.get(context.getSource().getLevel().getRandom().nextInt(candidates.size()));
   }
 
-  private static int playEntities(
-      CommandContext<CommandSourceStack> context,
-      List<EasyModelAnimation> candidates,
-      EasyModelAnimationPlayback playback,
-      EasyModelAnimationTransition transition)
-      throws CommandSyntaxException {
-    int updated = 0;
-    for (Entity entity : EntityArgument.getEntities(context, TARGETS_ARGUMENT)) {
-      if (!isRenderableEntity(entity)) {
-        continue;
-      }
-      EasyModelAnimationNetwork.send(
-          entity,
-          ClientboundEasyModelAnimationPacket.playEntity(
-              entity.getId(), pick(context, candidates), playback, transition));
-      updated++;
-    }
-    return sendResult(
-        context.getSource(), "Started animation", updated, updated == 1 ? "entity" : "entities");
-  }
-
-  private static int playBlockEntity(
-      CommandContext<CommandSourceStack> context,
-      EasyModelAnimation animation,
-      EasyModelAnimationPlayback playback,
-      EasyModelAnimationTransition transition)
-      throws CommandSyntaxException {
-    BlockTarget target = blockTarget(context);
-    if (!(target.blockEntity() instanceof EasyModelRenderable)) {
-      context.getSource().sendFailure(Component.literal("No Easy Model block entity at position."));
-      return 0;
-    }
-    EasyModelAnimationNetwork.send(
-        target.level(),
-        target.blockPos(),
-        ClientboundEasyModelAnimationPacket.playBlockEntity(
-            target.blockPos(), animation, playback, transition));
-    return sendResult(context.getSource(), "Started animation", 1, "block entity");
-  }
-
   private static int stop(
       CommandContext<CommandSourceStack> context,
       boolean blockTarget,
       EasyModelAnimationTransition transition)
       throws CommandSyntaxException {
-    if (blockTarget) {
-      BlockTarget target = blockTarget(context);
-      if (!(target.blockEntity() instanceof EasyModelRenderable)) {
-        context
-            .getSource()
-            .sendFailure(Component.literal("No Easy Model block entity at position."));
-        return 0;
-      }
-      EasyModelAnimationNetwork.send(
-          target.level(),
-          target.blockPos(),
-          ClientboundEasyModelAnimationPacket.controlBlockEntity(
-              target.blockPos(), EasyModelAnimationPacketOperation.STOP, transition));
-      return sendResult(context.getSource(), "Stopped animation", 1, "block entity");
-    }
-
-    int updated = 0;
-    for (Entity entity : EntityArgument.getEntities(context, TARGETS_ARGUMENT)) {
-      if (!isRenderableEntity(entity)) {
-        continue;
-      }
-      EasyModelAnimationNetwork.send(
-          entity,
-          ClientboundEasyModelAnimationPacket.controlEntity(
-              entity.getId(), EasyModelAnimationPacketOperation.STOP, transition));
-      updated++;
-    }
-    return sendResult(
-        context.getSource(), "Stopped animation", updated, updated == 1 ? "entity" : "entities");
+    return control(
+        context,
+        blockTarget,
+        EasyModelAnimationPacketOperation.STOP,
+        transition,
+        "Stopped animation");
   }
 
   private static int restart(CommandContext<CommandSourceStack> context, boolean blockTarget)
       throws CommandSyntaxException {
-    if (blockTarget) {
-      BlockTarget target = blockTarget(context);
-      if (!(target.blockEntity() instanceof EasyModelRenderable)) {
-        context
-            .getSource()
-            .sendFailure(Component.literal("No Easy Model block entity at position."));
-        return 0;
-      }
-      EasyModelAnimationNetwork.send(
-          target.level(),
-          target.blockPos(),
-          ClientboundEasyModelAnimationPacket.controlBlockEntity(
-              target.blockPos(),
-              EasyModelAnimationPacketOperation.RESTART,
-              EasyModelAnimationTransition.IMMEDIATE));
-      return sendResult(context.getSource(), "Restarted animation", 1, "block entity");
-    }
+    return control(
+        context,
+        blockTarget,
+        EasyModelAnimationPacketOperation.RESTART,
+        EasyModelAnimationTransition.IMMEDIATE,
+        "Restarted animation");
+  }
 
-    int updated = 0;
-    for (Entity entity : EntityArgument.getEntities(context, TARGETS_ARGUMENT)) {
-      if (!isRenderableEntity(entity)) {
-        continue;
-      }
-      EasyModelAnimationNetwork.send(
-          entity,
-          ClientboundEasyModelAnimationPacket.controlEntity(
-              entity.getId(),
-              EasyModelAnimationPacketOperation.RESTART,
-              EasyModelAnimationTransition.IMMEDIATE));
-      updated++;
-    }
-    return sendResult(
-        context.getSource(), "Restarted animation", updated, updated == 1 ? "entity" : "entities");
+  private static int control(
+      CommandContext<CommandSourceStack> context,
+      boolean blockTarget,
+      EasyModelAnimationPacketOperation operation,
+      EasyModelAnimationTransition transition,
+      String action)
+      throws CommandSyntaxException {
+    return updateRenderables(
+        context,
+        blockTarget,
+        action,
+        target ->
+            EasyModelAnimationNetwork.send(
+                target.level(),
+                target.blockPos(),
+                ClientboundEasyModelAnimationPacket.controlBlockEntity(
+                    target.blockPos(), operation, transition)),
+        entity ->
+            EasyModelAnimationNetwork.send(
+                entity,
+                ClientboundEasyModelAnimationPacket.controlEntity(
+                    entity.getId(), operation, transition)));
   }
 
   private static int set(
@@ -484,34 +372,17 @@ final class EasyModelAnimationCommand {
     Optional<EasyModelAnimation> animation =
         parseAnimation(StringArgumentType.getString(context, STATE_ARGUMENT));
     if (animation.isEmpty()) {
-      context.getSource().sendFailure(Component.literal("Invalid animation name."));
+      context.getSource().sendFailure(Component.literal(INVALID_ANIMATION_MESSAGE));
       return 0;
     }
 
-    Optional<EasyModelAnimationSetting> state =
-        animation.map(parsed -> new EasyModelAnimationSetting(parsed, loop));
-    if (blockTarget) {
-      BlockTarget target = blockTarget(context);
-      if (!(target.blockEntity() instanceof EasyModelHostBlockEntity hostBlockEntity)) {
-        context
-            .getSource()
-            .sendFailure(Component.literal("No Easy Model host block entity at position."));
-        return 0;
-      }
-      hostBlockEntity.setEasyModelAnimation(state.get());
-      return sendResult(context.getSource(), "Set animation", 1, "block entity");
-    }
-
-    int updated = 0;
-    Collection<? extends Entity> targets = EntityArgument.getEntities(context, TARGETS_ARGUMENT);
-    for (Entity entity : targets) {
-      if (entity instanceof EasyModelEntityHost hostEntity) {
-        hostEntity.setEasyModelAnimation(state.get());
-        updated++;
-      }
-    }
-    return sendResult(
-        context.getSource(), "Set animation", updated, updated == 1 ? "entity" : "entities");
+    EasyModelAnimationSetting setting = new EasyModelAnimationSetting(animation.get(), loop);
+    return updateHosts(
+        context,
+        blockTarget,
+        "Set animation",
+        hostBlockEntity -> hostBlockEntity.setEasyModelAnimation(setting),
+        hostEntity -> hostEntity.setEasyModelAnimation(setting));
   }
 
   static List<EasyModelAnimation> parseAnimations(String value) {

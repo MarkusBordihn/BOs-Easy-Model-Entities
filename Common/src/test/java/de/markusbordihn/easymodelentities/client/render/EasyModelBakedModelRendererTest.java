@@ -33,6 +33,8 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
@@ -64,8 +66,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
 import org.junit.jupiter.api.BeforeAll;
@@ -398,6 +403,29 @@ class EasyModelBakedModelRendererTest {
         false,
         clips,
         null);
+  }
+
+  private static void renderWithOpacity(
+      BakedModel bakedModel, SubmitNodeCollector submitNodeCollector, float opacity) {
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState(bakedModel),
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        EasyModelHeadLook.NONE,
+        EasyModelAnimationPlaybackFrame.single(EasyModelAnimation.AUTO, 0.0f),
+        EasyModelAnimationVariantFrame.NONE,
+        EasyModelTextureSetting.EMPTY,
+        EasyModelPartAnimator.NONE,
+        EasyModelPartAnimationMode.ADD,
+        new PoseStack(),
+        submitNodeCollector,
+        0,
+        OverlayTexture.NO_OVERLAY,
+        opacity,
+        EasyModelDisplaySettings.NO_LIGHT_LEVEL);
   }
 
   @Test
@@ -1305,6 +1333,93 @@ class EasyModelBakedModelRendererTest {
       verify(recordingConsumer, times(24))
           .addVertex((Matrix4f) any(), anyFloat(), anyFloat(), anyFloat());
     }
+  }
+
+  @Test
+  void opacityReachesTheVertexColor() {
+    VertexConsumer vertexConsumer = renderSingleCubeWithOpacity(0.4f);
+
+    verify(vertexConsumer, times(24)).setColor(255, 255, 255, 102);
+  }
+
+  @Test
+  void fullOpacityKeepsTheOpaqueVertexColor() {
+    VertexConsumer vertexConsumer =
+        renderSingleCubeWithOpacity(EasyModelDisplaySettings.MAX_OPACITY);
+
+    verify(vertexConsumer, times(24)).setColor(255, 255, 255, 255);
+  }
+
+  @Test
+  @DisplayName("A cutout render type would drop the alpha, so a faded model must turn translucent")
+  void partialOpacityForcesATranslucentRenderType() {
+    assertEquals(
+        RenderTypes.entityTranslucent(
+            Identifier.fromNamespaceAndPath("example", "textures/entity/uv_model.png")),
+        submittedRenderTypeWithOpacity(0.4f));
+  }
+
+  @Test
+  void fullOpacityKeepsTheCutoutRenderType() {
+    assertEquals(
+        RenderTypes.entityCutout(
+            Identifier.fromNamespaceAndPath("example", "textures/entity/uv_model.png")),
+        submittedRenderTypeWithOpacity(EasyModelDisplaySettings.MAX_OPACITY));
+  }
+
+  @Test
+  void zeroOpacityDrawsNothing() {
+    SubmitNodeCollector submitNodeCollector = mock(SubmitNodeCollector.class);
+
+    renderWithOpacity(singleCubeModel(), submitNodeCollector, EasyModelDisplaySettings.MIN_OPACITY);
+
+    verify(submitNodeCollector, never()).submitCustomGeometry(any(), any(), any());
+  }
+
+  private static VertexConsumer renderSingleCubeWithOpacity(float opacity) {
+    SubmitNodeCollector submitNodeCollector = mock(SubmitNodeCollector.class);
+    ArgumentCaptor<SubmitNodeCollector.CustomGeometryRenderer> rendererCaptor =
+        ArgumentCaptor.forClass(SubmitNodeCollector.CustomGeometryRenderer.class);
+
+    renderWithOpacity(singleCubeModel(), submitNodeCollector, opacity);
+
+    verify(submitNodeCollector).submitCustomGeometry(any(), any(), rendererCaptor.capture());
+    VertexConsumer vertexConsumer = mock(VertexConsumer.class, Answers.RETURNS_SELF);
+    rendererCaptor.getValue().render(new PoseStack().last(), vertexConsumer);
+    return vertexConsumer;
+  }
+
+  private static RenderType submittedRenderTypeWithOpacity(float opacity) {
+    SubmitNodeCollector submitNodeCollector = mock(SubmitNodeCollector.class);
+    ArgumentCaptor<RenderType> renderTypeCaptor = ArgumentCaptor.forClass(RenderType.class);
+
+    renderWithOpacity(singleCubeModel(), submitNodeCollector, opacity);
+
+    verify(submitNodeCollector).submitCustomGeometry(any(), renderTypeCaptor.capture(), any());
+    return renderTypeCaptor.getValue();
+  }
+
+  @Test
+  @DisplayName("The light level override raises the block light without touching the sky light")
+  void lightLevelOverrideRaisesOnlyTheBlockLight() {
+    int packedLight = LightCoordsUtil.pack(2, 11);
+
+    int packedLightWithOverride =
+        EasyModelBakedModelRenderer.packedLightWithOverride(packedLight, 9);
+
+    assertEquals(9, LightCoordsUtil.block(packedLightWithOverride));
+    assertEquals(11, LightCoordsUtil.sky(packedLightWithOverride));
+  }
+
+  @Test
+  void lightLevelOverrideNeverDarkensTheModel() {
+    int packedLight = LightCoordsUtil.pack(13, 4);
+
+    assertEquals(packedLight, EasyModelBakedModelRenderer.packedLightWithOverride(packedLight, 9));
+    assertEquals(
+        packedLight,
+        EasyModelBakedModelRenderer.packedLightWithOverride(
+            packedLight, EasyModelDisplaySettings.NO_LIGHT_LEVEL));
   }
 
   private static final class SharedBuilderBufferProvider

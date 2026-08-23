@@ -156,6 +156,10 @@ public record EasyModelRenderProfile(
     return this.rendering.hasVisibleBounds();
   }
 
+  public float opacity() {
+    return this.rendering.opacity();
+  }
+
   public EasyModelRenderProfile withValidationIssues(
       List<ModelRenderProfileValidationIssue> validationIssues) {
     return new EasyModelRenderProfile(

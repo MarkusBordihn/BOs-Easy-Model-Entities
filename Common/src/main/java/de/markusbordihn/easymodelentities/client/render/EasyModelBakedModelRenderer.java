@@ -26,6 +26,7 @@ import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureBlend;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelVec3f;
@@ -64,6 +65,7 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.util.Mth;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -73,6 +75,7 @@ import org.joml.Matrix4f;
 public final class EasyModelBakedModelRenderer {
 
   private static final Logger log = LogManager.getLogger(Constants.LOG_NAME);
+  private static final int OPAQUE_ALPHA = 255;
   private static final int MISSING_CLIP_WARN_CACHE_LIMIT = 512;
   private static final ThreadLocal<float[]> ANIMATION_SAMPLE =
       ThreadLocal.withInitial(() -> new float[6]);
@@ -394,6 +397,47 @@ public final class EasyModelBakedModelRenderer {
       EasyModelRenderState renderState,
       float limbSwing,
       float limbSwingAmount,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      EasyModelTextureSetting textureSetting,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay,
+      float opacity,
+      int lightLevel) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        airborneAmount,
+        attackAmount,
+        headLook,
+        playbackFrame,
+        variantFrame,
+        textureSetting,
+        partAnimator,
+        partAnimationMode,
+        EasyModelPartPoseListener.NONE,
+        poseStack,
+        submitNodeCollector,
+        packedLight,
+        packedOverlay,
+        opacity,
+        lightLevel);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
       float ageInTicks,
       float airborneAmount,
       EasyModelAnimation animation,
@@ -646,15 +690,64 @@ public final class EasyModelBakedModelRenderer {
       SubmitNodeCollector submitNodeCollector,
       int packedLight,
       int packedOverlay) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        airborneAmount,
+        attackAmount,
+        headLook,
+        playbackFrame,
+        variantFrame,
+        textureSetting,
+        partAnimator,
+        partAnimationMode,
+        partPoseListener,
+        poseStack,
+        submitNodeCollector,
+        packedLight,
+        packedOverlay,
+        EasyModelDisplaySettings.DEFAULT_OPACITY,
+        EasyModelDisplaySettings.NO_LIGHT_LEVEL);
+  }
+
+  static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      EasyModelTextureSetting textureSetting,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay,
+      float opacity,
+      int lightLevel) {
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
+    int alpha = alpha(opacity);
+    if (alpha <= 0) {
+      return;
+    }
+
     boolean cullBackfaces = bakedModel.cullBackfaces();
+    boolean forceTranslucent = alpha < OPAQUE_ALPHA;
+    int overriddenPackedLight = packedLightWithOverride(packedLight, lightLevel);
     EasyModelResolvedTextures resolvedTextures =
         EasyModelTextureOverrides.resolve(renderState, textureSetting);
     for (int textureIndex : textureIndices(bakedModel)) {
       Identifier texture = textureFor(resolvedTextures, renderState, textureIndex);
       RenderType renderType =
-          renderType(texture, resolvedTextures.blend(textureIndex), cullBackfaces);
+          renderType(texture, resolvedTextures.blend(textureIndex), cullBackfaces, forceTranslucent);
       submitNodeCollector.submitCustomGeometry(
           poseStack,
           renderType,
@@ -674,8 +767,9 @@ public final class EasyModelBakedModelRenderer {
                 variantFrame,
                 innerStack,
                 renderTextureIndex -> renderTextureIndex == textureIndex ? vertexConsumer : null,
-                packedLight,
+                overriddenPackedLight,
                 packedOverlay,
+                alpha,
                 partAnimator,
                 partAnimationMode,
                 partPoseListener);
@@ -683,9 +777,36 @@ public final class EasyModelBakedModelRenderer {
     }
   }
 
+  static int alpha(float opacity) {
+    if (!EasyModelDisplaySettings.hasOpacityOverride(opacity)
+        || opacity >= EasyModelDisplaySettings.DEFAULT_OPACITY) {
+      return OPAQUE_ALPHA;
+    }
+    if (opacity <= 0.0f) {
+      return 0;
+    }
+
+    return Math.round(opacity * OPAQUE_ALPHA);
+  }
+
+  static int packedLightWithOverride(int packedLight, int lightLevel) {
+    if (lightLevel <= EasyModelDisplaySettings.NO_LIGHT_LEVEL) {
+      return packedLight;
+    }
+
+    return LightCoordsUtil.pack(
+        Math.max(
+            LightCoordsUtil.block(packedLight),
+            Math.min(lightLevel, EasyModelDisplaySettings.MAX_LIGHT_LEVEL)),
+        LightCoordsUtil.sky(packedLight));
+  }
+
   private static RenderType renderType(
-      Identifier texture, EasyModelTextureBlend blend, boolean cullBackfaces) {
-    if (blend == EasyModelTextureBlend.TRANSLUCENT) {
+      Identifier texture,
+      EasyModelTextureBlend blend,
+      boolean cullBackfaces,
+      boolean forceTranslucent) {
+    if (forceTranslucent || blend == EasyModelTextureBlend.TRANSLUCENT) {
       return cullBackfaces
           ? RenderTypes.entityTranslucentCullItemTarget(texture)
           : RenderTypes.entityTranslucent(texture);
@@ -848,6 +969,48 @@ public final class EasyModelBakedModelRenderer {
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode,
       EasyModelPartPoseListener partPoseListener) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        airborneAmount,
+        attackAmount,
+        headLook,
+        playbackFrame,
+        variantFrame,
+        poseStack,
+        bufferProvider,
+        packedLight,
+        packedOverlay,
+        OPAQUE_ALPHA,
+        partAnimator,
+        partAnimationMode,
+        partPoseListener);
+  }
+
+  static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float airborneAmount,
+      float attackAmount,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      PoseStack poseStack,
+      IntFunction<VertexConsumer> bufferProvider,
+      int packedLight,
+      int packedOverlay,
+      int alpha,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener) {
+    if (alpha <= 0) {
+      return;
+    }
+
     Objects.requireNonNull(bakedModel, "bakedModel");
     Objects.requireNonNull(playbackFrame, "playbackFrame");
     Objects.requireNonNull(variantFrame, "variantFrame");
@@ -902,7 +1065,8 @@ public final class EasyModelBakedModelRenderer {
                 playbackFrame.previousAnimationTicks(),
                 attackAmount,
                 playbackFrame.previousLoopOverride());
-    VertexSinks sinks = new VertexSinks(bufferProvider, poseStack, packedLight, packedOverlay);
+    VertexSinks sinks =
+        new VertexSinks(bufferProvider, poseStack, packedLight, packedOverlay, alpha);
     float[] animationSample = ANIMATION_SAMPLE.get();
     for (BakedModelPart part : bakedModel.rootParts()) {
       renderPart(
@@ -1862,6 +2026,7 @@ public final class EasyModelBakedModelRenderer {
     private final PoseStack poseStack;
     private final int packedLight;
     private final int packedOverlay;
+    private final int alpha;
     private int lastTextureIndex = -1;
     private EasyModelVertexSink lastSink;
 
@@ -1869,11 +2034,13 @@ public final class EasyModelBakedModelRenderer {
         IntFunction<VertexConsumer> bufferProvider,
         PoseStack poseStack,
         int packedLight,
-        int packedOverlay) {
+        int packedOverlay,
+        int alpha) {
       this.bufferProvider = bufferProvider;
       this.poseStack = poseStack;
       this.packedLight = packedLight;
       this.packedOverlay = packedOverlay;
+      this.alpha = alpha;
     }
 
     private EasyModelVertexSink sink(int textureIndex) {
@@ -1883,7 +2050,8 @@ public final class EasyModelBakedModelRenderer {
                 this.bufferProvider.apply(textureIndex),
                 this.poseStack,
                 this.packedLight,
-                this.packedOverlay);
+                this.packedOverlay,
+                this.alpha);
         this.lastTextureIndex = textureIndex;
       }
       return this.lastSink;

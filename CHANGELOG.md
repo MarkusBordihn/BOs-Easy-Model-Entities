@@ -5,6 +5,18 @@
 This change log includes the summarized changes. For the full changelog, please go to
 the [GitHub History][history] instead.
 
+### 2.3.0
+
+- Changed models rendered by another mod to show the hurt and death overlay, which they never did.
+- Changed `texture query` to `texture get`, matching vanilla commands; the old name no longer works.
+- Changed the chat feedback of `behavior set` and `texture get` to match the other commands.
+- Added a server API call to read the texture override of an entity or block entity.
+- Added `display opacity set`, `clear` and `get` to fade a model out at runtime.
+- Added `display light set`, `clear` and `get` to give a model its own minimum block light.
+- Added opacity and light level as saved, synchronized state, so both survive a reload and relog.
+- Added `rendering.opacity` to the render profile as the default a model starts with.
+- Added opacity, light level and overlay to the render options and to the server API.
+
 ### 2.2.0
 
 - Fixed Forge entity data serializers using load-order-dependent IDs when other mods register their

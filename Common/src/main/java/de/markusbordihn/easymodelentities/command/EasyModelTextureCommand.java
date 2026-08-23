@@ -19,24 +19,22 @@
 
 package de.markusbordihn.easymodelentities.command;
 
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.BlockTarget;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.POSITION_ARGUMENT;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.TARGETS_ARGUMENT;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.blockTarget;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.isRenderableEntity;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.sendResult;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.HOST_ENTITY;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.RENDERABLE_ENTITY;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.getRenderables;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.targetBranches;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.updateHosts;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.EasyModelBlockEntitiesApi;
+import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureBlend;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSlot;
-import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
-import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -63,7 +61,7 @@ final class EasyModelTextureCommand {
         .then(setCommand())
         .then(blendCommand())
         .then(clearCommand())
-        .then(queryCommand());
+        .then(getCommand());
   }
 
   private static <T extends ArgumentBuilder<CommandSourceStack, T>> T withBlendLiterals(
@@ -75,25 +73,11 @@ final class EasyModelTextureCommand {
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> setCommand() {
-    return Commands.literal("set")
-        .then(
-            Commands.literal("entity")
-                .then(
-                    Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
-                        .suggests(
-                            (context, builder) ->
-                                EasyModelCommandSuggestions.suggestEntities(
-                                    context,
-                                    builder,
-                                    entity -> entity instanceof EasyModelEntityHost))
-                        .then(setDefaultSlot(false))
-                        .then(setNamedSlot(false))))
-        .then(
-            Commands.literal("block")
-                .then(
-                    Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .then(setDefaultSlot(true))
-                        .then(setNamedSlot(true))));
+    return targetBranches(
+        Commands.literal("set"),
+        HOST_ENTITY,
+        (target, blockTarget) ->
+            target.then(setDefaultSlot(blockTarget)).then(setNamedSlot(blockTarget)));
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> setDefaultSlot(boolean blockTarget) {
@@ -133,25 +117,11 @@ final class EasyModelTextureCommand {
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> blendCommand() {
-    return Commands.literal("blend")
-        .then(
-            Commands.literal("entity")
-                .then(
-                    Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
-                        .suggests(
-                            (context, builder) ->
-                                EasyModelCommandSuggestions.suggestEntities(
-                                    context,
-                                    builder,
-                                    entity -> entity instanceof EasyModelEntityHost))
-                        .then(blendDefaultSlot(false))
-                        .then(blendNamedSlot(false))))
-        .then(
-            Commands.literal("block")
-                .then(
-                    Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .then(blendDefaultSlot(true))
-                        .then(blendNamedSlot(true))));
+    return targetBranches(
+        Commands.literal("blend"),
+        HOST_ENTITY,
+        (target, blockTarget) ->
+            target.then(blendDefaultSlot(blockTarget)).then(blendNamedSlot(blockTarget)));
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> blendDefaultSlot(boolean blockTarget) {
@@ -176,27 +146,14 @@ final class EasyModelTextureCommand {
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> clearCommand() {
-    return Commands.literal("clear")
-        .then(
-            Commands.literal("entity")
-                .then(
-                    Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
-                        .suggests(
-                            (context, builder) ->
-                                EasyModelCommandSuggestions.suggestEntities(
-                                    context,
-                                    builder,
-                                    entity -> entity instanceof EasyModelEntityHost))
-                        .executes(context -> clear(context, false, null))
-                        .then(clearDefaultSlot(false))
-                        .then(clearNamedSlot(false))))
-        .then(
-            Commands.literal("block")
-                .then(
-                    Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .executes(context -> clear(context, true, null))
-                        .then(clearDefaultSlot(true))
-                        .then(clearNamedSlot(true))));
+    return targetBranches(
+        Commands.literal("clear"),
+        HOST_ENTITY,
+        (target, blockTarget) ->
+            target
+                .executes(context -> clear(context, blockTarget, null))
+                .then(clearDefaultSlot(blockTarget))
+                .then(clearNamedSlot(blockTarget)));
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> clearDefaultSlot(boolean blockTarget) {
@@ -216,22 +173,11 @@ final class EasyModelTextureCommand {
                             StringArgumentType.getString(context, SLOT_ARGUMENT))));
   }
 
-  private static ArgumentBuilder<CommandSourceStack, ?> queryCommand() {
-    return Commands.literal("query")
-        .then(
-            Commands.literal("entity")
-                .then(
-                    Commands.argument(TARGETS_ARGUMENT, EntityArgument.entities())
-                        .suggests(
-                            (context, builder) ->
-                                EasyModelCommandSuggestions.suggestEntities(
-                                    context, builder, EasyModelCommandTargets::isRenderableEntity))
-                        .executes(context -> query(context, false))))
-        .then(
-            Commands.literal("block")
-                .then(
-                    Commands.argument(POSITION_ARGUMENT, BlockPosArgument.blockPos())
-                        .executes(context -> query(context, true))));
+  private static ArgumentBuilder<CommandSourceStack, ?> getCommand() {
+    return targetBranches(
+        Commands.literal("get"),
+        RENDERABLE_ENTITY,
+        (target, blockTarget) -> target.executes(context -> getTexture(context, blockTarget)));
   }
 
   private static int set(
@@ -298,29 +244,24 @@ final class EasyModelTextureCommand {
         setting -> setting.withoutSlot(normalizedSlot.get()));
   }
 
-  private static int query(CommandContext<CommandSourceStack> context, boolean blockTarget)
+  private static int getTexture(CommandContext<CommandSourceStack> context, boolean blockTarget)
       throws CommandSyntaxException {
     CommandSourceStack source = context.getSource();
-    if (blockTarget) {
-      BlockTarget target = blockTarget(context);
-      if (!(target.blockEntity() instanceof EasyModelRenderable renderable)) {
-        source.sendFailure(Component.literal("No Easy Model block entity at position."));
-        return 0;
-      }
-      sendTextureLines(
-          source, target.blockPos().toShortString(), renderable.getEasyModelTextureSetting());
-      return 1;
-    }
-
-    int queried = 0;
-    for (Entity entity : EntityArgument.getEntities(context, TARGETS_ARGUMENT)) {
-      if (!isRenderableEntity(entity)) {
-        continue;
-      }
-      sendTextureLines(source, entity.getName().getString(), textureSetting(entity));
-      queried++;
-    }
-    return queried == 0 ? sendResult(source, "Queried texture", 0, "entities") : queried;
+    return getRenderables(
+        context,
+        blockTarget,
+        target -> {
+          sendTextureLines(
+              source,
+              target.blockPos().toShortString(),
+              EasyModelBlockEntitiesApi.getTextureSetting(target.blockEntity()));
+          return 1;
+        },
+        entity -> {
+          sendTextureLines(
+              source, entity.getName().getString(), EasyModelEntitiesApi.getTextureSetting(entity));
+          return 1;
+        });
   }
 
   private static int update(
@@ -329,27 +270,15 @@ final class EasyModelTextureCommand {
       String action,
       UnaryOperator<EasyModelTextureSetting> update)
       throws CommandSyntaxException {
-    if (blockTarget) {
-      BlockTarget target = blockTarget(context);
-      if (!(target.blockEntity() instanceof EasyModelHostBlockEntity hostBlockEntity)) {
-        context
-            .getSource()
-            .sendFailure(Component.literal("No Easy Model host block entity at position."));
-        return 0;
-      }
-      hostBlockEntity.setEasyModelTexture(
-          update.apply(hostBlockEntity.getEasyModelTextureSetting()));
-      return sendResult(context.getSource(), action, 1, "block entity");
-    }
-
-    int updated = 0;
-    for (Entity entity : EntityArgument.getEntities(context, TARGETS_ARGUMENT)) {
-      if (entity instanceof EasyModelEntityHost hostEntity) {
-        hostEntity.setEasyModelTexture(update.apply(hostEntity.getEasyModelTextureSetting()));
-        updated++;
-      }
-    }
-    return sendResult(context.getSource(), action, updated, updated == 1 ? "entity" : "entities");
+    return updateHosts(
+        context,
+        blockTarget,
+        action,
+        hostBlockEntity ->
+            hostBlockEntity.setEasyModelTexture(
+                update.apply(hostBlockEntity.getEasyModelTextureSetting())),
+        hostEntity ->
+            hostEntity.setEasyModelTexture(update.apply(hostEntity.getEasyModelTextureSetting())));
   }
 
   private static Optional<String> normalizedSlot(
@@ -359,17 +288,6 @@ final class EasyModelTextureCommand {
       context.getSource().sendFailure(Component.literal("Invalid texture slot name: " + slot));
     }
     return normalizedSlot;
-  }
-
-  private static EasyModelTextureSetting textureSetting(Entity entity) {
-    if (entity instanceof EasyModelEntityHost hostEntity) {
-      return hostEntity.getEasyModelTextureSetting();
-    }
-    if (entity instanceof EasyModelRenderable renderable) {
-      return renderable.getEasyModelTextureSetting();
-    }
-
-    return EasyModelTextureSetting.EMPTY;
   }
 
   private static void sendTextureLines(
