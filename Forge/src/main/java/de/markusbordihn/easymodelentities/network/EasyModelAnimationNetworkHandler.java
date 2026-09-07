@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.network;
 
 import de.markusbordihn.easymodelentities.client.network.EasyModelAnimationPacketHandler;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.util.function.Supplier;
@@ -38,7 +39,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class EasyModelAnimationNetworkHandler {
 
-  private static final String PROTOCOL_VERSION = "1";
+  private static final String PROTOCOL_VERSION = "2";
   private static final SimpleChannel CHANNEL =
       NetworkRegistry.newSimpleChannel(
           ModelResourcePaths.modResourceLocation("animation_playback"),
@@ -56,11 +57,27 @@ public final class EasyModelAnimationNetworkHandler {
         .decoder(ClientboundEasyModelAnimationPacket::decode)
         .consumerMainThread(EasyModelAnimationNetworkHandler::handle)
         .add();
+    CHANNEL
+        .messageBuilder(
+            ClientboundEasyModelAnimationSequencePacket.class, 1, NetworkDirection.PLAY_TO_CLIENT)
+        .encoder(ClientboundEasyModelAnimationSequencePacket::encode)
+        .decoder(ClientboundEasyModelAnimationSequencePacket::decode)
+        .consumerMainThread(EasyModelAnimationNetworkHandler::handle)
+        .add();
     EasyModelAnimationNetwork.setSender(new ForgeSender());
   }
 
   private static void handle(
       ClientboundEasyModelAnimationPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
+    NetworkEvent.Context context = contextSupplier.get();
+    DistExecutor.unsafeRunWhenOn(
+        Dist.CLIENT, () -> () -> EasyModelAnimationPacketHandler.handle(packet));
+    context.setPacketHandled(true);
+  }
+
+  private static void handle(
+      ClientboundEasyModelAnimationSequencePacket packet,
+      Supplier<NetworkEvent.Context> contextSupplier) {
     NetworkEvent.Context context = contextSupplier.get();
     DistExecutor.unsafeRunWhenOn(
         Dist.CLIENT, () -> () -> EasyModelAnimationPacketHandler.handle(packet));
@@ -77,6 +94,17 @@ public final class EasyModelAnimationNetworkHandler {
     @Override
     public void send(
         ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationPacket packet) {
+      CHANNEL.send(PacketDistributor.TRACKING_CHUNK.with(() -> level.getChunkAt(blockPos)), packet);
+    }
+
+    @Override
+    public void send(Entity entity, ClientboundEasyModelAnimationSequencePacket packet) {
+      CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), packet);
+    }
+
+    @Override
+    public void send(
+        ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationSequencePacket packet) {
       CHANNEL.send(PacketDistributor.TRACKING_CHUNK.with(() -> level.getChunkAt(blockPos)), packet);
     }
   }

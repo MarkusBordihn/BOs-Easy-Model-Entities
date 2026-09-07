@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.network;
 
 import de.markusbordihn.easymodelentities.client.network.EasyModelAnimationPacketHandler;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.util.HashSet;
@@ -41,6 +42,8 @@ public final class EasyModelAnimationNetworkHandler {
 
   public static final ResourceLocation PACKET_ID =
       ModelResourcePaths.modResourceLocation("animation_playback");
+  public static final ResourceLocation SEQUENCE_PACKET_ID =
+      ModelResourcePaths.modResourceLocation("animation_sequence");
 
   private EasyModelAnimationNetworkHandler() {}
 
@@ -56,6 +59,13 @@ public final class EasyModelAnimationNetworkHandler {
               ClientboundEasyModelAnimationPacket.decode(buffer);
           client.execute(() -> EasyModelAnimationPacketHandler.handle(packet));
         });
+    ClientPlayNetworking.registerGlobalReceiver(
+        SEQUENCE_PACKET_ID,
+        (client, handler, buffer, responseSender) -> {
+          ClientboundEasyModelAnimationSequencePacket packet =
+              ClientboundEasyModelAnimationSequencePacket.decode(buffer);
+          client.execute(() -> EasyModelAnimationPacketHandler.handle(packet));
+        });
   }
 
   private static void send(ServerPlayer player, ClientboundEasyModelAnimationPacket packet) {
@@ -64,15 +74,18 @@ public final class EasyModelAnimationNetworkHandler {
     ServerPlayNetworking.send(player, PACKET_ID, buffer);
   }
 
+  private static void send(
+      ServerPlayer player, ClientboundEasyModelAnimationSequencePacket packet) {
+    FriendlyByteBuf buffer = PacketByteBufs.create();
+    packet.encode(buffer);
+    ServerPlayNetworking.send(player, SEQUENCE_PACKET_ID, buffer);
+  }
+
   private static final class FabricSender implements EasyModelAnimationNetwork.Sender {
 
     @Override
     public void send(Entity entity, ClientboundEasyModelAnimationPacket packet) {
-      Set<ServerPlayer> recipients = new HashSet<>(PlayerLookup.tracking(entity));
-      if (entity instanceof ServerPlayer serverPlayer) {
-        recipients.add(serverPlayer);
-      }
-      recipients.forEach(player -> EasyModelAnimationNetworkHandler.send(player, packet));
+      recipients(entity).forEach(player -> EasyModelAnimationNetworkHandler.send(player, packet));
     }
 
     @Override
@@ -80,6 +93,27 @@ public final class EasyModelAnimationNetworkHandler {
         ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationPacket packet) {
       PlayerLookup.tracking(level, new ChunkPos(blockPos))
           .forEach(player -> EasyModelAnimationNetworkHandler.send(player, packet));
+    }
+
+    @Override
+    public void send(Entity entity, ClientboundEasyModelAnimationSequencePacket packet) {
+      recipients(entity).forEach(player -> EasyModelAnimationNetworkHandler.send(player, packet));
+    }
+
+    @Override
+    public void send(
+        ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationSequencePacket packet) {
+      PlayerLookup.tracking(level, new ChunkPos(blockPos))
+          .forEach(player -> EasyModelAnimationNetworkHandler.send(player, packet));
+    }
+
+    private static Set<ServerPlayer> recipients(Entity entity) {
+      Set<ServerPlayer> recipients = new HashSet<>(PlayerLookup.tracking(entity));
+      if (entity instanceof ServerPlayer serverPlayer) {
+        recipients.add(serverPlayer);
+      }
+
+      return recipients;
     }
   }
 }

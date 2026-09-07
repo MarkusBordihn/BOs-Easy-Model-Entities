@@ -62,7 +62,8 @@ class EasyModelApiContractTest {
         List.of("immediate", "after_current"), EasyModelApiContract.animationSwitchTimings());
     assertEquals(List.of("once", "loop", "repeat"), EasyModelApiContract.playbackModes());
     assertEquals(List.of("standard", "custom"), EasyModelApiContract.animationTypes());
-    assertEquals(List.of("cutout", "translucent"), EasyModelApiContract.textureBlends());
+    assertEquals(
+        List.of("cutout", "translucent", "emissive"), EasyModelApiContract.textureBlends());
     assertTrue(EasyModelApiContract.gaits().contains("natural"));
     assertTrue(EasyModelApiContract.presetTypes().contains("custom"));
     assertTrue(EasyModelApiContract.blockEntityPresetTypes().contains("ticking"));

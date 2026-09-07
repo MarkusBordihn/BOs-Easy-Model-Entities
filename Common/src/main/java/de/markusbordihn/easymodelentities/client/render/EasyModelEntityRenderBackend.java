@@ -22,11 +22,13 @@ package de.markusbordihn.easymodelentities.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
+import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
@@ -323,6 +325,12 @@ public final class EasyModelEntityRenderBackend {
       float opacity,
       int lightLevel) {
     float scale = renderState.scale() * (options.scale() == null ? 1.0f : options.scale());
+    EasyModelHandItemRenderer.Pass handItemPass =
+        EasyModelHandItemRenderer.createPass(renderState.bakedModel(), options.handItems());
+    EasyModelPartPoseListener partPoseListener =
+        handItemPass.isEmpty()
+            ? options.partPoseListener()
+            : options.partPoseListener().andThen(handItemPass);
 
     poseStack.pushPose();
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yaw));
@@ -342,13 +350,20 @@ public final class EasyModelEntityRenderBackend {
         textureSetting,
         options.partAnimator(),
         options.partAnimationMode(),
-        options.partPoseListener(),
+        partPoseListener,
         poseStack,
         bufferSource,
         packedLight,
         packedOverlay,
         opacity,
         lightLevel);
+    if (!handItemPass.isEmpty()) {
+      handItemPass.render(
+          poseStack,
+          bufferSource,
+          EasyModelBakedModelRenderer.packedLightWithOverride(packedLight, lightLevel),
+          packedOverlay);
+    }
     poseStack.popPose();
   }
 
@@ -363,6 +378,10 @@ public final class EasyModelEntityRenderBackend {
       EasyModelAnimationPlayback playback,
       EasyModelAnimationTransition transition) {
     ANIMATION_PLAYBACK_TRACKER.play(entity, animation, playback, transition);
+  }
+
+  public static void playAnimationSequence(Entity entity, EasyModelAnimationSequence sequence) {
+    ANIMATION_PLAYBACK_TRACKER.playSequence(entity, sequence);
   }
 
   public static void restartAnimation(Entity entity) {

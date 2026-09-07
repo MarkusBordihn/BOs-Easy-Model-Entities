@@ -24,7 +24,9 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelVec3f;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelItemAnchor;
 import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
+import de.markusbordihn.easymodelentities.data.model.ModelPartType;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
@@ -38,16 +40,14 @@ import net.minecraft.world.entity.HumanoidArm;
 
 public final class EasyModelItemAnchorResolver {
 
-  private static final String ANCHOR_SUFFIX = "_item";
-  private static final String HAND_SUFFIX = "_hand";
-  private static final String ARM_SUFFIX = "_arm";
-
-  private static final Map<AnchorCacheKey, Optional<EasyModelItemAnchor>> ANCHOR_CACHE =
+  private static final Map<AnchorCacheKey, Optional<EasyModelItemAnchor>> PROFILE_ANCHOR_CACHE =
+      new ConcurrentHashMap<>();
+  private static final Map<AnchorCacheKey, Optional<EasyModelItemAnchor>> MODEL_ANCHOR_CACHE =
       new ConcurrentHashMap<>();
 
   static {
-    EasyModelReloadEvents.onProfileReload(ANCHOR_CACHE::clear);
-    EasyModelReloadEvents.onRenderProfileReload(ANCHOR_CACHE::clear);
+    EasyModelReloadEvents.onProfileReload(EasyModelItemAnchorResolver::clearCaches);
+    EasyModelReloadEvents.onRenderProfileReload(EasyModelItemAnchorResolver::clearCaches);
   }
 
   private EasyModelItemAnchorResolver() {}
@@ -55,7 +55,19 @@ public final class EasyModelItemAnchorResolver {
   public static Optional<EasyModelItemAnchor> getItemAnchor(
       ResourceLocation profileId, HumanoidArm arm) {
     AnchorCacheKey cacheKey = new AnchorCacheKey(profileId, arm);
-    return ANCHOR_CACHE.computeIfAbsent(cacheKey, key -> resolve(key.profileId(), key.arm()));
+    return PROFILE_ANCHOR_CACHE.computeIfAbsent(
+        cacheKey, key -> resolve(key.identifier(), key.arm()));
+  }
+
+  public static Optional<EasyModelItemAnchor> getItemAnchor(BakedModel bakedModel, HumanoidArm arm) {
+    AnchorCacheKey cacheKey = new AnchorCacheKey(bakedModel.modelId(), arm);
+    return MODEL_ANCHOR_CACHE.computeIfAbsent(
+        cacheKey, key -> resolve(bakedModel.rootParts(), key.arm()));
+  }
+
+  private static void clearCaches() {
+    PROFILE_ANCHOR_CACHE.clear();
+    MODEL_ANCHOR_CACHE.clear();
   }
 
   private static Optional<EasyModelItemAnchor> resolve(
@@ -67,31 +79,49 @@ public final class EasyModelItemAnchorResolver {
       return Optional.empty();
     }
 
-    return resolve(renderState.get().bakedModel().rootParts(), arm);
+    return getItemAnchor(renderState.get().bakedModel(), arm);
   }
 
   static Optional<EasyModelItemAnchor> resolve(List<BakedModelPart> rootParts, HumanoidArm arm) {
-    String side = arm == HumanoidArm.LEFT ? "left" : "right";
-    BakedModelPart anchorPart = findPart(rootParts, side + ANCHOR_SUFFIX);
-    if (anchorPart != null) {
-      return Optional.of(new EasyModelItemAnchor(anchorPart.name(), EasyModelVec3f.ZERO));
+    boolean leftArm = arm == HumanoidArm.LEFT;
+
+    BakedModelPart itemPart =
+        findPart(rootParts, leftArm ? ModelPartType.LEFT_ITEM : ModelPartType.RIGHT_ITEM);
+    if (itemPart != null) {
+      return Optional.of(new EasyModelItemAnchor(itemPart.name(), EasyModelVec3f.ZERO));
     }
 
-    BakedModelPart handPart = findPart(rootParts, side + HAND_SUFFIX);
+    BakedModelPart handPart =
+        findPart(rootParts, leftArm ? ModelPartType.LEFT_HAND : ModelPartType.RIGHT_HAND);
     if (handPart != null) {
-      return Optional.of(
-          new EasyModelItemAnchor(
-              handPart.name(), EasyModelApiMapper.vector(cubeTipOffset(handPart))));
+      return Optional.of(anchor(handPart, cubeTipOffset(handPart)));
     }
 
-    BakedModelPart armPart = findPart(rootParts, side + ARM_SUFFIX);
+    BakedModelPart armPart =
+        findPart(rootParts, leftArm ? ModelPartType.LEFT_ARM : ModelPartType.RIGHT_ARM);
     if (armPart != null) {
-      return Optional.of(
-          new EasyModelItemAnchor(
-              armPart.name(), EasyModelApiMapper.vector(cubeTipOffset(armPart))));
+      return Optional.of(anchor(armPart, cubeTipOffset(armPart)));
+    }
+
+    BakedModelPart headPart = findPart(rootParts, ModelPartType.HEAD);
+    if (headPart != null) {
+      return Optional.of(anchor(headPart, cubeMouthOffset(headPart)));
+    }
+
+    BakedModelPart bodyPart = findPart(rootParts, ModelPartType.BODY);
+    if (bodyPart != null) {
+      return Optional.of(anchor(bodyPart, cubeMouthOffset(bodyPart)));
     }
 
     return Optional.empty();
+  }
+
+  private static EasyModelItemAnchor anchor(BakedModelPart part, Vec3f offset) {
+    return new EasyModelItemAnchor(part.name(), EasyModelApiMapper.vector(offset));
+  }
+
+  private static BakedModelPart findPart(List<BakedModelPart> parts, ModelPartType partType) {
+    return findPart(parts, partType.getTagName());
   }
 
   private static BakedModelPart findPart(List<BakedModelPart> parts, String name) {
@@ -108,9 +138,17 @@ public final class EasyModelItemAnchorResolver {
   }
 
   private static Vec3f cubeTipOffset(BakedModelPart part) {
+    return cubeBounds(part).tipOffset();
+  }
+
+  private static Vec3f cubeMouthOffset(BakedModelPart part) {
+    return cubeBounds(part).mouthOffset();
+  }
+
+  private static CubeBounds cubeBounds(BakedModelPart part) {
     CubeBounds bounds = new CubeBounds();
     accumulateCubeBounds(part, Vec3f.ZERO, bounds);
-    return bounds.tipOffset();
+    return bounds;
   }
 
   private static void accumulateCubeBounds(BakedModelPart part, Vec3f offset, CubeBounds bounds) {
@@ -122,12 +160,13 @@ public final class EasyModelItemAnchorResolver {
     }
   }
 
-  private record AnchorCacheKey(ResourceLocation profileId, HumanoidArm arm) {}
+  private record AnchorCacheKey(ResourceLocation identifier, HumanoidArm arm) {}
 
   private static final class CubeBounds {
 
     private float minX = Float.POSITIVE_INFINITY;
     private float maxX = Float.NEGATIVE_INFINITY;
+    private float minY = Float.POSITIVE_INFINITY;
     private float maxY = Float.NEGATIVE_INFINITY;
     private float minZ = Float.POSITIVE_INFINITY;
     private float maxZ = Float.NEGATIVE_INFINITY;
@@ -135,6 +174,7 @@ public final class EasyModelItemAnchorResolver {
     private void include(Vec3f position, Vec3f dimensions) {
       this.minX = Math.min(this.minX, position.x());
       this.maxX = Math.max(this.maxX, position.x() + dimensions.x());
+      this.minY = Math.min(this.minY, position.y());
       this.maxY = Math.max(this.maxY, position.y() + dimensions.y());
       this.minZ = Math.min(this.minZ, position.z());
       this.maxZ = Math.max(this.maxZ, position.z() + dimensions.z());
@@ -146,6 +186,14 @@ public final class EasyModelItemAnchorResolver {
       }
 
       return new Vec3f((this.minX + this.maxX) * 0.5f, this.maxY, (this.minZ + this.maxZ) * 0.5f);
+    }
+
+    private Vec3f mouthOffset() {
+      if (!Float.isFinite(this.minX)) {
+        return Vec3f.ZERO;
+      }
+
+      return new Vec3f((this.minX + this.maxX) * 0.5f, (this.minY + this.maxY) * 0.5f, this.minZ);
     }
   }
 }

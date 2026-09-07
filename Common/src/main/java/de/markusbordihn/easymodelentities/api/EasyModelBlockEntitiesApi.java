@@ -21,10 +21,15 @@ package de.markusbordihn.easymodelentities.api;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
+import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import java.util.Objects;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public final class EasyModelBlockEntitiesApi {
@@ -105,5 +110,21 @@ public final class EasyModelBlockEntitiesApi {
     }
 
     return false;
+  }
+
+  public static boolean playAnimationSequence(
+      BlockEntity blockEntity, EasyModelAnimationSequence sequence) {
+    Objects.requireNonNull(blockEntity, "blockEntity");
+    Objects.requireNonNull(sequence, "sequence");
+    if (!(blockEntity.getLevel() instanceof ServerLevel serverLevel)) {
+      return false;
+    }
+
+    BlockPos blockPos = blockEntity.getBlockPos();
+    EasyModelAnimationNetwork.send(
+        serverLevel,
+        blockPos,
+        ClientboundEasyModelAnimationSequencePacket.forBlockEntity(blockPos, sequence));
+    return true;
   }
 }

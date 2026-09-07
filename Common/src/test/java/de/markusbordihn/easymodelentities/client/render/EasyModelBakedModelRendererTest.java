@@ -35,6 +35,7 @@ import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
+import de.markusbordihn.easymodelentities.api.data.EasyModelTextureBlend;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationContext;
@@ -376,6 +377,75 @@ class EasyModelBakedModelRendererTest {
         EasyModelPartPoseListener.NONE);
 
     return context.get().automaticTransform().xRotation();
+  }
+
+  private static BakedModel staticClipModel() {
+    ModelAnimationBoneTrack track =
+        new ModelAnimationBoneTrack(
+            List.of(new ModelAnimationKeyframe(0.0f, new Vec3f(0.4f, 0.0f, 0.0f), false)),
+            List.of());
+    ModelAnimationClip clip = new ModelAnimationClip("wave", 1.0f, false, Map.of("body", track));
+
+    return new BakedModel(
+        new ResourceLocation("example", "statue"),
+        64,
+        64,
+        List.of(
+            new BakedModelPart("body", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of()),
+            new BakedModelPart("head", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())),
+        Map.of(),
+        false,
+        Map.of("wave", clip),
+        null);
+  }
+
+  private static EasyModelRenderState fallbackRenderState(BakedModel bakedModel) {
+    return new EasyModelRenderState(
+        bakedModel,
+        new ResourceLocation("example", "textures/entity/uv_model.png"),
+        1.0f,
+        0.3f,
+        ModelBodyType.STATIC,
+        new ModelAnimationSettings(ModelAnimationMode.NONE, 1.0f, 1.0f, 1.0f),
+        true,
+        false,
+        List.of());
+  }
+
+  private static Map<String, EasyModelPartTransform> staticClipTransforms(
+      EasyModelAnimation animation, float attackAmount) {
+    BakedModel bakedModel = staticClipModel();
+    return clipTransforms(renderState(bakedModel), bakedModel, animation, attackAmount);
+  }
+
+  private static Map<String, EasyModelPartTransform> clipTransforms(
+      EasyModelRenderState renderState,
+      BakedModel bakedModel,
+      EasyModelAnimation animation,
+      float attackAmount) {
+    Map<String, EasyModelPartTransform> transforms = new HashMap<>();
+
+    EasyModelBakedModelRenderer.render(
+        bakedModel,
+        renderState,
+        0.0f,
+        0.0f,
+        0.0f,
+        0.0f,
+        attackAmount,
+        EasyModelHeadLook.NONE,
+        animation,
+        new PoseStack(),
+        textureIndex -> mock(VertexConsumer.class, Answers.RETURNS_SELF),
+        0,
+        animationContext -> {
+          transforms.put(animationContext.partName(), animationContext.automaticTransform());
+          return EasyModelPartTransform.NONE;
+        },
+        EasyModelPartAnimationMode.ADD,
+        EasyModelPartPoseListener.NONE);
+
+    return transforms;
   }
 
   private static BakedModel variantModel(float length, boolean loop, String... clipNames) {
@@ -883,6 +953,49 @@ class EasyModelBakedModelRendererTest {
   }
 
   @Test
+  @DisplayName("A statue stays still until a clip is asked for by name")
+  void staticModelPlaysOnlyExplicitlyRequestedClips() {
+    Map<String, EasyModelPartTransform> automatic =
+        staticClipTransforms(EasyModelAnimation.AUTO, 0.0f);
+    Map<String, EasyModelPartTransform> requested =
+        staticClipTransforms(EasyModelAnimation.named("wave"), 0.0f);
+
+    assertEquals(EasyModelPartTransform.NONE, automatic.get("body"));
+    assertEquals(0.4f, requested.get("body").xRotation(), 0.001f);
+  }
+
+  @Test
+  @DisplayName("A bone without a track must not fall back to the procedural idle on a statue")
+  void staticModelKeepsUntrackedBonesAtRest() {
+    Map<String, EasyModelPartTransform> transforms =
+        staticClipTransforms(EasyModelAnimation.named("wave"), 0.0f);
+
+    assertEquals(EasyModelPartTransform.NONE, transforms.get("head"));
+  }
+
+  @Test
+  @DisplayName("The procedural attack pose must not reach a statue either")
+  void staticModelSuppressesTheAttackPose() {
+    Map<String, EasyModelPartTransform> transforms =
+        staticClipTransforms(EasyModelAnimation.named("wave"), 1.0f);
+
+    assertEquals(EasyModelPartTransform.NONE, transforms.get("head"));
+  }
+
+  @Test
+  @DisplayName("A fallback model has no matching bone names, so it stays unanimated")
+  void fallbackModelIgnoresExplicitlyRequestedClips() {
+    Map<String, EasyModelPartTransform> transforms =
+        clipTransforms(
+            fallbackRenderState(staticClipModel()),
+            staticClipModel(),
+            EasyModelAnimation.named("wave"),
+            0.0f);
+
+    assertEquals(EasyModelPartTransform.NONE, transforms.get("body"));
+  }
+
+  @Test
   void crossFadePreservesPreviousProceduralAnimationTime() {
     BakedModel bakedModel =
         new BakedModel(
@@ -1297,6 +1410,44 @@ class EasyModelBakedModelRendererTest {
         RenderType.entityCutoutNoCull(
             new ResourceLocation("example", "textures/entity/uv_model.png")),
         renderTypeCaptor.getValue());
+  }
+
+  @Test
+  @DisplayName("An emissive slot picks a fullbright render type, a cutout slot does not")
+  void emissiveBlendSelectsAnEmissiveRenderType() {
+    ResourceLocation texture = new ResourceLocation("example", "textures/entity/uv_model.png");
+
+    assertEquals(
+        RenderType.entityTranslucentEmissive(texture),
+        EasyModelBakedModelRenderer.renderType(
+            texture, EasyModelTextureBlend.EMISSIVE, false, false));
+    assertNotEquals(
+        EasyModelBakedModelRenderer.renderType(texture, EasyModelTextureBlend.CUTOUT, false, false),
+        EasyModelBakedModelRenderer.renderType(
+            texture, EasyModelTextureBlend.EMISSIVE, false, false));
+  }
+
+  @Test
+  @DisplayName("Emissive has no cull variant, so backface culling cannot change its render type")
+  void emissiveBlendIgnoresBackfaceCulling() {
+    ResourceLocation texture = new ResourceLocation("example", "textures/entity/uv_model.png");
+
+    assertEquals(
+        EasyModelBakedModelRenderer.renderType(
+            texture, EasyModelTextureBlend.EMISSIVE, false, false),
+        EasyModelBakedModelRenderer.renderType(
+            texture, EasyModelTextureBlend.EMISSIVE, true, false));
+  }
+
+  @Test
+  @DisplayName("A faded emissive slot keeps the emissive render type, which already blends alpha")
+  void fadedEmissiveBlendStaysEmissive() {
+    ResourceLocation texture = new ResourceLocation("example", "textures/entity/uv_model.png");
+
+    assertEquals(
+        RenderType.entityTranslucentEmissive(texture),
+        EasyModelBakedModelRenderer.renderType(
+            texture, EasyModelTextureBlend.EMISSIVE, false, true));
   }
 
   @Test

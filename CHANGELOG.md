@@ -5,6 +5,17 @@
 This change log includes the summarized changes. For the full changelog, please go to
 the [GitHub History][history] instead.
 
+### 2.4.0
+
+- Fixed `body_type: static` and `animation.mode: none` ignoring an explicitly played or set clip.
+- Added `animation play <target> sequence "<clips>"` to chain up to 16 clips in one run.
+- Added `playAnimationSequence` to the client and server API, sending a whole chain as one request.
+- Added `emissive` as texture blend, so a slot renders fullbright and keeps its transparency.
+  Emissive slots are never backface culled.
+- Added hand item rendering to the render options, off unless a mod opts in.
+- Added `left_item`, `right_item`, `left_hand` and `right_hand` as recognized model part names.
+- Added an automatic item anchor fallback to the arm, head or body when a model has no hand bone.
+
 ### 2.3.0
 
 - Changed models rendered by another mod to show the hurt and death overlay, which they never did.

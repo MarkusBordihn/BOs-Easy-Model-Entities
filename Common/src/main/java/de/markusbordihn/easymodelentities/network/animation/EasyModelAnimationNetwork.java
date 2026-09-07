@@ -43,6 +43,15 @@ public final class EasyModelAnimationNetwork {
     sender.send(level, blockPos, packet);
   }
 
+  public static void send(Entity entity, ClientboundEasyModelAnimationSequencePacket packet) {
+    sender.send(entity, packet);
+  }
+
+  public static void send(
+      ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationSequencePacket packet) {
+    sender.send(level, blockPos, packet);
+  }
+
   public interface Sender {
 
     Sender NONE = new Sender() {};
@@ -51,5 +60,12 @@ public final class EasyModelAnimationNetwork {
 
     default void send(
         ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationPacket packet) {}
+
+    default void send(Entity entity, ClientboundEasyModelAnimationSequencePacket packet) {}
+
+    default void send(
+        ServerLevel level,
+        BlockPos blockPos,
+        ClientboundEasyModelAnimationSequencePacket packet) {}
   }
 }
