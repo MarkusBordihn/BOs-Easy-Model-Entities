@@ -89,6 +89,32 @@ class EasyModelAnimationCommandTest {
   }
 
   @Test
+  void parsesSequencePlaybackCommands() {
+    assertParses("easy_model_entities animation play entity @e sequence \"wake,ready\"");
+    assertParses(
+        "easy_model_entities animation play entity @e sequence \"wake,ready\" fallback idle");
+    assertParses("easy_model_entities animation play block 1 64 -3 sequence \"wake,ready\"");
+  }
+
+  @Test
+  @DisplayName("A sequence keeps its order and repetitions and drops the automatic state")
+  void parsesSequenceClipLists() {
+    assertEquals(
+        List.of(
+            EasyModelAnimation.named("idle_2"),
+            EasyModelAnimation.named("idle_3"),
+            EasyModelAnimation.named("idle_2"),
+            EasyModelAnimation.ATTACK),
+        EasyModelAnimationCommand.parseAnimationSequence(" idle_2 , idle_3 ,idle_2,, attack "));
+    assertEquals(
+        List.of(EasyModelAnimation.IDLE),
+        EasyModelAnimationCommand.parseAnimationSequence("auto,idle"));
+    assertEquals(16, EasyModelAnimationCommand.parseAnimationSequence(clipList(20)).size());
+    assertTrue(EasyModelAnimationCommand.parseAnimationSequence(" , ").isEmpty());
+    assertTrue(EasyModelAnimationCommand.parseAnimationSequence(null).isEmpty());
+  }
+
+  @Test
   @DisplayName("A clip list is trimmed, deduplicated and capped")
   void parsesClipLists() {
     assertEquals(

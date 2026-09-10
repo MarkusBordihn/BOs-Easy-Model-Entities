@@ -27,6 +27,7 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
@@ -218,6 +219,11 @@ public final class EasyModelBlockEntityRenderBackend {
       EasyModelAnimationPlayback playback,
       EasyModelAnimationTransition transition) {
     ANIMATION_PLAYBACK_TRACKER.play(blockEntity, animation, playback, transition);
+  }
+
+  public static void playAnimationSequence(
+      BlockEntity blockEntity, EasyModelAnimationSequence sequence) {
+    ANIMATION_PLAYBACK_TRACKER.playSequence(blockEntity, sequence);
   }
 
   public static void restartAnimation(BlockEntity blockEntity) {

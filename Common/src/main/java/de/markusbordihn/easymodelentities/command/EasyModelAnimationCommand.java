@@ -36,10 +36,12 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlaybackMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSwitchTiming;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationPacketOperation;
 import java.util.Arrays;
@@ -81,7 +83,36 @@ final class EasyModelAnimationCommand {
         (target, blockTarget) ->
             target
                 .then(playAnimationArgument(blockTarget, false))
-                .then(Commands.literal("random").then(playAnimationArgument(blockTarget, true))));
+                .then(Commands.literal("random").then(playAnimationArgument(blockTarget, true)))
+                .then(Commands.literal("sequence").then(playSequenceArgument(blockTarget))));
+  }
+
+  private static ArgumentBuilder<CommandSourceStack, ?> playSequenceArgument(boolean blockTarget) {
+    return Commands.argument(CLIPS_ARGUMENT, StringArgumentType.string())
+        .suggests(
+            (context, builder) ->
+                SharedSuggestionProvider.suggest(
+                    Stream.of(
+                        "\""
+                            + ModelAnimationClips.IDLE
+                            + ","
+                            + ModelAnimationClips.WALK
+                            + ","
+                            + ModelAnimationClips.IDLE
+                            + "\""),
+                    builder))
+        .executes(context -> playSequence(context, blockTarget, false))
+        .then(
+            Commands.literal("fallback")
+                .then(
+                    Commands.argument(ANIMATION_ARGUMENT, StringArgumentType.string())
+                        .suggests(
+                            (context, builder) ->
+                                SharedSuggestionProvider.suggest(
+                                    EasyModelAnimation.standardStates().stream()
+                                        .map(EasyModelAnimation::serializedName),
+                                    builder))
+                        .executes(context -> playSequence(context, blockTarget, true))));
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> playAnimationArgument(
@@ -310,6 +341,38 @@ final class EasyModelAnimationCommand {
                     entity.getId(), pick(context, candidates), playback, transition)));
   }
 
+  private static int playSequence(
+      CommandContext<CommandSourceStack> context, boolean blockTarget, boolean withFallback)
+      throws CommandSyntaxException {
+    List<EasyModelAnimation> animations =
+        parseAnimationSequence(StringArgumentType.getString(context, CLIPS_ARGUMENT));
+    Optional<EasyModelAnimation> fallback =
+        withFallback
+            ? parseAnimation(StringArgumentType.getString(context, ANIMATION_ARGUMENT))
+            : Optional.of(EasyModelAnimation.AUTO);
+    if (animations.isEmpty() || fallback.isEmpty()) {
+      context.getSource().sendFailure(Component.literal(INVALID_ANIMATION_MESSAGE));
+      return 0;
+    }
+
+    EasyModelAnimationSequence sequence =
+        EasyModelAnimationSequence.of(animations).withFallback(fallback.get());
+    return updateRenderables(
+        context,
+        blockTarget,
+        "Started animation sequence",
+        target ->
+            EasyModelAnimationNetwork.send(
+                target.level(),
+                target.blockPos(),
+                ClientboundEasyModelAnimationSequencePacket.forBlockEntity(
+                    target.blockPos(), sequence)),
+        entity ->
+            EasyModelAnimationNetwork.send(
+                entity,
+                ClientboundEasyModelAnimationSequencePacket.forEntity(entity.getId(), sequence)));
+  }
+
   private static EasyModelAnimation pick(
       CommandContext<CommandSourceStack> context, List<EasyModelAnimation> candidates) {
     return candidates.size() == 1
@@ -395,6 +458,21 @@ final class EasyModelAnimationCommand {
         .limit(MAX_RANDOM_CLIPS)
         .map(EasyModelAnimationCommand::parseAnimation)
         .flatMap(Optional::stream)
+        .toList();
+  }
+
+  static List<EasyModelAnimation> parseAnimationSequence(String value) {
+    if (value == null || value.isBlank()) {
+      return List.of();
+    }
+
+    return Arrays.stream(value.split(","))
+        .map(String::trim)
+        .filter(clipName -> !clipName.isEmpty())
+        .limit(EasyModelAnimationSequence.MAX_STEPS)
+        .map(EasyModelAnimationCommand::parseAnimation)
+        .flatMap(Optional::stream)
+        .filter(animation -> !animation.equals(EasyModelAnimation.AUTO))
         .toList();
   }
 

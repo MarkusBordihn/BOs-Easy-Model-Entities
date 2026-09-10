@@ -28,6 +28,7 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelProfileType;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationInfo;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlaybackMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelBounds;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
@@ -311,6 +312,11 @@ public final class EasyModelEntitiesClientApi {
     playAnimation(entity, resolveAnimationName(animationName), playbackMode, transition);
   }
 
+  public static void playAnimationSequence(Entity entity, EasyModelAnimationSequence sequence) {
+    EasyModelEntityRenderBackend.playAnimationSequence(
+        Objects.requireNonNull(entity, "entity"), Objects.requireNonNull(sequence, "sequence"));
+  }
+
   public static void restartAnimation(Entity entity) {
     EasyModelEntityRenderBackend.restartAnimation(Objects.requireNonNull(entity, "entity"));
   }
@@ -387,6 +393,13 @@ public final class EasyModelEntitiesClientApi {
       EasyModelAnimationPlaybackMode playbackMode,
       EasyModelAnimationTransition transition) {
     playAnimation(blockEntity, resolveAnimationName(animationName), playbackMode, transition);
+  }
+
+  public static void playAnimationSequence(
+      BlockEntity blockEntity, EasyModelAnimationSequence sequence) {
+    EasyModelBlockEntityRenderBackend.playAnimationSequence(
+        Objects.requireNonNull(blockEntity, "blockEntity"),
+        Objects.requireNonNull(sequence, "sequence"));
   }
 
   public static void restartAnimation(BlockEntity blockEntity) {

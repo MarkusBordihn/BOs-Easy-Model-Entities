@@ -27,6 +27,7 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelTextureBlend;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import java.util.Objects;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.LivingEntity;
 
 public final class EasyModelEntityRenderOptions {
 
@@ -42,7 +43,8 @@ public final class EasyModelEntityRenderOptions {
           EasyModelTextureSetting.EMPTY,
           null,
           null,
-          null);
+          null,
+          EasyModelHandItems.NONE);
 
   private final Float scale;
   private final Float animationTicks;
@@ -55,6 +57,7 @@ public final class EasyModelEntityRenderOptions {
   private final Float opacity;
   private final Integer lightLevel;
   private final Integer packedOverlay;
+  private final EasyModelHandItems handItems;
 
   private EasyModelEntityRenderOptions(
       Float scale,
@@ -67,7 +70,8 @@ public final class EasyModelEntityRenderOptions {
       EasyModelTextureSetting textureSetting,
       Float opacity,
       Integer lightLevel,
-      Integer packedOverlay) {
+      Integer packedOverlay,
+      EasyModelHandItems handItems) {
     this.scale = scale;
     this.animationTicks = animationTicks;
     this.partAnimator = Objects.requireNonNull(partAnimator, "partAnimator");
@@ -79,6 +83,7 @@ public final class EasyModelEntityRenderOptions {
     this.opacity = opacity;
     this.lightLevel = lightLevel;
     this.packedOverlay = packedOverlay;
+    this.handItems = Objects.requireNonNull(handItems, "handItems");
   }
 
   private static EasyModelEntityRenderOptions copy(
@@ -92,7 +97,8 @@ public final class EasyModelEntityRenderOptions {
       EasyModelTextureSetting textureSetting,
       Float opacity,
       Integer lightLevel,
-      Integer packedOverlay) {
+      Integer packedOverlay,
+      EasyModelHandItems handItems) {
     return new EasyModelEntityRenderOptions(
         scale,
         animationTicks,
@@ -104,7 +110,8 @@ public final class EasyModelEntityRenderOptions {
         textureSetting,
         opacity,
         lightLevel,
-        packedOverlay);
+        packedOverlay,
+        handItems);
   }
 
   private static void requirePositiveFinite(float value, String name) {
@@ -163,6 +170,10 @@ public final class EasyModelEntityRenderOptions {
     return this.packedOverlay;
   }
 
+  public EasyModelHandItems handItems() {
+    return this.handItems;
+  }
+
   public EasyModelEntityRenderOptions withScale(float scale) {
     requirePositiveFinite(scale, "scale");
     return copy(
@@ -176,7 +187,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withAnimationTicks(float animationTicks) {
@@ -192,7 +204,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withPartAnimator(EasyModelPartAnimator partAnimator) {
@@ -207,7 +220,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withPartAnimationMode(
@@ -223,7 +237,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withPartPoseListener(
@@ -239,7 +254,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withAnimation(EasyModelAnimation animation) {
@@ -254,7 +270,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withAnimation(String animation) {
@@ -273,7 +290,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withHeadLook(EasyModelHeadLook headLook) {
@@ -288,7 +306,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withTextureSetting(EasyModelTextureSetting textureSetting) {
@@ -303,7 +322,8 @@ public final class EasyModelEntityRenderOptions {
         Objects.requireNonNull(textureSetting, "textureSetting"),
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withTexture(String slot, ResourceLocation texture) {
@@ -336,7 +356,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withoutOpacityOverride() {
@@ -351,7 +372,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         null,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withLightLevel(int lightLevel) {
@@ -367,7 +389,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withoutLightLevelOverride() {
@@ -382,7 +405,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         null,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withOverlay(int packedOverlay) {
@@ -397,7 +421,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        packedOverlay);
+        packedOverlay,
+        this.handItems);
   }
 
   public EasyModelEntityRenderOptions withoutOverlayOverride() {
@@ -412,7 +437,32 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        null);
+        null,
+        this.handItems);
+  }
+
+  public EasyModelEntityRenderOptions withHandItems(EasyModelHandItems handItems) {
+    return copy(
+        this.scale,
+        this.animationTicks,
+        this.partAnimator,
+        this.partAnimationMode,
+        this.partPoseListener,
+        this.animation,
+        this.headLook,
+        this.textureSetting,
+        this.opacity,
+        this.lightLevel,
+        this.packedOverlay,
+        Objects.requireNonNull(handItems, "handItems"));
+  }
+
+  public EasyModelEntityRenderOptions withHandItems(LivingEntity holder) {
+    return this.withHandItems(EasyModelHandItems.of(holder));
+  }
+
+  public EasyModelEntityRenderOptions withoutHandItems() {
+    return this.withHandItems(EasyModelHandItems.NONE);
   }
 
   @Override
@@ -434,7 +484,8 @@ public final class EasyModelEntityRenderOptions {
         && this.textureSetting.equals(options.textureSetting)
         && Objects.equals(this.opacity, options.opacity)
         && Objects.equals(this.lightLevel, options.lightLevel)
-        && Objects.equals(this.packedOverlay, options.packedOverlay);
+        && Objects.equals(this.packedOverlay, options.packedOverlay)
+        && this.handItems.equals(options.handItems);
   }
 
   @Override
@@ -450,7 +501,8 @@ public final class EasyModelEntityRenderOptions {
         this.textureSetting,
         this.opacity,
         this.lightLevel,
-        this.packedOverlay);
+        this.packedOverlay,
+        this.handItems);
   }
 
   @Override
@@ -477,6 +529,8 @@ public final class EasyModelEntityRenderOptions {
         + this.lightLevel
         + ", packedOverlay="
         + this.packedOverlay
+        + ", handItems="
+        + this.handItems
         + "]";
   }
 }

@@ -37,9 +37,12 @@ class EasyModelTextureBlendTest {
     assertEquals(
         Optional.of(EasyModelTextureBlend.TRANSLUCENT),
         EasyModelTextureBlend.parse("  TransLucent "));
+    assertEquals(
+        Optional.of(EasyModelTextureBlend.EMISSIVE), EasyModelTextureBlend.parse(" Emissive "));
     assertTrue(EasyModelTextureBlend.parse("glowing").isEmpty());
     assertTrue(EasyModelTextureBlend.parse(null).isEmpty());
-    assertEquals(List.of("cutout", "translucent"), EasyModelTextureBlend.serializedNames());
+    assertEquals(
+        List.of("cutout", "translucent", "emissive"), EasyModelTextureBlend.serializedNames());
   }
 
   @Test

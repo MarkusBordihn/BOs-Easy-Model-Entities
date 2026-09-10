@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.network;
 
 import de.markusbordihn.easymodelentities.client.network.EasyModelAnimationPacketHandler;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import net.minecraft.core.BlockPos;
@@ -51,11 +52,25 @@ public final class EasyModelAnimationNetworkHandler {
         .decoder(ClientboundEasyModelAnimationPacket::decode)
         .consumerMainThread(EasyModelAnimationNetworkHandler::handle)
         .add();
+    CHANNEL
+        .messageBuilder(
+            ClientboundEasyModelAnimationSequencePacket.class, 1, NetworkDirection.PLAY_TO_CLIENT)
+        .encoder(ClientboundEasyModelAnimationSequencePacket::encode)
+        .decoder(ClientboundEasyModelAnimationSequencePacket::decode)
+        .consumerMainThread(EasyModelAnimationNetworkHandler::handle)
+        .add();
     EasyModelAnimationNetwork.setSender(new ForgeSender());
   }
 
   private static void handle(
       ClientboundEasyModelAnimationPacket packet, CustomPayloadEvent.Context context) {
+    DistExecutor.unsafeRunWhenOn(
+        Dist.CLIENT, () -> () -> EasyModelAnimationPacketHandler.handle(packet));
+    context.setPacketHandled(true);
+  }
+
+  private static void handle(
+      ClientboundEasyModelAnimationSequencePacket packet, CustomPayloadEvent.Context context) {
     DistExecutor.unsafeRunWhenOn(
         Dist.CLIENT, () -> () -> EasyModelAnimationPacketHandler.handle(packet));
     context.setPacketHandled(true);
@@ -71,6 +86,17 @@ public final class EasyModelAnimationNetworkHandler {
     @Override
     public void send(
         ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationPacket packet) {
+      CHANNEL.send(packet, PacketDistributor.TRACKING_CHUNK.with(level.getChunkAt(blockPos)));
+    }
+
+    @Override
+    public void send(Entity entity, ClientboundEasyModelAnimationSequencePacket packet) {
+      CHANNEL.send(packet, PacketDistributor.TRACKING_ENTITY_AND_SELF.with(entity));
+    }
+
+    @Override
+    public void send(
+        ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationSequencePacket packet) {
       CHANNEL.send(packet, PacketDistributor.TRACKING_CHUNK.with(level.getChunkAt(blockPos)));
     }
   }
