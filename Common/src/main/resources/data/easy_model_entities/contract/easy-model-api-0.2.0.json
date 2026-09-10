@@ -128,7 +128,8 @@
     ],
     "texture_blends": [
       "cutout",
-      "translucent"
+      "translucent",
+      "emissive"
     ],
     "gaits": [
       "natural",
