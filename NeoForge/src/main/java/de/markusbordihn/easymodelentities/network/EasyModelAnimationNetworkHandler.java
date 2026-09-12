@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.network;
 
 import de.markusbordihn.easymodelentities.client.network.EasyModelAnimationPacketHandler;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -47,6 +48,14 @@ public final class EasyModelAnimationNetworkHandler {
             EasyModelAnimationPacketHandler.handle(packet);
           }
         });
+    registrar.playToClient(
+        ClientboundEasyModelAnimationSequencePacket.TYPE,
+        ClientboundEasyModelAnimationSequencePacket.STREAM_CODEC,
+        (packet, context) -> {
+          if (FMLEnvironment.getDist() == Dist.CLIENT) {
+            EasyModelAnimationPacketHandler.handle(packet);
+          }
+        });
     EasyModelAnimationNetwork.setSender(new NeoForgeSender());
   }
 
@@ -60,6 +69,17 @@ public final class EasyModelAnimationNetworkHandler {
     @Override
     public void send(
         ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationPacket packet) {
+      PacketDistributor.sendToPlayersTrackingChunk(level, ChunkPos.containing(blockPos), packet);
+    }
+
+    @Override
+    public void send(Entity entity, ClientboundEasyModelAnimationSequencePacket packet) {
+      PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, packet);
+    }
+
+    @Override
+    public void send(
+        ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationSequencePacket packet) {
       PacketDistributor.sendToPlayersTrackingChunk(level, ChunkPos.containing(blockPos), packet);
     }
   }

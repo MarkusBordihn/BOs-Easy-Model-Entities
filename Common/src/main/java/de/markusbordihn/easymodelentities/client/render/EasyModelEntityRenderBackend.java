@@ -29,6 +29,7 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderOptions;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
@@ -143,6 +144,7 @@ public final class EasyModelEntityRenderBackend {
     renderState.headLook = headLook(entity, renderState.entityYaw, partialTick, safeOptions);
     renderState.partAnimator = safeOptions.partAnimator();
     renderState.partAnimationMode = safeOptions.partAnimationMode();
+    renderState.handItems = safeOptions.handItems();
     renderState.scaleFactor = safeOptions.scale() == null ? 1.0f : safeOptions.scale();
     renderState.packedOverlay =
         resolveOverlay(safeOptions.packedOverlay(), packedOverlay(entity), entity);
@@ -200,7 +202,46 @@ public final class EasyModelEntityRenderBackend {
         renderState.packedOverlay,
         renderState.opacity,
         renderState.lightLevel);
+    submitHandItems(renderState, easyModelRenderState, poseStack, submitNodeCollector, packedLight);
     poseStack.popPose();
+  }
+
+  private static void submitHandItems(
+      EasyModelEntityRenderState renderState,
+      EasyModelRenderState easyModelRenderState,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    EasyModelHandItemRenderer.Pass handItemPass =
+        EasyModelHandItemRenderer.createPass(
+            easyModelRenderState.bakedModel(), renderState.handItems);
+    if (handItemPass.isEmpty()) {
+      return;
+    }
+
+    EasyModelBakedModelRenderer.render(
+        easyModelRenderState.bakedModel(),
+        easyModelRenderState,
+        renderState.limbSwing,
+        renderState.limbSwingAmount,
+        renderState.airborneAmount,
+        renderState.attackAmount,
+        renderState.headLook == null ? EasyModelHeadLook.NONE : renderState.headLook,
+        renderState.playbackFrame,
+        poseStack,
+        textureIndex -> null,
+        0,
+        renderState.partAnimator == null ? EasyModelPartAnimator.NONE : renderState.partAnimator,
+        renderState.partAnimationMode == null
+            ? EasyModelPartAnimationMode.ADD
+            : renderState.partAnimationMode,
+        handItemPass);
+    handItemPass.render(
+        poseStack,
+        submitNodeCollector,
+        EasyModelBakedModelRenderer.packedLightWithOverride(packedLight, renderState.lightLevel),
+        renderState.packedOverlay,
+        renderState.outlineColor);
   }
 
   /**
@@ -507,6 +548,12 @@ public final class EasyModelEntityRenderBackend {
       float opacity,
       int lightLevel) {
     float scale = renderState.scale() * (options.scale() == null ? 1.0f : options.scale());
+    EasyModelHandItemRenderer.Pass handItemPass =
+        EasyModelHandItemRenderer.createPass(renderState.bakedModel(), options.handItems());
+    EasyModelPartPoseListener partPoseListener =
+        handItemPass.isEmpty()
+            ? options.partPoseListener()
+            : options.partPoseListener().andThen(handItemPass);
 
     poseStack.pushPose();
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yaw));
@@ -526,13 +573,20 @@ public final class EasyModelEntityRenderBackend {
         textureSetting,
         options.partAnimator(),
         options.partAnimationMode(),
-        options.partPoseListener(),
+        partPoseListener,
         poseStack,
         bufferSource,
         packedLight,
         packedOverlay,
         opacity,
         lightLevel);
+    if (!handItemPass.isEmpty()) {
+      handItemPass.render(
+          poseStack,
+          bufferSource,
+          EasyModelBakedModelRenderer.packedLightWithOverride(packedLight, lightLevel),
+          packedOverlay);
+    }
     poseStack.popPose();
   }
 
@@ -547,6 +601,10 @@ public final class EasyModelEntityRenderBackend {
       EasyModelAnimationPlayback playback,
       EasyModelAnimationTransition transition) {
     ANIMATION_PLAYBACK_TRACKER.play(entity, animation, playback, transition);
+  }
+
+  public static void playAnimationSequence(Entity entity, EasyModelAnimationSequence sequence) {
+    ANIMATION_PLAYBACK_TRACKER.playSequence(entity, sequence);
   }
 
   public static void restartAnimation(Entity entity) {

@@ -428,7 +428,8 @@ public final class EasyModelBakedModelRenderer {
     for (int textureIndex : textureIndices(bakedModel)) {
       Identifier texture = textureFor(resolvedTextures, renderState, textureIndex);
       RenderType renderType =
-          renderType(texture, resolvedTextures.blend(textureIndex), cullBackfaces, forceTranslucent);
+          renderType(
+              texture, resolvedTextures.blend(textureIndex), cullBackfaces, forceTranslucent);
       submitNodeCollector.submitCustomGeometry(
           poseStack,
           renderType,
@@ -963,11 +964,14 @@ public final class EasyModelBakedModelRenderer {
         LightCoordsUtil.sky(packedLight));
   }
 
-  private static RenderType renderType(
+  static RenderType renderType(
       Identifier texture,
       EasyModelTextureBlend blend,
       boolean cullBackfaces,
       boolean forceTranslucent) {
+    if (blend == EasyModelTextureBlend.EMISSIVE) {
+      return RenderTypes.entityTranslucentEmissive(texture);
+    }
     if (forceTranslucent || blend == EasyModelTextureBlend.TRANSLUCENT) {
       return cullBackfaces
           ? RenderTypes.entityTranslucentCullItemTarget(texture)
@@ -1430,9 +1434,7 @@ public final class EasyModelBakedModelRenderer {
       float previousAgeInTicks,
       float blendProgress,
       float[] animationSample) {
-    if (renderState.fallbackModel()
-        || renderState.animation().mode() == ModelAnimationMode.NONE
-        || renderState.bodyType() == ModelBodyType.STATIC) {
+    if (renderState.fallbackModel()) {
       return noRotation();
     }
 
@@ -1481,6 +1483,11 @@ public final class EasyModelBakedModelRenderer {
       ModelAnimationClip clip,
       float clipTime,
       float[] animationSample) {
+    boolean explicitOnly = explicitAnimationOnly(renderState);
+    if (explicitOnly && animation == EasyModelAnimation.AUTO) {
+      return EasyModelPartTransform.NONE;
+    }
+
     ModelPartType part = modelPart.partType();
     boolean tailPart = modelPart.tailPart();
     EasyModelPartTransform baseTransform = null;
@@ -1491,6 +1498,10 @@ public final class EasyModelBakedModelRenderer {
       }
     }
     if (baseTransform == null) {
+      if (explicitOnly) {
+        return EasyModelPartTransform.NONE;
+      }
+
       baseTransform =
           clip == null && animation != EasyModelAnimation.AUTO && !animation.isNamed()
               ? fallbackAnimationTransform(tailPart, part, renderState, animation, animationTicks)
@@ -1506,7 +1517,7 @@ public final class EasyModelBakedModelRenderer {
                       renderState.animation().idleStrength());
     }
 
-    if (attackAmount > 0.0f && (clip == null || !isAttackClip(clip))) {
+    if (!explicitOnly && attackAmount > 0.0f && (clip == null || !isAttackClip(clip))) {
       EasyModelPartTransform attackTransform =
           attackRotation(part, renderState.bodyType(), attackAmount);
       if (attackTransform != EasyModelPartTransform.NONE) {
@@ -2100,6 +2111,11 @@ public final class EasyModelBakedModelRenderer {
 
   private static EasyModelPartTransform noRotation() {
     return EasyModelPartTransform.NONE;
+  }
+
+  private static boolean explicitAnimationOnly(EasyModelRenderState renderState) {
+    return renderState.animation().mode() == ModelAnimationMode.NONE
+        || renderState.bodyType() == ModelBodyType.STATIC;
   }
 
   private static void rotate(

@@ -22,10 +22,14 @@ package de.markusbordihn.easymodelentities.client.render;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlaybackMode;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationStep;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSwitchTiming;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Map;
 import java.util.Objects;
 import java.util.WeakHashMap;
@@ -44,15 +48,16 @@ final class EasyModelAnimationPlaybackTracker<T> {
       Supplier<String> automaticClipNameSupplier,
       double currentTicks,
       Map<String, ModelAnimationClip> clips) {
-    Request request = playback.pending;
+    Request request = playback.pending.poll();
     if (request == null) {
       return;
     }
 
-    playback.pending = null;
+    playback.queued.clear();
     EasyModelAnimation requestedAnimation =
         request.release ? fallback : request.restart ? playback.animation : request.animation;
     if (requestedAnimation == null) {
+      playback.pending.clear();
       return;
     }
 
@@ -66,6 +71,8 @@ final class EasyModelAnimationPlaybackTracker<T> {
           -1.0f,
           !request.release);
       initializeCompletion(playback, request, currentTicks);
+      stageFollowUps(playback);
+      refreshQueueBoundary(playback, automaticClipNameSupplier, clips);
       return;
     }
 
@@ -79,22 +86,48 @@ final class EasyModelAnimationPlaybackTracker<T> {
           -1.0f,
           !request.release);
       initializeCompletion(playback, request, currentTicks);
+      stageFollowUps(playback);
+      refreshQueueBoundary(playback, automaticClipNameSupplier, clips);
       return;
     }
 
-    playback.queued = request;
+    playback.queued.addLast(request);
     playback.queueBoundary = boundary;
+    stageFollowUps(playback);
+  }
+
+  private static void stageFollowUps(Playback playback) {
+    playback.queued.addAll(playback.pending);
+    playback.pending.clear();
+  }
+
+  private static void refreshQueueBoundary(
+      Playback playback,
+      Supplier<String> automaticClipNameSupplier,
+      Map<String, ModelAnimationClip> clips) {
+    if (playback.queued.isEmpty()) {
+      return;
+    }
+
+    playback.queueBoundary =
+        playback.playback == null
+            ? nextBoundary(playback, automaticClipNameSupplier, clips)
+            : Double.POSITIVE_INFINITY;
   }
 
   private static void applyQueued(
-      Playback playback, EasyModelAnimation fallback, double currentTicks) {
-    if (playback.queued == null || currentTicks < playback.queueBoundary) {
+      Playback playback,
+      EasyModelAnimation fallback,
+      Supplier<String> automaticClipNameSupplier,
+      double currentTicks,
+      Map<String, ModelAnimationClip> clips) {
+    Request queued = playback.queued.peek();
+    if (queued == null || currentTicks < playback.queueBoundary) {
       return;
     }
 
-    Request queued = playback.queued;
     float previousTicks = (float) Math.max(0.0, playback.queueBoundary - playback.startTicks);
-    playback.queued = null;
+    playback.queued.poll();
     switchAnimation(
         playback,
         queued.release ? fallback : queued.animation,
@@ -103,6 +136,7 @@ final class EasyModelAnimationPlaybackTracker<T> {
         previousTicks,
         !queued.release);
     initializeCompletion(playback, queued, playback.queueBoundary);
+    refreshQueueBoundary(playback, automaticClipNameSupplier, clips);
   }
 
   private static double nextBoundary(
@@ -158,7 +192,6 @@ final class EasyModelAnimationPlaybackTracker<T> {
     playback.animation = animation;
     playback.startTicks = switchTicks;
     playback.overridden = overridden;
-    playback.queued = null;
   }
 
   private static void initializeCompletion(Playback playback, Request request, double switchTicks) {
@@ -213,7 +246,7 @@ final class EasyModelAnimationPlaybackTracker<T> {
 
     float durationTicks = playback.playback.durationTicks();
     if (durationTicks > 0.0f && currentTicks >= playback.playStartTicks + durationTicks) {
-      completePlayback(playback, fallback, currentTicks);
+      completePlayback(playback, fallback, automaticClipNameSupplier, currentTicks, clips);
       return;
     }
     if (playback.playback.mode() == EasyModelAnimationPlaybackMode.LOOP) {
@@ -223,7 +256,7 @@ final class EasyModelAnimationPlaybackTracker<T> {
     ModelAnimationClip clip = clips.get(clipName(playback.animation, automaticClipNameSupplier));
     float animationLength = animationLength(playback, clip);
     if (animationLength <= 0.0f) {
-      completePlayback(playback, fallback, currentTicks);
+      completePlayback(playback, fallback, automaticClipNameSupplier, currentTicks, clips);
       return;
     }
 
@@ -234,7 +267,7 @@ final class EasyModelAnimationPlaybackTracker<T> {
       return;
     }
     if (completions >= playback.remainingPlays) {
-      completePlayback(playback, fallback, currentTicks);
+      completePlayback(playback, fallback, automaticClipNameSupplier, currentTicks, clips);
       return;
     }
 
@@ -243,11 +276,14 @@ final class EasyModelAnimationPlaybackTracker<T> {
   }
 
   private static void completePlayback(
-      Playback playback, EasyModelAnimation fallback, double currentTicks) {
-    if (playback.queued != null) {
-      Request queued = playback.queued;
+      Playback playback,
+      EasyModelAnimation fallback,
+      Supplier<String> automaticClipNameSupplier,
+      double currentTicks,
+      Map<String, ModelAnimationClip> clips) {
+    Request queued = playback.queued.poll();
+    if (queued != null) {
       float previousTicks = (float) Math.max(0.0, currentTicks - playback.startTicks);
-      playback.queued = null;
       switchAnimation(
           playback,
           queued.release ? fallback : queued.animation,
@@ -256,6 +292,7 @@ final class EasyModelAnimationPlaybackTracker<T> {
           previousTicks,
           !queued.release);
       initializeCompletion(playback, queued, currentTicks);
+      refreshQueueBoundary(playback, automaticClipNameSupplier, clips);
       return;
     }
 
@@ -339,7 +376,29 @@ final class EasyModelAnimationPlaybackTracker<T> {
     Objects.requireNonNull(transition, "transition");
     synchronized (this.playbacks) {
       Playback playback = this.playbacks.computeIfAbsent(target, ignored -> new Playback());
-      playback.pending = new Request(animation, animationPlayback, transition, false, false);
+      playback.stage(new Request(animation, animationPlayback, transition, false, false));
+    }
+  }
+
+  void playSequence(T target, EasyModelAnimationSequence sequence) {
+    Objects.requireNonNull(target, "target");
+    Objects.requireNonNull(sequence, "sequence");
+    synchronized (this.playbacks) {
+      Playback playback = this.playbacks.computeIfAbsent(target, ignored -> new Playback());
+      playback.pending.clear();
+      for (EasyModelAnimationStep step : sequence.steps()) {
+        playback.pending.addLast(
+            new Request(step.animation(), step.playback(), step.transition(), false, false));
+      }
+      if (!sequence.fallback().equals(EasyModelAnimation.AUTO)) {
+        playback.pending.addLast(
+            new Request(
+                sequence.fallback(),
+                EasyModelAnimationPlayback.DEFAULT.withMode(EasyModelAnimationPlaybackMode.LOOP),
+                EasyModelAnimationTransition.AFTER_CURRENT,
+                false,
+                false));
+      }
     }
   }
 
@@ -352,7 +411,7 @@ final class EasyModelAnimationPlaybackTracker<T> {
         return;
       }
 
-      playback.pending = new Request(EasyModelAnimation.AUTO, null, transition, false, true);
+      playback.stage(new Request(EasyModelAnimation.AUTO, null, transition, false, true));
     }
   }
 
@@ -364,7 +423,7 @@ final class EasyModelAnimationPlaybackTracker<T> {
         return;
       }
 
-      playback.pending =
+      playback.stage(
           new Request(
               null,
               playback.playback,
@@ -372,7 +431,7 @@ final class EasyModelAnimationPlaybackTracker<T> {
                   ? EasyModelAnimationTransition.IMMEDIATE
                   : playback.transition,
               true,
-              false);
+              false));
     }
   }
 
@@ -426,7 +485,7 @@ final class EasyModelAnimationPlaybackTracker<T> {
         playback.reset(fallback, currentTicks);
       }
       applyPending(playback, fallback, automaticClipNameSupplier, currentTicks, clips);
-      applyQueued(playback, fallback, currentTicks);
+      applyQueued(playback, fallback, automaticClipNameSupplier, currentTicks, clips);
       checkCompletion(playback, fallback, automaticClipNameSupplier, currentTicks, clips);
       normalizeLoopStart(playback, automaticClipNameSupplier, currentTicks, clips);
       playback.lastTicks = currentTicks;
@@ -443,12 +502,12 @@ final class EasyModelAnimationPlaybackTracker<T> {
 
   private static final class Playback {
 
+    private final Deque<Request> pending = new ArrayDeque<>();
+    private final Deque<Request> queued = new ArrayDeque<>();
     private EasyModelAnimation animation;
     private double startTicks;
     private double lastTicks;
     private boolean overridden;
-    private Request pending;
-    private Request queued;
     private double queueBoundary;
     private EasyModelAnimation previousAnimation;
     private double previousStartTicks;
@@ -462,20 +521,25 @@ final class EasyModelAnimationPlaybackTracker<T> {
     private boolean autoReverted;
     private Boolean previousLoopOverride;
 
+    private void stage(Request request) {
+      this.pending.clear();
+      this.pending.addLast(request);
+    }
+
     private void reset(EasyModelAnimation animation, double currentTicks) {
       this.animation = animation;
       this.startTicks = currentTicks;
       this.lastTicks = currentTicks;
       this.overridden = false;
-      this.queued = null;
+      this.queued.clear();
       clearCompletion();
       clearBlend();
     }
 
     private boolean hasPlaybackState() {
       return this.overridden
-          || this.pending != null
-          || this.queued != null
+          || !this.pending.isEmpty()
+          || !this.queued.isEmpty()
           || this.previousAnimation != null;
     }
 

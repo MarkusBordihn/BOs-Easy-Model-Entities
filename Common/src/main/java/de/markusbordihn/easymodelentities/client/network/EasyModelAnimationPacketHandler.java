@@ -21,7 +21,9 @@ package de.markusbordihn.easymodelentities.client.network;
 
 import de.markusbordihn.easymodelentities.api.client.EasyModelEntitiesClientApi;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -84,5 +86,32 @@ public final class EasyModelAnimationPacketHandler {
   private static Optional<EasyModelAnimation> animation(
       ClientboundEasyModelAnimationPacket packet) {
     return EasyModelAnimation.parse(packet.animation());
+  }
+
+  public static void handle(ClientboundEasyModelAnimationSequencePacket packet) {
+    ClientLevel level = Minecraft.getInstance().level;
+    if (level == null) {
+      return;
+    }
+
+    Optional<EasyModelAnimationSequence> sequence = packet.toSequence();
+    if (sequence.isEmpty()) {
+      return;
+    }
+
+    switch (packet.targetType()) {
+      case ENTITY -> {
+        Entity entity = level.getEntity((int) packet.targetValue());
+        if (entity != null) {
+          EasyModelEntitiesClientApi.playAnimationSequence(entity, sequence.get());
+        }
+      }
+      case BLOCK_ENTITY -> {
+        BlockEntity blockEntity = level.getBlockEntity(BlockPos.of(packet.targetValue()));
+        if (blockEntity != null) {
+          EasyModelEntitiesClientApi.playAnimationSequence(blockEntity, sequence.get());
+        }
+      }
+    }
   }
 }

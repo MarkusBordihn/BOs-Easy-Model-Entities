@@ -23,10 +23,13 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelBodyType;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelProfileInfo;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
 import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
+import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import java.util.List;
 import java.util.Objects;
@@ -151,6 +154,18 @@ public final class EasyModelEntitiesApi {
     }
 
     return EasyModelTextureSetting.EMPTY;
+  }
+
+  public static boolean playAnimationSequence(Entity entity, EasyModelAnimationSequence sequence) {
+    Objects.requireNonNull(entity, "entity");
+    Objects.requireNonNull(sequence, "sequence");
+    if (entity.level().isClientSide()) {
+      return false;
+    }
+
+    EasyModelAnimationNetwork.send(
+        entity, ClientboundEasyModelAnimationSequencePacket.forEntity(entity.getId(), sequence));
+    return true;
   }
 
   private static EasyModelProfileInfo profileInfo(EasyModelEntityProfile profile) {

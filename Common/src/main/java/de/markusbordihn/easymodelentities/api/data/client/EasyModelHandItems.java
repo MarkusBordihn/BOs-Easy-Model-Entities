@@ -19,58 +19,36 @@
 
 package de.markusbordihn.easymodelentities.api.data.client;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
 
-public enum EasyModelPartType {
-  ROOT,
-  BODY,
-  HEAD,
-  LEFT_ARM,
-  RIGHT_ARM,
-  LEFT_HAND,
-  RIGHT_HAND,
-  LEFT_ITEM,
-  RIGHT_ITEM,
-  LEFT_LEG,
-  RIGHT_LEG,
-  FRONT_LEFT_LEG,
-  FRONT_RIGHT_LEG,
-  BACK_LEFT_LEG,
-  BACK_RIGHT_LEG,
-  MIDDLE_FRONT_LEFT_LEG,
-  MIDDLE_FRONT_RIGHT_LEG,
-  MIDDLE_BACK_LEFT_LEG,
-  MIDDLE_BACK_RIGHT_LEG,
-  LEFT_WING,
-  RIGHT_WING,
-  TAIL,
-  TAIL_FIN,
-  UNKNOWN;
+public record EasyModelHandItems(
+    LivingEntity holder, ItemStack mainHandItem, ItemStack offHandItem, HumanoidArm mainArm) {
 
-  private static final Map<String, EasyModelPartType> BY_TAG_NAME = byTagName();
+  public static final EasyModelHandItems NONE =
+      new EasyModelHandItems(null, ItemStack.EMPTY, ItemStack.EMPTY, HumanoidArm.RIGHT);
 
-  private final String tagName = this.name().toLowerCase(Locale.ROOT);
-
-  public static EasyModelPartType fromPartName(String partName) {
-    if (partName == null || partName.isEmpty()) {
-      return UNKNOWN;
-    }
-
-    return BY_TAG_NAME.getOrDefault(partName.toLowerCase(Locale.ROOT), UNKNOWN);
+  public EasyModelHandItems {
+    mainHandItem = mainHandItem == null ? ItemStack.EMPTY : mainHandItem;
+    offHandItem = offHandItem == null ? ItemStack.EMPTY : offHandItem;
+    mainArm = mainArm == null ? HumanoidArm.RIGHT : mainArm;
   }
 
-  private static Map<String, EasyModelPartType> byTagName() {
-    Map<String, EasyModelPartType> byTagName = new HashMap<>();
-    for (EasyModelPartType partType : values()) {
-      byTagName.put(partType.tagName, partType);
+  public static EasyModelHandItems of(LivingEntity holder) {
+    if (holder == null) {
+      return NONE;
     }
 
-    return Map.copyOf(byTagName);
+    return new EasyModelHandItems(
+        holder, holder.getMainHandItem(), holder.getOffhandItem(), holder.getMainArm());
   }
 
-  public String getTagName() {
-    return this.tagName;
+  public boolean isEmpty() {
+    return this.mainHandItem.isEmpty() && this.offHandItem.isEmpty();
+  }
+
+  public HumanoidArm offArm() {
+    return this.mainArm == HumanoidArm.RIGHT ? HumanoidArm.LEFT : HumanoidArm.RIGHT;
   }
 }
