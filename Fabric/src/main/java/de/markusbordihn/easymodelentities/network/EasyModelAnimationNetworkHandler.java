@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.network;
 
 import de.markusbordihn.easymodelentities.client.network.EasyModelAnimationPacketHandler;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,6 +43,10 @@ public final class EasyModelAnimationNetworkHandler {
         .register(
             ClientboundEasyModelAnimationPacket.TYPE,
             ClientboundEasyModelAnimationPacket.STREAM_CODEC);
+    PayloadTypeRegistry.clientboundPlay()
+        .register(
+            ClientboundEasyModelAnimationSequencePacket.TYPE,
+            ClientboundEasyModelAnimationSequencePacket.STREAM_CODEC);
     EasyModelAnimationNetwork.setSender(new FabricSender());
   }
 
@@ -49,22 +54,42 @@ public final class EasyModelAnimationNetworkHandler {
     ClientPlayNetworking.registerGlobalReceiver(
         ClientboundEasyModelAnimationPacket.TYPE,
         (packet, context) -> EasyModelAnimationPacketHandler.handle(packet));
+    ClientPlayNetworking.registerGlobalReceiver(
+        ClientboundEasyModelAnimationSequencePacket.TYPE,
+        (packet, context) -> EasyModelAnimationPacketHandler.handle(packet));
   }
 
   private static final class FabricSender implements EasyModelAnimationNetwork.Sender {
 
-    @Override
-    public void send(Entity entity, ClientboundEasyModelAnimationPacket packet) {
+    private static Set<ServerPlayer> recipients(Entity entity) {
       Set<ServerPlayer> recipients = new HashSet<>(PlayerLookup.tracking(entity));
       if (entity instanceof ServerPlayer serverPlayer) {
         recipients.add(serverPlayer);
       }
-      recipients.forEach(player -> ServerPlayNetworking.send(player, packet));
+
+      return recipients;
+    }
+
+    @Override
+    public void send(Entity entity, ClientboundEasyModelAnimationPacket packet) {
+      recipients(entity).forEach(player -> ServerPlayNetworking.send(player, packet));
     }
 
     @Override
     public void send(
         ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationPacket packet) {
+      PlayerLookup.tracking(level, blockPos)
+          .forEach(player -> ServerPlayNetworking.send(player, packet));
+    }
+
+    @Override
+    public void send(Entity entity, ClientboundEasyModelAnimationSequencePacket packet) {
+      recipients(entity).forEach(player -> ServerPlayNetworking.send(player, packet));
+    }
+
+    @Override
+    public void send(
+        ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationSequencePacket packet) {
       PlayerLookup.tracking(level, blockPos)
           .forEach(player -> ServerPlayNetworking.send(player, packet));
     }

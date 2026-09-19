@@ -40,13 +40,10 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.IdentifierArgument;
-import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.permissions.Permissions;
-import net.minecraft.world.entity.Entity;
 
 final class EasyModelTextureCommand {
 

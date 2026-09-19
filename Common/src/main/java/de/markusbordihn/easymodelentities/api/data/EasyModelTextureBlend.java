@@ -27,7 +27,8 @@ import java.util.Optional;
 
 public enum EasyModelTextureBlend {
   CUTOUT,
-  TRANSLUCENT;
+  TRANSLUCENT,
+  EMISSIVE;
 
   public static final EasyModelTextureBlend DEFAULT = CUTOUT;
 

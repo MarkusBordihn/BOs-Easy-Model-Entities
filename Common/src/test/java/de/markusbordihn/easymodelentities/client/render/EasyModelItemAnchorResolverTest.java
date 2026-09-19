@@ -20,6 +20,7 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelVec3f;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelItemAnchor;
@@ -89,5 +90,49 @@ class EasyModelItemAnchorResolverTest {
             .orElseThrow();
 
     assertEquals("left_hand", result.partName());
+  }
+
+  @Test
+  void handTakesPrecedenceOverArmFallback() {
+    BakedModelPart hand = part("right_hand", List.of(cube(Vec3f.ZERO, Vec3f.ZERO)));
+    BakedModelPart arm = part("right_arm", List.of(cube(Vec3f.ZERO, new Vec3f(2.0f, 12.0f, 2.0f))));
+
+    EasyModelItemAnchor result =
+        EasyModelItemAnchorResolver.resolve(List.of(arm, hand), HumanoidArm.RIGHT).orElseThrow();
+
+    assertEquals("right_hand", result.partName());
+  }
+
+  @Test
+  void modelWithoutArmsFallsBackToHeadFront() {
+    BakedModelPart head =
+        part("head", List.of(cube(new Vec3f(-4.0f, -8.0f, -4.0f), new Vec3f(8.0f, 8.0f, 8.0f))));
+    BakedModelPart body =
+        part("body", List.of(cube(new Vec3f(-4.0f, 0.0f, -2.0f), new Vec3f(8.0f, 12.0f, 4.0f))));
+
+    EasyModelItemAnchor result =
+        EasyModelItemAnchorResolver.resolve(List.of(body, head), HumanoidArm.RIGHT).orElseThrow();
+
+    assertEquals("head", result.partName());
+    assertEquals(new EasyModelVec3f(0.0f, -4.0f, -4.0f), result.localOffset());
+  }
+
+  @Test
+  void modelWithoutArmsAndHeadFallsBackToBodyFront() {
+    BakedModelPart body =
+        part("body", List.of(cube(new Vec3f(-4.0f, 0.0f, -2.0f), new Vec3f(8.0f, 12.0f, 4.0f))));
+
+    EasyModelItemAnchor result =
+        EasyModelItemAnchorResolver.resolve(List.of(body), HumanoidArm.LEFT).orElseThrow();
+
+    assertEquals("body", result.partName());
+    assertEquals(new EasyModelVec3f(0.0f, 6.0f, -2.0f), result.localOffset());
+  }
+
+  @Test
+  void modelWithoutAnyKnownPartResolvesToNoAnchor() {
+    BakedModelPart tail = part("tail", List.of(cube(Vec3f.ZERO, new Vec3f(2.0f, 2.0f, 6.0f))));
+
+    assertTrue(EasyModelItemAnchorResolver.resolve(List.of(tail), HumanoidArm.RIGHT).isEmpty());
   }
 }

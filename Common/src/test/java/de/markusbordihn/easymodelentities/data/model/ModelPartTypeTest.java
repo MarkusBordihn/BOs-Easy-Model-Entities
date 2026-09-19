@@ -33,6 +33,10 @@ class ModelPartTypeTest {
     assertEquals("head", ModelPartType.HEAD.getTagName());
     assertEquals("left_arm", ModelPartType.LEFT_ARM.getTagName());
     assertEquals("right_arm", ModelPartType.RIGHT_ARM.getTagName());
+    assertEquals("left_hand", ModelPartType.LEFT_HAND.getTagName());
+    assertEquals("right_hand", ModelPartType.RIGHT_HAND.getTagName());
+    assertEquals("left_item", ModelPartType.LEFT_ITEM.getTagName());
+    assertEquals("right_item", ModelPartType.RIGHT_ITEM.getTagName());
     assertEquals("left_leg", ModelPartType.LEFT_LEG.getTagName());
     assertEquals("right_leg", ModelPartType.RIGHT_LEG.getTagName());
     assertEquals("front_left_leg", ModelPartType.FRONT_LEFT_LEG.getTagName());

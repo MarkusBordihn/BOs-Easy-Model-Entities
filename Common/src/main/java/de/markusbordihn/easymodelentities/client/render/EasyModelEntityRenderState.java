@@ -23,6 +23,7 @@ import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelHandItems;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
@@ -38,6 +39,7 @@ public class EasyModelEntityRenderState extends EntityRenderState {
   public EasyModelTextureSetting textureSetting = EasyModelTextureSetting.EMPTY;
   public EasyModelPartAnimator partAnimator = EasyModelPartAnimator.NONE;
   public EasyModelPartAnimationMode partAnimationMode = EasyModelPartAnimationMode.ADD;
+  public EasyModelHandItems handItems = EasyModelHandItems.NONE;
   public EasyModelHeadLook headLook = EasyModelHeadLook.NONE;
   public int packedOverlay = OverlayTexture.NO_OVERLAY;
   public float opacity = EasyModelDisplaySettings.DEFAULT_OPACITY;

@@ -129,7 +129,9 @@ class ContractConsistencyTest {
 
   @Test
   void textureBlendSetMatchesDocumentedContract() {
-    assertEquals(Set.of("cutout", "translucent"), Set.copyOf(EasyModelApiContract.textureBlends()));
+    assertEquals(
+        Set.of("cutout", "translucent", "emissive"),
+        Set.copyOf(EasyModelApiContract.textureBlends()));
   }
 
   @Test

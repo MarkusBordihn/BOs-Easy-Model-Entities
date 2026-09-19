@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.network;
 
 import de.markusbordihn.easymodelentities.client.network.EasyModelAnimationPacketHandler;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import net.minecraft.core.BlockPos;
@@ -45,9 +46,17 @@ public final class EasyModelAnimationNetworkHandler {
 
   public static void register() {
     CHANNEL
-        .messageBuilder(ClientboundEasyModelAnimationPacket.class, NetworkDirection.PLAY_TO_CLIENT)
+        .messageBuilder(
+            ClientboundEasyModelAnimationPacket.class, 0, NetworkDirection.PLAY_TO_CLIENT)
         .encoder(ClientboundEasyModelAnimationPacket::encode)
         .decoder(ClientboundEasyModelAnimationPacket::decode)
+        .consumerMainThread(EasyModelAnimationNetworkHandler::handle)
+        .add();
+    CHANNEL
+        .messageBuilder(
+            ClientboundEasyModelAnimationSequencePacket.class, 1, NetworkDirection.PLAY_TO_CLIENT)
+        .encoder(ClientboundEasyModelAnimationSequencePacket::encode)
+        .decoder(ClientboundEasyModelAnimationSequencePacket::decode)
         .consumerMainThread(EasyModelAnimationNetworkHandler::handle)
         .add();
     EasyModelAnimationNetwork.setSender(new ForgeSender());
@@ -55,6 +64,14 @@ public final class EasyModelAnimationNetworkHandler {
 
   private static void handle(
       ClientboundEasyModelAnimationPacket packet, CustomPayloadEvent.Context context) {
+    if (FMLEnvironment.dist.isClient()) {
+      EasyModelAnimationPacketHandler.handle(packet);
+    }
+    context.setPacketHandled(true);
+  }
+
+  private static void handle(
+      ClientboundEasyModelAnimationSequencePacket packet, CustomPayloadEvent.Context context) {
     if (FMLEnvironment.dist.isClient()) {
       EasyModelAnimationPacketHandler.handle(packet);
     }
@@ -71,6 +88,17 @@ public final class EasyModelAnimationNetworkHandler {
     @Override
     public void send(
         ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationPacket packet) {
+      CHANNEL.send(packet, PacketDistributor.TRACKING_CHUNK.with(level.getChunkAt(blockPos)));
+    }
+
+    @Override
+    public void send(Entity entity, ClientboundEasyModelAnimationSequencePacket packet) {
+      CHANNEL.send(packet, PacketDistributor.TRACKING_ENTITY_AND_SELF.with(entity));
+    }
+
+    @Override
+    public void send(
+        ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationSequencePacket packet) {
       CHANNEL.send(packet, PacketDistributor.TRACKING_CHUNK.with(level.getChunkAt(blockPos)));
     }
   }

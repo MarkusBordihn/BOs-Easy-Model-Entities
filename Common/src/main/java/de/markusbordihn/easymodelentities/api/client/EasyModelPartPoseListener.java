@@ -31,4 +31,32 @@ public interface EasyModelPartPoseListener {
   }
 
   void onPartPose(EasyModelPartPose partPose);
+
+  default EasyModelPartPoseListener andThen(EasyModelPartPoseListener other) {
+    if (other == null || other == NONE) {
+      return this;
+    }
+    if (this == NONE) {
+      return other;
+    }
+
+    EasyModelPartPoseListener first = this;
+    return new EasyModelPartPoseListener() {
+
+      @Override
+      public boolean wantsPart(String partName) {
+        return first.wantsPart(partName) || other.wantsPart(partName);
+      }
+
+      @Override
+      public void onPartPose(EasyModelPartPose partPose) {
+        if (first.wantsPart(partPose.partName())) {
+          first.onPartPose(partPose);
+        }
+        if (other.wantsPart(partPose.partName())) {
+          other.onPartPose(partPose);
+        }
+      }
+    };
+  }
 }

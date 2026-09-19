@@ -19,58 +19,33 @@
 
 package de.markusbordihn.easymodelentities.api.data.client;
 
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import java.util.Objects;
 
-public enum EasyModelPartType {
-  ROOT,
-  BODY,
-  HEAD,
-  LEFT_ARM,
-  RIGHT_ARM,
-  LEFT_HAND,
-  RIGHT_HAND,
-  LEFT_ITEM,
-  RIGHT_ITEM,
-  LEFT_LEG,
-  RIGHT_LEG,
-  FRONT_LEFT_LEG,
-  FRONT_RIGHT_LEG,
-  BACK_LEFT_LEG,
-  BACK_RIGHT_LEG,
-  MIDDLE_FRONT_LEFT_LEG,
-  MIDDLE_FRONT_RIGHT_LEG,
-  MIDDLE_BACK_LEFT_LEG,
-  MIDDLE_BACK_RIGHT_LEG,
-  LEFT_WING,
-  RIGHT_WING,
-  TAIL,
-  TAIL_FIN,
-  UNKNOWN;
+public record EasyModelAnimationStep(
+    EasyModelAnimation animation,
+    EasyModelAnimationPlayback playback,
+    EasyModelAnimationTransition transition) {
 
-  private static final Map<String, EasyModelPartType> BY_TAG_NAME = byTagName();
-
-  private final String tagName = this.name().toLowerCase(Locale.ROOT);
-
-  public static EasyModelPartType fromPartName(String partName) {
-    if (partName == null || partName.isEmpty()) {
-      return UNKNOWN;
+  public EasyModelAnimationStep {
+    Objects.requireNonNull(animation, "animation");
+    Objects.requireNonNull(playback, "playback");
+    Objects.requireNonNull(transition, "transition");
+    if (animation.equals(EasyModelAnimation.AUTO)) {
+      throw new IllegalArgumentException("A sequence step must not be the automatic animation.");
     }
-
-    return BY_TAG_NAME.getOrDefault(partName.toLowerCase(Locale.ROOT), UNKNOWN);
   }
 
-  private static Map<String, EasyModelPartType> byTagName() {
-    Map<String, EasyModelPartType> byTagName = new HashMap<>();
-    for (EasyModelPartType partType : values()) {
-      byTagName.put(partType.tagName, partType);
-    }
-
-    return Map.copyOf(byTagName);
+  public static EasyModelAnimationStep of(EasyModelAnimation animation) {
+    return new EasyModelAnimationStep(
+        animation, EasyModelAnimationPlayback.DEFAULT, EasyModelAnimationTransition.DEFAULT);
   }
 
-  public String getTagName() {
-    return this.tagName;
+  public EasyModelAnimationStep withPlayback(EasyModelAnimationPlayback playback) {
+    return new EasyModelAnimationStep(this.animation, playback, this.transition);
+  }
+
+  public EasyModelAnimationStep withTransition(EasyModelAnimationTransition transition) {
+    return new EasyModelAnimationStep(this.animation, this.playback, transition);
   }
 }
