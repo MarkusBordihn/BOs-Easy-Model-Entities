@@ -176,7 +176,7 @@ public final class EasyModelEntityRenderBackend {
     EasyModelRenderState easyModelRenderState = renderState.easyModelRenderState;
     float scale = easyModelRenderState.scale() * renderState.scaleFactor;
     poseStack.pushPose();
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.entityYaw));
+    poseStack.rotateDegrees(Axis.YP, 180.0f - renderState.entityYaw);
     poseStack.scale(-scale, -scale, scale);
     poseStack.translate(0.0f, -1.501f, 0.0f);
 
@@ -261,7 +261,7 @@ public final class EasyModelEntityRenderBackend {
     float scale = easyModelRenderState.scale() * renderState.scaleFactor;
 
     poseStack.pushPose();
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.entityYaw));
+    poseStack.rotateDegrees(Axis.YP, 180.0f - renderState.entityYaw);
     poseStack.scale(-scale, -scale, scale);
     poseStack.translate(0.0f, -1.501f, 0.0f);
     EasyModelBakedModelRenderer.render(
@@ -555,7 +555,7 @@ public final class EasyModelEntityRenderBackend {
             : options.partPoseListener().andThen(handItemPass);
 
     poseStack.pushPose();
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yaw));
+    poseStack.rotateDegrees(Axis.YP, 180.0f - yaw);
     poseStack.scale(-scale, -scale, scale);
     poseStack.translate(0.0f, -1.501f, 0.0f);
 
@@ -815,7 +815,7 @@ public final class EasyModelEntityRenderBackend {
 
   public static float attackAmount(Entity entity, float partialTick) {
     return entity instanceof LivingEntity livingEntity
-        ? livingEntity.getAttackAnim(partialTick)
+        ? livingEntity.getSwingAnimation(partialTick)
         : 0.0f;
   }
 

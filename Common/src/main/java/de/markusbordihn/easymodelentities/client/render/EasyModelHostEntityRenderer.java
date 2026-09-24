@@ -76,11 +76,12 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
   }
 
   @Override
-  public boolean shouldRender(T entity, Frustum frustum, double camX, double camY, double camZ) {
+  public boolean shouldRender(
+      T entity, Frustum frustum, double camX, double camY, double camZ, float partialTicks) {
     var easyModelRenderState =
         EasyModelEntityRenderBackend.resolveRenderState(entity.getEasyModelRuntimeContract());
     if (!easyModelRenderState.hasVisibleBounds()) {
-      return super.shouldRender(entity, frustum, camX, camY, camZ);
+      return super.shouldRender(entity, frustum, camX, camY, camZ, partialTicks);
     }
 
     if (!entity.shouldRender(camX, camY, camZ)) {

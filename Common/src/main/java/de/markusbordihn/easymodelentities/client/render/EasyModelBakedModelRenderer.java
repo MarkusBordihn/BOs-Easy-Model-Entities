@@ -812,7 +812,7 @@ public final class EasyModelBakedModelRenderer {
     }
     if (forceTranslucent || blend == EasyModelTextureBlend.TRANSLUCENT) {
       return cullBackfaces
-          ? RenderTypes.entityTranslucentCullItemTarget(texture)
+          ? RenderTypes.entityTranslucentCull(texture)
           : RenderTypes.entityTranslucent(texture);
     }
 
@@ -1959,13 +1959,13 @@ public final class EasyModelBakedModelRenderer {
   private static void rotate(
       PoseStack poseStack, float xRotation, float yRotation, float zRotation) {
     if (zRotation != 0.0f) {
-      poseStack.mulPose(Axis.ZP.rotation(zRotation));
+      poseStack.rotate(Axis.ZP, zRotation);
     }
     if (yRotation != 0.0f) {
-      poseStack.mulPose(Axis.YP.rotation(yRotation));
+      poseStack.rotate(Axis.YP, yRotation);
     }
     if (xRotation != 0.0f) {
-      poseStack.mulPose(Axis.XP.rotation(xRotation));
+      poseStack.rotate(Axis.XP, xRotation);
     }
   }
 

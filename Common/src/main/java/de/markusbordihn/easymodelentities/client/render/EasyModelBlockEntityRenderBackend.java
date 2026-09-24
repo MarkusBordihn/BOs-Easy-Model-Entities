@@ -162,7 +162,7 @@ public final class EasyModelBlockEntityRenderBackend {
 
     poseStack.pushPose();
     poseStack.translate(0.5f, 1.5f, 0.5f);
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.yawDegrees));
+    poseStack.rotateDegrees(Axis.YP, 180.0f - renderState.yawDegrees);
     poseStack.scale(-scale, -scale, scale);
 
     EasyModelBakedModelRenderer.render(
@@ -202,7 +202,7 @@ public final class EasyModelBlockEntityRenderBackend {
 
     poseStack.pushPose();
     poseStack.translate(0.5f, 1.5f, 0.5f);
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yawDegrees));
+    poseStack.rotateDegrees(Axis.YP, 180.0f - yawDegrees);
     poseStack.scale(-renderState.scale(), -renderState.scale(), renderState.scale());
 
     EasyModelBakedModelRenderer.render(
@@ -265,7 +265,7 @@ public final class EasyModelBlockEntityRenderBackend {
 
     poseStack.pushPose();
     poseStack.translate(0.5f, 1.5f, 0.5f);
-    poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yawDegrees));
+    poseStack.rotateDegrees(Axis.YP, 180.0f - yawDegrees);
     poseStack.scale(-scale, -scale, scale);
 
     EasyModelBakedModelRenderer.render(

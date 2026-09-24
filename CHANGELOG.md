@@ -1,4 +1,4 @@
-# Changelog for Easy Model Entities 26.2
+# Changelog for Easy Model Entities 26.3
 
 ## Note
 
@@ -209,4 +209,4 @@ the [GitHub History][history] instead.
 
 - Initial release for Minecraft 1.20.1.
 
-[history]: https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/commits/26.2
+[history]: https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/commits/26.3

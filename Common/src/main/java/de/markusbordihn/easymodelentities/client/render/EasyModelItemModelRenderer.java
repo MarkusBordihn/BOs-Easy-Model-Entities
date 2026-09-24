@@ -101,8 +101,8 @@ public final class EasyModelItemModelRenderer {
 
     poseStack.pushPose();
     poseStack.translate(0.5f, 0.5f, 0.5f);
-    poseStack.mulPose(Axis.XP.rotationDegrees(ICON_TILT_X));
-    poseStack.mulPose(Axis.YP.rotationDegrees(ICON_ROTATION_Y));
+    poseStack.rotateDegrees(Axis.XP, ICON_TILT_X);
+    poseStack.rotateDegrees(Axis.YP, ICON_ROTATION_Y);
     poseStack.scale(-fit, -fit, fit);
     poseStack.translate(-center.x(), -center.y(), -center.z());
 

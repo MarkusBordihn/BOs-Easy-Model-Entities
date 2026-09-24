@@ -151,8 +151,8 @@ public final class EasyModelHandItemRenderer {
         EasyModelVec3f localOffset = anchoredItem.anchor().localOffset();
         poseStack.translate(
             localOffset.x() / 16.0f, localOffset.y() / 16.0f, localOffset.z() / 16.0f);
-        poseStack.mulPose(Axis.XP.rotationDegrees(-90.0f));
-        poseStack.mulPose(Axis.YP.rotationDegrees(180.0f));
+        poseStack.rotateDegrees(Axis.XP, -90.0f);
+        poseStack.rotateDegrees(Axis.YP, 180.0f);
         itemStackRenderState.submit(
             poseStack, submitNodeCollector, packedLight, packedOverlay, outlineColor);
         poseStack.popPose();
