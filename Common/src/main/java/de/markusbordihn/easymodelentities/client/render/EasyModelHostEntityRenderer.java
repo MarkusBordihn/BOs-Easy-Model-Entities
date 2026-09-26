@@ -28,6 +28,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 
 public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
     extends EntityRenderer<T, EasyModelEntityRenderState> {
@@ -92,11 +93,12 @@ public class EasyModelHostEntityRenderer<T extends Entity & EasyModelEntityHost>
       return true;
     }
 
+    Vec3 interpolatedPosition = entity.getPosition(partialTicks);
     return frustum.isVisible(
         EasyModelCullingBounds.visibleBounds(
-            entity.getX(),
-            entity.getY(),
-            entity.getZ(),
+            interpolatedPosition.x(),
+            interpolatedPosition.y(),
+            interpolatedPosition.z(),
             easyModelRenderState.visibleBoundsWidth(),
             easyModelRenderState.visibleBoundsHeight(),
             easyModelRenderState.visibleBoundsOffset(),
