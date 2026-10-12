@@ -19,11 +19,11 @@
 
 package de.markusbordihn.easymodelentities.command;
 
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.HOST_ENTITY;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.MUTABLE_ENTITY;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.RENDERABLE_ENTITY;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.getRenderables;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.targetBranches;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.updateHosts;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.updateMutables;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -57,14 +57,14 @@ final class EasyModelDisplayCommand {
         .then(
             targetBranches(
                 Commands.literal("set"),
-                HOST_ENTITY,
+                MUTABLE_ENTITY,
                 (target, blockTarget) ->
                     target.then(
                         opacityArgument().executes(context -> setOpacity(context, blockTarget)))))
         .then(
             targetBranches(
                 Commands.literal("clear"),
-                HOST_ENTITY,
+                MUTABLE_ENTITY,
                 (target, blockTarget) ->
                     target.executes(context -> clearOpacity(context, blockTarget))))
         .then(
@@ -80,7 +80,7 @@ final class EasyModelDisplayCommand {
         .then(
             targetBranches(
                 Commands.literal("set"),
-                HOST_ENTITY,
+                MUTABLE_ENTITY,
                 (target, blockTarget) ->
                     target.then(
                         lightLevelArgument()
@@ -88,7 +88,7 @@ final class EasyModelDisplayCommand {
         .then(
             targetBranches(
                 Commands.literal("clear"),
-                HOST_ENTITY,
+                MUTABLE_ENTITY,
                 (target, blockTarget) ->
                     target.executes(context -> clearLightLevel(context, blockTarget))))
         .then(
@@ -126,12 +126,12 @@ final class EasyModelDisplayCommand {
   private static int applyOpacity(
       CommandContext<CommandSourceStack> context, boolean blockTarget, float opacity, String action)
       throws CommandSyntaxException {
-    return updateHosts(
+    return updateMutables(
         context,
         blockTarget,
         action,
-        hostBlockEntity -> hostBlockEntity.setEasyModelOpacity(opacity),
-        hostEntity -> hostEntity.setEasyModelOpacity(opacity));
+        blockEntity -> EasyModelBlockEntitiesApi.setOpacity(blockEntity, opacity),
+        entity -> EasyModelEntitiesApi.setOpacity(entity, opacity));
   }
 
   private static int setLightLevel(CommandContext<CommandSourceStack> context, boolean blockTarget)
@@ -156,12 +156,12 @@ final class EasyModelDisplayCommand {
       int lightLevel,
       String action)
       throws CommandSyntaxException {
-    return updateHosts(
+    return updateMutables(
         context,
         blockTarget,
         action,
-        hostBlockEntity -> hostBlockEntity.setEasyModelLightLevel(lightLevel),
-        hostEntity -> hostEntity.setEasyModelLightLevel(lightLevel));
+        blockEntity -> EasyModelBlockEntitiesApi.setLightLevel(blockEntity, lightLevel),
+        entity -> EasyModelEntitiesApi.setLightLevel(entity, lightLevel));
   }
 
   private static int getOpacity(CommandContext<CommandSourceStack> context, boolean blockTarget)

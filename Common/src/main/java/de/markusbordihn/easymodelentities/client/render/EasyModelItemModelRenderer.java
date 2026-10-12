@@ -54,16 +54,22 @@ public final class EasyModelItemModelRenderer {
       MultiBufferSource bufferSource,
       int packedLight,
       int packedOverlay) {
-    Optional<ResourceLocation> profileId = EasyModelEntitiesItems.profileId(stack);
-    if (profileId.isEmpty()) {
-      return;
-    }
+    EasyModelEntitiesItems.profileId(stack)
+        .ifPresent(
+            profileId -> render(profileId, poseStack, bufferSource, packedLight, packedOverlay));
+  }
 
+  public static boolean render(
+      ResourceLocation profileId,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      int packedOverlay) {
     Optional<EasyModelRuntimeContract> contract =
         EasyModelEntityRenderBackend.resolveContract(
-            profileId.get(), EasyModelAnimationSetting.of(EasyModelAnimation.IDLE));
+            profileId, EasyModelAnimationSetting.of(EasyModelAnimation.IDLE));
     if (contract.isEmpty()) {
-      return;
+      return false;
     }
 
     EasyModelRenderState renderState =
@@ -101,5 +107,6 @@ public final class EasyModelItemModelRenderer {
         LightTexture.FULL_BRIGHT,
         packedOverlay);
     poseStack.popPose();
+    return true;
   }
 }

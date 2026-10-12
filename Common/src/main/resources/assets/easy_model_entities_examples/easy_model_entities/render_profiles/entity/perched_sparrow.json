@@ -3,5 +3,9 @@
   "preset_type": "winged_still",
   "version": "demo-perched-sparrow-v2",
   "model": "easy_model_entities_examples:easy_model_entities/models/dawn_sparrow",
-  "texture": "easy_model_entities_examples:textures/entity/dawn_sparrow.png"
+  "texture": "easy_model_entities_examples:textures/entity/dawn_sparrow.png",
+  "shoulder": {
+    "offset": [0.05, 0.0, 0.0],
+    "scale": 0.75
+  }
 }

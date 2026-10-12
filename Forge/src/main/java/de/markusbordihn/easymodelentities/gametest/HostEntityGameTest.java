@@ -20,76 +20,22 @@
 package de.markusbordihn.easymodelentities.gametest;
 
 import de.markusbordihn.easymodelentities.Constants;
-import net.minecraft.gametest.framework.GameTest;
-import net.minecraft.gametest.framework.GameTestHelper;
+import java.util.Collection;
+import net.minecraft.gametest.framework.GameTestGenerator;
+import net.minecraft.gametest.framework.TestFunction;
 import net.minecraftforge.gametest.GameTestHolder;
 
 @SuppressWarnings("unused")
 @GameTestHolder(Constants.MOD_ID)
 public class HostEntityGameTest {
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void groundEntityCanBeCreated(GameTestHelper helper) {
-    HostEntityGameTestCases.groundEntityCanBeCreated(helper);
+  @GameTestGenerator
+  public Collection<TestFunction> hostEntityTests() {
+    return GameTestHelpers.testFunctions(HostEntityGameTestCases.class);
   }
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void staticEntityCanBeCreated(GameTestHelper helper) {
-    HostEntityGameTestCases.staticEntityCanBeCreated(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void frozenBehaviorStopsHostEntityMovement(GameTestHelper helper) {
-    HostEntityGameTestCases.frozenBehaviorStopsHostEntityMovement(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void missingAndInvalidProfilesReturnEmpty(GameTestHelper helper) {
-    HostEntityGameTestCases.missingAndInvalidProfilesReturnEmpty(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void nbtPreservesRuntimeContractData(GameTestHelper helper) {
-    HostEntityGameTestCases.nbtPreservesRuntimeContractData(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void nbtPreservesTextureSetting(GameTestHelper helper) {
-    HostEntityGameTestCases.nbtPreservesTextureSetting(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void nbtPreservesDisplaySettings(GameTestHelper helper) {
-    HostEntityGameTestCases.nbtPreservesDisplaySettings(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void invalidNbtResourceLocationsFallBackSafely(GameTestHelper helper) {
-    HostEntityGameTestCases.invalidNbtResourceLocationsFallBackSafely(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void dimensionRefreshUsesProfileDimensions(GameTestHelper helper) {
-    HostEntityGameTestCases.dimensionRefreshUsesProfileDimensions(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void blockEntityCanBePlacedAndInitialized(GameTestHelper helper) {
-    HostEntityGameTestCases.blockEntityCanBePlacedAndInitialized(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void attributesAreAppliedFromProfile(GameTestHelper helper) {
-    HostEntityGameTestCases.attributesAreAppliedFromProfile(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void entitySpawnItemSpawnsHostEntity(GameTestHelper helper) {
-    HostEntityGameTestCases.entitySpawnItemSpawnsHostEntity(helper);
-  }
-
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void blockSpawnItemPlacesHostBlock(GameTestHelper helper) {
-    HostEntityGameTestCases.blockSpawnItemPlacesHostBlock(helper);
+  @GameTestGenerator
+  public Collection<TestFunction> commandTests() {
+    return GameTestHelpers.testFunctions(CommandGameTestCases.class);
   }
 }

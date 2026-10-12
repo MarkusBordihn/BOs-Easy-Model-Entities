@@ -19,12 +19,19 @@
 
 package de.markusbordihn.easymodelentities.api.data.client;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 public record EasyModelHandItems(
-    LivingEntity holder, ItemStack mainHandItem, ItemStack offHandItem, HumanoidArm mainArm) {
+    LivingEntity holder,
+    ItemStack mainHandItem,
+    ItemStack offHandItem,
+    HumanoidArm mainArm,
+    Map<String, ItemStack> partItems) {
 
   public static final EasyModelHandItems NONE =
       new EasyModelHandItems(null, ItemStack.EMPTY, ItemStack.EMPTY, HumanoidArm.RIGHT);
@@ -33,6 +40,12 @@ public record EasyModelHandItems(
     mainHandItem = mainHandItem == null ? ItemStack.EMPTY : mainHandItem;
     offHandItem = offHandItem == null ? ItemStack.EMPTY : offHandItem;
     mainArm = mainArm == null ? HumanoidArm.RIGHT : mainArm;
+    partItems = partItems == null ? Map.of() : Map.copyOf(partItems);
+  }
+
+  public EasyModelHandItems(
+      LivingEntity holder, ItemStack mainHandItem, ItemStack offHandItem, HumanoidArm mainArm) {
+    this(holder, mainHandItem, offHandItem, mainArm, Map.of());
   }
 
   public static EasyModelHandItems of(LivingEntity holder) {
@@ -44,8 +57,20 @@ public record EasyModelHandItems(
         holder, holder.getMainHandItem(), holder.getOffhandItem(), holder.getMainArm());
   }
 
+  public EasyModelHandItems withPartItem(String partName, ItemStack itemStack) {
+    Objects.requireNonNull(partName, "partName");
+    Map<String, ItemStack> updatedPartItems = new HashMap<>(this.partItems);
+    if (itemStack == null || itemStack.isEmpty()) {
+      updatedPartItems.remove(partName);
+    } else {
+      updatedPartItems.put(partName, itemStack);
+    }
+    return new EasyModelHandItems(
+        this.holder, this.mainHandItem, this.offHandItem, this.mainArm, updatedPartItems);
+  }
+
   public boolean isEmpty() {
-    return this.mainHandItem.isEmpty() && this.offHandItem.isEmpty();
+    return this.mainHandItem.isEmpty() && this.offHandItem.isEmpty() && this.partItems.isEmpty();
   }
 
   public HumanoidArm offArm() {

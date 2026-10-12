@@ -22,7 +22,10 @@ package de.markusbordihn.easymodelentities;
 import de.markusbordihn.easymodelentities.client.EasyModelClientItemExtensions;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
+import de.markusbordihn.easymodelentities.client.render.EasyModelShoulderLayer;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.client.resources.PlayerSkin;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -42,6 +45,15 @@ public class EasyModelEntitiesClient {
     modEventBus.addListener(this::registerEntityRenderers);
     modEventBus.addListener(this::registerClientReloadListeners);
     modEventBus.addListener(this::registerClientItemExtensions);
+    modEventBus.addListener(this::addLayers);
+  }
+
+  private void addLayers(EntityRenderersEvent.AddLayers event) {
+    for (PlayerSkin.Model skinModel : event.getSkins()) {
+      if (event.getSkin(skinModel) instanceof PlayerRenderer playerRenderer) {
+        playerRenderer.addLayer(new EasyModelShoulderLayer(playerRenderer));
+      }
+    }
   }
 
   private void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {

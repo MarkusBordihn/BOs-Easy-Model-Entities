@@ -29,7 +29,9 @@ import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import java.io.StringReader;
+import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ModelRenderProfileParserTest {
@@ -161,6 +163,53 @@ class ModelRenderProfileParserTest {
   }
 
   @Test
+  @DisplayName("A profile without shoulder block uses the default settings")
+  void defaultsToDefaultShoulderSettings() {
+    EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"static\"}");
+
+    assertEquals(ModelShoulderSettings.DEFAULT, renderProfile.shoulder());
+  }
+
+  @Test
+  @DisplayName("Shoulder offset and scale are read from the profile")
+  void parsesShoulderSettings() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            """
+            {
+              "preset_type": "static",
+              "shoulder": {
+                "offset": [0.05, 0.1, -0.02],
+                "scale": 0.75
+              }
+            }
+            """);
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(new Vec3f(0.05f, 0.1f, -0.02f), renderProfile.shoulder().offset());
+    assertEquals(0.75f, renderProfile.shoulder().scale());
+  }
+
+  @Test
+  @DisplayName("Invalid shoulder values fall back to the defaults instead of hiding the model")
+  void rejectsInvalidShoulderSettingsWithoutKeepingThem() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            """
+            {
+              "preset_type": "static",
+              "shoulder": {
+                "offset": [0.0, 1.0],
+                "scale": -1.0
+              }
+            }
+            """);
+
+    assertEquals(ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, renderProfile.status());
+    assertEquals(ModelShoulderSettings.DEFAULT, renderProfile.shoulder());
+  }
+
+  @Test
   void parsesOpacity() {
     EasyModelRenderProfile renderProfile =
         parse(
@@ -233,6 +282,28 @@ class ModelRenderProfileParserTest {
     EasyModelRenderProfile renderProfile = parse("{\"preset_type\":\"static\"}");
 
     assertTrue(renderProfile.textures().isEmpty());
+  }
+
+  @Test
+  @DisplayName("An explicit texture maps slot 0, while textures.0 still takes precedence")
+  void explicitTextureMapsFirstSlot() {
+    ResourceLocation texture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/texture.png");
+    ResourceLocation firstSlot =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/first_slot.png");
+
+    assertEquals(
+        Map.of(0, texture),
+        parse("{\"preset_type\":\"static\",\"texture\":\"" + texture + "\"}").textures());
+    assertEquals(
+        Map.of(0, firstSlot),
+        parse(
+                "{\"preset_type\":\"static\",\"texture\":\""
+                    + texture
+                    + "\",\"textures\":{\"0\":\""
+                    + firstSlot
+                    + "\"}}")
+            .textures());
   }
 
   @Test
@@ -379,6 +450,31 @@ class ModelRenderProfileParserTest {
 
     assertEquals(ModelRenderProfileStatus.INVALID_ANIMATION_MODE, renderProfile.status());
     assertEquals(ModelAnimationVariantMode.RANDOM, renderProfile.animation().variantMode());
+  }
+
+  @Test
+  @DisplayName("Variant weights are read per clip name in lower case")
+  void parsesVariantWeights() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            "{\"preset_type\":\"quadruped_wandering\","
+                + "\"animation\":{\"variant_weights\":{\"Idle\":3,\"idle_2\":0.5}}}");
+
+    assertEquals(ModelRenderProfileStatus.ACTIVE, renderProfile.status());
+    assertEquals(
+        Map.of("idle", 3.0f, "idle_2", 0.5f), renderProfile.animation().variantWeights());
+  }
+
+  @Test
+  @DisplayName("A zero or negative variant weight is reported and skipped")
+  void rejectsNonPositiveVariantWeights() {
+    EasyModelRenderProfile renderProfile =
+        parse(
+            "{\"preset_type\":\"quadruped_wandering\","
+                + "\"animation\":{\"variant_weights\":{\"idle\":0,\"idle_2\":2}}}");
+
+    assertEquals(ModelRenderProfileStatus.INVALID_RENDER_SETTINGS, renderProfile.status());
+    assertEquals(Map.of("idle_2", 2.0f), renderProfile.animation().variantWeights());
   }
 
   @Test

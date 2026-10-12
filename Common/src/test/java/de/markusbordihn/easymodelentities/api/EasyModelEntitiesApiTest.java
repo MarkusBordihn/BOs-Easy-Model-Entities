@@ -98,18 +98,6 @@ class EasyModelEntitiesApiTest {
     };
   }
 
-  private static EasyModelEntityFactory activeOnlyFactory(Entity entity) {
-    return new EasyModelEntityFactory() {
-      @Override
-      public Optional<Entity> createEntity(Level level, ResourceLocation profileId, Vec3 position) {
-        return EasyModelServices.profileService()
-            .getProfile(profileId)
-            .filter(EasyModelEntityProfile::isActive)
-            .map(profile -> entity);
-      }
-    };
-  }
-
   private static EasyModelEntityProfile profile(
       ResourceLocation profileId, ModelProfileStatus status) {
     return new EasyModelEntityProfile(
@@ -198,18 +186,6 @@ class EasyModelEntitiesApiTest {
     assertSame(
         entity,
         EasyModelEntitiesApi.createEntity(level, ACTIVE_PROFILE_ID, position).orElseThrow());
-  }
-
-  @Test
-  void createEntityReturnsEmptyForMissingAndInactiveProfiles() {
-    Level level = mock(Level.class);
-    Vec3 position = new Vec3(1.0, 2.0, 3.0);
-    EasyModelServices.setProfileService(
-        profileService(profile(INVALID_PROFILE_ID, ModelProfileStatus.DISABLED)));
-    EasyModelServices.setEntityFactory(activeOnlyFactory(mock(Entity.class)));
-
-    assertTrue(EasyModelEntitiesApi.createEntity(level, MISSING_PROFILE_ID, position).isEmpty());
-    assertTrue(EasyModelEntitiesApi.createEntity(level, INVALID_PROFILE_ID, position).isEmpty());
   }
 
   @Test

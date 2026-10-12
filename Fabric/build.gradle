@@ -27,8 +27,9 @@ dependencies {
 
   implementation project(":Common")
 
-  testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+  if (rootProject.findProperty('clientRuntimeTest')?.isClientTestRun()) {
+    modLocalRuntime rootProject.clientRuntimeTest.toolkitCoordinate('fabric')
+  }
 }
 
 loom {
@@ -38,7 +39,6 @@ loom {
     client {
       client()
       setConfigName("Fabric Client")
-      property("fabric.logging.markers", "REGISTRIES")
       property("fabric.log.level", "debug")
       ideConfigGenerated(true)
       runDir("run")
@@ -47,7 +47,6 @@ loom {
     server {
       server()
       setConfigName("Fabric Server")
-      property("fabric.logging.markers", "REGISTRIES")
       property("fabric.log.level", "debug")
       ideConfigGenerated(true)
       runDir("run")
@@ -57,6 +56,15 @@ loom {
       server()
       name "Game Test"
       vmArg "-Dfabric-api.gametest"
+      vmArg "-D${project.mod_id}.gametest=true"
+    }
+
+    if (project.rootProject.findProperty('clientRuntimeTest')?.isAvailable()) {
+      clientTest {
+        client()
+        setConfigName("Fabric Client Test")
+        runDir("run/clienttest")
+      }
     }
   }
 }
@@ -83,14 +91,6 @@ processResources {
 
 tasks.named('compileJava', JavaCompile).configure {
   source(commonProject.sourceSets.main.allSource)
-}
-
-tasks.named('build') {
-  dependsOn 'remapJar'
-}
-
-test {
-  useJUnitPlatform()
 }
 
 if (project.hasProperty('curseforge_project_id') && project.curseforge_project_id) {

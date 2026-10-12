@@ -37,6 +37,7 @@ import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProf
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
+import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileValidationIssue;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderSettings;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -68,18 +69,22 @@ class ModelTextureResolverTest {
   }
 
   private static DecodedModel decodedModel(DecodedTexture secondTexture) {
+    return decodedModel(
+        new DecodedTexture(0, "", "block", "model_a.png", "model_a.png", 16, 16), secondTexture);
+  }
+
+  private static DecodedModel decodedModel(
+      DecodedTexture firstTexture, DecodedTexture secondTexture) {
     DecodedModelPart root =
         new DecodedModelPart(
             "root", new Vec3f(0.0f, 24.0f, 0.0f), Vec3f.ZERO, List.of(cube(0), cube(1)), List.of());
     return new DecodedModel(
-        MODEL_ID,
-        16,
-        16,
-        List.of(root),
-        List.of(
-            new DecodedTexture(0, "", "block", "model_a.png", "model_a.png", 16, 16),
-            secondTexture),
-        List.of());
+        MODEL_ID, 16, 16, List.of(root), List.of(firstTexture, secondTexture), List.of());
+  }
+
+  private static List<ModelRenderProfileValidationIssue> issues(
+      ModelTextureResolver.ResolvedTextures resolved, ModelRenderProfileStatus status) {
+    return resolved.issues().stream().filter(issue -> issue.status() == status).toList();
   }
 
   private static DecodedModelCube cube(int textureIndex) {
@@ -210,5 +215,169 @@ class ModelTextureResolverTest {
 
     assertEquals(ModelTextureResolver.FALLBACK_TEXTURE, resolved.textures().get(1));
     assertTrue(hasMissingTexture(resolved));
+  }
+
+  @Test
+  @DisplayName("A Blockbench relative path resolves against the model file location")
+  void resolvesRelativePathAgainstModelLocation() throws IOException {
+    ResourceLocation relative =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model_b.png");
+    DecodedModel model =
+        decodedModel(
+            new DecodedTexture(
+                1, "", "block", "../../textures/entity/model_b.png", "model_b.png", 16, 16));
+    ResourceManager resourceManager = resourceManager(DEFAULT_TEXTURE, relative);
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of()), model, resourceManager);
+
+    assertEquals(relative, resolved.textures().get(1));
+    assertEquals(List.of(), resolved.issues());
+  }
+
+  @Test
+  @DisplayName("A relative path into another assets namespace resolves to that namespace")
+  void resolvesAssetsPathFromRelativePath() throws IOException {
+    ResourceLocation vanilla =
+        ResourceLocation.fromNamespaceAndPath("minecraft", "textures/entity/chest/normal.png");
+    DecodedModel model =
+        decodedModel(
+            new DecodedTexture(
+                1,
+                "",
+                "block",
+                "../../../../resources/assets/minecraft/textures/entity/chest/normal.png",
+                "normal.png",
+                16,
+                16));
+    ResourceManager resourceManager = resourceManager(DEFAULT_TEXTURE, vanilla);
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of()), model, resourceManager);
+
+    assertEquals(vanilla, resolved.textures().get(1));
+  }
+
+  @Test
+  @DisplayName("Without a profile texture, slot 0 comes from the model")
+  void resolvesFirstTextureFromModel() throws IOException {
+    ResourceLocation modelTexture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model_a.png");
+    DecodedModel model =
+        decodedModel(
+            new DecodedTexture(0, "example", "entity", "", "model_a.png", 16, 16),
+            new DecodedTexture(1, "example", "entity", "", "model_a.png", 16, 16));
+    ResourceManager resourceManager = resourceManager(modelTexture);
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of()), model, resourceManager);
+
+    assertEquals(modelTexture, resolved.textures().get(0));
+    assertEquals(List.of(), resolved.issues());
+  }
+
+  @Test
+  @DisplayName("An existing profile mapping overrides the model texture without a warning")
+  void profileMappingOverridesModelTexture() throws IOException {
+    ResourceLocation override =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/reskin.png");
+    ResourceLocation modelTexture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model_b.png");
+    DecodedModel model =
+        decodedModel(new DecodedTexture(1, "example", "entity", "", "model_b.png", 16, 16));
+    ResourceManager resourceManager = resourceManager(DEFAULT_TEXTURE, override, modelTexture);
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of(1, override)), model, resourceManager);
+
+    assertEquals(override, resolved.textures().get(1));
+    assertEquals(List.of(), resolved.issues());
+  }
+
+  @Test
+  @DisplayName("A stale profile mapping falls back to the model texture and asks for a re-export")
+  void staleProfileMappingFallsBackToModelTexture() throws IOException {
+    ResourceLocation stale =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model_1.png");
+    ResourceLocation modelTexture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/crow.png");
+    DecodedModel model =
+        decodedModel(new DecodedTexture(1, "example", "entity", "", "crow.png", 16, 16));
+    ResourceManager resourceManager = resourceManager(DEFAULT_TEXTURE, modelTexture);
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of(1, stale)), model, resourceManager);
+
+    assertEquals(modelTexture, resolved.textures().get(1));
+    assertFalse(hasMissingTexture(resolved));
+    List<ModelRenderProfileValidationIssue> warnings =
+        issues(resolved, ModelRenderProfileStatus.ACTIVE);
+    assertEquals(1, warnings.size());
+    assertEquals("textures.1", warnings.get(0).field());
+    assertTrue(warnings.get(0).message().startsWith("Texture \"crow\" (index 1)"));
+    assertTrue(warnings.get(0).message().contains(stale.toString()));
+    assertTrue(warnings.get(0).message().contains("Re-export the render profile"));
+  }
+
+  @Test
+  @DisplayName("A profile mapping for an index the model lacks is reported")
+  void warnsAboutProfileMappingWithoutModelTexture() throws IOException {
+    ResourceLocation orphan =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/orphan.png");
+    DecodedModel model =
+        decodedModel(new DecodedTexture(1, "minecraft", "block", "", "chest.png", 16, 16));
+    ResourceManager resourceManager =
+        resourceManager(
+            DEFAULT_TEXTURE,
+            ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/chest.png"));
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of(5, orphan)), model, resourceManager);
+
+    List<ModelRenderProfileValidationIssue> warnings =
+        issues(resolved, ModelRenderProfileStatus.ACTIVE);
+    assertEquals(1, warnings.size());
+    assertEquals("textures.5", warnings.get(0).field());
+    assertTrue(warnings.get(0).message().contains(orphan.toString()));
+  }
+
+  @Test
+  @DisplayName("A missing texture names the texture and every location that was tried")
+  void missingTextureListsEveryAttempt() throws IOException {
+    ResourceLocation stale =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/model_1.png");
+    DecodedModel model =
+        decodedModel(
+            new DecodedTexture(
+                1, "example", "entity", "../../textures/entity/body.png", "body.png", 16, 16));
+    ResourceManager resourceManager = resourceManager(DEFAULT_TEXTURE);
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of(1, stale)), model, resourceManager);
+
+    assertEquals(ModelTextureResolver.FALLBACK_TEXTURE, resolved.textures().get(1));
+    List<ModelRenderProfileValidationIssue> missing =
+        issues(resolved, ModelRenderProfileStatus.MISSING_TEXTURE);
+    assertEquals(1, missing.size());
+    assertEquals(
+        "Texture \"body\" (index 1) is missing, tried example:textures/entity/model_1.png,"
+            + " example:textures/entity/body.png.",
+        missing.get(0).message());
+  }
+
+  @Test
+  @DisplayName("An embedded texture without profile mapping asks for a re-export")
+  void embeddedTextureWithoutMappingIsReported() throws IOException {
+    DecodedModel model =
+        decodedModel(new DecodedTexture(1, "", "block", "", "embedded.png", 16, 16));
+    ResourceManager resourceManager = resourceManager(DEFAULT_TEXTURE);
+
+    ModelTextureResolver.ResolvedTextures resolved =
+        ModelTextureResolver.resolve(profile(Map.of()), model, resourceManager);
+
+    List<ModelRenderProfileValidationIssue> missing =
+        issues(resolved, ModelRenderProfileStatus.MISSING_TEXTURE);
+    assertEquals(1, missing.size());
+    assertTrue(missing.get(0).message().startsWith("Texture \"embedded\" (index 1) has no"));
   }
 }

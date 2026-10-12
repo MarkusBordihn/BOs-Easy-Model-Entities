@@ -20,7 +20,9 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyFloat;
 import static org.mockito.Mockito.mock;
@@ -50,10 +52,12 @@ import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationKeyframe;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
+import de.markusbordihn.easymodelentities.data.model.TextureRenderSides;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
+import de.markusbordihn.easymodelentities.data.model.bake.ModelBounds;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
@@ -64,19 +68,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import net.minecraft.SharedConstants;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.Bootstrap;
 import net.minecraft.util.Mth;
 import org.joml.Matrix4f;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 
 class EasyModelBakedModelRendererTest {
+
+  @BeforeAll
+  static void bootstrapMinecraft() {
+    SharedConstants.tryDetectVersion();
+    Bootstrap.bootStrap();
+  }
 
   private static ModelCubeFaceUvs faceUvs() {
     return new ModelCubeFaceUvs(
@@ -487,6 +500,34 @@ class EasyModelBakedModelRendererTest {
         OverlayTexture.NO_OVERLAY,
         opacity,
         EasyModelDisplaySettings.NO_LIGHT_LEVEL);
+  }
+
+  @Test
+  @DisplayName("Moving in water plays swim for every body type, on land walk")
+  void swimClipDependsOnWaterNotBodyType() {
+    BakedModel bakedModel = variantModel(1.0f, true, "idle", "walk", "swim");
+    EasyModelRenderState biped =
+        renderState(bakedModel, ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC);
+    EasyModelRenderState amphibious =
+        renderState(bakedModel, ModelBodyType.AMPHIBIOUS, ModelAnimationMode.AUTOMATIC);
+
+    assertEquals(
+        "swim", EasyModelBakedModelRenderer.automaticClipName(biped, 0.5f, 0.0f, 0.0f, true));
+    assertEquals(
+        "walk", EasyModelBakedModelRenderer.automaticClipName(amphibious, 0.5f, 0.0f, 0.0f, false));
+    assertEquals(
+        "idle", EasyModelBakedModelRenderer.automaticClipName(amphibious, 0.0f, 0.0f, 0.0f, true));
+  }
+
+  @Test
+  @DisplayName("Moving in water without a swim clip falls back to walk")
+  void missingSwimClipFallsBackToWalkInWater() {
+    BakedModel bakedModel = variantModel(1.0f, true, "idle", "walk");
+    EasyModelRenderState renderState =
+        renderState(bakedModel, ModelBodyType.AQUATIC, ModelAnimationMode.AUTOMATIC);
+
+    assertEquals(
+        "walk", EasyModelBakedModelRenderer.automaticClipName(renderState, 0.5f, 0.0f, 0.0f, true));
   }
 
   @Test
@@ -970,6 +1011,20 @@ class EasyModelBakedModelRendererTest {
   }
 
   @Test
+  @DisplayName("Animation mode none still plays a clip asked for by name")
+  void animationModeNonePlaysExplicitlyRequestedClips() {
+    BakedModel bakedModel = staticClipModel();
+    Map<String, EasyModelPartTransform> requested =
+        clipTransforms(
+            renderState(bakedModel, ModelBodyType.BIPED, ModelAnimationMode.NONE),
+            bakedModel,
+            EasyModelAnimation.named("wave"),
+            0.0f);
+
+    assertEquals(0.4f, requested.get("body").xRotation(), 0.001f);
+  }
+
+  @Test
   @DisplayName("A bone without a track must not fall back to the procedural idle on a statue")
   void staticModelKeepsUntrackedBonesAtRest() {
     Map<String, EasyModelPartTransform> transforms =
@@ -1422,7 +1477,8 @@ class EasyModelBakedModelRendererTest {
   @Test
   @DisplayName("An emissive slot picks a fullbright render type, a cutout slot does not")
   void emissiveBlendSelectsAnEmissiveRenderType() {
-    ResourceLocation texture = ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png");
+    ResourceLocation texture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png");
 
     assertEquals(
         RenderType.entityTranslucentEmissive(texture),
@@ -1437,7 +1493,8 @@ class EasyModelBakedModelRendererTest {
   @Test
   @DisplayName("Emissive has no cull variant, so backface culling cannot change its render type")
   void emissiveBlendIgnoresBackfaceCulling() {
-    ResourceLocation texture = ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png");
+    ResourceLocation texture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png");
 
     assertEquals(
         EasyModelBakedModelRenderer.renderType(
@@ -1449,7 +1506,8 @@ class EasyModelBakedModelRendererTest {
   @Test
   @DisplayName("A faded emissive slot keeps the emissive render type, which already blends alpha")
   void fadedEmissiveBlendStaysEmissive() {
-    ResourceLocation texture = ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png");
+    ResourceLocation texture =
+        ResourceLocation.fromNamespaceAndPath("example", "textures/entity/uv_model.png");
 
     assertEquals(
         RenderType.entityTranslucentEmissive(texture),
@@ -1488,6 +1546,69 @@ class EasyModelBakedModelRendererTest {
         packedLight,
         EasyModelBakedModelRenderer.packedLightWithOverride(
             packedLight, EasyModelDisplaySettings.NO_LIGHT_LEVEL));
+  }
+
+  @Test
+  @DisplayName("Only a cube inverted on one or two axes flips its face normals")
+  void normalSignFollowsTheTwoOtherAxes() {
+    assertEquals(1.0f, EasyModelBakedModelRenderer.normalSign(2.0f, 3.0f));
+    assertEquals(-1.0f, EasyModelBakedModelRenderer.normalSign(-2.0f, 3.0f));
+    assertEquals(-1.0f, EasyModelBakedModelRenderer.normalSign(2.0f, -3.0f));
+    assertEquals(1.0f, EasyModelBakedModelRenderer.normalSign(-2.0f, -3.0f));
+  }
+
+  @Test
+  @DisplayName("Face UV corners shift by one vertex per clockwise quarter turn")
+  void faceUvCornersFollowClockwiseQuarterTurns() {
+    FaceUv unrotated = new FaceUv(0.0f, 0.0f, 1.0f, 1.0f);
+    FaceUv quarterTurn = unrotated.withClockwiseQuarterTurns(1);
+
+    float[][] unrotatedCorners = {{1, 0}, {0, 0}, {0, 1}, {1, 1}};
+    float[][] quarterTurnCorners = {{0, 0}, {0, 1}, {1, 1}, {1, 0}};
+    for (int vertexIndex = 0; vertexIndex < 4; vertexIndex++) {
+      assertEquals(
+          unrotatedCorners[vertexIndex][0],
+          EasyModelBakedModelRenderer.cornerU(unrotated, vertexIndex));
+      assertEquals(
+          unrotatedCorners[vertexIndex][1],
+          EasyModelBakedModelRenderer.cornerV(unrotated, vertexIndex));
+      assertEquals(
+          quarterTurnCorners[vertexIndex][0],
+          EasyModelBakedModelRenderer.cornerU(quarterTurn, vertexIndex));
+      assertEquals(
+          quarterTurnCorners[vertexIndex][1],
+          EasyModelBakedModelRenderer.cornerV(quarterTurn, vertexIndex));
+    }
+  }
+
+  @Test
+  @DisplayName("Texture render sides override the body type backface culling")
+  void textureRenderSidesOverrideBodyTypeCulling() {
+    Map<Integer, TextureRenderSides> renderSides =
+        Map.of(0, TextureRenderSides.FRONT, 1, TextureRenderSides.DOUBLE);
+    BakedModel cullingModel = renderSidesModel(true, renderSides);
+    BakedModel doubleSidedModel = renderSidesModel(false, renderSides);
+
+    assertTrue(EasyModelBakedModelRenderer.cullBackfaces(doubleSidedModel, 0));
+    assertFalse(EasyModelBakedModelRenderer.cullBackfaces(cullingModel, 1));
+    assertTrue(EasyModelBakedModelRenderer.cullBackfaces(cullingModel, 2));
+    assertFalse(EasyModelBakedModelRenderer.cullBackfaces(doubleSidedModel, 2));
+  }
+
+  private static BakedModel renderSidesModel(
+      boolean cullBackfaces, Map<Integer, TextureRenderSides> renderSides) {
+    return new BakedModel(
+        ResourceLocation.fromNamespaceAndPath("example", "render_sides"),
+        16,
+        16,
+        List.of(),
+        Map.of(),
+        cullBackfaces,
+        Map.of(),
+        ModelBounds.EMPTY,
+        null,
+        Map.of(),
+        renderSides);
   }
 
   private static final class SharedBuilderBufferProvider

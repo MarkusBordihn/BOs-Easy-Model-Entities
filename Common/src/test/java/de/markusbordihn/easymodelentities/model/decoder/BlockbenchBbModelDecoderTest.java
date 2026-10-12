@@ -27,6 +27,7 @@ import static org.mockito.Mockito.mock;
 
 import de.markusbordihn.easymodelentities.data.model.FaceUv;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
+import de.markusbordihn.easymodelentities.data.model.TextureRenderSides;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelCube;
@@ -40,6 +41,7 @@ import java.util.Optional;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class BlockbenchBbModelDecoderTest {
@@ -135,11 +137,26 @@ class BlockbenchBbModelDecoderTest {
     return new Resource(packResources, () -> new ByteArrayInputStream(bytes));
   }
 
+  private static DecodedModel decodeSingleCubeModel(String extraElementFields) throws Exception {
+    return new BlockbenchBbModelDecoder()
+        .decode(MODEL_ID, resource(singleCubeModel("[0,0,0]", "[0,0,0]", extraElementFields)));
+  }
+
   private static DecodedModelCube decodeSingleCube(String extraElementFields) throws Exception {
-    DecodedModel model =
-        new BlockbenchBbModelDecoder()
-            .decode(MODEL_ID, resource(singleCubeModel("[0,0,0]", "[0,0,0]", extraElementFields)));
-    return model.rootParts().get(0).cubes().get(0);
+    return decodeSingleCubeModel(extraElementFields).rootParts().get(0).cubes().get(0);
+  }
+
+  private static boolean hasWarning(DecodedModel model, String field) {
+    return model.validationIssues().stream()
+        .anyMatch(
+            issue ->
+                issue.status() == ModelRenderProfileStatus.ACTIVE && field.equals(issue.field()));
+  }
+
+  private static void assertVec(float x, float y, float z, Vec3f actual) {
+    assertEquals(x, actual.x(), DELTA, "x");
+    assertEquals(y, actual.y(), DELTA, "y");
+    assertEquals(z, actual.z(), DELTA, "z");
   }
 
   @Test
@@ -478,5 +495,176 @@ class BlockbenchBbModelDecoderTest {
     assertTrue(
         root.cubes().get(0).hasRotation(),
         "A [-180,0,0] element rotation must be kept so its faces stay oriented correctly");
+  }
+
+  @Test
+  @DisplayName("Inflate grows the cube but keeps its box UV")
+  void inflateGrowsGeometryButKeepsBoxUv() throws Exception {
+    DecodedModelCube plain = decodeSingleCube(",\"box_uv\":true");
+    DecodedModelCube inflated = decodeSingleCube(",\"box_uv\":true,\"inflate\":0.5");
+
+    assertVec(-1.5f, -2.5f, -1.5f, inflated.position());
+    assertVec(3.0f, 3.0f, 3.0f, inflated.dimensions());
+    assertEquals(plain.faceUvs(), inflated.faceUvs());
+  }
+
+  @Test
+  @DisplayName("A negative inflate larger than the cube inverts it")
+  void negativeInflateBeyondCubeSizeInvertsDimensions() throws Exception {
+    DecodedModelCube cube = decodeSingleCube(",\"inflate\":-2");
+
+    assertVec(-2.0f, -2.0f, -2.0f, cube.dimensions());
+  }
+
+  @Test
+  @DisplayName("A cube with export false is skipped without a warning")
+  void hiddenCubeIsSkippedWithoutUnusedWarning() throws Exception {
+    DecodedModel model = decodeSingleCubeModel(",\"export\":false");
+
+    assertTrue(model.rootParts().get(0).cubes().isEmpty());
+    assertFalse(hasWarning(model, "model"));
+  }
+
+  @Test
+  @DisplayName("A group with export false is skipped with all its cubes")
+  void hiddenGroupIsSkippedWithItsCubes() throws Exception {
+    String cube =
+        ",\"from\":[-1,0,-1],\"to\":[1,2,1],\"origin\":[0,0,0],\"uv_offset\":[0,0],"
+            + "\"type\":\"cube\"}";
+    String model =
+        "{\"meta\":{\"format_version\":\"5.0\",\"model_format\":\"modded_entity\"},"
+            + "\"resolution\":{\"width\":64,\"height\":64},"
+            + "\"elements\":[{\"name\":\"visible\",\"uuid\":\"e1\""
+            + cube
+            + ",{\"name\":\"hidden\",\"uuid\":\"e2\""
+            + cube
+            + "],\"groups\":["
+            + "{\"uuid\":\"g\",\"name\":\"root\",\"origin\":[0,0,0],\"rotation\":[0,0,0],"
+            + "\"export\":true},"
+            + "{\"uuid\":\"h\",\"name\":\"hidden\",\"origin\":[0,0,0],\"rotation\":[0,0,0],"
+            + "\"export\":false}],"
+            + "\"outliner\":[{\"uuid\":\"g\",\"children\":[\"e1\","
+            + "{\"uuid\":\"h\",\"children\":[\"e2\"]}]}]}";
+
+    DecodedModel decodedModel = new BlockbenchBbModelDecoder().decode(MODEL_ID, resource(model));
+
+    DecodedModelPart root = decodedModel.rootParts().get(0);
+    assertTrue(root.children().isEmpty());
+    assertEquals(1, root.cubes().size());
+    assertEquals("visible", root.cubes().get(0).name());
+    assertFalse(hasWarning(decodedModel, "model"));
+  }
+
+  private static DecodedModel decodeTwoHeadModel(boolean secondHeadExported) throws Exception {
+    String group = "\",\"origin\":[0,0,0],\"rotation\":[0,0,0],\"export\":";
+    String model =
+        "{\"meta\":{\"format_version\":\"5.0\",\"model_format\":\"modded_entity\"},"
+            + "\"resolution\":{\"width\":64,\"height\":64},\"elements\":[],\"groups\":["
+            + "{\"uuid\":\"g\",\"name\":\"root"
+            + group
+            + "true},{\"uuid\":\"h1\",\"name\":\"Head"
+            + group
+            + "true},{\"uuid\":\"h2\",\"name\":\" head "
+            + group
+            + secondHeadExported
+            + "}],\"outliner\":[{\"uuid\":\"g\",\"children\":["
+            + "{\"uuid\":\"h1\",\"children\":[]},{\"uuid\":\"h2\",\"children\":[]}]}]}";
+    return new BlockbenchBbModelDecoder().decode(MODEL_ID, resource(model));
+  }
+
+  @Test
+  @DisplayName("Groups with the same name after trimming and lowercasing are warned about")
+  void duplicateGroupNamesAreWarnedAbout() throws Exception {
+    DecodedModel decodedModel = decodeTwoHeadModel(true);
+
+    assertTrue(
+        decodedModel.validationIssues().stream()
+            .anyMatch(
+                issue ->
+                    issue.status() == ModelRenderProfileStatus.ACTIVE
+                        && issue.message().contains("share the name head")));
+  }
+
+  @Test
+  @DisplayName("A group with export false does not count as a duplicate name")
+  void hiddenGroupIsNoDuplicateName() throws Exception {
+    assertFalse(hasWarning(decodeTwoHeadModel(false), "model"));
+  }
+
+  @Test
+  @DisplayName("Face rotation is read as clockwise quarter turns")
+  void faceRotationIsReadAsClockwiseQuarterTurns() throws Exception {
+    DecodedModelCube cube =
+        decodeSingleCube(
+            ",\"box_uv\":false,\"faces\":{"
+                + "\"north\":{\"uv\":[0,0,2,2],\"texture\":0,\"rotation\":90},"
+                + "\"south\":{\"uv\":[0,0,2,2],\"texture\":0,\"rotation\":-90},"
+                + "\"east\":{\"uv\":[0,0,2,2],\"texture\":0,\"rotation\":540},"
+                + "\"west\":{\"uv\":[0,0,2,2],\"texture\":0}}");
+
+    assertEquals(1, cube.faceUvs().uv(ModelCubeFace.NORTH).clockwiseQuarterTurns());
+    assertEquals(3, cube.faceUvs().uv(ModelCubeFace.SOUTH).clockwiseQuarterTurns());
+    assertEquals(2, cube.faceUvs().uv(ModelCubeFace.EAST).clockwiseQuarterTurns());
+    assertEquals(0, cube.faceUvs().uv(ModelCubeFace.WEST).clockwiseQuarterTurns());
+  }
+
+  @Test
+  @DisplayName("Face rotation also applies to box UV faces")
+  void faceRotationAppliesToBoxUvFallback() throws Exception {
+    DecodedModelCube cube =
+        decodeSingleCube(",\"box_uv\":true,\"faces\":{\"up\":{\"rotation\":180}}");
+
+    assertEquals(2, cube.faceUvs().uv(ModelCubeFace.UP).clockwiseQuarterTurns());
+  }
+
+  @Test
+  @DisplayName("A face rotation other than 90 degree steps is ignored with a warning")
+  void nonQuarterFaceRotationIsIgnoredWithWarning() throws Exception {
+    DecodedModel model =
+        decodeSingleCubeModel(
+            ",\"box_uv\":false,\"faces\":{"
+                + "\"north\":{\"uv\":[0,0,2,2],\"texture\":0,\"rotation\":45}}");
+
+    FaceUv north = model.rootParts().get(0).cubes().get(0).faceUvs().uv(ModelCubeFace.NORTH);
+    assertEquals(0, north.clockwiseQuarterTurns());
+    assertTrue(hasWarning(model, "faces.north.rotation"));
+  }
+
+  @Test
+  @DisplayName("Render sides are read per texture, unknown values become auto")
+  void textureRenderSidesAreRead() throws Exception {
+    String textures =
+        "\"textures\":[{\"id\":\"0\",\"name\":\"front\",\"render_sides\":\"front\"},"
+            + "{\"id\":\"1\",\"name\":\"double\",\"render_sides\":\"double\"},"
+            + "{\"id\":\"2\",\"name\":\"plain\"},"
+            + "{\"id\":\"3\",\"name\":\"unknown\",\"render_sides\":\"both\"}],"
+            + "\"resolution\"";
+    String modelWithTextures =
+        singleCubeModel("[0,0,0]", "[0,0,0]", "").replace("\"resolution\"", textures);
+
+    DecodedModel model =
+        new BlockbenchBbModelDecoder().decode(MODEL_ID, resource(modelWithTextures));
+
+    assertEquals(TextureRenderSides.FRONT, model.textures().get(0).renderSides());
+    assertEquals(TextureRenderSides.DOUBLE, model.textures().get(1).renderSides());
+    assertEquals(TextureRenderSides.AUTO, model.textures().get(2).renderSides());
+    assertEquals(TextureRenderSides.AUTO, model.textures().get(3).renderSides());
+    assertTrue(hasWarning(model, "textures.render_sides"));
+  }
+
+  @Test
+  @DisplayName("Texture slots follow the array position, not the Blockbench texture id")
+  void textureSlotsFollowArrayPosition() throws Exception {
+    String textures =
+        "\"textures\":[{\"id\":\"2\",\"name\":\"first\"},{\"id\":\"0\",\"name\":\"second\"}],"
+            + "\"resolution\"";
+    String modelWithTextures =
+        singleCubeModel("[0,0,0]", "[0,0,0]", "").replace("\"resolution\"", textures);
+
+    DecodedModel model =
+        new BlockbenchBbModelDecoder().decode(MODEL_ID, resource(modelWithTextures));
+
+    assertEquals(0, model.textures().get(0).index());
+    assertEquals(1, model.textures().get(1).index());
   }
 }

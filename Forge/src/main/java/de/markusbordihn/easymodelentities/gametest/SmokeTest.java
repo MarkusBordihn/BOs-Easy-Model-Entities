@@ -20,8 +20,10 @@
 package de.markusbordihn.easymodelentities.gametest;
 
 import de.markusbordihn.easymodelentities.Constants;
-import net.minecraft.gametest.framework.GameTest;
+import java.util.Collection;
+import net.minecraft.gametest.framework.GameTestGenerator;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.TestFunction;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.gametest.GameTestHolder;
 
@@ -29,8 +31,12 @@ import net.minecraftforge.gametest.GameTestHolder;
 @GameTestHolder(Constants.MOD_ID)
 public class SmokeTest {
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void testModRegistered(GameTestHelper helper) {
+  @GameTestGenerator
+  public Collection<TestFunction> smokeTests() {
+    return GameTestHelpers.testFunctions(SmokeTest.class);
+  }
+
+  public static void testModRegistered(GameTestHelper helper) {
     GameTestHelpers.assertTrue(
         helper,
         "Mod " + Constants.MOD_ID + " is not loaded!",

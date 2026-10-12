@@ -22,8 +22,8 @@ package de.markusbordihn.easymodelentities.command;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import de.markusbordihn.easymodelentities.api.EasyModelMutableRenderable;
 import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
-import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -44,11 +44,12 @@ final class EasyModelCommandTargets {
   static final String POSITION_ARGUMENT = "pos";
   static final Predicate<Entity> HOST_ENTITY = entity -> entity instanceof EasyModelEntityHost;
   static final Predicate<Entity> RENDERABLE_ENTITY = EasyModelCommandTargets::isRenderableEntity;
+  static final Predicate<Entity> MUTABLE_ENTITY = EasyModelCommandTargets::isMutableEntity;
 
   private static final String NO_TARGETS_MESSAGE = "No compatible Easy Model targets selected.";
   private static final String NO_BLOCK_ENTITY_MESSAGE = "No Easy Model block entity at position.";
-  private static final String NO_HOST_BLOCK_ENTITY_MESSAGE =
-      "No Easy Model host block entity at position.";
+  private static final String NO_MUTABLE_BLOCK_ENTITY_MESSAGE =
+      "No changeable Easy Model block entity at position.";
 
   private EasyModelCommandTargets() {}
 
@@ -83,27 +84,29 @@ final class EasyModelCommandTargets {
     return entity instanceof EasyModelEntityHost || entity instanceof EasyModelRenderable;
   }
 
-  static int updateHosts(
+  private static boolean isMutableEntity(Entity entity) {
+    return entity instanceof EasyModelEntityHost || entity instanceof EasyModelMutableRenderable;
+  }
+
+  static int updateMutables(
       CommandContext<CommandSourceStack> context,
       boolean blockTarget,
       String action,
-      Consumer<EasyModelHostBlockEntity> blockEntityUpdate,
-      Consumer<EasyModelEntityHost> entityUpdate)
+      Predicate<BlockEntity> blockEntityUpdate,
+      Predicate<Entity> entityUpdate)
       throws CommandSyntaxException {
     if (blockTarget) {
-      if (!(blockTarget(context).blockEntity()
-          instanceof EasyModelHostBlockEntity hostBlockEntity)) {
-        return sendMissingHostBlockEntity(context.getSource());
+      BlockEntity blockEntity = blockTarget(context).blockEntity();
+      if (blockEntity == null || !blockEntityUpdate.test(blockEntity)) {
+        return sendMissingMutableBlockEntity(context.getSource());
       }
 
-      blockEntityUpdate.accept(hostBlockEntity);
       return sendBlockEntityResult(context.getSource(), action);
     }
 
     int updated = 0;
     for (Entity entity : EntityArgument.getEntities(context, TARGETS_ARGUMENT)) {
-      if (entity instanceof EasyModelEntityHost hostEntity) {
-        entityUpdate.accept(hostEntity);
+      if (entityUpdate.test(entity)) {
         updated++;
       }
     }
@@ -192,8 +195,8 @@ final class EasyModelCommandTargets {
     return 0;
   }
 
-  static int sendMissingHostBlockEntity(CommandSourceStack source) {
-    source.sendFailure(Component.literal(NO_HOST_BLOCK_ENTITY_MESSAGE));
+  static int sendMissingMutableBlockEntity(CommandSourceStack source) {
+    source.sendFailure(Component.literal(NO_MUTABLE_BLOCK_ENTITY_MESSAGE));
     return 0;
   }
 

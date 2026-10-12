@@ -48,6 +48,7 @@ import de.markusbordihn.easymodelentities.data.model.ModelAnimationKeyframe;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationVariants;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFaceUvs;
+import de.markusbordihn.easymodelentities.data.model.TextureRenderSides;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.decoder.*;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
@@ -60,8 +61,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
@@ -347,6 +350,11 @@ public abstract class AbstractBbModelParser {
 
   private static float optionalNonNegativeFloat(
       JsonObject jsonObject, String field, float defaultValue) throws EasyModelDecodeException {
+    return Math.max(optionalFloat(jsonObject, field, defaultValue), 0.0f);
+  }
+
+  private static float optionalFloat(JsonObject jsonObject, String field, float defaultValue)
+      throws EasyModelDecodeException {
     JsonElement value = jsonObject.get(field);
     if (value == null || value.isJsonNull()) {
       return defaultValue;
@@ -356,7 +364,7 @@ public abstract class AbstractBbModelParser {
     }
     float floatValue = value.getAsFloat();
     validateModelNumber(floatValue, field);
-    return Math.max(floatValue, 0.0f);
+    return floatValue;
   }
 
   private static void validateSourceBudgets(int boneCount, int cubeCount)
@@ -370,7 +378,10 @@ public abstract class AbstractBbModelParser {
   }
 
   private static ModelCubeFaceUvs parseFaceUvs(
-      JsonObject elementObject, int[] uvOffset, float[] dimensions)
+      JsonObject elementObject,
+      int[] uvOffset,
+      float[] dimensions,
+      List<ModelRenderProfileValidationIssue> issues)
       throws EasyModelDecodeException {
     ModelCubeFaceUvs boxUvs = ModelCubeFaceUvs.fromBoxUv(uvOffset, dimensions);
     JsonElement facesElement = elementObject.get("faces");
@@ -383,12 +394,12 @@ public abstract class AbstractBbModelParser {
 
     JsonObject faces = facesElement.getAsJsonObject();
     return new ModelCubeFaceUvs(
-        faceUv(faces, ModelCubeFace.NORTH.getTagName(), boxUvs.north()),
-        faceUv(faces, ModelCubeFace.EAST.getTagName(), boxUvs.east()),
-        faceUv(faces, ModelCubeFace.SOUTH.getTagName(), boxUvs.south()),
-        faceUv(faces, ModelCubeFace.WEST.getTagName(), boxUvs.west()),
-        faceUv(faces, ModelCubeFace.UP.getTagName(), boxUvs.up()),
-        faceUv(faces, ModelCubeFace.DOWN.getTagName(), boxUvs.down()));
+        faceUv(faces, ModelCubeFace.NORTH.getTagName(), boxUvs.north(), issues),
+        faceUv(faces, ModelCubeFace.EAST.getTagName(), boxUvs.east(), issues),
+        faceUv(faces, ModelCubeFace.SOUTH.getTagName(), boxUvs.south(), issues),
+        faceUv(faces, ModelCubeFace.WEST.getTagName(), boxUvs.west(), issues),
+        faceUv(faces, ModelCubeFace.UP.getTagName(), boxUvs.up(), issues),
+        faceUv(faces, ModelCubeFace.DOWN.getTagName(), boxUvs.down(), issues));
   }
 
   private static CubeFaceVisibility parseFaceVisibility(JsonObject elementObject)
@@ -435,7 +446,11 @@ public abstract class AbstractBbModelParser {
     return false;
   }
 
-  private static FaceUv faceUv(JsonObject faces, String face, FaceUv fallback)
+  private static FaceUv faceUv(
+      JsonObject faces,
+      String face,
+      FaceUv fallback,
+      List<ModelRenderProfileValidationIssue> issues)
       throws EasyModelDecodeException {
     JsonElement faceElement = faces.get(face);
     if (faceElement == null || faceElement.isJsonNull()) {
@@ -445,10 +460,31 @@ public abstract class AbstractBbModelParser {
       throw new EasyModelDecodeException("Face " + face + " must be an object.");
     }
 
-    JsonElement uvElement = faceElement.getAsJsonObject().get("uv");
-    return uvElement == null || uvElement.isJsonNull()
-        ? fallback
-        : FaceUv.of(parseFloatArray(uvElement, "faces." + face + ".uv", 4));
+    JsonObject faceObject = faceElement.getAsJsonObject();
+    JsonElement uvElement = faceObject.get("uv");
+    FaceUv faceUv =
+        uvElement == null || uvElement.isJsonNull()
+            ? fallback
+            : FaceUv.of(parseFloatArray(uvElement, "faces." + face + ".uv", 4));
+    return faceUv.withClockwiseQuarterTurns(clockwiseQuarterTurns(faceObject, face, issues));
+  }
+
+  private static int clockwiseQuarterTurns(
+      JsonObject faceObject, String face, List<ModelRenderProfileValidationIssue> issues)
+      throws EasyModelDecodeException {
+    float degrees = optionalFloat(faceObject, "rotation", 0.0f);
+    float normalizedDegrees = ((degrees % 360.0f) + 360.0f) % 360.0f;
+    if (normalizedDegrees % 90.0f != 0.0f) {
+      issues.add(
+          warning(
+              "faces." + face + ".rotation",
+              "Ignoring face rotation "
+                  + degrees
+                  + ": only multiples of 90 degrees are supported."));
+      return 0;
+    }
+
+    return (int) (normalizedDegrees / 90.0f);
   }
 
   private static Map<String, RawGroup> parseGroups(JsonArray groupsArray)
@@ -461,7 +497,8 @@ public abstract class AbstractBbModelParser {
               requiredString(groupObject, "uuid"),
               requiredString(groupObject, "name"),
               optionalFloatArray(groupObject, "origin", new float[] {0.0f, 0.0f, 0.0f}),
-              optionalFloatArray(groupObject, "rotation", new float[] {0.0f, 0.0f, 0.0f}));
+              optionalFloatArray(groupObject, "rotation", new float[] {0.0f, 0.0f, 0.0f}),
+              optionalBoolean(groupObject, "export", true));
       if (groupsByUuid.put(rawGroup.uuid(), rawGroup) != null) {
         throw new EasyModelDecodeException("Duplicate group uuid " + rawGroup.uuid() + ".");
       }
@@ -504,6 +541,33 @@ public abstract class AbstractBbModelParser {
                 + "."));
   }
 
+  private static void warnAboutDuplicatePartNames(
+      List<DecodedModelPart> rootParts, List<ModelRenderProfileValidationIssue> issues) {
+    Set<String> duplicateNames = new LinkedHashSet<>();
+    collectDuplicatePartNames(rootParts, new HashSet<>(), duplicateNames);
+    if (duplicateNames.isEmpty()) {
+      return;
+    }
+
+    issues.add(
+        warning(
+            "model",
+            "Several groups share the name "
+                + String.join(", ", duplicateNames)
+                + " (ignoring case and spaces): animations, poses and held items cannot tell"
+                + " them apart."));
+  }
+
+  private static void collectDuplicatePartNames(
+      List<DecodedModelPart> parts, Set<String> partNames, Set<String> duplicateNames) {
+    for (DecodedModelPart part : parts) {
+      if (!partNames.add(part.name())) {
+        duplicateNames.add(part.name());
+      }
+      collectDuplicatePartNames(part.children(), partNames, duplicateNames);
+    }
+  }
+
   private static DecodedModelPart convertNode(
       JsonObject node,
       Map<String, RawElement> elementsByUuid,
@@ -543,17 +607,24 @@ public abstract class AbstractBbModelParser {
                 "Outliner references unknown element uuid " + childElement.getAsString() + ".");
           }
           referencedElements.add(rawElement.uuid());
-          cubes.add(convertCube(rawElement, group));
+          if (rawElement.exported()) {
+            cubes.add(convertCube(rawElement, group));
+          }
         } else if (childElement.isJsonObject()) {
-          children.add(
-              convertNode(
-                  childElement.getAsJsonObject(),
-                  elementsByUuid,
-                  groupsByUuid,
-                  group,
-                  depth + 1,
-                  groupPath,
-                  referencedElements));
+          JsonObject childNode = childElement.getAsJsonObject();
+          if (isExportedGroup(childNode, groupsByUuid)) {
+            children.add(
+                convertNode(
+                    childNode,
+                    elementsByUuid,
+                    groupsByUuid,
+                    group,
+                    depth + 1,
+                    groupPath,
+                    referencedElements));
+          } else {
+            markElementsReferenced(childNode, referencedElements);
+          }
         } else {
           throw new EasyModelDecodeException(
               "Outliner children must be group objects or element ids.");
@@ -568,6 +639,27 @@ public abstract class AbstractBbModelParser {
         rotationRadians(group.rotation()),
         cubes,
         children);
+  }
+
+  private static boolean isExportedGroup(JsonObject node, Map<String, RawGroup> groupsByUuid)
+      throws EasyModelDecodeException {
+    RawGroup group = groupsByUuid.get(requiredString(node, "uuid"));
+    return group == null || group.exported();
+  }
+
+  private static void markElementsReferenced(JsonObject node, Set<String> referencedElements) {
+    JsonElement childrenElement = node.get("children");
+    if (childrenElement == null || !childrenElement.isJsonArray()) {
+      return;
+    }
+
+    for (JsonElement childElement : childrenElement.getAsJsonArray()) {
+      if (childElement.isJsonPrimitive() && childElement.getAsJsonPrimitive().isString()) {
+        referencedElements.add(childElement.getAsString());
+      } else if (childElement.isJsonObject()) {
+        markElementsReferenced(childElement.getAsJsonObject(), referencedElements);
+      }
+    }
   }
 
   private static DecodedModelCube convertCube(RawElement element, RawGroup group) {
@@ -850,24 +942,13 @@ public abstract class AbstractBbModelParser {
     }
   }
 
-  private static int textureId(JsonObject textureObject, int positionalIndex)
-      throws EasyModelDecodeException {
-    String id = optionalString(textureObject, "id", "");
-    if (id.isBlank()) {
-      return positionalIndex;
-    }
-    try {
-      return Math.max(Integer.parseInt(id.trim()), 0);
-    } catch (NumberFormatException exception) {
-      return positionalIndex;
-    }
-  }
-
   protected abstract int textureIndex(
       JsonObject elementObject, List<ModelRenderProfileValidationIssue> issues)
       throws EasyModelDecodeException;
 
-  protected List<DecodedTexture> parseTextures(JsonObject root) throws EasyModelDecodeException {
+  protected List<DecodedTexture> parseTextures(
+      JsonObject root, List<ModelRenderProfileValidationIssue> issues)
+      throws EasyModelDecodeException {
     JsonElement texturesElement = root.get("textures");
     if (texturesElement == null || texturesElement.isJsonNull()) {
       return List.of();
@@ -882,17 +963,40 @@ public abstract class AbstractBbModelParser {
       JsonObject textureObject = requireObjectElement(textureElement, "textures");
       textures.add(
           new DecodedTexture(
-              textureId(textureObject, positionalIndex),
+              positionalIndex,
               optionalString(textureObject, "namespace", ""),
               optionalString(textureObject, "folder", ""),
               optionalString(textureObject, "relative_path", ""),
               optionalString(textureObject, "name", ""),
               optionalNonNegativeInt(textureObject, "uv_width", 0),
-              optionalNonNegativeInt(textureObject, "uv_height", 0)));
+              optionalNonNegativeInt(textureObject, "uv_height", 0),
+              renderSides(textureObject, issues)));
       positionalIndex++;
     }
 
     return textures;
+  }
+
+  private static TextureRenderSides renderSides(
+      JsonObject textureObject, List<ModelRenderProfileValidationIssue> issues)
+      throws EasyModelDecodeException {
+    String renderSides = optionalString(textureObject, "render_sides", "");
+    if (renderSides.isEmpty()) {
+      return TextureRenderSides.AUTO;
+    }
+
+    Optional<TextureRenderSides> parsedRenderSides = TextureRenderSides.fromTagName(renderSides);
+    if (parsedRenderSides.isEmpty()) {
+      issues.add(
+          warning(
+              "textures.render_sides",
+              "Unknown render_sides value \""
+                  + renderSides
+                  + "\" on texture "
+                  + optionalString(textureObject, "name", "")
+                  + ", using auto."));
+    }
+    return parsedRenderSides.orElse(TextureRenderSides.AUTO);
   }
 
   public final DecodedModel parse(ResourceLocation modelId, JsonObject root, int modelByteLength)
@@ -949,6 +1053,10 @@ public abstract class AbstractBbModelParser {
                 + outlinerEntryName(outlinerElement, elementsByUuid)
                 + " is not a group: every cube must be placed inside a group (bone).");
       }
+      if (!isExportedGroup(outlinerElement.getAsJsonObject(), groupsByUuid)) {
+        markElementsReferenced(outlinerElement.getAsJsonObject(), referencedElements);
+        continue;
+      }
       rootParts.add(
           convertNode(
               outlinerElement.getAsJsonObject(),
@@ -960,8 +1068,9 @@ public abstract class AbstractBbModelParser {
               referencedElements));
     }
     warnAboutUnusedElements(elementsByUuid, referencedElements, issues);
+    warnAboutDuplicatePartNames(rootParts, issues);
 
-    List<DecodedTexture> textures = parseTextures(root);
+    List<DecodedTexture> textures = parseTextures(root, issues);
     addSoftBudgetWarnings(rootParts, issues);
     return new DecodedModel(
         modelId, resolution[0], resolution[1], rootParts, textures, animations, issues);
@@ -980,6 +1089,7 @@ public abstract class AbstractBbModelParser {
       float[] from = requiredFloatArray(elementObject, "from");
       float[] to = requiredFloatArray(elementObject, "to");
       float[] dimensions = new float[] {to[0] - from[0], to[1] - from[1], to[2] - from[2]};
+      float inflate = optionalFloat(elementObject, "inflate", 0.0f);
       int[] uvOffset = optionalIntArray(elementObject, "uv_offset", new int[] {0, 0});
       boolean mirror =
           optionalBoolean(elementObject, "mirror_uv", false) && !hasResolvedFaceUvs(elementObject);
@@ -987,15 +1097,16 @@ public abstract class AbstractBbModelParser {
           new RawElement(
               requiredString(elementObject, "uuid"),
               requiredString(elementObject, "name"),
-              from,
-              to,
+              new float[] {from[0] - inflate, from[1] - inflate, from[2] - inflate},
+              new float[] {to[0] + inflate, to[1] + inflate, to[2] + inflate},
               uvOffset,
-              parseFaceUvs(elementObject, uvOffset, dimensions),
+              parseFaceUvs(elementObject, uvOffset, dimensions, issues),
               textureIndex(elementObject, issues),
               optionalFloatArray(elementObject, "origin", new float[] {0.0f, 0.0f, 0.0f}),
               optionalFloatArray(elementObject, "rotation", new float[] {0.0f, 0.0f, 0.0f}),
               mirror,
-              parseFaceVisibility(elementObject));
+              parseFaceVisibility(elementObject),
+              optionalBoolean(elementObject, "export", true));
       if (elementsByUuid.put(rawElement.uuid(), rawElement) != null) {
         throw new EasyModelDecodeException("Duplicate element uuid " + rawElement.uuid() + ".");
       }
@@ -1015,7 +1126,9 @@ public abstract class AbstractBbModelParser {
       float[] origin,
       float[] rotation,
       boolean mirrorUv,
-      CubeFaceVisibility faceVisibility) {}
+      CubeFaceVisibility faceVisibility,
+      boolean exported) {}
 
-  private record RawGroup(String uuid, String name, float[] origin, float[] rotation) {}
+  private record RawGroup(
+      String uuid, String name, float[] origin, float[] rotation, boolean exported) {}
 }

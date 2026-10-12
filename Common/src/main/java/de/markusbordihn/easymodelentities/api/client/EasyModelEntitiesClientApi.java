@@ -36,6 +36,7 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelItemAnchor;
 import de.markusbordihn.easymodelentities.client.render.EasyModelBlockEntityRenderBackend;
 import de.markusbordihn.easymodelentities.client.render.EasyModelEntityRenderBackend;
 import de.markusbordihn.easymodelentities.client.render.EasyModelItemAnchorResolver;
+import de.markusbordihn.easymodelentities.client.render.EasyModelItemModelRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelTextureOverrides;
 import de.markusbordihn.easymodelentities.client.render.EasyModelTextureVariants;
 import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
@@ -52,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -62,6 +64,8 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public final class EasyModelEntitiesClientApi {
+
+  public static final String SHOULDER_CLIP = "shoulder";
 
   private EasyModelEntitiesClientApi() {}
 
@@ -130,6 +134,19 @@ public final class EasyModelEntitiesClientApi {
     return true;
   }
 
+  public static boolean renderItem(
+      ResourceLocation profileId,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      int packedOverlay) {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(poseStack, "poseStack");
+    Objects.requireNonNull(bufferSource, "bufferSource");
+    return EasyModelItemModelRenderer.render(
+        profileId, poseStack, bufferSource, packedLight, packedOverlay);
+  }
+
   public static Optional<EasyModelBounds> getModelBounds(ResourceLocation profileId) {
     Objects.requireNonNull(profileId, "profileId");
     return resolveRenderState(profileId, EasyModelAnimationSetting.AUTO)
@@ -150,6 +167,13 @@ public final class EasyModelEntitiesClientApi {
     Objects.requireNonNull(profileId, "profileId");
     Objects.requireNonNull(arm, "arm");
     return EasyModelItemAnchorResolver.getItemAnchor(profileId, arm);
+  }
+
+  public static Optional<EasyModelItemAnchor> getPartAnchor(
+      ResourceLocation profileId, String partName) {
+    Objects.requireNonNull(profileId, "profileId");
+    Objects.requireNonNull(partName, "partName");
+    return EasyModelItemAnchorResolver.getPartAnchor(profileId, partName);
   }
 
   public static Optional<EasyModelBodyType> getBodyType(ResourceLocation profileId) {
@@ -176,6 +200,26 @@ public final class EasyModelEntitiesClientApi {
     return listAnimations(profileId).stream()
         .filter(animation -> animation.name().equals(normalizedName))
         .findFirst();
+  }
+
+  public static EasyModelAnimation resolveShoulderAnimation(ResourceLocation profileId) {
+    Objects.requireNonNull(profileId, "profileId");
+    return shoulderAnimation(
+        resolveRenderState(profileId, EasyModelAnimationSetting.AUTO)
+            .map(EasyModelRenderState::bakedModel)
+            .map(BakedModel::animations)
+            .map(Map::keySet)
+            .orElse(Set.of()));
+  }
+
+  static EasyModelAnimation shoulderAnimation(Set<String> clipNames) {
+    if (clipNames.contains(SHOULDER_CLIP)) {
+      return EasyModelAnimation.named(SHOULDER_CLIP);
+    }
+    if (clipNames.contains(ModelAnimationClips.SIT)) {
+      return EasyModelAnimation.SIT;
+    }
+    return EasyModelAnimation.IDLE;
   }
 
   public static List<String> listAnimationVariants(ResourceLocation profileId, String baseName) {

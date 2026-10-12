@@ -22,12 +22,15 @@ package de.markusbordihn.easymodelentities;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelItemModelRenderer;
+import de.markusbordihn.easymodelentities.client.render.EasyModelShoulderLayer;
 import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.BuiltinItemRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.server.packs.PackType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -67,5 +70,11 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
     BuiltinItemRendererRegistry.INSTANCE.register(EasyModelItems.BLOCK_SPAWN, itemRenderer);
     ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
         .registerReloadListener(new ModelRenderProfileReloadListenerWrapper());
+    LivingEntityFeatureRendererRegistrationCallback.EVENT.register(
+        (entityType, entityRenderer, registrationHelper, context) -> {
+          if (entityRenderer instanceof PlayerRenderer playerRenderer) {
+            registrationHelper.register(new EasyModelShoulderLayer(playerRenderer));
+          }
+        });
   }
 }

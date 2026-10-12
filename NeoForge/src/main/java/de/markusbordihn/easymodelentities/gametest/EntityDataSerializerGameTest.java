@@ -22,20 +22,24 @@ package de.markusbordihn.easymodelentities.gametest;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
-import net.minecraft.gametest.framework.GameTest;
+import java.util.Collection;
+import net.minecraft.gametest.framework.GameTestGenerator;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.TestFunction;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.gametest.GameTestHolder;
-import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 @SuppressWarnings("unused")
-@PrefixGameTestTemplate(value = false)
 @GameTestHolder(Constants.MOD_ID)
 public class EntityDataSerializerGameTest {
 
-  @GameTest(template = "gametest.3x3x3")
-  public void serializersAreNeoForgeRegistered(GameTestHelper helper) {
+  @GameTestGenerator
+  public Collection<TestFunction> entityDataSerializerTests() {
+    return GameTestHelpers.testFunctions(EntityDataSerializerGameTest.class);
+  }
+
+  public static void serializersAreNeoForgeRegistered(GameTestHelper helper) {
     ResourceLocation bodyTypeId = ModelResourcePaths.modResourceLocation("body_type");
     ResourceLocation animationSettingId =
         ModelResourcePaths.modResourceLocation("animation_setting");

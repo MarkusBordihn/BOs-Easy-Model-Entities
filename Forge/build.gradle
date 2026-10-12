@@ -6,8 +6,6 @@ plugins {
   id "com.modrinth.minotaur" version "2.+"
 }
 
-apply plugin: 'net.minecraftforge.gradle'
-
 base {
   archivesName = "${mod_id}-forge-${minecraft_version}"
 }
@@ -35,6 +33,7 @@ minecraft {
       property 'forge.logging.markers', 'REGISTRIES'
       property 'forge.logging.console.level', 'debug'
       property 'forge.enabledGameTestNamespaces', "${project.mod_id}"
+      property "${project.mod_id}.gametest", 'true'
       mods {
         "${project.mod_id}" { source sourceSets.main }
       }
@@ -45,6 +44,7 @@ minecraft {
       property 'forge.logging.markers', 'REGISTRIES'
       property 'forge.logging.console.level', 'debug'
       property 'forge.enabledGameTestNamespaces', "${project.mod_id}"
+      property "${project.mod_id}.gametest", 'true'
       mods {
         "${project.mod_id}" { source sourceSets.main }
       }
@@ -55,8 +55,16 @@ minecraft {
       property 'forge.logging.markers', 'REGISTRIES'
       property 'forge.logging.console.level', 'debug'
       property 'forge.enabledGameTestNamespaces', "${project.mod_id}"
+      property "${project.mod_id}.gametest", 'true'
       mods {
         "${project.mod_id}" { source sourceSets.main }
+      }
+    }
+
+    if (rootProject.findProperty('clientRuntimeTest')?.isAvailable()) {
+      clientTest {
+        parent minecraft.runs.client
+        workingDirectory project.file('run/clienttest')
       }
     }
   }
@@ -64,8 +72,6 @@ minecraft {
 
 def commonProject = project(":Common")
 def forgeMinVersion = forge_min_version.toString()
-
-sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
   minecraft "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
@@ -75,8 +81,9 @@ dependencies {
   // Hack fix for now, force jopt-simple to be exactly 5.0.4 because Mojang ships that version, but some transitive dependencies request 6.0+
   implementation('net.sf.jopt-simple:jopt-simple:5.0.4') { version { strictly '5.0.4' } }
 
-  testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+  if (rootProject.findProperty('clientRuntimeTest')?.isClientTestRun()) {
+    runtimeOnly fg.deobf(rootProject.clientRuntimeTest.toolkitCoordinate('forge'))
+  }
 }
 
 tasks.named('compileJava', JavaCompile).configure {
@@ -102,10 +109,6 @@ tasks.named('jar', Jar).configure {
         "Implementation-Vendor"   : "${project.mod_id}",
     ])
   }
-}
-
-test {
-  useJUnitPlatform()
 }
 
 if (project.hasProperty('curseforge_project_id') && project.curseforge_project_id) {
