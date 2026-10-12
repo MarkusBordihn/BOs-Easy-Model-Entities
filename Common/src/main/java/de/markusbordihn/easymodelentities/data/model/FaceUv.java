@@ -19,13 +19,20 @@
 
 package de.markusbordihn.easymodelentities.data.model;
 
-public record FaceUv(float minU, float minV, float maxU, float maxV) {
+public record FaceUv(float minU, float minV, float maxU, float maxV, int clockwiseQuarterTurns) {
 
   public FaceUv {
     requireFinite(minU, "minU");
     requireFinite(minV, "minV");
     requireFinite(maxU, "maxU");
     requireFinite(maxV, "maxV");
+    if (clockwiseQuarterTurns < 0 || clockwiseQuarterTurns > 3) {
+      throw new IllegalArgumentException("clockwiseQuarterTurns must be between 0 and 3.");
+    }
+  }
+
+  public FaceUv(float minU, float minV, float maxU, float maxV) {
+    this(minU, minV, maxU, maxV, 0);
   }
 
   public static FaceUv of(float[] uv) {
@@ -50,10 +57,18 @@ public record FaceUv(float minU, float minV, float maxU, float maxV) {
       throw new IllegalArgumentException("textureHeight must be a finite positive value.");
     }
     return new FaceUv(
-        minU / textureWidth, minV / textureHeight, maxU / textureWidth, maxV / textureHeight);
+        this.minU / textureWidth,
+        this.minV / textureHeight,
+        this.maxU / textureWidth,
+        this.maxV / textureHeight,
+        this.clockwiseQuarterTurns);
   }
 
   public FaceUv mirrorU() {
-    return new FaceUv(this.maxU, this.minV, this.minU, this.maxV);
+    return new FaceUv(this.maxU, this.minV, this.minU, this.maxV, this.clockwiseQuarterTurns);
+  }
+
+  public FaceUv withClockwiseQuarterTurns(int clockwiseQuarterTurns) {
+    return new FaceUv(this.minU, this.minV, this.maxU, this.maxV, clockwiseQuarterTurns);
   }
 }

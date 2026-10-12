@@ -116,6 +116,7 @@ public record ClientboundEasyModelAnimationSequencePacket(
             buffer, EasyModelAnimationPlaybackMode.values(), EasyModelAnimationPlaybackMode.ONCE);
     int repeatCount = buffer.readVarInt();
     float durationTicks = buffer.readFloat();
+    float speed = buffer.readFloat();
     EasyModelAnimationSwitchTiming timing =
         readEnum(
             buffer,
@@ -125,7 +126,10 @@ public record ClientboundEasyModelAnimationSequencePacket(
     return new Step(
         animation,
         new EasyModelAnimationPlayback(
-            playbackMode, Math.max(1, repeatCount), nonNegativeFinite(durationTicks)),
+            playbackMode,
+            Math.max(1, repeatCount),
+            nonNegativeFinite(durationTicks),
+            ClientboundEasyModelAnimationPacket.clampSpeed(speed)),
         new EasyModelAnimationTransition(timing, nonNegativeFinite(blendDurationTicks)));
   }
 
@@ -160,6 +164,7 @@ public record ClientboundEasyModelAnimationSequencePacket(
       buffer.writeEnum(step.playback().mode());
       buffer.writeVarInt(step.playback().repeatCount());
       buffer.writeFloat(step.playback().durationTicks());
+      buffer.writeFloat(step.playback().speed());
       buffer.writeEnum(step.transition().timing());
       buffer.writeFloat(step.transition().blendDurationTicks());
     }

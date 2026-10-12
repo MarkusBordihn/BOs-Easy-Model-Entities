@@ -23,6 +23,7 @@ import de.markusbordihn.easymodelentities.command.EasyModelEntitiesCommand;
 import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnosticsService;
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
 import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
+import de.markusbordihn.easymodelentities.network.EasyModelShoulderNetworkHandler;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.fabricmc.api.ModInitializer;
@@ -61,6 +62,7 @@ public class EasyModelEntities implements ModInitializer {
     EasyModelItems.register();
     EasyModelCreativeModeTabs.register();
     EasyModelAnimationNetworkHandler.registerServer();
+    EasyModelShoulderNetworkHandler.registerServer();
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(EasyModelEntityTypes.INSTANCE));
     EasyModelServices.setBlockEntityTypeProvider(EasyModelBlockEntityTypes.INSTANCE);

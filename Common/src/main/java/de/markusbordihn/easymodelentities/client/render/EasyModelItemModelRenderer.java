@@ -56,8 +56,51 @@ public final class EasyModelItemModelRenderer {
       MultiBufferSource bufferSource,
       int packedLight,
       int packedOverlay) {
-    render(
-        stack,
+    EasyModelEntitiesItems.profileId(stack)
+        .ifPresent(
+            profileId -> render(profileId, poseStack, bufferSource, packedLight, packedOverlay));
+  }
+
+  public static void render(
+      ItemStack stack,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay) {
+    EasyModelEntitiesItems.profileId(stack)
+        .ifPresent(
+            profileId ->
+                render(
+                    profileId,
+                    poseStack,
+                    (bakedModel, renderState, innerPoseStack) ->
+                        EasyModelBakedModelRenderer.render(
+                            bakedModel,
+                            renderState,
+                            0.0f,
+                            0.0f,
+                            0.0f,
+                            0.0f,
+                            EasyModelHeadLook.NONE,
+                            EasyModelAnimationPlaybackFrame.single(EasyModelAnimation.AUTO, 0.0f),
+                            EasyModelAnimationVariantFrame.NONE,
+                            EasyModelTextureSetting.EMPTY,
+                            EasyModelPartAnimator.NONE,
+                            EasyModelPartAnimationMode.ADD,
+                            innerPoseStack,
+                            submitNodeCollector,
+                            LightTexture.FULL_BRIGHT,
+                            packedOverlay)));
+  }
+
+  public static boolean render(
+      Identifier profileId,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      int packedOverlay) {
+    return render(
+        profileId,
         poseStack,
         (bakedModel, renderState, innerPoseStack) ->
             EasyModelBakedModelRenderer.render(
@@ -80,46 +123,13 @@ public final class EasyModelItemModelRenderer {
                 packedOverlay));
   }
 
-  public static void render(
-      ItemStack stack,
-      PoseStack poseStack,
-      SubmitNodeCollector submitNodeCollector,
-      int packedLight,
-      int packedOverlay) {
-    render(
-        stack,
-        poseStack,
-        (bakedModel, renderState, innerPoseStack) ->
-            EasyModelBakedModelRenderer.render(
-                bakedModel,
-                renderState,
-                0.0f,
-                0.0f,
-                0.0f,
-                0.0f,
-                EasyModelHeadLook.NONE,
-                EasyModelAnimationPlaybackFrame.single(EasyModelAnimation.AUTO, 0.0f),
-                EasyModelAnimationVariantFrame.NONE,
-                EasyModelTextureSetting.EMPTY,
-                EasyModelPartAnimator.NONE,
-                EasyModelPartAnimationMode.ADD,
-                innerPoseStack,
-                submitNodeCollector,
-                LightTexture.FULL_BRIGHT,
-                packedOverlay));
-  }
-
-  private static void render(ItemStack stack, PoseStack poseStack, ModelRenderCallback callback) {
-    Optional<Identifier> profileId = EasyModelEntitiesItems.profileId(stack);
-    if (profileId.isEmpty()) {
-      return;
-    }
-
+  private static boolean render(
+      Identifier profileId, PoseStack poseStack, ModelRenderCallback callback) {
     Optional<EasyModelRuntimeContract> contract =
         EasyModelEntityRenderBackend.resolveContract(
-            profileId.get(), EasyModelAnimationSetting.of(EasyModelAnimation.IDLE));
+            profileId, EasyModelAnimationSetting.of(EasyModelAnimation.IDLE));
     if (contract.isEmpty()) {
-      return;
+      return false;
     }
 
     EasyModelRenderState renderState =
@@ -140,6 +150,7 @@ public final class EasyModelItemModelRenderer {
 
     callback.render(renderState.bakedModel(), renderState, poseStack);
     poseStack.popPose();
+    return true;
   }
 
   @FunctionalInterface

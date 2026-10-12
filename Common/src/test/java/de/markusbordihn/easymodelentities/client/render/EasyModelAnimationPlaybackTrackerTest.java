@@ -29,10 +29,13 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlaybackMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationStep;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartTransform;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
+import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelAnimationPlaybackTrackerTest {
@@ -228,6 +231,175 @@ class EasyModelAnimationPlaybackTrackerTest {
     assertEquals(0.0f, tracker.resolve(target, IDLE, 20.0, CLIPS).animationTicks(), 0.0001f);
     assertEquals(0.0f, tracker.resolve(target, IDLE, 40.0, CLIPS).animationTicks(), 0.0001f);
     assertEquals(IDLE, tracker.resolve(target, IDLE, 60.0, CLIPS).animation());
+  }
+
+  @Test
+  @DisplayName("Double speed plays a clip in half the time and advances clip time twice as fast")
+  void doubleSpeedHalvesTheClipLength() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.play(
+        target,
+        WAVE,
+        EasyModelAnimationPlayback.DEFAULT.withSpeed(2.0f),
+        EasyModelAnimationTransition.IMMEDIATE);
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+
+    EasyModelAnimationPlaybackFrame middle = tracker.resolve(target, IDLE, 5.0, CLIPS);
+
+    assertEquals(WAVE, middle.animation());
+    assertEquals(10.0f, middle.animationTicks(), 0.0001f);
+    assertEquals(WAVE, tracker.resolve(target, IDLE, 9.0, CLIPS).animation());
+    assertEquals(IDLE, tracker.resolve(target, IDLE, 10.0, CLIPS).animation());
+  }
+
+  @Test
+  @DisplayName("Half speed doubles every repeat, and the fallback plays at normal speed again")
+  void halfSpeedDoublesEachRepeat() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.play(
+        target,
+        WAVE,
+        new EasyModelAnimationPlayback(EasyModelAnimationPlaybackMode.REPEAT, 2, 0.0f, 0.5f),
+        EasyModelAnimationTransition.IMMEDIATE);
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+
+    assertEquals(19.0f, tracker.resolve(target, IDLE, 38.0, CLIPS).animationTicks(), 0.0001f);
+    assertEquals(0.0f, tracker.resolve(target, IDLE, 40.0, CLIPS).animationTicks(), 0.0001f);
+    assertEquals(WAVE, tracker.resolve(target, IDLE, 79.0, CLIPS).animation());
+    assertEquals(IDLE, tracker.resolve(target, IDLE, 80.0, CLIPS).animation());
+    assertEquals(4.0f, tracker.resolve(target, IDLE, 84.0, CLIPS).animationTicks(), 0.0001f);
+  }
+
+  @Test
+  @DisplayName("Duration limits count real ticks, not scaled clip time")
+  void durationIgnoresSpeed() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.play(
+        target,
+        WAVE,
+        new EasyModelAnimationPlayback(EasyModelAnimationPlaybackMode.LOOP, 0, 15.0f, 4.0f),
+        EasyModelAnimationTransition.IMMEDIATE);
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+
+    assertEquals(WAVE, tracker.resolve(target, IDLE, 14.0, CLIPS).animation());
+    assertEquals(IDLE, tracker.resolve(target, IDLE, 15.0, CLIPS).animation());
+  }
+
+  @Test
+  @DisplayName("A cross-fade keeps the previous clip running at its own speed")
+  void crossFadeKeepsPreviousSpeed() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.play(
+        target,
+        WAVE,
+        new EasyModelAnimationPlayback(EasyModelAnimationPlaybackMode.LOOP, 0, 0.0f, 2.0f),
+        EasyModelAnimationTransition.IMMEDIATE);
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+
+    tracker.stop(target, EasyModelAnimationTransition.immediate(10.0f));
+    tracker.resolve(target, IDLE, 4.0, CLIPS);
+    EasyModelAnimationPlaybackFrame blending = tracker.resolve(target, IDLE, 6.0, CLIPS);
+
+    assertEquals(IDLE, blending.animation());
+    assertEquals(2.0f, blending.animationTicks(), 0.0001f);
+    assertEquals(WAVE, blending.previousAnimation());
+    assertEquals(12.0f, blending.previousAnimationTicks(), 0.0001f);
+  }
+
+  @Test
+  @DisplayName("Hold keeps the finished clip on its last frame instead of reverting")
+  void holdKeepsTheLastFrameAfterTheClipEnds() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.play(
+        target,
+        WAVE,
+        EasyModelAnimationPlayback.DEFAULT.withMode(EasyModelAnimationPlaybackMode.HOLD),
+        EasyModelAnimationTransition.IMMEDIATE);
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+
+    EasyModelAnimationPlaybackFrame held = tracker.resolve(target, IDLE, 200.0, CLIPS);
+
+    assertEquals(WAVE, held.animation());
+    assertEquals(Boolean.FALSE, held.loopOverride());
+    assertTrue(held.playbackDriven());
+    assertTrue(tracker.hasPlayback(target));
+  }
+
+  @Test
+  @DisplayName("Stop releases a held clip back to the fallback animation")
+  void stopReleasesAHeldClip() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.play(
+        target,
+        WAVE,
+        EasyModelAnimationPlayback.DEFAULT.withMode(EasyModelAnimationPlaybackMode.HOLD),
+        EasyModelAnimationTransition.IMMEDIATE);
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.resolve(target, IDLE, 60.0, CLIPS);
+
+    tracker.stop(target, EasyModelAnimationTransition.IMMEDIATE);
+
+    assertEquals(IDLE, tracker.resolve(target, IDLE, 61.0, CLIPS).animation());
+    assertFalse(tracker.hasPlayback(target));
+  }
+
+  @Test
+  @DisplayName("A request after the current clip ends a hold right away")
+  void afterCurrentEndsAHoldImmediately() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.play(
+        target,
+        WAVE,
+        EasyModelAnimationPlayback.DEFAULT.withMode(EasyModelAnimationPlaybackMode.HOLD),
+        EasyModelAnimationTransition.IMMEDIATE);
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.resolve(target, IDLE, 60.0, CLIPS);
+
+    tracker.play(target, IDLE, EasyModelAnimationTransition.AFTER_CURRENT);
+    EasyModelAnimationPlaybackFrame switched = tracker.resolve(target, IDLE, 61.0, CLIPS);
+
+    assertEquals(IDLE, switched.animation());
+    assertEquals(0.0f, switched.animationTicks(), 0.0001f);
+  }
+
+  @Test
+  @DisplayName("A held step inside a sequence still hands over to the next step")
+  void holdInsideASequenceAdvancesToTheNextStep() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.playSequence(
+        target,
+        new EasyModelAnimationSequence(
+            List.of(
+                new EasyModelAnimationStep(
+                    WAVE,
+                    EasyModelAnimationPlayback.DEFAULT.withMode(
+                        EasyModelAnimationPlaybackMode.HOLD),
+                    EasyModelAnimationTransition.IMMEDIATE),
+                new EasyModelAnimationStep(
+                    IDLE,
+                    EasyModelAnimationPlayback.DEFAULT,
+                    EasyModelAnimationTransition.AFTER_CURRENT)),
+            EasyModelAnimation.AUTO));
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+
+    assertEquals(WAVE, tracker.resolve(target, IDLE, 19.0, CLIPS).animation());
+    assertEquals(IDLE, tracker.resolve(target, IDLE, 20.0, CLIPS).animation());
   }
 
   @Test
@@ -461,6 +633,46 @@ class EasyModelAnimationPlaybackTrackerTest {
 
     assertEquals(WAVE, tracker.resolve(target, WAVE, 24.0, CLIPS).animation());
     assertEquals(WAVE, tracker.resolve(target, WAVE, 25.0, CLIPS).animation());
+    assertFalse(tracker.hasPlayback(target));
+  }
+
+  @Test
+  @DisplayName("An overriding fallback cuts a held playback and starts from its first frame")
+  void overridingFallbackCutsAHeldPlayback() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    tracker.play(
+        target,
+        WAVE,
+        EasyModelAnimationPlayback.DEFAULT.withMode(EasyModelAnimationPlaybackMode.HOLD),
+        EasyModelAnimationTransition.IMMEDIATE);
+    tracker.resolve(target, IDLE, 0.0, CLIPS);
+    assertEquals(WAVE, tracker.resolve(target, IDLE, 30.0, CLIPS).animation());
+
+    EasyModelAnimationPlaybackFrame deathFrame =
+        tracker.resolve(target, EasyModelAnimation.DEATH, true, () -> "", 30.0, CLIPS);
+
+    assertEquals(EasyModelAnimation.DEATH, deathFrame.animation());
+    assertEquals(0.0f, deathFrame.animationTicks(), 0.0001f);
+    assertFalse(deathFrame.playbackDriven());
+    assertFalse(tracker.hasPlayback(target));
+  }
+
+  @Test
+  @DisplayName("An overriding fallback ignores later requests and never restarts")
+  void overridingFallbackIgnoresLaterRequests() {
+    Object target = new Object();
+    EasyModelAnimationPlaybackTracker<Object> tracker = new EasyModelAnimationPlaybackTracker<>();
+    tracker.resolve(target, EasyModelAnimation.DEATH, true, () -> "", 0.0, CLIPS);
+
+    tracker.play(target, WAVE, EasyModelAnimationTransition.IMMEDIATE);
+    tracker.playSequence(target, EasyModelAnimationSequence.of(WAVE).withFallback(IDLE));
+    EasyModelAnimationPlaybackFrame laterFrame =
+        tracker.resolve(target, EasyModelAnimation.DEATH, true, () -> "", 5.0, CLIPS);
+
+    assertEquals(EasyModelAnimation.DEATH, laterFrame.animation());
+    assertEquals(5.0f, laterFrame.animationTicks(), 0.0001f);
     assertFalse(tracker.hasPlayback(target));
   }
 }

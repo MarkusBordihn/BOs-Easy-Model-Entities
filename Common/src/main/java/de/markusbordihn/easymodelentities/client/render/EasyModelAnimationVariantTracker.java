@@ -68,12 +68,35 @@ final class EasyModelAnimationVariantTracker<T> {
       variant.index = (variant.index + 1) % size;
     } else {
       variant.rollCounter++;
-      int index =
-        Math.floorMod(
-            mix(roll.seed(), roll.baseName().hashCode(), variant.rollCounter), size);
-      variant.index = index == variant.index ? (index + 1) % size : index;
+      long value = mix(roll.seed(), roll.baseName().hashCode(), variant.rollCounter);
+      if (isWeighted(roll)) {
+        variant.index = weightedIndex(roll, (value >>> 11) * 0x1.0p-53);
+      } else {
+        int index = (int) Math.floorMod(value, size);
+        variant.index = index == variant.index ? (index + 1) % size : index;
+      }
     }
     variant.clipName = roll.clipNames().get(variant.index);
+  }
+
+  private static boolean isWeighted(Roll roll) {
+    return roll.clipNames().stream().anyMatch(roll.variantWeights()::containsKey);
+  }
+
+  private static int weightedIndex(Roll roll, double unitValue) {
+    double totalWeight = 0.0;
+    for (String clipName : roll.clipNames()) {
+      totalWeight += roll.variantWeights().getOrDefault(clipName, 1.0f);
+    }
+    double target = unitValue * totalWeight;
+    for (int i = 0; i < roll.clipNames().size(); i++) {
+      target -= roll.variantWeights().getOrDefault(roll.clipNames().get(i), 1.0f);
+      if (target < 0.0) {
+        return i;
+      }
+    }
+
+    return roll.clipNames().size() - 1;
   }
 
   private static boolean loops(ModelAnimationClip clip, Boolean loopOverride) {
@@ -163,6 +186,7 @@ final class EasyModelAnimationVariantTracker<T> {
       long seed,
       BakedModel bakedModel,
       ModelAnimationVariantMode mode,
+      Map<String, Float> variantWeights,
       EasyModelAnimationPlaybackFrame playbackFrame,
       String automaticClipName,
       double currentTicks,
@@ -174,6 +198,7 @@ final class EasyModelAnimationVariantTracker<T> {
         seed,
         bakedModel,
         mode,
+        variantWeights,
         playbackFrame,
         () -> automaticClipName,
         currentTicks,
@@ -186,6 +211,7 @@ final class EasyModelAnimationVariantTracker<T> {
       long seed,
       BakedModel bakedModel,
       ModelAnimationVariantMode mode,
+      Map<String, Float> variantWeights,
       EasyModelAnimationPlaybackFrame playbackFrame,
       Supplier<String> automaticClipNameSupplier,
       double currentTicks,
@@ -193,6 +219,7 @@ final class EasyModelAnimationVariantTracker<T> {
       float attackAmount) {
     Objects.requireNonNull(target, "target");
     Objects.requireNonNull(bakedModel, "bakedModel");
+    Objects.requireNonNull(variantWeights, "variantWeights");
     Objects.requireNonNull(playbackFrame, "playbackFrame");
     if (mode == ModelAnimationVariantMode.NONE || playbackFrame.playbackDriven()) {
       return EasyModelAnimationVariantFrame.NONE;
@@ -222,7 +249,7 @@ final class EasyModelAnimationVariantTracker<T> {
         variant.startTicks = currentTicks;
       }
 
-      Roll roll = new Roll(seed, baseName, clipNames, mode);
+      Roll roll = new Roll(seed, baseName, clipNames, mode, variantWeights);
       return switch (ModelAnimationClips.familyOf(baseName)) {
         case MOVEMENT -> resolveMovement(variant, roll, walkCycles, previousClipName);
         case ATTACK -> resolveAttack(variant, roll, attackAmount, previousClipName);
@@ -239,7 +266,11 @@ final class EasyModelAnimationVariantTracker<T> {
   }
 
   private record Roll(
-      long seed, String baseName, List<String> clipNames, ModelAnimationVariantMode mode) {}
+      long seed,
+      String baseName,
+      List<String> clipNames,
+      ModelAnimationVariantMode mode,
+      Map<String, Float> variantWeights) {}
 
   private static final class Variant {
 

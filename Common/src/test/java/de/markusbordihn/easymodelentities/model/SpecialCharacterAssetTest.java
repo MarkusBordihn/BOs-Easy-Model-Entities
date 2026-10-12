@@ -176,7 +176,7 @@ class SpecialCharacterAssetTest {
     assertTrue(
         result.validationIssues().stream()
             .map(ModelRenderProfileValidationIssue::message)
-            .anyMatch(message -> message.contains("Bär Textur.png")),
+            .anyMatch(message -> message.contains("Texture \"Bär Textur\" (index 1)")),
         () -> "Expected the texture name in the message: " + result.validationIssues());
   }
 

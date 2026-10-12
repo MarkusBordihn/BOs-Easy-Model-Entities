@@ -19,11 +19,11 @@
 
 package de.markusbordihn.easymodelentities.command;
 
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.HOST_ENTITY;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.MUTABLE_ENTITY;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.RENDERABLE_ENTITY;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.getRenderables;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.targetBranches;
-import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.updateHosts;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.updateMutables;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -75,7 +75,7 @@ final class EasyModelTextureCommand {
   private static ArgumentBuilder<CommandSourceStack, ?> setCommand() {
     return targetBranches(
         Commands.literal("set"),
-        HOST_ENTITY,
+        MUTABLE_ENTITY,
         (target, blockTarget) ->
             target.then(setDefaultSlot(blockTarget)).then(setNamedSlot(blockTarget)));
   }
@@ -119,7 +119,7 @@ final class EasyModelTextureCommand {
   private static ArgumentBuilder<CommandSourceStack, ?> blendCommand() {
     return targetBranches(
         Commands.literal("blend"),
-        HOST_ENTITY,
+        MUTABLE_ENTITY,
         (target, blockTarget) ->
             target.then(blendDefaultSlot(blockTarget)).then(blendNamedSlot(blockTarget)));
   }
@@ -148,7 +148,7 @@ final class EasyModelTextureCommand {
   private static ArgumentBuilder<CommandSourceStack, ?> clearCommand() {
     return targetBranches(
         Commands.literal("clear"),
-        HOST_ENTITY,
+        MUTABLE_ENTITY,
         (target, blockTarget) ->
             target
                 .executes(context -> clear(context, blockTarget, null))
@@ -270,15 +270,17 @@ final class EasyModelTextureCommand {
       String action,
       UnaryOperator<EasyModelTextureSetting> update)
       throws CommandSyntaxException {
-    return updateHosts(
+    return updateMutables(
         context,
         blockTarget,
         action,
-        hostBlockEntity ->
-            hostBlockEntity.setEasyModelTexture(
-                update.apply(hostBlockEntity.getEasyModelTextureSetting())),
-        hostEntity ->
-            hostEntity.setEasyModelTexture(update.apply(hostEntity.getEasyModelTextureSetting())));
+        blockEntity ->
+            EasyModelBlockEntitiesApi.setTextureSetting(
+                blockEntity,
+                update.apply(EasyModelBlockEntitiesApi.getTextureSetting(blockEntity))),
+        entity ->
+            EasyModelEntitiesApi.setTextureSetting(
+                entity, update.apply(EasyModelEntitiesApi.getTextureSetting(entity))));
   }
 
   private static Optional<String> normalizedSlot(

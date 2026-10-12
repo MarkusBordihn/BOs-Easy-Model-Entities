@@ -130,7 +130,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
 
   public void clientTick(Level level, BlockPos blockPos, BlockState blockState) {
     if (this instanceof EasyModelRandomlyAnimatedBlockEntity) {
-      randomIdleTick(level == null ? RandomSource.create() : level.random);
+      this.randomIdleTick(level == null ? RandomSource.create() : level.random);
       return;
     }
 
@@ -152,17 +152,17 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     this.lightLevel = state.lightLevel();
 
     if (profileId == null) {
-      applyRuntimeContract(fallbackRuntimeContract(MISSING_PROFILE_ID, animation), false);
+      this.applyRuntimeContract(this.fallbackRuntimeContract(MISSING_PROFILE_ID, animation), false);
       return;
     }
 
     Optional<EasyModelEntityProfile> profile = activeBlockEntityProfile(profileId);
     if (profile.isPresent()) {
-      applyProfile(profile.get(), animation, false);
+      this.applyProfile(profile.get(), animation, false);
       return;
     }
 
-    applyRuntimeContract(
+    this.applyRuntimeContract(
         new EasyModelRuntimeContract(
             profileId,
             renderProfileId == null ? profileId : renderProfileId,
@@ -197,7 +197,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
 
   @Override
   public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-    return saveCustomOnly(registries);
+    return this.saveCustomOnly(registries);
   }
 
   @Override
@@ -209,12 +209,12 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     Objects.requireNonNull(profileId, "profileId");
     Optional<EasyModelEntityProfile> profile = activeBlockEntityProfile(profileId);
     if (profile.isPresent()) {
-      applyProfile(profile.get(), this.runtimeContract.animation(), true);
+      this.applyProfile(profile.get(), this.runtimeContract.animation(), true);
       return;
     }
 
-    applyRuntimeContract(
-        fallbackRuntimeContract(profileId, this.runtimeContract.animation()), true);
+    this.applyRuntimeContract(
+        this.fallbackRuntimeContract(profileId, this.runtimeContract.animation()), true);
   }
 
   @Override
@@ -233,7 +233,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   }
 
   public void setEasyModelAnimation(EasyModelAnimationSetting animation) {
-    applyRuntimeContract(
+    this.applyRuntimeContract(
         new EasyModelRuntimeContract(
             this.runtimeContract.profileId(),
             this.runtimeContract.renderProfileId(),
@@ -242,7 +242,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
             this.runtimeContract.height(),
             this.runtimeContract.eyeHeight(),
             this.runtimeContract.bodyType(),
-            Objects.requireNonNull(animation, "animationState")),
+            Objects.requireNonNull(animation, "animation")),
         true);
   }
 
@@ -258,8 +258,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     }
 
     this.textureSetting = updated;
-    setChanged();
-    syncBlockEntity();
+    this.setChanged();
+    this.syncBlockEntity();
   }
 
   @Override
@@ -274,8 +274,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     }
 
     this.opacity = updated;
-    setChanged();
-    syncBlockEntity();
+    this.setChanged();
+    this.syncBlockEntity();
   }
 
   @Override
@@ -290,8 +290,8 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
     }
 
     this.lightLevel = updated;
-    setChanged();
-    syncBlockEntity();
+    this.setChanged();
+    this.syncBlockEntity();
   }
 
   public int getEasyModelAnimationTicks() {
@@ -300,7 +300,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
 
   public float getEasyModelAnimationTicks(float partialTick) {
     return this instanceof EasyModelRandomlyAnimatedBlockEntity
-        ? getRandomIdleAnimationTicks(partialTick)
+        ? this.getRandomIdleAnimationTicks(partialTick)
         : this.animationTicks + partialTick;
   }
 
@@ -311,7 +311,7 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
   protected EasyModelRuntimeContract fallbackRuntimeContract(
       Identifier profileId, EasyModelAnimationSetting animation) {
     Identifier fallbackProfileId =
-        profileId == null ? MISSING_PROFILE_ID : Objects.requireNonNull(profileId, "profileId");
+        profileId == null ? MISSING_PROFILE_ID : profileId;
     return new EasyModelRuntimeContract(
         fallbackProfileId,
         fallbackProfileId,
@@ -325,20 +325,20 @@ public abstract class EasyModelHostBlockEntity extends BlockEntity implements Ea
 
   protected void applyProfile(
       EasyModelEntityProfile profile, EasyModelAnimationSetting animation, boolean sync) {
-    applyRuntimeContract(EasyModelRuntimeContract.fromProfile(profile, animation), sync);
+    this.applyRuntimeContract(EasyModelRuntimeContract.fromProfile(profile, animation), sync);
   }
 
   protected void applyRuntimeContract(EasyModelRuntimeContract contract, boolean sync) {
     this.runtimeContract = Objects.requireNonNull(contract, "contract");
-    setChanged();
+    this.setChanged();
     if (sync) {
-      syncBlockEntity();
+      this.syncBlockEntity();
     }
   }
 
   protected void syncBlockEntity() {
     if (this.level != null && !this.level.isClientSide()) {
-      BlockState blockState = getBlockState();
+      BlockState blockState = this.getBlockState();
       this.level.sendBlockUpdated(this.worldPosition, blockState, blockState, Block.UPDATE_CLIENTS);
     }
   }

@@ -19,7 +19,6 @@ loom {
     client {
       client()
       setConfigName("Fabric Client")
-      property("fabric.logging.markers", "REGISTRIES")
       property("fabric.log.level", "debug")
       property("mixin.debug.verbose", "false")
       property("mixin.debug.export", "false")
@@ -29,7 +28,6 @@ loom {
     server {
       server()
       setConfigName("Fabric Server")
-      property("fabric.logging.markers", "REGISTRIES")
       property("fabric.log.level", "debug")
       property("mixin.debug.verbose", "false")
       property("mixin.debug.export", "false")
@@ -40,6 +38,15 @@ loom {
       server()
       name "Game Test"
       vmArg "-Dfabric-api.gametest"
+      vmArg "-D${project.mod_id}.gametest=true"
+    }
+
+    if (project.rootProject.findProperty('clientRuntimeTest')?.isAvailable()) {
+      clientTest {
+        client()
+        setConfigName("Fabric Client Test")
+        runDir("run/clienttest")
+      }
     }
   }
 }
@@ -53,8 +60,9 @@ dependencies {
   // Include Common code
   implementation project(":Common")
 
-  testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+  if (rootProject.findProperty('clientRuntimeTest')?.isClientTestRun()) {
+    modLocalRuntime rootProject.clientRuntimeTest.toolkitCoordinate('fabric')
+  }
 }
 
 def commonProject = project(":Common")

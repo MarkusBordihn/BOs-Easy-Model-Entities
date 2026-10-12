@@ -28,6 +28,7 @@ final class EasyModelAutomaticClipName implements Supplier<String> {
   private final float limbSwingAmount;
   private final float airborneAmount;
   private final float attackAmount;
+  private final boolean inWater;
 
   private String clipName;
 
@@ -35,11 +36,13 @@ final class EasyModelAutomaticClipName implements Supplier<String> {
       EasyModelRenderState renderState,
       float limbSwingAmount,
       float airborneAmount,
-      float attackAmount) {
+      float attackAmount,
+      boolean inWater) {
     this.renderState = renderState;
     this.limbSwingAmount = limbSwingAmount;
     this.airborneAmount = airborneAmount;
     this.attackAmount = attackAmount;
+    this.inWater = inWater;
   }
 
   @Override
@@ -47,7 +50,11 @@ final class EasyModelAutomaticClipName implements Supplier<String> {
     if (this.clipName == null) {
       this.clipName =
           EasyModelBakedModelRenderer.automaticClipName(
-              this.renderState, this.limbSwingAmount, this.airborneAmount, this.attackAmount);
+              this.renderState,
+              this.limbSwingAmount,
+              this.airborneAmount,
+              this.attackAmount,
+              this.inWater);
     }
 
     return this.clipName;

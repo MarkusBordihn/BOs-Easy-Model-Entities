@@ -51,6 +51,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
@@ -279,6 +280,24 @@ class EasyModelEntitiesClientApiTest {
         List.of(SCREEN, SCREEN_SAD),
         EasyModelEntitiesClientApi.textureVariants(
             renderState(), "screen", resourceManager(SCREEN_SAD, SCREEN)));
+  }
+
+  @Test
+  @DisplayName("A shoulder clip wins over sit and idle")
+  void shoulderClipWinsOverSitAndIdle() {
+    assertEquals(
+        EasyModelAnimation.named(EasyModelEntitiesClientApi.SHOULDER_CLIP),
+        EasyModelEntitiesClientApi.shoulderAnimation(Set.of("idle", "sit", "shoulder")));
+  }
+
+  @Test
+  @DisplayName("Without a shoulder clip the model sits, without sit it idles")
+  void shoulderAnimationFallsBackToSitThenIdle() {
+    assertEquals(
+        EasyModelAnimation.SIT,
+        EasyModelEntitiesClientApi.shoulderAnimation(Set.of("idle", "sit")));
+    assertEquals(
+        EasyModelAnimation.IDLE, EasyModelEntitiesClientApi.shoulderAnimation(Set.of("walk")));
   }
 
   @Test

@@ -20,16 +20,25 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelBlockEntityRenderOptions;
+import de.markusbordihn.easymodelentities.block.EasyModelHostBlock;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
+import java.util.EnumMap;
+import java.util.Map;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.CameraRenderState;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity>
     implements BlockEntityRenderer<T, EasyModelBlockEntityRenderState> {
+
+  private static final Map<Direction, EasyModelBlockEntityRenderOptions> FACING_OPTIONS =
+      createFacingOptions();
 
   public EasyModelHostBlockEntityRenderer(BlockEntityRendererProvider.Context context) {
     EasyModelEntityCullingCompat.register();
@@ -38,6 +47,23 @@ public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity
   @Override
   public EasyModelBlockEntityRenderState createRenderState() {
     return new EasyModelBlockEntityRenderState();
+  }
+
+  private static Map<Direction, EasyModelBlockEntityRenderOptions> createFacingOptions() {
+    Map<Direction, EasyModelBlockEntityRenderOptions> options = new EnumMap<>(Direction.class);
+    for (Direction direction : Direction.Plane.HORIZONTAL) {
+      options.put(
+          direction, EasyModelBlockEntityRenderOptions.DEFAULT.withYawDegrees(direction.toYRot()));
+    }
+    return options;
+  }
+
+  private static EasyModelBlockEntityRenderOptions facingOptions(BlockState blockState) {
+    if (!blockState.hasProperty(EasyModelHostBlock.FACING)) {
+      return EasyModelBlockEntityRenderOptions.DEFAULT;
+    }
+
+    return FACING_OPTIONS.get(blockState.getValue(EasyModelHostBlock.FACING));
   }
 
   @Override
@@ -50,7 +76,11 @@ public class EasyModelHostBlockEntityRenderer<T extends EasyModelHostBlockEntity
     BlockEntityRenderer.super.extractRenderState(
         blockEntity, renderState, partialTick, cameraPos, crumblingOverlay);
     EasyModelBlockEntityRenderBackend.extractRenderState(
-        blockEntity, blockEntity.getEasyModelRuntimeContract(), renderState, partialTick);
+        blockEntity,
+        blockEntity.getEasyModelRuntimeContract(),
+        renderState,
+        partialTick,
+        facingOptions(blockEntity.getBlockState()));
   }
 
   @Override

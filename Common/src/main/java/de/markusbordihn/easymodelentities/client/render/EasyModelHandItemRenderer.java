@@ -53,9 +53,26 @@ public final class EasyModelHandItemRenderer {
       return Pass.EMPTY;
     }
 
-    List<AnchoredItem> anchoredItems = new ArrayList<>(2);
-    addAnchoredItem(anchoredItems, bakedModel, handItems.mainHandItem(), handItems.mainArm());
-    addAnchoredItem(anchoredItems, bakedModel, handItems.offHandItem(), handItems.offArm());
+    List<AnchoredItem> anchoredItems = new ArrayList<>(2 + handItems.partItems().size());
+    addAnchoredItem(
+        anchoredItems,
+        handItems.mainHandItem(),
+        handItems.mainArm(),
+        EasyModelItemAnchorResolver.getItemAnchor(bakedModel, handItems.mainArm()));
+    addAnchoredItem(
+        anchoredItems,
+        handItems.offHandItem(),
+        handItems.offArm(),
+        EasyModelItemAnchorResolver.getItemAnchor(bakedModel, handItems.offArm()));
+    handItems
+        .partItems()
+        .forEach(
+            (partName, itemStack) ->
+                addAnchoredItem(
+                    anchoredItems,
+                    itemStack,
+                    HumanoidArm.RIGHT,
+                    EasyModelItemAnchorResolver.getPartAnchor(bakedModel, partName)));
     if (anchoredItems.isEmpty()) {
       return Pass.EMPTY;
     }
@@ -65,14 +82,13 @@ public final class EasyModelHandItemRenderer {
 
   private static void addAnchoredItem(
       List<AnchoredItem> anchoredItems,
-      BakedModel bakedModel,
       ItemStack itemStack,
-      HumanoidArm arm) {
+      HumanoidArm arm,
+      Optional<EasyModelItemAnchor> anchor) {
     if (itemStack.isEmpty()) {
       return;
     }
 
-    Optional<EasyModelItemAnchor> anchor = EasyModelItemAnchorResolver.getItemAnchor(bakedModel, arm);
     anchor.ifPresent(
         resolvedAnchor -> anchoredItems.add(new AnchoredItem(itemStack, arm, resolvedAnchor)));
   }

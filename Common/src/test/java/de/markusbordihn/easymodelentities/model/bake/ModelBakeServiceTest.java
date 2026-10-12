@@ -22,11 +22,13 @@ package de.markusbordihn.easymodelentities.model.bake;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.markusbordihn.easymodelentities.data.model.FaceUv;
+import de.markusbordihn.easymodelentities.data.model.TextureRenderSides;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.*;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
@@ -56,6 +58,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ModelBakeServiceTest {
@@ -162,6 +165,19 @@ class ModelBakeServiceTest {
         + "\"outliner\":[{\"uuid\":\"group_root\",\"children\":[\"element_tilted\"]}]}";
   }
 
+  private static String crystalModelWithExplicitRoot() {
+    return "{\"meta\":{\"format_version\":\"5.0\",\"model_format\":\"modded_entity\"},"
+        + "\"resolution\":{\"width\":64,\"height\":64},"
+        + "\"elements\":[{\"name\":\"crystal_cube\",\"from\":[-2,0,-2],\"to\":[2,6,2],"
+        + "\"origin\":[0,0,0],\"uv_offset\":[0,0],\"type\":\"cube\",\"uuid\":\"element_crystal\"}],"
+        + "\"groups\":[{\"uuid\":\"group_root\",\"name\":\"root\","
+        + "\"origin\":[0,0,0],\"rotation\":[0,0,0]},"
+        + "{\"uuid\":\"group_crystal\",\"name\":\"crystal\","
+        + "\"origin\":[0,0,0],\"rotation\":[0,0,0]}],"
+        + "\"outliner\":[{\"uuid\":\"group_root\",\"children\":"
+        + "[{\"uuid\":\"group_crystal\",\"children\":[\"element_crystal\"]}]}]}";
+  }
+
   private static BakedModelCube cube(BakedModelPart rootPart, String partName, int cubeIndex) {
     return part(rootPart, partName).cubes().get(cubeIndex);
   }
@@ -254,6 +270,112 @@ class ModelBakeServiceTest {
     assertTrue(result.successful());
     assertEquals("root", result.bakedModel().rootParts().get(0).name());
     assertEquals("crystal", result.bakedModel().rootParts().get(0).children().get(0).name());
+  }
+
+  @Test
+  @DisplayName("A static model without root stands on the ground like one with root")
+  void virtualRootPlacesModelOnGroundLikeExplicitRoot() throws Exception {
+    ModelBakeResult virtualRoot =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.STATIC, "fingerprint"),
+                resourceManager("static_virtual_root.bbmodel", png(64, 64)));
+    ModelBakeResult explicitRoot =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.STATIC, "fingerprint"),
+                resourceManager(
+                    crystalModelWithExplicitRoot().getBytes(StandardCharsets.UTF_8),
+                    png(64, 64)));
+
+    ModelBounds bounds = virtualRoot.bakedModel().bounds();
+    assertEquals(explicitRoot.bakedModel().bounds(), bounds);
+    assertVec(-0.125f, 1.125f, -0.125f, bounds.min());
+    assertVec(0.125f, 1.5f, 0.125f, bounds.max());
+  }
+
+  private static byte[] bodyModel(String outliner) {
+    return ("{\"meta\":{\"format_version\":\"5.0\",\"model_format\":\"modded_entity\"},"
+            + "\"resolution\":{\"width\":64,\"height\":64},"
+            + "\"elements\":[{\"name\":\"body_cube\",\"from\":[-2,0,-2],\"to\":[2,6,2],"
+            + "\"origin\":[0,0,0],\"uv_offset\":[0,0],\"type\":\"cube\",\"uuid\":\"element_body\"}],"
+            + "\"groups\":[{\"uuid\":\"group_root\",\"name\":\"root\","
+            + "\"origin\":[0,0,0],\"rotation\":[0,0,0]},"
+            + "{\"uuid\":\"group_body\",\"name\":\"body\","
+            + "\"origin\":[0,0,0],\"rotation\":[0,0,0]}],"
+            + "\"outliner\":"
+            + outliner
+            + "}")
+        .getBytes(StandardCharsets.UTF_8);
+  }
+
+  @Test
+  @DisplayName("An aquatic model without root gets a virtual root and keeps its position")
+  void aquaticModelWithoutRootCreatesVirtualRoot() throws Exception {
+    ModelBakeResult virtualRoot =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.AQUATIC, "fingerprint"),
+                resourceManager(
+                    bodyModel("[{\"uuid\":\"group_body\",\"children\":[\"element_body\"]}]"),
+                    png(64, 64)));
+    ModelBakeResult explicitRoot =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.AQUATIC, "fingerprint"),
+                resourceManager(
+                    bodyModel(
+                        "[{\"uuid\":\"group_root\",\"children\":"
+                            + "[{\"uuid\":\"group_body\",\"children\":[\"element_body\"]}]}]"),
+                    png(64, 64)));
+
+    assertTrue(virtualRoot.successful());
+    assertEquals(ModelRenderProfileStatus.ACTIVE, status(virtualRoot));
+    BakedModelPart root = virtualRoot.bakedModel().rootParts().get(0);
+    assertEquals("root", root.name());
+    assertEquals("body", root.children().get(0).name());
+    assertEquals(explicitRoot.bakedModel().bounds(), virtualRoot.bakedModel().bounds());
+  }
+
+  @Test
+  @DisplayName("A nested root is not wrapped in a second, virtual root")
+  void nestedRootIsNotWrappedAgain() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.AQUATIC, "fingerprint"),
+                resourceManager(
+                    bodyModel(
+                        "[{\"uuid\":\"group_body\",\"children\":"
+                            + "[{\"uuid\":\"group_root\",\"children\":[\"element_body\"]}]}]"),
+                    png(64, 64)));
+
+    assertTrue(result.successful());
+    assertEquals(1, result.bakedModel().rootParts().size());
+    assertEquals("body", result.bakedModel().rootParts().get(0).name());
+  }
+
+  @Test
+  @DisplayName("Inflate, hidden groups, face rotation and render sides survive baking")
+  void bakesBlockbenchParityFeatures() throws Exception {
+    ModelBakeResult result =
+        ModelBakeService.createDefault()
+            .bake(
+                renderProfile(ModelBodyType.STATIC, "fingerprint"),
+                resourceManager("parity_features.bbmodel", png(64, 64)));
+
+    assertTrue(result.successful());
+    BakedModel bakedModel = result.bakedModel();
+    BakedModelPart body = part(bakedModel.rootParts().get(0), "body");
+    assertEquals(3, body.cubes().size());
+    assertNull(part(bakedModel.rootParts().get(0), "hidden_group"));
+    assertEquals(
+        new FaceUv(0.125f, 0.125f, 0.25f, 0.15625f, 1), body.cubes().get(0).faceUvs().north());
+    assertVec(5.0f, 5.0f, 5.0f, body.cubes().get(1).dimensions());
+    assertVec(-1.0f, 1.0f, 1.0f, body.cubes().get(2).dimensions());
+    assertEquals(TextureRenderSides.FRONT, bakedModel.textureRenderSides().get(0));
+    assertVec(-0.375f, 1.09375f, -0.25f, bakedModel.bounds().min());
+    assertVec(0.25f, 1.5f, 0.25f, bakedModel.bounds().max());
   }
 
   @Test
