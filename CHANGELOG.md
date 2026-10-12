@@ -5,6 +5,25 @@
 This change log includes the summarized changes. For the full changelog, please go to
 the [GitHub History][history] instead.
 
+### 2.5.0
+
+- Fixed models playing `fly` instead of `swim` while diving or surfacing.
+- Fixed the game tests getting in the way of game tests from other mods.
+- Fixed models without a `root` group sinking into the ground; `root` is now optional.
+- Fixed `inflate`, `export: false`, inverted cubes and texture paths not matching Blockbench.
+- Changed textures to come from the model; render profile `texture` and `textures` override them.
+- Changed `swim`, `hurt`, `death` and `sit` clips to play automatically when they apply.
+- Changed aquatic models without a `walk` clip to flop on land like fish.
+- Changed `behavior set … auto` to keep static models without AI.
+- Changed placed block entities to face the player; existing ones keep their direction.
+- Added shoulder sitting like a parrot, with its own clip, render profile settings and API.
+- Added server API calls for animations, textures, opacity, light level and freezing.
+- Added an opt-in interface so commands and the API can control models of other mods.
+- Added item sockets and client API calls to render items and find model part positions.
+- Added playback speed, a `hold` play mode and weighted clip variants.
+- Added double-sided textures, face UV rotation and a scarecrow block entity example.
+- Improved warnings and errors for textures and duplicate group names.
+
 ### 2.4.0
 
 - Fixed `body_type: static` and `animation.mode: none` ignoring an explicitly played or set clip.

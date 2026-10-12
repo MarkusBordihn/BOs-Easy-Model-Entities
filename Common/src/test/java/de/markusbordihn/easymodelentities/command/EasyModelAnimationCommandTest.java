@@ -65,6 +65,16 @@ class EasyModelAnimationCommandTest {
   }
 
   @Test
+  @DisplayName("hold and a trailing speed parse for entities, blocks and random picks")
+  void parsesHoldAndSpeedArguments() {
+    assertParses("easy_model_entities animation play entity @e death hold");
+    assertParses("easy_model_entities animation play block 1 64 -3 open hold after_current 5");
+    assertParses("easy_model_entities animation play entity @e wave once immediate 5 0 2.0");
+    assertParses("easy_model_entities animation play entity @e wave repeat 2 immediate 5 0 0.5");
+    assertParses("easy_model_entities animation play entity @e random \"wave,bow\" hold");
+  }
+
+  @Test
   void normalizesStandardAndCustomAnimationNames() {
     assertEquals(
         EasyModelAnimation.ATTACK,

@@ -27,16 +27,14 @@ import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
+import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.phys.Vec3;
 
-public final class EasyModelBehaviorCommand {
+final class EasyModelBehaviorCommand {
 
   private EasyModelBehaviorCommand() {}
 
@@ -57,25 +55,11 @@ public final class EasyModelBehaviorCommand {
                                         .executes(context -> set(context, true))))));
   }
 
-  public static void setFrozen(Mob hostEntity, boolean frozen) {
-    hostEntity.setNoAi(frozen);
-    if (!frozen) {
-      return;
-    }
-
-    hostEntity.getNavigation().stop();
-    hostEntity.setDeltaMovement(Vec3.ZERO);
-    hostEntity.setXxa(0.0f);
-    hostEntity.setYya(0.0f);
-    hostEntity.setZza(0.0f);
-  }
-
   private static int set(CommandContext<CommandSourceStack> context, boolean frozen)
       throws CommandSyntaxException {
     int updated = 0;
     for (Entity entity : EntityArgument.getEntities(context, TARGETS_ARGUMENT)) {
-      if (entity instanceof EasyModelEntityHost && entity instanceof Mob hostEntity) {
-        setFrozen(hostEntity, frozen);
+      if (EasyModelEntitiesApi.setFrozen(entity, frozen)) {
         updated++;
       }
     }

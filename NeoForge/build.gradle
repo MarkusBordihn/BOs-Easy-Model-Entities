@@ -27,6 +27,14 @@ neoForge {
       client()
       gameDirectory = project.file('run/client')
       systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+      systemProperty "${project.mod_id}.gametest", 'true'
+    }
+
+    if (rootProject.findProperty('clientRuntimeTest')?.isAvailable()) {
+      clientTest {
+        client()
+        gameDirectory = project.file('run/clienttest')
+      }
     }
 
     client2 {
@@ -39,12 +47,14 @@ neoForge {
       server()
       gameDirectory = project.file('run/server')
       systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+      systemProperty "${project.mod_id}.gametest", 'true'
       programArgument '--nogui'
     }
 
     gameTestServer {
       type = 'gameTestServer'
       systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+      systemProperty "${project.mod_id}.gametest", 'true'
     }
   }
 
@@ -60,6 +70,10 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
   compileOnly project(":Common")
+
+  if (rootProject.findProperty('clientRuntimeTest')?.isClientTestRun()) {
+    runtimeOnly rootProject.clientRuntimeTest.toolkitCoordinate('neoforge')
+  }
 }
 
 // NeoGradle compiles the game, but we don't want to add our common code to the game's code

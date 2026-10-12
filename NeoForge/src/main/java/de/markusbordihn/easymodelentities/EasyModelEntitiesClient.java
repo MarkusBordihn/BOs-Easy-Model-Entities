@@ -21,9 +21,13 @@ package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
+import de.markusbordihn.easymodelentities.client.render.EasyModelShoulderLayer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelSpawnItemSpecialRendererUnbaked;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.PlayerModelType;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -44,6 +48,16 @@ public class EasyModelEntitiesClient {
     modEventBus.addListener(this::registerEntityRenderers);
     modEventBus.addListener(this::registerClientReloadListeners);
     modEventBus.addListener(this::registerSpecialModelRenderer);
+    modEventBus.addListener(this::addLayers);
+  }
+
+  private void addLayers(EntityRenderersEvent.AddLayers event) {
+    for (PlayerModelType modelType : event.getSkins()) {
+      AvatarRenderer<AbstractClientPlayer> playerRenderer = event.getPlayerRenderer(modelType);
+      if (playerRenderer != null) {
+        playerRenderer.addLayer(new EasyModelShoulderLayer(playerRenderer));
+      }
+    }
   }
 
   private void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {

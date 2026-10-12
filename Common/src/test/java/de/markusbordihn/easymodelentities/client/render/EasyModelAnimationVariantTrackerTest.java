@@ -73,6 +73,7 @@ class EasyModelAnimationVariantTrackerTest {
         SEED,
         bakedModel,
         ModelAnimationVariantMode.RANDOM,
+        Map.of(),
         automaticFrame(),
         "idle",
         currentTicks,
@@ -92,6 +93,7 @@ class EasyModelAnimationVariantTrackerTest {
         SEED,
         bakedModel,
         ModelAnimationVariantMode.RANDOM,
+        Map.of(),
         automaticFrame(),
         automaticClipName,
         0.0,
@@ -183,6 +185,7 @@ class EasyModelAnimationVariantTrackerTest {
                   SEED,
                   bakedModel,
                   ModelAnimationVariantMode.SEQUENTIAL,
+                  Map.of(),
                   automaticFrame(),
                   "idle",
                   cycle * 20.0,
@@ -238,6 +241,7 @@ class EasyModelAnimationVariantTrackerTest {
             SEED,
             bakedModel,
             ModelAnimationVariantMode.RANDOM,
+            Map.of(),
             EasyModelAnimationPlaybackFrame.single(EasyModelAnimation.IDLE, 0.0f, null, true),
             "idle",
             0.0,
@@ -250,6 +254,7 @@ class EasyModelAnimationVariantTrackerTest {
                 SEED,
                 bakedModel,
                 ModelAnimationVariantMode.RANDOM,
+                Map.of(),
                 EasyModelAnimationPlaybackFrame.single(
                     EasyModelAnimation.named("idle_2"), 0.0f, null, false),
                 "idle",
@@ -257,6 +262,50 @@ class EasyModelAnimationVariantTrackerTest {
                 0.0f,
                 0.0f)
             .clipName());
+  }
+
+  private static int countAttackPicks(Map<String, Float> variantWeights, String clipName) {
+    EasyModelAnimationVariantTracker<Object> tracker = new EasyModelAnimationVariantTracker<>();
+    Object target = new Object();
+    BakedModel bakedModel = model(false, 1.0f, "attack", "attack_2");
+    int picks = 0;
+    for (int i = 0; i < 1000; i++) {
+      for (float attackAmount : new float[] {1.0f, 0.0f}) {
+        String picked =
+            tracker
+                .resolve(
+                    target,
+                    SEED,
+                    bakedModel,
+                    ModelAnimationVariantMode.RANDOM,
+                    variantWeights,
+                    automaticFrame(),
+                    "attack",
+                    0.0,
+                    0.0f,
+                    attackAmount)
+                .clipName();
+        if (attackAmount > 0.0f && clipName.equals(picked)) {
+          picks++;
+        }
+      }
+    }
+
+    return picks;
+  }
+
+  @Test
+  @DisplayName("Variant weights make a heavier clip play more often, repeats included")
+  void variantWeightsBiasTheRandomPick() {
+    int heavyPicks = countAttackPicks(Map.of("attack", 1.0f, "attack_2", 9.0f), "attack_2");
+
+    assertTrue(heavyPicks > 820 && heavyPicks < 980, "attack_2 picked " + heavyPicks + " times");
+  }
+
+  @Test
+  @DisplayName("Without weights for the group, random never repeats the current clip")
+  void unweightedGroupAlternates() {
+    assertEquals(500, countAttackPicks(Map.of("idle_2", 5.0f), "attack_2"));
   }
 
   @Test
@@ -270,6 +319,7 @@ class EasyModelAnimationVariantTrackerTest {
             SEED,
             model(true, 1.0f, "idle", "idle_2"),
             ModelAnimationVariantMode.NONE,
+            Map.of(),
             automaticFrame(),
             "idle",
             0.0,
@@ -291,6 +341,7 @@ class EasyModelAnimationVariantTrackerTest {
             SEED,
             bakedModel,
             ModelAnimationVariantMode.RANDOM,
+            Map.of(),
             new EasyModelAnimationPlaybackFrame(
                 EasyModelAnimation.SIT,
                 0.0f,

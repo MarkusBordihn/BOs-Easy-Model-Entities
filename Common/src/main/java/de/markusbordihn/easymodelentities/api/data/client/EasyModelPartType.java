@@ -58,7 +58,7 @@ public enum EasyModelPartType {
       return UNKNOWN;
     }
 
-    return BY_TAG_NAME.getOrDefault(partName.toLowerCase(Locale.ROOT), UNKNOWN);
+    return BY_TAG_NAME.getOrDefault(partName.trim().toLowerCase(Locale.ROOT), UNKNOWN);
   }
 
   private static Map<String, EasyModelPartType> byTagName() {

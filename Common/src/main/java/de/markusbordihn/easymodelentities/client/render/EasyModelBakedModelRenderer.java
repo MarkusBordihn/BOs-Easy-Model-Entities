@@ -43,6 +43,7 @@ import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.data.model.ModelCubeFace;
 import de.markusbordihn.easymodelentities.data.model.ModelPartType;
+import de.markusbordihn.easymodelentities.data.model.TextureRenderSides;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
@@ -413,6 +414,48 @@ public final class EasyModelBakedModelRenderer {
       int packedOverlay,
       float opacity,
       int lightLevel) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        airborneAmount,
+        attackAmount,
+        false,
+        headLook,
+        playbackFrame,
+        variantFrame,
+        textureSetting,
+        partAnimator,
+        partAnimationMode,
+        poseStack,
+        submitNodeCollector,
+        packedLight,
+        packedOverlay,
+        opacity,
+        lightLevel);
+  }
+
+  public static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float airborneAmount,
+      float attackAmount,
+      boolean inWater,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      EasyModelTextureSetting textureSetting,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay,
+      float opacity,
+      int lightLevel) {
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(submitNodeCollector, "submitNodeCollector");
     int alpha = alpha(opacity);
@@ -420,7 +463,6 @@ public final class EasyModelBakedModelRenderer {
       return;
     }
 
-    boolean cullBackfaces = bakedModel.cullBackfaces();
     boolean forceTranslucent = alpha < OPAQUE_ALPHA;
     int overriddenPackedLight = packedLightWithOverride(packedLight, lightLevel);
     EasyModelResolvedTextures resolvedTextures =
@@ -429,7 +471,10 @@ public final class EasyModelBakedModelRenderer {
       Identifier texture = textureFor(resolvedTextures, renderState, textureIndex);
       RenderType renderType =
           renderType(
-              texture, resolvedTextures.blend(textureIndex), cullBackfaces, forceTranslucent);
+              texture,
+              resolvedTextures.blend(textureIndex),
+              cullBackfaces(bakedModel, textureIndex),
+              forceTranslucent);
       submitNodeCollector.submitCustomGeometry(
           poseStack,
           renderType,
@@ -444,6 +489,7 @@ public final class EasyModelBakedModelRenderer {
                 limbSwingAmount,
                 airborneAmount,
                 attackAmount,
+                inWater,
                 headLook,
                 playbackFrame,
                 variantFrame,
@@ -902,6 +948,50 @@ public final class EasyModelBakedModelRenderer {
       int packedOverlay,
       float opacity,
       int lightLevel) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        airborneAmount,
+        attackAmount,
+        false,
+        headLook,
+        playbackFrame,
+        variantFrame,
+        textureSetting,
+        partAnimator,
+        partAnimationMode,
+        partPoseListener,
+        poseStack,
+        bufferSource,
+        packedLight,
+        packedOverlay,
+        opacity,
+        lightLevel);
+  }
+
+  static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float airborneAmount,
+      float attackAmount,
+      boolean inWater,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      EasyModelTextureSetting textureSetting,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener,
+      PoseStack poseStack,
+      MultiBufferSource bufferSource,
+      int packedLight,
+      int packedOverlay,
+      float opacity,
+      int lightLevel) {
     Objects.requireNonNull(renderState, "renderState");
     Objects.requireNonNull(bufferSource, "bufferSource");
     int alpha = alpha(opacity);
@@ -909,7 +999,6 @@ public final class EasyModelBakedModelRenderer {
       return;
     }
 
-    boolean cullBackfaces = bakedModel.cullBackfaces();
     boolean forceTranslucent = alpha < OPAQUE_ALPHA;
     EasyModelResolvedTextures resolvedTextures =
         EasyModelTextureOverrides.resolve(renderState, textureSetting);
@@ -918,7 +1007,10 @@ public final class EasyModelBakedModelRenderer {
           Identifier texture = textureFor(resolvedTextures, renderState, textureIndex);
           return bufferSource.getBuffer(
               renderType(
-                  texture, resolvedTextures.blend(textureIndex), cullBackfaces, forceTranslucent));
+                  texture,
+                  resolvedTextures.blend(textureIndex),
+                  cullBackfaces(bakedModel, textureIndex),
+                  forceTranslucent));
         };
     render(
         bakedModel,
@@ -927,6 +1019,7 @@ public final class EasyModelBakedModelRenderer {
         limbSwingAmount,
         airborneAmount,
         attackAmount,
+        inWater,
         headLook,
         playbackFrame,
         variantFrame,
@@ -962,6 +1055,16 @@ public final class EasyModelBakedModelRenderer {
             LightCoordsUtil.block(packedLight),
             Math.min(lightLevel, EasyModelDisplaySettings.MAX_LIGHT_LEVEL)),
         LightCoordsUtil.sky(packedLight));
+  }
+
+  static boolean cullBackfaces(BakedModel bakedModel, int textureIndex) {
+    return switch (bakedModel
+        .textureRenderSides()
+        .getOrDefault(textureIndex, TextureRenderSides.AUTO)) {
+      case FRONT -> true;
+      case DOUBLE -> false;
+      case AUTO -> bakedModel.cullBackfaces();
+    };
   }
 
   static RenderType renderType(
@@ -1173,6 +1276,46 @@ public final class EasyModelBakedModelRenderer {
       EasyModelPartAnimator partAnimator,
       EasyModelPartAnimationMode partAnimationMode,
       EasyModelPartPoseListener partPoseListener) {
+    render(
+        bakedModel,
+        renderState,
+        limbSwing,
+        limbSwingAmount,
+        airborneAmount,
+        attackAmount,
+        false,
+        headLook,
+        playbackFrame,
+        variantFrame,
+        poseStack,
+        bufferProvider,
+        packedLight,
+        packedOverlay,
+        alpha,
+        partAnimator,
+        partAnimationMode,
+        partPoseListener);
+  }
+
+  static void render(
+      BakedModel bakedModel,
+      EasyModelRenderState renderState,
+      float limbSwing,
+      float limbSwingAmount,
+      float airborneAmount,
+      float attackAmount,
+      boolean inWater,
+      EasyModelHeadLook headLook,
+      EasyModelAnimationPlaybackFrame playbackFrame,
+      EasyModelAnimationVariantFrame variantFrame,
+      PoseStack poseStack,
+      IntFunction<VertexConsumer> bufferProvider,
+      int packedLight,
+      int packedOverlay,
+      int alpha,
+      EasyModelPartAnimator partAnimator,
+      EasyModelPartAnimationMode partAnimationMode,
+      EasyModelPartPoseListener partPoseListener) {
     if (alpha <= 0) {
       return;
     }
@@ -1192,7 +1335,8 @@ public final class EasyModelBakedModelRenderer {
                 playbackFrame.animation(),
                 limbSwingAmount,
                 airborneAmount,
-                attackAmount),
+                attackAmount,
+                inWater),
             variantFrame.clipName());
     float clipTime =
         clip == null
@@ -1218,7 +1362,8 @@ public final class EasyModelBakedModelRenderer {
                     playbackFrame.previousAnimation(),
                     limbSwingAmount,
                     airborneAmount,
-                    attackAmount),
+                    attackAmount,
+                    inWater),
                 variantFrame.previousClipName());
     float previousClipTime =
         previousClip == null
@@ -1581,7 +1726,8 @@ public final class EasyModelBakedModelRenderer {
       EasyModelAnimation animation,
       float limbSwingAmount,
       float airborneAmount,
-      float attackAmount) {
+      float attackAmount,
+      boolean inWater) {
     Map<String, ModelAnimationClip> clips = bakedModel.animations();
     if (clips.isEmpty()) {
       return null;
@@ -1614,8 +1760,7 @@ public final class EasyModelBakedModelRenderer {
       }
     }
     if (limbSwingAmount > 0.01f) {
-      ModelBodyType bodyType = renderState.bodyType();
-      if (bodyType == ModelBodyType.AQUATIC || bodyType == ModelBodyType.AMPHIBIOUS) {
+      if (inWater) {
         ModelAnimationClip swimClip = groupClip(bakedModel, ModelAnimationClips.SWIM);
         if (swimClip != null) {
           return swimClip;
@@ -1630,7 +1775,8 @@ public final class EasyModelBakedModelRenderer {
       EasyModelRenderState renderState,
       float limbSwingAmount,
       float airborneAmount,
-      float attackAmount) {
+      float attackAmount,
+      boolean inWater) {
     ModelAnimationClip clip =
         selectClip(
             renderState.bakedModel(),
@@ -1638,7 +1784,8 @@ public final class EasyModelBakedModelRenderer {
             EasyModelAnimation.AUTO,
             limbSwingAmount,
             airborneAmount,
-            attackAmount);
+            attackAmount,
+            inWater);
     return clip == null ? "" : clip.name();
   }
 
@@ -2113,7 +2260,7 @@ public final class EasyModelBakedModelRenderer {
     return EasyModelPartTransform.NONE;
   }
 
-  private static boolean explicitAnimationOnly(EasyModelRenderState renderState) {
+  static boolean explicitAnimationOnly(EasyModelRenderState renderState) {
     return renderState.animation().mode() == ModelAnimationMode.NONE
         || renderState.bodyType() == ModelBodyType.STATIC;
   }
@@ -2142,6 +2289,10 @@ public final class EasyModelBakedModelRenderer {
     float y2 = y1 + dimensions.y() * PIXEL;
     float z2 = z1 + dimensions.z() * PIXEL;
 
+    float zNormalSign = normalSign(dimensions.x(), dimensions.y());
+    float xNormalSign = normalSign(dimensions.y(), dimensions.z());
+    float yNormalSign = normalSign(dimensions.x(), dimensions.z());
+
     FaceUv southUv = uv(cube, ModelCubeFace.SOUTH);
     FaceUv northUv = uv(cube, ModelCubeFace.NORTH);
     FaceUv westUv = uv(cube, ModelCubeFace.WEST);
@@ -2151,23 +2302,27 @@ public final class EasyModelBakedModelRenderer {
 
     CubeFaceVisibility visibility = cube.faceVisibility();
     if (visibility.isVisible(ModelCubeFace.SOUTH)) {
-      quad(sink, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, 0, 0, 1, southUv);
+      quad(sink, x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, 0, 0, zNormalSign, southUv);
     }
     if (visibility.isVisible(ModelCubeFace.NORTH)) {
-      quad(sink, x2, y1, z1, x1, y1, z1, x1, y2, z1, x2, y2, z1, 0, 0, -1, northUv);
+      quad(sink, x2, y1, z1, x1, y1, z1, x1, y2, z1, x2, y2, z1, 0, 0, -zNormalSign, northUv);
     }
     if (visibility.isVisible(ModelCubeFace.EAST)) {
-      quad(sink, x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1, -1, 0, 0, eastUv);
+      quad(sink, x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1, -xNormalSign, 0, 0, eastUv);
     }
     if (visibility.isVisible(ModelCubeFace.WEST)) {
-      quad(sink, x2, y1, z2, x2, y1, z1, x2, y2, z1, x2, y2, z2, 1, 0, 0, westUv);
+      quad(sink, x2, y1, z2, x2, y1, z1, x2, y2, z1, x2, y2, z2, xNormalSign, 0, 0, westUv);
     }
     if (visibility.isVisible(ModelCubeFace.UP)) {
-      quad(sink, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, 0, -1, 0, upUv);
+      quad(sink, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, 0, -yNormalSign, 0, upUv);
     }
     if (visibility.isVisible(ModelCubeFace.DOWN)) {
-      quad(sink, x1, y2, z2, x2, y2, z2, x2, y2, z1, x1, y2, z1, 0, 1, 0, downUv);
+      quad(sink, x1, y2, z2, x2, y2, z2, x2, y2, z1, x1, y2, z1, 0, yNormalSign, 0, downUv);
     }
+  }
+
+  static float normalSign(float firstOtherDimension, float secondOtherDimension) {
+    return (firstOtherDimension < 0.0f) == (secondOtherDimension < 0.0f) ? 1.0f : -1.0f;
   }
 
   private static FaceUv uv(BakedModelCube cube, ModelCubeFace face) {
@@ -2192,10 +2347,24 @@ public final class EasyModelBakedModelRenderer {
       float normalY,
       float normalZ,
       FaceUv uv) {
-    sink.vertex(x1, y1, z1, uv.maxU(), uv.minV(), normalX, normalY, normalZ);
-    sink.vertex(x2, y2, z2, uv.minU(), uv.minV(), normalX, normalY, normalZ);
-    sink.vertex(x3, y3, z3, uv.minU(), uv.maxV(), normalX, normalY, normalZ);
-    sink.vertex(x4, y4, z4, uv.maxU(), uv.maxV(), normalX, normalY, normalZ);
+    sink.vertex(x1, y1, z1, cornerU(uv, 0), cornerV(uv, 0), normalX, normalY, normalZ);
+    sink.vertex(x2, y2, z2, cornerU(uv, 1), cornerV(uv, 1), normalX, normalY, normalZ);
+    sink.vertex(x3, y3, z3, cornerU(uv, 2), cornerV(uv, 2), normalX, normalY, normalZ);
+    sink.vertex(x4, y4, z4, cornerU(uv, 3), cornerV(uv, 3), normalX, normalY, normalZ);
+  }
+
+  static float cornerU(FaceUv uv, int vertexIndex) {
+    return switch ((vertexIndex + uv.clockwiseQuarterTurns()) & 3) {
+      case 0, 3 -> uv.maxU();
+      default -> uv.minU();
+    };
+  }
+
+  static float cornerV(FaceUv uv, int vertexIndex) {
+    return switch ((vertexIndex + uv.clockwiseQuarterTurns()) & 3) {
+      case 0, 1 -> uv.minV();
+      default -> uv.maxV();
+    };
   }
 
   private static final class VertexSinks {

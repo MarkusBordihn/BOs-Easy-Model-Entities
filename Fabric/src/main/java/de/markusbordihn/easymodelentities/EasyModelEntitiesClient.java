@@ -21,12 +21,16 @@ package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
+import de.markusbordihn.easymodelentities.client.render.EasyModelShoulderLayer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelSpawnItemSpecialRendererUnbaked;
 import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
+import de.markusbordihn.easymodelentities.network.EasyModelShoulderNetworkHandler;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityRenderLayerRegistrationCallback;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.client.renderer.special.SpecialModelRenderers;
 import net.minecraft.server.packs.PackType;
 import org.apache.logging.log4j.LogManager;
@@ -40,6 +44,7 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
   public void onInitializeClient() {
     log.info("Initializing {} (Fabric Client) ...", Constants.MOD_NAME);
     EasyModelAnimationNetworkHandler.registerClient();
+    EasyModelShoulderNetworkHandler.registerClient();
     EntityRendererRegistry.register(
         EasyModelEntityTypes.INSTANCE.groundEntityType(), EasyModelHostEntityRenderer::new);
     EntityRendererRegistry.register(
@@ -65,5 +70,11 @@ public class EasyModelEntitiesClient implements ClientModInitializer {
         EasyModelSpawnItemSpecialRendererUnbaked.MAP_CODEC);
     ResourceManagerHelper.get(PackType.CLIENT_RESOURCES)
         .registerReloadListener(new ModelRenderProfileReloadListenerWrapper());
+    LivingEntityRenderLayerRegistrationCallback.EVENT.register(
+        (entityType, entityRenderer, registrationHelper, context) -> {
+          if (entityRenderer instanceof AvatarRenderer<?> avatarRenderer) {
+            registrationHelper.register(new EasyModelShoulderLayer(avatarRenderer));
+          }
+        });
   }
 }

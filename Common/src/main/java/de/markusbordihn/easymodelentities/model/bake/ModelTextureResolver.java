@@ -32,16 +32,23 @@ import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
@@ -56,8 +63,10 @@ public final class ModelTextureResolver {
   private static final int MAX_TEXTURE_SIZE = ModelAssetBudgets.MAX_TEXTURE_SIZE;
   private static final int SOFT_TEXTURE_SIZE = ModelAssetBudgets.SOFT_TEXTURE_SIZE;
   private static final String TEXTURE_FOLDER = "textures";
-  private static final String ENTITY_FOLDER = "entity";
+  private static final String TEXTURES_FIELD = "textures";
   private static final String PNG_SUFFIX = ".png";
+  private static final Pattern ASSETS_TEXTURE_PATTERN =
+      Pattern.compile("(?:^|/)assets/([a-z0-9_.-]+)/(textures/.+\\.png)$");
 
   private ModelTextureResolver() {}
 
@@ -70,28 +79,219 @@ public final class ModelTextureResolver {
     Map<Integer, Identifier> textures = new LinkedHashMap<>();
     List<ModelRenderProfileValidationIssue> issues = new ArrayList<>();
     for (int index : usedIndices) {
-      Identifier candidate = candidateTexture(renderProfile, index, decodedTextures.get(index));
-      if (candidate == null) {
-        textures.put(index, FALLBACK_TEXTURE);
-        issues.add(
-            new ModelRenderProfileValidationIssue(
-                ModelRenderProfileStatus.MISSING_TEXTURE,
-                "texture",
-                textureMappingMessage(index, decodedTextures.get(index))));
-        continue;
-      }
-      List<ModelRenderProfileValidationIssue> textureIssues =
-          validateTexture(candidate, resourceManager);
-      if (hasMissingTexture(textureIssues)) {
-        textures.put(index, FALLBACK_TEXTURE);
-        issues.addAll(textureIssues);
-        continue;
-      }
-      textures.put(index, candidate);
-      issues.addAll(textureIssues);
+      textures.put(
+          index,
+          resolveTexture(
+              renderProfile,
+              decodedModel.modelId(),
+              index,
+              decodedTextures.get(index),
+              resourceManager,
+              issues));
     }
+    warnAboutUnmatchedProfileTextures(renderProfile, decodedTextures, usedIndices, issues);
 
     return new ResolvedTextures(textures, slotNames(decodedTextures, usedIndices), issues);
+  }
+
+  private static Identifier resolveTexture(
+      EasyModelRenderProfile renderProfile,
+      Identifier modelId,
+      int index,
+      DecodedTexture decodedTexture,
+      ResourceManager resourceManager,
+      List<ModelRenderProfileValidationIssue> issues) {
+    Identifier profileTexture = renderProfile.textures().get(index);
+    List<String> attemptedTextures = new ArrayList<>();
+    for (String candidate : candidateTextures(renderProfile, modelId, index, decodedTexture)) {
+      Identifier candidateTexture = Identifier.tryParse(candidate);
+      if (candidateTexture == null) {
+        attemptedTextures.add(candidate + " (not a valid resource location)");
+        continue;
+      }
+
+      List<ModelRenderProfileValidationIssue> textureIssues =
+          validateTexture(candidateTexture, resourceManager);
+      if (hasMissingTexture(textureIssues)) {
+        attemptedTextures.add(candidate);
+        continue;
+      }
+
+      issues.addAll(textureIssues);
+      if (profileTexture != null && !profileTexture.equals(candidateTexture)) {
+        issues.add(
+            new ModelRenderProfileValidationIssue(
+                ModelRenderProfileStatus.ACTIVE,
+                textureField(index),
+                textureLabel(index, decodedTexture)
+                    + " is mapped to the missing asset "
+                    + profileTexture
+                    + " in the render profile, using "
+                    + candidateTexture
+                    + " instead. Re-export the render profile."));
+      }
+      return candidateTexture;
+    }
+
+    issues.add(
+        new ModelRenderProfileValidationIssue(
+            ModelRenderProfileStatus.MISSING_TEXTURE,
+            textureField(index),
+            missingTextureMessage(index, decodedTexture, attemptedTextures)));
+    return FALLBACK_TEXTURE;
+  }
+
+  private static Set<String> candidateTextures(
+      EasyModelRenderProfile renderProfile,
+      Identifier modelId,
+      int index,
+      DecodedTexture decodedTexture) {
+    Set<String> candidates = new LinkedHashSet<>();
+    Identifier profileTexture = renderProfile.textures().get(index);
+    if (profileTexture != null) {
+      candidates.add(profileTexture.toString());
+    }
+    if (index == 0) {
+      candidates.add(renderProfile.texture().toString());
+    }
+    if (decodedTexture == null) {
+      return candidates;
+    }
+
+    String namespacedTexture = namespacedModelTexture(decodedTexture);
+    if (namespacedTexture != null) {
+      candidates.add(namespacedTexture);
+    }
+    String relativeTexture = relativeModelTexture(modelId, decodedTexture);
+    if (relativeTexture != null) {
+      candidates.add(relativeTexture);
+    }
+    return candidates;
+  }
+
+  private static String namespacedModelTexture(DecodedTexture decodedTexture) {
+    String namespace = decodedTexture.namespace().trim().toLowerCase(Locale.ROOT);
+    String name = withoutPngSuffix(decodedTexture.name().trim()).toLowerCase(Locale.ROOT);
+    if (namespace.isEmpty() || name.isEmpty()) {
+      return null;
+    }
+
+    String folder = trimSlashes(decodedTexture.folder().trim()).toLowerCase(Locale.ROOT);
+    if (folder.isEmpty()) {
+      return namespace + ":" + joinPath(TEXTURE_FOLDER, name) + PNG_SUFFIX;
+    }
+
+    return namespace + ":" + joinPath(TEXTURE_FOLDER, folder, name) + PNG_SUFFIX;
+  }
+
+  private static String relativeModelTexture(
+      Identifier modelId, DecodedTexture decodedTexture) {
+    String relativePath = decodedTexture.relativePath().trim().replace('\\', '/');
+    if (relativePath.isEmpty()) {
+      return null;
+    }
+
+    Matcher assetsMatcher = ASSETS_TEXTURE_PATTERN.matcher(relativePath);
+    if (assetsMatcher.find()) {
+      return assetsMatcher.group(1) + ":" + assetsMatcher.group(2);
+    }
+
+    Deque<String> segments = new ArrayDeque<>(List.of(modelId.getPath().split("/")));
+    segments.removeLast();
+    for (String segment : relativePath.split("/")) {
+      if (segment.isEmpty() || segment.equals(".")) {
+        continue;
+      }
+      if (!segment.equals("..")) {
+        segments.addLast(segment);
+        continue;
+      }
+      if (segments.isEmpty()) {
+        return null;
+      }
+
+      segments.removeLast();
+    }
+    String path = String.join("/", segments);
+    if (!path.startsWith(TEXTURE_FOLDER + "/") || !path.endsWith(PNG_SUFFIX)) {
+      return null;
+    }
+
+    return modelId.getNamespace() + ":" + path;
+  }
+
+  private static void warnAboutUnmatchedProfileTextures(
+      EasyModelRenderProfile renderProfile,
+      Map<Integer, DecodedTexture> decodedTextures,
+      TreeSet<Integer> usedIndices,
+      List<ModelRenderProfileValidationIssue> issues) {
+    for (Map.Entry<Integer, Identifier> profileTexture :
+        new TreeMap<>(renderProfile.textures()).entrySet()) {
+      int index = profileTexture.getKey();
+      if (usedIndices.contains(index) || decodedTextures.containsKey(index)) {
+        continue;
+      }
+
+      issues.add(
+          new ModelRenderProfileValidationIssue(
+              ModelRenderProfileStatus.ACTIVE,
+              textureField(index),
+              "The render profile maps texture index "
+                  + index
+                  + " to "
+                  + profileTexture.getValue()
+                  + ", but the model has no texture with this index. Re-export the render"
+                  + " profile."));
+    }
+  }
+
+  private static String missingTextureMessage(
+      int index, DecodedTexture decodedTexture, List<String> attemptedTextures) {
+    if (attemptedTextures.isEmpty()) {
+      return textureLabel(index, decodedTexture)
+          + " has no texture location, neither the render profile nor the model names one."
+          + " Re-export the render profile.";
+    }
+
+    return textureLabel(index, decodedTexture)
+        + " is missing, tried "
+        + String.join(", ", attemptedTextures)
+        + ".";
+  }
+
+  private static String textureLabel(int index, DecodedTexture decodedTexture) {
+    String name = decodedTexture == null ? "" : withoutPngSuffix(decodedTexture.name().trim());
+    if (name.isEmpty()) {
+      return "Texture index " + index;
+    }
+
+    return "Texture \"" + name + "\" (index " + index + ")";
+  }
+
+  private static String textureField(int index) {
+    return TEXTURES_FIELD + "." + index;
+  }
+
+  private static String withoutPngSuffix(String name) {
+    int suffixStart = name.length() - PNG_SUFFIX.length();
+    if (suffixStart >= 0
+        && name.regionMatches(true, suffixStart, PNG_SUFFIX, 0, PNG_SUFFIX.length())) {
+      return name.substring(0, suffixStart);
+    }
+
+    return name;
+  }
+
+  private static String trimSlashes(String path) {
+    int start = 0;
+    int end = path.length();
+    while (start < end && path.charAt(start) == '/') {
+      start++;
+    }
+    while (end > start && path.charAt(end - 1) == '/') {
+      end--;
+    }
+    return path.substring(start, end);
   }
 
   private static Map<String, Integer> slotNames(
@@ -191,67 +391,6 @@ public final class ModelTextureResolver {
         ModelRenderProfileStatus.CLIENT_ASSET_MISMATCH,
         "texture",
         "Texture asset " + textureResourceLocation + " could not be decoded.");
-  }
-
-  private static Identifier candidateTexture(
-      EasyModelRenderProfile renderProfile, int index, DecodedTexture decodedTexture) {
-    Identifier profileTexture = renderProfile.textures().get(index);
-    if (profileTexture != null) {
-      return ModelResourcePaths.textureResourceLocation(profileTexture);
-    }
-    if (index == 0) {
-      return ModelResourcePaths.textureResourceLocation(renderProfile.texture());
-    }
-    return derivedTexture(decodedTexture);
-  }
-
-  private static String textureMappingMessage(int index, DecodedTexture decodedTexture) {
-    String textureName = decodedTexture == null ? "" : textureName(decodedTexture);
-    if (textureName.isBlank()) {
-      return "No texture mapping for texture index " + index + ".";
-    }
-
-    return "Texture name "
-        + textureName
-        + " for texture index "
-        + index
-        + " cannot be used as a resource location, use lowercase letters, digits, '_', '-' and '/'"
-        + " only.";
-  }
-
-  private static String textureName(DecodedTexture decodedTexture) {
-    String relativePath = decodedTexture.relativePath().trim();
-    return relativePath.isBlank() ? decodedTexture.name().trim() : relativePath;
-  }
-
-  private static Identifier derivedTexture(DecodedTexture decodedTexture) {
-    if (decodedTexture == null) {
-      return null;
-    }
-
-    String relativePath = textureName(decodedTexture);
-    if (relativePath.isBlank()) {
-      return null;
-    }
-
-    String namespace = decodedTexture.namespace().trim();
-    if (namespace.isBlank()) {
-      namespace = Identifier.DEFAULT_NAMESPACE;
-    }
-    String folder = decodedTexture.folder().trim();
-    String path =
-        folder.isBlank()
-            ? joinPath(TEXTURE_FOLDER, ENTITY_FOLDER, withPngSuffix(relativePath))
-            : joinPath(TEXTURE_FOLDER, folder, withPngSuffix(relativePath));
-    return Identifier.tryParse(namespace + ":" + path);
-  }
-
-  private static String withPngSuffix(String path) {
-    int suffixStart = path.length() - PNG_SUFFIX.length();
-    return suffixStart >= 0
-            && path.regionMatches(true, suffixStart, PNG_SUFFIX, 0, PNG_SUFFIX.length())
-        ? path
-        : path + PNG_SUFFIX;
   }
 
   private static String joinPath(String... segments) {

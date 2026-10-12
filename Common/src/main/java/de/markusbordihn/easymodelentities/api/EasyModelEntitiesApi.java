@@ -19,25 +19,36 @@
 
 package de.markusbordihn.easymodelentities.api;
 
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelBodyType;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelProfileInfo;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
 import de.markusbordihn.easymodelentities.data.EasyModelApiMapper;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.entity.EasyModelEntityHost;
-import de.markusbordihn.easymodelentities.entity.EasyModelHostEntity;
+import de.markusbordihn.easymodelentities.entity.EasyModelStaticEntity;
+import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationPacket;
 import de.markusbordihn.easymodelentities.network.animation.ClientboundEasyModelAnimationSequencePacket;
 import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationNetwork;
+import de.markusbordihn.easymodelentities.network.animation.EasyModelAnimationPacketOperation;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 public final class EasyModelEntitiesApi {
@@ -84,7 +95,7 @@ public final class EasyModelEntitiesApi {
 
   public static Optional<Identifier> getProfileId(Entity entity) {
     Objects.requireNonNull(entity, "entity");
-    if (entity instanceof EasyModelHostEntity hostEntity) {
+    if (entity instanceof EasyModelEntityHost hostEntity) {
       return Optional.of(hostEntity.getEasyModelProfileId());
     }
     if (entity instanceof EasyModelRenderable renderable) {
@@ -115,8 +126,16 @@ public final class EasyModelEntitiesApi {
       hostEntity.setEasyModelOpacity(opacity);
       return true;
     }
+    if (entity instanceof EasyModelMutableRenderable mutableRenderable) {
+      mutableRenderable.setEasyModelOpacity(opacity);
+      return true;
+    }
 
     return false;
+  }
+
+  public static boolean clearOpacity(Entity entity) {
+    return setOpacity(entity, EasyModelDisplaySettings.NO_OPACITY);
   }
 
   public static int getLightLevel(Entity entity) {
@@ -140,8 +159,57 @@ public final class EasyModelEntitiesApi {
       hostEntity.setEasyModelLightLevel(lightLevel);
       return true;
     }
+    if (entity instanceof EasyModelMutableRenderable mutableRenderable) {
+      mutableRenderable.setEasyModelLightLevel(lightLevel);
+      return true;
+    }
 
     return false;
+  }
+
+  public static boolean clearLightLevel(Entity entity) {
+    return setLightLevel(entity, EasyModelDisplaySettings.NO_LIGHT_LEVEL);
+  }
+
+  public static boolean isFrozen(Entity entity) {
+    Objects.requireNonNull(entity, "entity");
+    return entity instanceof EasyModelEntityHost && entity instanceof Mob mob && mob.isNoAi();
+  }
+
+  public static boolean setFrozen(Entity entity, boolean frozen) {
+    Objects.requireNonNull(entity, "entity");
+    if (!(entity instanceof EasyModelEntityHost) || !(entity instanceof Mob mob)) {
+      return false;
+    }
+
+    mob.setNoAi(frozen || mob instanceof EasyModelStaticEntity);
+    if (frozen) {
+      mob.getNavigation().stop();
+      mob.setDeltaMovement(Vec3.ZERO);
+      mob.setXxa(0.0f);
+      mob.setYya(0.0f);
+      mob.setZza(0.0f);
+    }
+    return true;
+  }
+
+  public static boolean sitOnShoulder(Entity entity, Player player) {
+    Objects.requireNonNull(entity, "entity");
+    Objects.requireNonNull(player, "player");
+    if (!(entity instanceof EasyModelEntityHost)
+        || !(player instanceof ServerPlayer serverPlayer)) {
+      return false;
+    }
+
+    TagValueOutput entityOutput =
+        TagValueOutput.createWithContext(ProblemReporter.DISCARDING, entity.registryAccess());
+    if (!entity.save(entityOutput)
+        || !serverPlayer.setEntityOnShoulder(entityOutput.buildResult())) {
+      return false;
+    }
+
+    entity.discard();
+    return true;
   }
 
   public static EasyModelTextureSetting getTextureSetting(Entity entity) {
@@ -156,6 +224,90 @@ public final class EasyModelEntitiesApi {
     return EasyModelTextureSetting.EMPTY;
   }
 
+  public static boolean setTextureSetting(Entity entity, EasyModelTextureSetting textureSetting) {
+    Objects.requireNonNull(entity, "entity");
+    Objects.requireNonNull(textureSetting, "textureSetting");
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      hostEntity.setEasyModelTexture(textureSetting);
+      return true;
+    }
+    if (entity instanceof EasyModelMutableRenderable mutableRenderable) {
+      mutableRenderable.setEasyModelTextureSetting(textureSetting);
+      return true;
+    }
+
+    return false;
+  }
+
+  public static boolean clearTextureSetting(Entity entity) {
+    return setTextureSetting(entity, EasyModelTextureSetting.EMPTY);
+  }
+
+  public static EasyModelAnimationSetting getAnimationSetting(Entity entity) {
+    Objects.requireNonNull(entity, "entity");
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      return hostEntity.getEasyModelAnimationSetting();
+    }
+    if (entity instanceof EasyModelRenderable renderable) {
+      return renderable.getEasyModelAnimationSetting();
+    }
+
+    return EasyModelAnimationSetting.AUTO;
+  }
+
+  public static boolean setAnimation(Entity entity, EasyModelAnimationSetting animationSetting) {
+    Objects.requireNonNull(entity, "entity");
+    Objects.requireNonNull(animationSetting, "animationSetting");
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      hostEntity.setEasyModelAnimation(animationSetting);
+      return true;
+    }
+    if (entity instanceof EasyModelMutableRenderable mutableRenderable) {
+      mutableRenderable.setEasyModelAnimationSetting(animationSetting);
+      return true;
+    }
+
+    return false;
+  }
+
+  public static boolean playAnimation(
+      Entity entity,
+      EasyModelAnimation animation,
+      EasyModelAnimationPlayback playback,
+      EasyModelAnimationTransition transition) {
+    Objects.requireNonNull(entity, "entity");
+    Objects.requireNonNull(animation, "animation");
+    Objects.requireNonNull(playback, "playback");
+    Objects.requireNonNull(transition, "transition");
+    if (entity.level().isClientSide()) {
+      return false;
+    }
+
+    EasyModelAnimationNetwork.send(
+        entity,
+        ClientboundEasyModelAnimationPacket.playEntity(
+            entity.getId(), animation, playback, transition));
+    return true;
+  }
+
+  public static boolean playRandomAnimation(
+      Entity entity,
+      List<EasyModelAnimation> animations,
+      EasyModelAnimationPlayback playback,
+      EasyModelAnimationTransition transition) {
+    Objects.requireNonNull(entity, "entity");
+    Objects.requireNonNull(animations, "animations");
+    if (animations.isEmpty()) {
+      return false;
+    }
+
+    return playAnimation(
+        entity,
+        animations.get(entity.level().getRandom().nextInt(animations.size())),
+        playback,
+        transition);
+  }
+
   public static boolean playAnimationSequence(Entity entity, EasyModelAnimationSequence sequence) {
     Objects.requireNonNull(entity, "entity");
     Objects.requireNonNull(sequence, "sequence");
@@ -165,6 +317,31 @@ public final class EasyModelEntitiesApi {
 
     EasyModelAnimationNetwork.send(
         entity, ClientboundEasyModelAnimationSequencePacket.forEntity(entity.getId(), sequence));
+    return true;
+  }
+
+  public static boolean stopAnimation(Entity entity, EasyModelAnimationTransition transition) {
+    Objects.requireNonNull(transition, "transition");
+    return control(entity, EasyModelAnimationPacketOperation.STOP, transition);
+  }
+
+  public static boolean restartAnimation(Entity entity) {
+    return control(
+        entity, EasyModelAnimationPacketOperation.RESTART, EasyModelAnimationTransition.IMMEDIATE);
+  }
+
+  private static boolean control(
+      Entity entity,
+      EasyModelAnimationPacketOperation operation,
+      EasyModelAnimationTransition transition) {
+    Objects.requireNonNull(entity, "entity");
+    if (entity.level().isClientSide()) {
+      return false;
+    }
+
+    EasyModelAnimationNetwork.send(
+        entity,
+        ClientboundEasyModelAnimationPacket.controlEntity(entity.getId(), operation, transition));
     return true;
   }
 

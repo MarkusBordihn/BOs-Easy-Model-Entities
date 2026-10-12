@@ -124,7 +124,7 @@ class ContractConsistencyTest {
         Set.copyOf(EasyModelApiContract.animationVariantModes()));
     assertEquals(Set.of("natural", "feline", "ungulate"), Set.copyOf(EasyModelApiContract.gaits()));
     assertEquals(
-        Set.of("once", "loop", "repeat"), Set.copyOf(EasyModelApiContract.playbackModes()));
+        Set.of("once", "loop", "repeat", "hold"), Set.copyOf(EasyModelApiContract.playbackModes()));
   }
 
   @Test

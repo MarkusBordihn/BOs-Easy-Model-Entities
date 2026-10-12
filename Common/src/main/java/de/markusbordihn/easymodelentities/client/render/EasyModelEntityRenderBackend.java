@@ -25,6 +25,7 @@ import de.markusbordihn.easymodelentities.api.EasyModelRenderable;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartAnimator;
 import de.markusbordihn.easymodelentities.api.client.EasyModelPartPoseListener;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
@@ -35,6 +36,7 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelEntityRenderO
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelHeadLook;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartAnimationMode;
 import de.markusbordihn.easymodelentities.api.data.client.EasyModelPartPose;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
@@ -61,6 +63,10 @@ public final class EasyModelEntityRenderBackend {
 
   private static final float AIRBORNE_BASE = 0.35f;
   private static final float AIRBORNE_MOTION_RANGE = 0.4f;
+  private static final float STRANDED_FLOP_DEGREES = 4.3f;
+  private static final float STRANDED_FLOP_FREQUENCY = 0.6f;
+  private static final float STRANDED_OFFSET = 0.1f;
+  private static final float STRANDED_ROLL_DEGREES = 90.0f;
   private static final EasyModelAnimationPlaybackTracker<Entity> ANIMATION_PLAYBACK_TRACKER =
       new EasyModelAnimationPlaybackTracker<>();
   private static final EasyModelAnimationVariantTracker<Entity> ANIMATION_VARIANT_TRACKER =
@@ -118,6 +124,7 @@ public final class EasyModelEntityRenderBackend {
     EasyModelEntityRenderOptions safeOptions =
         options == null ? EasyModelEntityRenderOptions.DEFAULT : options;
     float limbSwingAmount = limbSwingAmount(entity, partialTick);
+    boolean inWater = entity.isInWater();
     float airborneAmount = airborneAmount(entity);
     float attackAmount = attackAmount(entity, partialTick);
 
@@ -127,6 +134,11 @@ public final class EasyModelEntityRenderBackend {
     renderState.limbSwingAmount = limbSwingAmount;
     renderState.airborneAmount = airborneAmount;
     renderState.attackAmount = attackAmount;
+    renderState.inWater = inWater;
+    renderState.strandedAgeInTicks =
+        stranded(entity, renderState.easyModelRenderState, inWater)
+            ? entity.tickCount + partialTick
+            : null;
     AnimationFrames animationFrames =
         animationFrames(
             entity,
@@ -136,7 +148,8 @@ public final class EasyModelEntityRenderBackend {
             renderState.limbSwing,
             limbSwingAmount,
             airborneAmount,
-            attackAmount);
+            attackAmount,
+            inWater);
     renderState.playbackFrame = animationFrames.playbackFrame();
     renderState.variantFrame = animationFrames.variantFrame();
     renderState.textureSetting =
@@ -149,9 +162,10 @@ public final class EasyModelEntityRenderBackend {
     renderState.packedOverlay =
         resolveOverlay(safeOptions.packedOverlay(), packedOverlay(entity), entity);
     renderState.opacity =
-        resolveOpacity(
+        EasyModelDisplayResolver.resolveOpacity(
             safeOptions.opacity(), opacity(entity), renderState.easyModelRenderState.opacity());
-    renderState.lightLevel = resolveLightLevel(safeOptions.lightLevel(), lightLevel(entity));
+    renderState.lightLevel =
+        EasyModelDisplayResolver.resolveLightLevel(safeOptions.lightLevel(), lightLevel(entity));
   }
 
   public static int packedOverlay(Entity entity) {
@@ -178,6 +192,9 @@ public final class EasyModelEntityRenderBackend {
     float scale = easyModelRenderState.scale() * renderState.scaleFactor;
     poseStack.pushPose();
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - renderState.entityYaw));
+    if (renderState.strandedAgeInTicks != null) {
+      applyStrandedPose(poseStack, renderState.strandedAgeInTicks);
+    }
     poseStack.scale(-scale, -scale, scale);
     poseStack.translate(0.0f, -1.501f, 0.0f);
 
@@ -188,6 +205,7 @@ public final class EasyModelEntityRenderBackend {
         renderState.limbSwingAmount,
         renderState.airborneAmount,
         renderState.attackAmount,
+        renderState.inWater,
         renderState.headLook == null ? EasyModelHeadLook.NONE : renderState.headLook,
         renderState.playbackFrame,
         renderState.variantFrame,
@@ -287,7 +305,9 @@ public final class EasyModelEntityRenderBackend {
   }
 
   public static float airborneAmount(Entity entity) {
-    if (!(entity instanceof LivingEntity livingEntity) || livingEntity.onGround()) {
+    if (!(entity instanceof LivingEntity livingEntity)
+        || livingEntity.onGround()
+        || livingEntity.isInWater()) {
       return 0.0f;
     }
     float verticalMotion = (float) Math.abs(livingEntity.getDeltaMovement().y);
@@ -374,6 +394,7 @@ public final class EasyModelEntityRenderBackend {
     EasyModelEntityRenderOptions safeOptions =
         options == null ? EasyModelEntityRenderOptions.DEFAULT : options;
     float limbSwingAmount = limbSwingAmount(entity, partialTick);
+    boolean inWater = entity.isInWater();
     float airborneAmount = airborneAmount(entity);
     float attackAmount = attackAmount(entity, partialTick);
     float limbSwing = limbSwing(entity, partialTick);
@@ -386,7 +407,8 @@ public final class EasyModelEntityRenderBackend {
             limbSwing,
             limbSwingAmount,
             airborneAmount,
-            attackAmount);
+            attackAmount,
+            inWater);
 
     render(
         renderState,
@@ -397,6 +419,8 @@ public final class EasyModelEntityRenderBackend {
         animationFrames.variantFrame(),
         airborneAmount,
         attackAmount,
+        inWater,
+        stranded(entity, renderState, inWater) ? entity.tickCount + partialTick : null,
         headLook(entity, entityYaw, partialTick, safeOptions),
         safeOptions,
         resolveTextureSetting(safeOptions.textureSetting(), textureSetting(entity)),
@@ -404,8 +428,9 @@ public final class EasyModelEntityRenderBackend {
         bufferSource,
         packedLight,
         resolveOverlay(safeOptions.packedOverlay(), packedOverlay, entity),
-        resolveOpacity(safeOptions.opacity(), opacity(entity), renderState.opacity()),
-        resolveLightLevel(safeOptions.lightLevel(), lightLevel(entity)));
+        EasyModelDisplayResolver.resolveOpacity(
+            safeOptions.opacity(), opacity(entity), renderState.opacity()),
+        EasyModelDisplayResolver.resolveLightLevel(safeOptions.lightLevel(), lightLevel(entity)));
   }
 
   private static AnimationFrames animationFrames(
@@ -416,9 +441,16 @@ public final class EasyModelEntityRenderBackend {
       float limbSwing,
       float limbSwingAmount,
       float airborneAmount,
-      float attackAmount) {
+      float attackAmount,
+      boolean inWater) {
+    boolean dying = dying(entity, renderState);
     EasyModelAnimationSetting setting =
-        resolveSetting(options.animation(), animationSetting(entity));
+        stateSetting(
+            entity,
+            renderState,
+            resolveSetting(options.animation(), animationSetting(entity)),
+            attackAmount,
+            dying);
     if (options.animationTicks() != null) {
       ANIMATION_PLAYBACK_TRACKER.clear(entity);
       ANIMATION_VARIANT_TRACKER.clear(entity);
@@ -430,12 +462,14 @@ public final class EasyModelEntityRenderBackend {
 
     double animationClock = entity.tickCount + partialTick;
     Supplier<String> automaticClipName =
-        new EasyModelAutomaticClipName(renderState, limbSwingAmount, airborneAmount, attackAmount);
+        new EasyModelAutomaticClipName(
+            renderState, limbSwingAmount, airborneAmount, attackAmount, inWater);
     EasyModelAnimationPlaybackFrame playbackFrame =
         applySetting(
             ANIMATION_PLAYBACK_TRACKER.resolve(
                 entity,
                 setting.animation(),
+                dying,
                 automaticClipName,
                 animationClock,
                 renderState.bakedModel().animations()),
@@ -447,6 +481,7 @@ public final class EasyModelEntityRenderBackend {
             entity.getId(),
             renderState.bakedModel(),
             renderState.animation().variantMode(),
+            renderState.animation().variantWeights(),
             playbackFrame,
             automaticClipName,
             animationClock,
@@ -487,9 +522,49 @@ public final class EasyModelEntityRenderBackend {
         bufferSource,
         packedLight,
         resolveOverlay(safeOptions.packedOverlay(), OverlayTexture.NO_OVERLAY),
-        resolveOpacity(
+        EasyModelDisplayResolver.resolveOpacity(
             safeOptions.opacity(), EasyModelDisplaySettings.NO_OPACITY, renderState.opacity()),
-        resolveLightLevel(safeOptions.lightLevel(), EasyModelDisplaySettings.NO_LIGHT_LEVEL));
+        EasyModelDisplayResolver.resolveLightLevel(
+            safeOptions.lightLevel(), EasyModelDisplaySettings.NO_LIGHT_LEVEL));
+  }
+
+  public static void render(
+      EasyModelRenderState renderState,
+      float yaw,
+      EasyModelEntityRenderOptions options,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight) {
+    Objects.requireNonNull(renderState, "renderState");
+
+    EasyModelEntityRenderOptions safeOptions =
+        options == null ? EasyModelEntityRenderOptions.DEFAULT : options;
+    float ageInTicks = safeOptions.animationTicks() == null ? 0.0f : safeOptions.animationTicks();
+    EasyModelAnimationSetting setting =
+        resolveSetting(safeOptions.animation(), EasyModelAnimationSetting.AUTO);
+    EasyModelEntityRenderState entityRenderState = new EasyModelEntityRenderState();
+    entityRenderState.easyModelRenderState = renderState;
+    entityRenderState.entityYaw = yaw;
+    entityRenderState.playbackFrame =
+        EasyModelAnimationPlaybackFrame.single(
+            setting.animation(), ageInTicks, setting.loopOverride(), false);
+    entityRenderState.textureSetting =
+        resolveTextureSetting(safeOptions.textureSetting(), EasyModelTextureSetting.EMPTY);
+    entityRenderState.headLook =
+        safeOptions.headLook() == null ? EasyModelHeadLook.NONE : safeOptions.headLook();
+    entityRenderState.partAnimator = safeOptions.partAnimator();
+    entityRenderState.partAnimationMode = safeOptions.partAnimationMode();
+    entityRenderState.handItems = safeOptions.handItems();
+    entityRenderState.scaleFactor = safeOptions.scale() == null ? 1.0f : safeOptions.scale();
+    entityRenderState.packedOverlay =
+        resolveOverlay(safeOptions.packedOverlay(), OverlayTexture.NO_OVERLAY);
+    entityRenderState.opacity =
+        EasyModelDisplayResolver.resolveOpacity(
+            safeOptions.opacity(), EasyModelDisplaySettings.NO_OPACITY, renderState.opacity());
+    entityRenderState.lightLevel =
+        EasyModelDisplayResolver.resolveLightLevel(
+            safeOptions.lightLevel(), EasyModelDisplaySettings.NO_LIGHT_LEVEL);
+    render(entityRenderState, poseStack, submitNodeCollector, packedLight);
   }
 
   private static void render(
@@ -518,6 +593,8 @@ public final class EasyModelEntityRenderBackend {
         EasyModelAnimationVariantFrame.NONE,
         airborneAmount,
         attackAmount,
+        false,
+        null,
         headLook,
         options,
         textureSetting,
@@ -538,6 +615,8 @@ public final class EasyModelEntityRenderBackend {
       EasyModelAnimationVariantFrame variantFrame,
       float airborneAmount,
       float attackAmount,
+      boolean inWater,
+      Float strandedAgeInTicks,
       EasyModelHeadLook headLook,
       EasyModelEntityRenderOptions options,
       EasyModelTextureSetting textureSetting,
@@ -557,6 +636,9 @@ public final class EasyModelEntityRenderBackend {
 
     poseStack.pushPose();
     poseStack.mulPose(Axis.YP.rotationDegrees(180.0f - yaw));
+    if (strandedAgeInTicks != null) {
+      applyStrandedPose(poseStack, strandedAgeInTicks);
+    }
     poseStack.scale(-scale, -scale, scale);
     poseStack.translate(0.0f, -1.501f, 0.0f);
 
@@ -567,6 +649,7 @@ public final class EasyModelEntityRenderBackend {
         limbSwingAmount,
         airborneAmount,
         attackAmount,
+        inWater,
         headLook,
         playbackFrame,
         variantFrame,
@@ -672,17 +755,6 @@ public final class EasyModelEntityRenderBackend {
     return EasyModelTextureSetting.EMPTY;
   }
 
-  private static float resolveOpacity(Float requested, float hostOpacity, float profileOpacity) {
-    if (requested != null) {
-      return EasyModelDisplaySettings.clampOpacity(requested);
-    }
-    if (EasyModelDisplaySettings.hasOpacityOverride(hostOpacity)) {
-      return EasyModelDisplaySettings.clampOpacity(hostOpacity);
-    }
-
-    return EasyModelDisplaySettings.clampOpacity(profileOpacity);
-  }
-
   private static float opacity(Entity entity) {
     if (entity instanceof EasyModelEntityHost hostEntity) {
       return hostEntity.getEasyModelOpacity();
@@ -692,10 +764,6 @@ public final class EasyModelEntityRenderBackend {
     }
 
     return EasyModelDisplaySettings.NO_OPACITY;
-  }
-
-  private static int resolveLightLevel(Integer requested, int fallback) {
-    return EasyModelDisplaySettings.clampLightLevel(requested == null ? fallback : requested);
   }
 
   private static int lightLevel(Entity entity) {
@@ -817,6 +885,58 @@ public final class EasyModelEntityRenderBackend {
     return entity instanceof LivingEntity livingEntity
         ? livingEntity.getAttackAnim(partialTick)
         : 0.0f;
+  }
+
+  static boolean dying(Entity entity, EasyModelRenderState renderState) {
+    return entity instanceof LivingEntity livingEntity
+        && livingEntity.isDeadOrDying()
+        && !EasyModelBakedModelRenderer.explicitAnimationOnly(renderState)
+        && hasClip(renderState, ModelAnimationClips.DEATH);
+  }
+
+  static EasyModelAnimationSetting stateSetting(
+      Entity entity,
+      EasyModelRenderState renderState,
+      EasyModelAnimationSetting setting,
+      float attackAmount,
+      boolean dying) {
+    if (dying) {
+      return new EasyModelAnimationSetting(EasyModelAnimation.DEATH, EasyModelAnimationLoop.ONCE);
+    }
+    if (setting.animation() != EasyModelAnimation.AUTO
+        || EasyModelBakedModelRenderer.explicitAnimationOnly(renderState)
+        || !(entity instanceof LivingEntity livingEntity)) {
+      return setting;
+    }
+    if (livingEntity.hurtTime > 0 && hasClip(renderState, ModelAnimationClips.HURT)) {
+      return new EasyModelAnimationSetting(EasyModelAnimation.HURT, EasyModelAnimationLoop.ONCE);
+    }
+    if (attackAmount <= 0.0f
+        && livingEntity.isPassenger()
+        && hasClip(renderState, ModelAnimationClips.SIT)) {
+      return EasyModelAnimationSetting.of(EasyModelAnimation.SIT);
+    }
+
+    return setting;
+  }
+
+  static boolean stranded(Entity entity, EasyModelRenderState renderState, boolean inWater) {
+    return !inWater
+        && entity instanceof LivingEntity
+        && renderState.bodyType() == ModelBodyType.AQUATIC
+        && !hasClip(renderState, ModelAnimationClips.WALK);
+  }
+
+  private static void applyStrandedPose(PoseStack poseStack, float ageInTicks) {
+    poseStack.mulPose(
+        Axis.YP.rotationDegrees(
+            STRANDED_FLOP_DEGREES * Mth.sin(STRANDED_FLOP_FREQUENCY * ageInTicks)));
+    poseStack.translate(STRANDED_OFFSET, STRANDED_OFFSET, -STRANDED_OFFSET);
+    poseStack.mulPose(Axis.ZP.rotationDegrees(STRANDED_ROLL_DEGREES));
+  }
+
+  private static boolean hasClip(EasyModelRenderState renderState, String clipName) {
+    return EasyModelBakedModelRenderer.groupClip(renderState.bakedModel(), clipName) != null;
   }
 
   private static float width(Entity entity) {

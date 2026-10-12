@@ -67,7 +67,8 @@ public enum ModelPartType {
       return ModelPartType.UNKNOWN;
     }
 
-    return BY_TAG_NAME.getOrDefault(modelPart.toLowerCase(Locale.ROOT), ModelPartType.UNKNOWN);
+    return BY_TAG_NAME.getOrDefault(
+        modelPart.trim().toLowerCase(Locale.ROOT), ModelPartType.UNKNOWN);
   }
 
   public String getTagName() {
