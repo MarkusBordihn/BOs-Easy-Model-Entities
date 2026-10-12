@@ -19,6 +19,7 @@
 
 package de.markusbordihn.easymodelentities.data.renderprofile;
 
+import java.util.Map;
 import java.util.Objects;
 
 public record ModelAnimationSettings(
@@ -27,15 +28,28 @@ public record ModelAnimationSettings(
     float walkSpeedMultiplier,
     float idleStrength,
     ModelGaitType gait,
-    ModelAnimationVariantMode variantMode) {
+    ModelAnimationVariantMode variantMode,
+    Map<String, Float> variantWeights) {
 
   public ModelAnimationSettings {
     Objects.requireNonNull(mode, "mode");
     Objects.requireNonNull(gait, "gait");
     Objects.requireNonNull(variantMode, "variantMode");
+    variantWeights = Map.copyOf(Objects.requireNonNull(variantWeights, "variantWeights"));
+    variantWeights.values().forEach(weight -> requirePositiveFinite(weight, "variantWeights"));
     requireNonNegativeFinite(swingSpeed, "swingSpeed");
     requireNonNegativeFinite(walkSpeedMultiplier, "walkSpeedMultiplier");
     requireNonNegativeFinite(idleStrength, "idleStrength");
+  }
+
+  public ModelAnimationSettings(
+      ModelAnimationMode mode,
+      float swingSpeed,
+      float walkSpeedMultiplier,
+      float idleStrength,
+      ModelGaitType gait,
+      ModelAnimationVariantMode variantMode) {
+    this(mode, swingSpeed, walkSpeedMultiplier, idleStrength, gait, variantMode, Map.of());
   }
 
   public ModelAnimationSettings(
@@ -61,6 +75,12 @@ public record ModelAnimationSettings(
   public ModelAnimationSettings(
       ModelAnimationMode mode, float swingSpeed, float walkSpeedMultiplier) {
     this(mode, swingSpeed, walkSpeedMultiplier, 1.0f, ModelGaitType.NATURAL);
+  }
+
+  private static void requirePositiveFinite(float value, String name) {
+    if (!Float.isFinite(value) || value <= 0.0f) {
+      throw new IllegalArgumentException(name + " must contain finite positive values.");
+    }
   }
 
   private static void requireNonNegativeFinite(float value, String name) {

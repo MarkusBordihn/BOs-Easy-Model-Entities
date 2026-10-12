@@ -22,5 +22,6 @@ package de.markusbordihn.easymodelentities.api.data.client;
 public enum EasyModelAnimationPlaybackMode {
   ONCE,
   LOOP,
-  REPEAT
+  REPEAT,
+  HOLD
 }

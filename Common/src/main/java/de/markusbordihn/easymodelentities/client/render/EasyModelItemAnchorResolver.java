@@ -29,6 +29,7 @@ import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
+import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelPart;
 import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import java.util.List;
 import java.util.Locale;
@@ -63,6 +64,24 @@ public final class EasyModelItemAnchorResolver {
     AnchorCacheKey cacheKey = new AnchorCacheKey(bakedModel.modelId(), arm);
     return MODEL_ANCHOR_CACHE.computeIfAbsent(
         cacheKey, key -> resolve(bakedModel.rootParts(), key.arm()));
+  }
+
+  public static Optional<EasyModelItemAnchor> getPartAnchor(
+      ResourceLocation profileId, String partName) {
+    return EasyModelEntityRenderBackend.resolveContract(profileId, EasyModelAnimationSetting.AUTO)
+        .map(EasyModelEntityRenderBackend::resolveRenderState)
+        .flatMap(renderState -> getPartAnchor(renderState.bakedModel(), partName));
+  }
+
+  public static Optional<EasyModelItemAnchor> getPartAnchor(
+      BakedModel bakedModel, String partName) {
+    return resolvePart(bakedModel.rootParts(), partName);
+  }
+
+  static Optional<EasyModelItemAnchor> resolvePart(
+      List<BakedModelPart> rootParts, String partName) {
+    return Optional.ofNullable(findPart(rootParts, DecodedModelPart.normalizeName(partName)))
+        .map(part -> new EasyModelItemAnchor(part.name(), EasyModelVec3f.ZERO));
   }
 
   private static void clearCaches() {

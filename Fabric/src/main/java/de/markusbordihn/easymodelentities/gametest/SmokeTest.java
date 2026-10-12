@@ -20,15 +20,21 @@
 package de.markusbordihn.easymodelentities.gametest;
 
 import de.markusbordihn.easymodelentities.Constants;
+import java.util.Collection;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestGenerator;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.TestFunction;
 
 @SuppressWarnings("unused")
 public class SmokeTest {
 
-  @GameTest(template = Constants.MOD_ID + ":gametest.3x3x3")
-  public void testModRegistered(GameTestHelper helper) {
+  @GameTestGenerator
+  public Collection<TestFunction> smokeTests() {
+    return GameTestHelpers.testFunctions(SmokeTest.class);
+  }
+
+  public static void testModRegistered(GameTestHelper helper) {
     GameTestHelpers.assertTrue(
         helper,
         "Mod " + Constants.MOD_ID + " is not loaded!",

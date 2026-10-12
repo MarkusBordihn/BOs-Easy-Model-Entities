@@ -22,10 +22,18 @@ package de.markusbordihn.easymodelentities.api.data.client;
 import java.util.Objects;
 
 public record EasyModelAnimationPlayback(
-    EasyModelAnimationPlaybackMode mode, int repeatCount, float durationTicks) {
+    EasyModelAnimationPlaybackMode mode, int repeatCount, float durationTicks, float speed) {
+
+  public static final float MIN_SPEED = 0.05f;
+  public static final float MAX_SPEED = 16.0f;
 
   public static final EasyModelAnimationPlayback DEFAULT =
       new EasyModelAnimationPlayback(EasyModelAnimationPlaybackMode.ONCE, 1, 0.0f);
+
+  public EasyModelAnimationPlayback(
+      EasyModelAnimationPlaybackMode mode, int repeatCount, float durationTicks) {
+    this(mode, repeatCount, durationTicks, 1.0f);
+  }
 
   public EasyModelAnimationPlayback {
     Objects.requireNonNull(mode, "mode");
@@ -38,17 +46,25 @@ public record EasyModelAnimationPlayback(
     if (!Float.isFinite(durationTicks) || durationTicks < 0.0f) {
       throw new IllegalArgumentException("Duration must be a finite non-negative value.");
     }
+    if (!(speed >= MIN_SPEED && speed <= MAX_SPEED)) {
+      throw new IllegalArgumentException(
+          "Speed must be between " + MIN_SPEED + " and " + MAX_SPEED + ".");
+    }
   }
 
   public EasyModelAnimationPlayback withMode(EasyModelAnimationPlaybackMode mode) {
-    return new EasyModelAnimationPlayback(mode, this.repeatCount, this.durationTicks);
+    return new EasyModelAnimationPlayback(mode, this.repeatCount, this.durationTicks, this.speed);
   }
 
   public EasyModelAnimationPlayback withRepeat(int repeatCount) {
-    return new EasyModelAnimationPlayback(this.mode, repeatCount, this.durationTicks);
+    return new EasyModelAnimationPlayback(this.mode, repeatCount, this.durationTicks, this.speed);
   }
 
   public EasyModelAnimationPlayback withDuration(float durationTicks) {
-    return new EasyModelAnimationPlayback(this.mode, this.repeatCount, durationTicks);
+    return new EasyModelAnimationPlayback(this.mode, this.repeatCount, durationTicks, this.speed);
+  }
+
+  public EasyModelAnimationPlayback withSpeed(float speed) {
+    return new EasyModelAnimationPlayback(this.mode, this.repeatCount, this.durationTicks, speed);
   }
 }

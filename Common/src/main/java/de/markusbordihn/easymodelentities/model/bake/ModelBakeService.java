@@ -20,11 +20,13 @@
 package de.markusbordihn.easymodelentities.model.bake;
 
 import de.markusbordihn.easymodelentities.data.model.ModelPartType;
+import de.markusbordihn.easymodelentities.data.model.TextureRenderSides;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.model.bake.*;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModel;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelCube;
 import de.markusbordihn.easymodelentities.data.model.decoder.DecodedModelPart;
+import de.markusbordihn.easymodelentities.data.model.decoder.DecodedTexture;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelRenderProfileStatus;
@@ -54,6 +56,7 @@ public final class ModelBakeService implements EasyModelBakeService {
 
   private static final Logger log =
       LogManager.getLogger(de.markusbordihn.easymodelentities.Constants.LOG_NAME);
+  private static final float GROUND_LEVEL_PIXELS = 24.0f;
 
   private final EasyModelDecoderRegistry decoderRegistry;
   private final ModelCache cache = new ModelCache();
@@ -93,7 +96,6 @@ public final class ModelBakeService implements EasyModelBakeService {
     return switch (bodyType) {
       case BIPED ->
           List.of(
-              ModelPartType.ROOT.getTagName(),
               ModelPartType.HEAD.getTagName(),
               ModelPartType.BODY.getTagName(),
               ModelPartType.LEFT_ARM.getTagName(),
@@ -102,25 +104,21 @@ public final class ModelBakeService implements EasyModelBakeService {
               ModelPartType.RIGHT_LEG.getTagName());
       case QUADRUPED ->
           List.of(
-              ModelPartType.ROOT.getTagName(),
               ModelPartType.BODY.getTagName(),
               ModelPartType.HEAD.getTagName(),
               ModelPartType.FRONT_LEFT_LEG.getTagName(),
               ModelPartType.FRONT_RIGHT_LEG.getTagName(),
               ModelPartType.BACK_LEFT_LEG.getTagName(),
               ModelPartType.BACK_RIGHT_LEG.getTagName());
-      case AQUATIC, AMPHIBIOUS ->
-          List.of(ModelPartType.ROOT.getTagName(), ModelPartType.BODY.getTagName());
+      case AQUATIC, AMPHIBIOUS, CUBOID, FLOATING -> List.of(ModelPartType.BODY.getTagName());
       case WINGED ->
           List.of(
-              ModelPartType.ROOT.getTagName(),
               ModelPartType.BODY.getTagName(),
               ModelPartType.HEAD.getTagName(),
               ModelPartType.LEFT_WING.getTagName(),
               ModelPartType.RIGHT_WING.getTagName());
       case WINGED_HUMANOID ->
           List.of(
-              ModelPartType.ROOT.getTagName(),
               ModelPartType.BODY.getTagName(),
               ModelPartType.HEAD.getTagName(),
               ModelPartType.LEFT_ARM.getTagName(),
@@ -129,7 +127,6 @@ public final class ModelBakeService implements EasyModelBakeService {
               ModelPartType.RIGHT_WING.getTagName());
       case ARTHROPOD ->
           List.of(
-              ModelPartType.ROOT.getTagName(),
               ModelPartType.BODY.getTagName(),
               ModelPartType.HEAD.getTagName(),
               ModelPartType.FRONT_LEFT_LEG.getTagName(),
@@ -140,8 +137,6 @@ public final class ModelBakeService implements EasyModelBakeService {
               ModelPartType.MIDDLE_BACK_RIGHT_LEG.getTagName(),
               ModelPartType.BACK_LEFT_LEG.getTagName(),
               ModelPartType.BACK_RIGHT_LEG.getTagName());
-      case CUBOID, FLOATING ->
-          List.of(ModelPartType.ROOT.getTagName(), ModelPartType.BODY.getTagName());
       case STATIC -> List.of();
     };
   }
@@ -172,40 +167,25 @@ public final class ModelBakeService implements EasyModelBakeService {
         decodedModel.rootParts().stream()
             .map(part -> bakePart(part, textureWidth, textureHeight))
             .toList();
-    if (bodyType == ModelBodyType.STATIC
-        && rootParts.stream()
-            .noneMatch(part -> ModelPartType.ROOT.getTagName().equals(part.name()))) {
-      rootParts =
-          List.of(
-              new BakedModelPart(
-                  ModelPartType.ROOT.getTagName(),
-                  new Vec3f(0.0f, 24.0f, 0.0f),
-                  Vec3f.ZERO,
-                  List.of(),
-                  rootParts));
+    if (needsVirtualRoot(decodedModel.rootParts())) {
+      rootParts = wrapInVirtualRoot(rootParts);
     }
 
-    ModelFaceOcclusionCuller.Result occlusion =
-        ModelFaceOcclusionCuller.cull(rootParts, bodyType, false);
-    rootParts = occlusion.rootParts();
     ModelEmptyCubePruner.Result pruned = ModelEmptyCubePruner.prune(rootParts);
     rootParts = pruned.rootParts();
     boolean cullBackfaces = bodyType == ModelBodyType.STATIC;
     if (pruned.droppedCubes() > 0) {
       log.warn(
-          "Model {} (body type {}): {} cube(s) are fully covered by other cubes and are not"
-              + " rendered.",
+          "Model {} (body type {}): {} cube(s) have no textured faces and are not rendered.",
           decodedModel.modelId(),
           bodyType.getSerializedName(),
           pruned.droppedCubes());
     }
     if (log.isDebugEnabled()) {
       log.debug(
-          "Baked model {} (body type {}): occlusion-culled {} faces, dropped {} fully hidden cubes,"
-              + " backface culling {}.",
+          "Baked model {} (body type {}): dropped {} untextured cubes, backface culling {}.",
           decodedModel.modelId(),
           bodyType.getSerializedName(),
-          occlusion.culledFaces(),
           pruned.droppedCubes(),
           cullBackfaces ? "enabled" : "disabled");
     }
@@ -219,7 +199,43 @@ public final class ModelBakeService implements EasyModelBakeService {
         cullBackfaces,
         decodedModel.animations(),
         ModelBoundsCalculator.compute(rootParts),
-        slotNames);
+        null,
+        slotNames,
+        textureRenderSides(decodedModel));
+  }
+
+  private static Map<Integer, TextureRenderSides> textureRenderSides(DecodedModel decodedModel) {
+    Map<Integer, TextureRenderSides> renderSides = new HashMap<>();
+    for (DecodedTexture texture : decodedModel.textures()) {
+      renderSides.putIfAbsent(texture.index(), texture.renderSides());
+    }
+
+    return renderSides;
+  }
+
+  private static boolean needsVirtualRoot(List<DecodedModelPart> decodedRootParts) {
+    Set<String> partNames = new HashSet<>();
+    collectPartNames(decodedRootParts, partNames);
+    return !partNames.contains(ModelPartType.ROOT.getTagName());
+  }
+
+  private static List<BakedModelPart> wrapInVirtualRoot(List<BakedModelPart> topLevelParts) {
+    Vec3f groundOffset = new Vec3f(0.0f, GROUND_LEVEL_PIXELS, 0.0f);
+    Vec3f relativeToGround = new Vec3f(0.0f, -GROUND_LEVEL_PIXELS, 0.0f);
+    List<BakedModelPart> children =
+        topLevelParts.stream()
+            .map(
+                part ->
+                    new BakedModelPart(
+                        part.name(),
+                        part.offset().add(relativeToGround),
+                        part.rotation(),
+                        part.cubes(),
+                        part.children()))
+            .toList();
+    return List.of(
+        new BakedModelPart(
+            ModelPartType.ROOT.getTagName(), groundOffset, Vec3f.ZERO, List.of(), children));
   }
 
   private static BakedModelPart bakePart(

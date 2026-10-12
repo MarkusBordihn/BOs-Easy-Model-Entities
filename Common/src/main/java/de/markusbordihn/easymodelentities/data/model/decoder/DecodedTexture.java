@@ -19,6 +19,9 @@
 
 package de.markusbordihn.easymodelentities.data.model.decoder;
 
+import de.markusbordihn.easymodelentities.data.model.TextureRenderSides;
+import java.util.Objects;
+
 public record DecodedTexture(
     int index,
     String namespace,
@@ -26,4 +29,22 @@ public record DecodedTexture(
     String relativePath,
     String name,
     int uvWidth,
-    int uvHeight) {}
+    int uvHeight,
+    TextureRenderSides renderSides) {
+
+  public DecodedTexture {
+    Objects.requireNonNull(renderSides, "renderSides");
+  }
+
+  public DecodedTexture(
+      int index,
+      String namespace,
+      String folder,
+      String relativePath,
+      String name,
+      int uvWidth,
+      int uvHeight) {
+    this(
+        index, namespace, folder, relativePath, name, uvWidth, uvHeight, TextureRenderSides.AUTO);
+  }
+}

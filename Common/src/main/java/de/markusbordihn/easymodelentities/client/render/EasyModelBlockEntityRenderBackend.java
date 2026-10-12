@@ -148,7 +148,7 @@ public final class EasyModelBlockEntityRenderBackend {
     } else {
       double animationClock = animationClock(blockEntity, partialTick);
       Supplier<String> automaticClipName =
-          new EasyModelAutomaticClipName(renderState, 0.0f, 0.0f, 0.0f);
+          new EasyModelAutomaticClipName(renderState, 0.0f, 0.0f, 0.0f, false);
       playbackFrame =
           applySetting(
               ANIMATION_PLAYBACK_TRACKER.resolve(
@@ -166,6 +166,7 @@ public final class EasyModelBlockEntityRenderBackend {
               Objects.hashCode(blockEntity.getBlockPos()),
               renderState.bakedModel(),
               renderState.animation().variantMode(),
+              renderState.animation().variantWeights(),
               playbackFrame,
               automaticClipName,
               playbackFrame.animationTicks(),
@@ -201,8 +202,10 @@ public final class EasyModelBlockEntityRenderBackend {
         bufferSource,
         packedLight,
         safeOptions.packedOverlay() == null ? packedOverlay : safeOptions.packedOverlay(),
-        resolveOpacity(safeOptions.opacity(), opacity(blockEntity), renderState.opacity()),
-        resolveLightLevel(safeOptions.lightLevel(), lightLevel(blockEntity)));
+        EasyModelDisplayResolver.resolveOpacity(
+            safeOptions.opacity(), opacity(blockEntity), renderState.opacity()),
+        EasyModelDisplayResolver.resolveLightLevel(
+            safeOptions.lightLevel(), lightLevel(blockEntity)));
     poseStack.popPose();
   }
 
@@ -263,25 +266,10 @@ public final class EasyModelBlockEntityRenderBackend {
         : EasyModelTextureSetting.EMPTY;
   }
 
-  private static float resolveOpacity(Float requested, float hostOpacity, float profileOpacity) {
-    if (requested != null) {
-      return EasyModelDisplaySettings.clampOpacity(requested);
-    }
-    if (EasyModelDisplaySettings.hasOpacityOverride(hostOpacity)) {
-      return EasyModelDisplaySettings.clampOpacity(hostOpacity);
-    }
-
-    return EasyModelDisplaySettings.clampOpacity(profileOpacity);
-  }
-
   private static float opacity(BlockEntity blockEntity) {
     return blockEntity instanceof EasyModelRenderable renderable
         ? renderable.getEasyModelOpacity()
         : EasyModelDisplaySettings.NO_OPACITY;
-  }
-
-  private static int resolveLightLevel(Integer requested, int fallback) {
-    return EasyModelDisplaySettings.clampLightLevel(requested == null ? fallback : requested);
   }
 
   private static int lightLevel(BlockEntity blockEntity) {

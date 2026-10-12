@@ -21,7 +21,9 @@ package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
+import de.markusbordihn.easymodelentities.client.render.EasyModelShoulderLayer;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -36,6 +38,15 @@ public class EasyModelEntitiesClient {
     log.info("Initializing {} (Forge Client) ...", Constants.MOD_NAME);
     modEventBus.addListener(this::registerEntityRenderers);
     modEventBus.addListener(this::registerClientReloadListeners);
+    modEventBus.addListener(this::addLayers);
+  }
+
+  private void addLayers(EntityRenderersEvent.AddLayers event) {
+    for (String skin : event.getSkins()) {
+      if (event.getSkin(skin) instanceof PlayerRenderer playerRenderer) {
+        playerRenderer.addLayer(new EasyModelShoulderLayer(playerRenderer));
+      }
+    }
   }
 
   private void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {

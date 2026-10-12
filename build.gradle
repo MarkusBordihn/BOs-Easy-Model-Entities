@@ -1,3 +1,20 @@
+buildscript {
+  String toolkitPluginModule = "client_runtime_interface_toolkit-gradle-plugin-${minecraft_version}"
+  String toolkitPluginVersion = '1.1.0'
+  File toolkitPluginDirectory = new File(
+      System.getProperty('maven.repo.local', "${System.getProperty('user.home')}/.m2/repository"),
+      "de/markusbordihn/clientruntimeinterfacetoolkit/${toolkitPluginModule}/${toolkitPluginVersion}")
+  ext.clientRuntimeTestPluginAvailable = toolkitPluginDirectory.isDirectory()
+  repositories {
+    mavenLocal { content { includeGroup 'de.markusbordihn.clientruntimeinterfacetoolkit' } }
+  }
+  dependencies {
+    if (clientRuntimeTestPluginAvailable) {
+      classpath "de.markusbordihn.clientruntimeinterfacetoolkit:${toolkitPluginModule}:${toolkitPluginVersion}"
+    }
+  }
+}
+
 apply plugin: 'java'
 
 String ghostRefIndexPath = (findProperty('ghostRefIndex') ?: '').toString().trim()
@@ -53,7 +70,6 @@ subprojects {
 
   java.toolchain.languageVersion = JavaLanguageVersion.of(17)
   java.withSourcesJar()
-  java.withJavadocJar()
 
   repositories {
     mavenCentral()
@@ -63,11 +79,6 @@ subprojects {
         includeGroup "curse.maven"
       }
     }
-  }
-
-  tasks.register('wrapper', Wrapper) {
-    gradleVersion = '8.14.5'
-    distributionType = Wrapper.DistributionType.BIN
   }
 
   tasks.withType(JavaCompile).configureEach {
@@ -81,10 +92,6 @@ subprojects {
   }
 
   tasks.withType(GenerateModuleMetadata).configureEach {
-    enabled = false
-  }
-
-  tasks.withType(Javadoc).configureEach {
     enabled = false
   }
 
@@ -134,4 +141,11 @@ tasks.register('publishMods') {
   group = 'publishing'
   description = 'Builds, runs full checks, then publishes to Modrinth and (after a 5s pause) CurseForge.'
   dependsOn 'fullCheck', 'publishModrinth', 'publishDelay', 'publishCurseForge'
+}
+
+if (clientRuntimeTestPluginAvailable) {
+  apply plugin: 'de.markusbordihn.clientruntimeinterfacetoolkit.client-test'
+  clientRuntimeTest {
+    loaders = ['Fabric', 'Forge']
+  }
 }

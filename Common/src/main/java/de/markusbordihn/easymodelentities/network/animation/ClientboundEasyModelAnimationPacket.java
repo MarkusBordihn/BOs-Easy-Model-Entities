@@ -124,6 +124,7 @@ public record ClientboundEasyModelAnimationPacket(
             buffer, EasyModelAnimationPlaybackMode.values(), EasyModelAnimationPlaybackMode.ONCE);
     int repeatCount = buffer.readVarInt();
     float durationTicks = buffer.readFloat();
+    float speed = buffer.readFloat();
     EasyModelAnimationSwitchTiming timing =
         readEnum(
             buffer,
@@ -136,8 +137,19 @@ public record ClientboundEasyModelAnimationPacket(
         operation,
         animation,
         new EasyModelAnimationPlayback(
-            playbackMode, Math.max(1, repeatCount), nonNegativeFinite(durationTicks)),
+            playbackMode,
+            Math.max(1, repeatCount),
+            nonNegativeFinite(durationTicks),
+            clampSpeed(speed)),
         new EasyModelAnimationTransition(timing, nonNegativeFinite(blendDurationTicks)));
+  }
+
+  static float clampSpeed(float speed) {
+    return Float.isFinite(speed)
+        ? Math.max(
+            EasyModelAnimationPlayback.MIN_SPEED,
+            Math.min(speed, EasyModelAnimationPlayback.MAX_SPEED))
+        : 1.0f;
   }
 
   private static <E extends Enum<E>> E readEnum(FriendlyByteBuf buffer, E[] values, E fallback) {
@@ -163,6 +175,7 @@ public record ClientboundEasyModelAnimationPacket(
     buffer.writeEnum(this.playback.mode());
     buffer.writeVarInt(this.playback.repeatCount());
     buffer.writeFloat(this.playback.durationTicks());
+    buffer.writeFloat(this.playback.speed());
     buffer.writeEnum(this.transition.timing());
     buffer.writeFloat(this.transition.blendDurationTicks());
   }

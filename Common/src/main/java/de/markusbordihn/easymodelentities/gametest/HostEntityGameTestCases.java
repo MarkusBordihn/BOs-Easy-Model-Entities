@@ -19,12 +19,20 @@
 
 package de.markusbordihn.easymodelentities.gametest;
 
+import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.api.EasyModelBlockEntitiesApi;
+import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationPlayback;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationSequence;
+import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTransition;
+import de.markusbordihn.easymodelentities.block.EasyModelHostBlock;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
-import de.markusbordihn.easymodelentities.command.EasyModelBehaviorCommand;
+import de.markusbordihn.easymodelentities.data.diagnostics.ModelResourceRejection;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.entity.EasyModelGroundEntity;
@@ -39,9 +47,12 @@ import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import java.io.StringReader;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -50,29 +61,39 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Marker;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 
 public final class HostEntityGameTestCases {
 
-  private static final ResourceLocation GROUND_PROFILE_ID =
-      ModelResourcePaths.resourceLocation("example", "ground");
+  static final String TEST_NAMESPACE = Constants.MOD_ID + "_gametest";
+  static final ResourceLocation GROUND_PROFILE_ID =
+      ModelResourcePaths.resourceLocation(TEST_NAMESPACE, "ground");
   private static final ResourceLocation STATIC_PROFILE_ID =
-      ModelResourcePaths.resourceLocation("example", "static");
+      ModelResourcePaths.resourceLocation(TEST_NAMESPACE, "static");
   private static final ResourceLocation INVALID_PROFILE_ID =
-      ModelResourcePaths.resourceLocation("example", "invalid");
-  private static final ResourceLocation BLOCK_PROFILE_ID =
-      ModelResourcePaths.resourceLocation("example", "animated_block");
+      ModelResourcePaths.resourceLocation(TEST_NAMESPACE, "invalid");
+  static final ResourceLocation BLOCK_PROFILE_ID =
+      ModelResourcePaths.resourceLocation(TEST_NAMESPACE, "animated_block");
+  static final ResourceLocation SCREEN_TEXTURE =
+      ModelResourcePaths.resourceLocation(TEST_NAMESPACE, "textures/entity/screen_sad.png");
+  static final ResourceLocation CRYSTAL_TEXTURE =
+      ModelResourcePaths.resourceLocation(TEST_NAMESPACE, "textures/block/shrine_glow.png");
   private static final ResourceLocation ATTRIBUTES_PROFILE_ID =
-      ModelResourcePaths.resourceLocation("example", "attributes");
+      ModelResourcePaths.resourceLocation(TEST_NAMESPACE, "attributes");
 
   private HostEntityGameTestCases() {}
 
@@ -125,7 +146,7 @@ public final class HostEntityGameTestCases {
         EasyModelServices.entityFactory()
             .createEntity(
                 helper.getLevel(),
-                ModelResourcePaths.resourceLocation("example", "missing"),
+                ModelResourcePaths.resourceLocation(TEST_NAMESPACE, "missing"),
                 Vec3.ZERO)
             .isPresent();
     boolean invalidProfileCreated =
@@ -152,16 +173,16 @@ public final class HostEntityGameTestCases {
 
     groundEntity.setDeltaMovement(new Vec3(0.5, 0.0, 0.5));
     groundEntity.setZza(1.0f);
-    EasyModelBehaviorCommand.setFrozen(groundEntity, true);
-    if (!groundEntity.isNoAi()
+    if (!EasyModelEntitiesApi.setFrozen(groundEntity, true)
+        || !EasyModelEntitiesApi.isFrozen(groundEntity)
         || groundEntity.zza != 0.0f
         || !groundEntity.getDeltaMovement().equals(Vec3.ZERO)) {
       helper.fail("Frozen behavior did not stop the host entity movement.");
       return;
     }
 
-    EasyModelBehaviorCommand.setFrozen(groundEntity, false);
-    if (groundEntity.isNoAi()) {
+    if (!EasyModelEntitiesApi.setFrozen(groundEntity, false)
+        || EasyModelEntitiesApi.isFrozen(groundEntity)) {
       helper.fail("Automatic behavior did not restore the host entity AI.");
       return;
     }
@@ -179,7 +200,9 @@ public final class HostEntityGameTestCases {
       return;
     }
 
-    hostEntity.setEasyModelAnimation(EasyModelAnimationSetting.of(EasyModelAnimation.RUN));
+    EasyModelAnimationSetting animationSetting =
+        new EasyModelAnimationSetting(EasyModelAnimation.DEATH, EasyModelAnimationLoop.ONCE);
+    hostEntity.setEasyModelAnimation(animationSetting);
     CompoundTag compoundTag = new CompoundTag();
     hostEntity.addAdditionalSaveData(compoundTag);
 
@@ -195,7 +218,7 @@ public final class HostEntityGameTestCases {
     loadedHostEntity.readAdditionalSaveData(compoundTag);
     EasyModelRuntimeContract contract = loadedHostEntity.getEasyModelRuntimeContract();
     if (!GROUND_PROFILE_ID.equals(contract.profileId())
-        || contract.animation().animation() != EasyModelAnimation.RUN
+        || !animationSetting.equals(contract.animation())
         || contract.bodyType() != ModelBodyType.QUADRUPED) {
       helper.fail("NBT load did not preserve the persisted runtime contract fields.");
       return;
@@ -221,10 +244,9 @@ public final class HostEntityGameTestCases {
       return;
     }
 
-    ResourceLocation texture =
-        ModelResourcePaths.resourceLocation("example", "textures/entity/screen_sad.png");
-    hostEntity.setEasyModelTexture(EasyModelTextureSetting.of("screen", texture));
-    if (!Optional.of(texture).equals(hostEntity.getEasyModelTextureSetting().texture("screen"))) {
+    EasyModelTextureSetting textureSetting = EasyModelTextureSetting.of("screen", SCREEN_TEXTURE);
+    hostEntity.setEasyModelTexture(textureSetting);
+    if (!Optional.of(SCREEN_TEXTURE).equals(hostEntity.getEasyModelTextureSetting().texture("screen"))) {
       helper.fail("Synched data did not return the texture setting.");
       return;
     }
@@ -242,8 +264,7 @@ public final class HostEntityGameTestCases {
     }
 
     loadedHostEntity.readAdditionalSaveData(compoundTag);
-    if (!Optional.of(texture)
-        .equals(loadedHostEntity.getEasyModelTextureSetting().texture("screen"))) {
+    if (!textureSetting.equals(loadedHostEntity.getEasyModelTextureSetting())) {
       helper.fail("NBT load did not preserve the texture setting.");
       return;
     }
@@ -312,6 +333,378 @@ public final class HostEntityGameTestCases {
     }
 
     helper.succeed();
+  }
+
+  public static void apiControlsHostEntityTextureAndAnimation(GameTestHelper helper) {
+    installProfiles();
+    Optional<Entity> entity =
+        EasyModelServices.entityFactory()
+            .createEntity(
+                helper.getLevel(), GROUND_PROFILE_ID, helper.absoluteVec(new Vec3(1.5, 1, 1.5)));
+    if (entity.isEmpty() || !(entity.get() instanceof EasyModelHostEntity hostEntity)) {
+      helper.fail("Could not create host entity for the API round trip.");
+      return;
+    }
+    helper.getLevel().addFreshEntity(hostEntity);
+
+    EasyModelTextureSetting textureSetting = EasyModelTextureSetting.of("screen", SCREEN_TEXTURE);
+    if (!EasyModelEntitiesApi.setTextureSetting(hostEntity, textureSetting)
+        || !textureSetting.equals(EasyModelEntitiesApi.getTextureSetting(hostEntity))) {
+      helper.fail("The API did not set the texture setting of the host entity.");
+      return;
+    }
+
+    EasyModelAnimationSetting animationSetting =
+        new EasyModelAnimationSetting(EasyModelAnimation.DEATH, EasyModelAnimationLoop.ONCE);
+    if (!EasyModelEntitiesApi.setAnimation(hostEntity, animationSetting)
+        || !animationSetting.equals(EasyModelEntitiesApi.getAnimationSetting(hostEntity))) {
+      helper.fail("The API did not set the animation setting of the host entity.");
+      return;
+    }
+
+    if (!EasyModelEntitiesApi.stopAnimation(hostEntity, EasyModelAnimationTransition.IMMEDIATE)
+        || !EasyModelEntitiesApi.restartAnimation(hostEntity)) {
+      helper.fail("The API did not send stop or restart for a server-side host entity.");
+      return;
+    }
+
+    if (!EasyModelEntitiesApi.clearTextureSetting(hostEntity)
+        || !EasyModelEntitiesApi.getTextureSetting(hostEntity).isEmpty()
+        || !EasyModelEntitiesApi.setAnimation(hostEntity, EasyModelAnimationSetting.AUTO)
+        || !EasyModelAnimationSetting.AUTO.equals(
+            EasyModelEntitiesApi.getAnimationSetting(hostEntity))) {
+      helper.fail("The API did not reset the texture and animation setting.");
+      return;
+    }
+
+    Entity pig = EntityType.PIG.create(helper.getLevel());
+    if (pig == null
+        || EasyModelEntitiesApi.setTextureSetting(pig, textureSetting)
+        || EasyModelEntitiesApi.setAnimation(pig, animationSetting)) {
+      helper.fail("The API changed an entity that is not an EME host.");
+      return;
+    }
+
+    hostEntity.discard();
+    helper.succeed();
+  }
+
+  public static void apiControlsMutableRenderableEntity(GameTestHelper helper) {
+    MutableRenderableTestEntity entity =
+        new MutableRenderableTestEntity(helper.getLevel(), GROUND_PROFILE_ID);
+    EasyModelTextureSetting textureSetting = EasyModelTextureSetting.of("screen", SCREEN_TEXTURE);
+    EasyModelAnimationSetting animationSetting =
+        new EasyModelAnimationSetting(EasyModelAnimation.ATTACK, EasyModelAnimationLoop.LOOP);
+    if (!EasyModelEntitiesApi.setTextureSetting(entity, textureSetting)
+        || !EasyModelEntitiesApi.setAnimation(entity, animationSetting)
+        || !EasyModelEntitiesApi.setOpacity(entity, 0.5f)
+        || !EasyModelEntitiesApi.setLightLevel(entity, 12)) {
+      helper.fail("The API rejected an entity implementing the mutable renderable contract.");
+      return;
+    }
+
+    if (!textureSetting.equals(EasyModelEntitiesApi.getTextureSetting(entity))
+        || !animationSetting.equals(EasyModelEntitiesApi.getAnimationSetting(entity))
+        || EasyModelEntitiesApi.getOpacity(entity) != 0.5f
+        || EasyModelEntitiesApi.getLightLevel(entity) != 12) {
+      helper.fail("The API did not hand the settings to the mutable renderable entity.");
+      return;
+    }
+
+    if (!EasyModelEntitiesApi.clearTextureSetting(entity)
+        || !EasyModelEntitiesApi.getTextureSetting(entity).isEmpty()) {
+      helper.fail("The API did not clear the texture of the mutable renderable entity.");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  public static void displayCommandChangesOnlyMutableRenderables(GameTestHelper helper) {
+    MutableRenderableTestEntity mutableEntity =
+        new MutableRenderableTestEntity(helper.getLevel(), GROUND_PROFILE_ID);
+    Marker plainEntity = new Marker(EntityType.MARKER, helper.getLevel());
+    helper.getLevel().addFreshEntity(mutableEntity);
+    helper.getLevel().addFreshEntity(plainEntity);
+
+    int changedMutable =
+        runCommand(helper, "display opacity set entity " + mutableEntity.getStringUUID() + " 40");
+    runCommand(helper, "display light set entity " + mutableEntity.getStringUUID() + " 12");
+    int changedPlain =
+        runCommand(helper, "display opacity set entity " + plainEntity.getStringUUID() + " 40");
+
+    mutableEntity.discard();
+    plainEntity.discard();
+    GameTestHelpers.assertTrue(
+        helper,
+        "The display command must change the mutable renderable and skip the plain entity!",
+        changedMutable == 1
+            && Math.abs(mutableEntity.getEasyModelOpacity() - 0.4f) < 0.001f
+            && mutableEntity.getEasyModelLightLevel() == 12
+            && changedPlain == 0);
+  }
+
+  static int runCommand(GameTestHelper helper, String command) {
+    return runCommand(helper, commandSource(helper), command);
+  }
+
+  static int runCommand(GameTestHelper helper, CommandSourceStack source, String command) {
+    return helper
+        .getLevel()
+        .getServer()
+        .getCommands()
+        .performPrefixedCommand(source, Constants.MOD_ID + " " + command);
+  }
+
+  static CommandSourceStack commandSource(GameTestHelper helper) {
+    return helper
+        .getLevel()
+        .getServer()
+        .createCommandSourceStack()
+        .withLevel(helper.getLevel())
+        .withPermission(4)
+        .withSuppressedOutput();
+  }
+
+  public static void apiControlsHostBlockEntityTextureAndAnimation(GameTestHelper helper) {
+    installProfiles();
+    Block block = BuiltInRegistries.BLOCK.get(ModelBlockIds.ANIMATED_BLOCK);
+    BlockPos blockPos = new BlockPos(1, 1, 1);
+    helper.setBlock(blockPos, block.defaultBlockState());
+    if (!(helper.getBlockEntity(blockPos) instanceof EasyModelHostBlockEntity hostBlockEntity)) {
+      helper.fail("Placed host block did not create an EasyModelHostBlockEntity.");
+      return;
+    }
+    hostBlockEntity.setEasyModelProfileId(BLOCK_PROFILE_ID);
+
+    EasyModelTextureSetting textureSetting = EasyModelTextureSetting.of("crystal", CRYSTAL_TEXTURE);
+    if (!EasyModelBlockEntitiesApi.setTextureSetting(hostBlockEntity, textureSetting)
+        || !textureSetting.equals(EasyModelBlockEntitiesApi.getTextureSetting(hostBlockEntity))) {
+      helper.fail("The API did not set the texture setting of the host block entity.");
+      return;
+    }
+
+    EasyModelAnimationSetting animationSetting =
+        new EasyModelAnimationSetting(EasyModelAnimation.ATTACK, EasyModelAnimationLoop.ONCE);
+    if (!EasyModelBlockEntitiesApi.setAnimation(hostBlockEntity, animationSetting)
+        || !animationSetting.equals(
+            EasyModelBlockEntitiesApi.getAnimationSetting(hostBlockEntity))) {
+      helper.fail("The API did not set the animation setting of the host block entity.");
+      return;
+    }
+
+    if (!EasyModelBlockEntitiesApi.stopAnimation(
+            hostBlockEntity, EasyModelAnimationTransition.IMMEDIATE)
+        || !EasyModelBlockEntitiesApi.restartAnimation(hostBlockEntity)) {
+      helper.fail("The API did not send stop or restart for a server-side host block entity.");
+      return;
+    }
+
+    if (!EasyModelBlockEntitiesApi.clearTextureSetting(hostBlockEntity)
+        || !EasyModelBlockEntitiesApi.getTextureSetting(hostBlockEntity).isEmpty()) {
+      helper.fail("The API did not clear the texture setting of the host block entity.");
+      return;
+    }
+
+    helper.succeed();
+  }
+
+  public static void apiControlsHostEntityDisplaySettings(GameTestHelper helper) {
+    Optional<EasyModelHostEntity> spawnedEntity = spawnHostEntity(helper);
+    if (spawnedEntity.isEmpty()) {
+      helper.fail("Could not create host entity for the display API.");
+      return;
+    }
+
+    EasyModelHostEntity hostEntity = spawnedEntity.get();
+    boolean applied =
+        EasyModelEntitiesApi.setOpacity(hostEntity, 0.25f)
+            && EasyModelEntitiesApi.setLightLevel(hostEntity, 7)
+            && EasyModelEntitiesApi.getOpacity(hostEntity) == 0.25f
+            && EasyModelEntitiesApi.getLightLevel(hostEntity) == 7;
+    boolean cleared =
+        EasyModelEntitiesApi.clearOpacity(hostEntity)
+            && EasyModelEntitiesApi.clearLightLevel(hostEntity)
+            && EasyModelEntitiesApi.getOpacity(hostEntity) == EasyModelDisplaySettings.NO_OPACITY
+            && EasyModelEntitiesApi.getLightLevel(hostEntity)
+                == EasyModelDisplaySettings.NO_LIGHT_LEVEL;
+    Entity pig = EntityType.PIG.create(helper.getLevel());
+    boolean pigRejected =
+        pig != null
+            && !EasyModelEntitiesApi.setOpacity(pig, 0.25f)
+            && !EasyModelEntitiesApi.setLightLevel(pig, 7);
+    hostEntity.discard();
+    GameTestHelpers.assertTrue(
+        helper,
+        "The display API must set and clear opacity and light only on host entities!",
+        applied && cleared && pigRejected);
+  }
+
+  public static void apiPlaysAnimationsOnHostEntity(GameTestHelper helper) {
+    Optional<EasyModelHostEntity> spawnedEntity = spawnHostEntity(helper);
+    if (spawnedEntity.isEmpty()) {
+      helper.fail("Could not create host entity for the animation API.");
+      return;
+    }
+
+    EasyModelHostEntity hostEntity = spawnedEntity.get();
+    boolean played =
+        EasyModelEntitiesApi.playAnimation(
+            hostEntity,
+            EasyModelAnimation.WALK,
+            EasyModelAnimationPlayback.DEFAULT,
+            EasyModelAnimationTransition.DEFAULT);
+    boolean randomPlayed =
+        EasyModelEntitiesApi.playRandomAnimation(
+            hostEntity,
+            List.of(EasyModelAnimation.WALK, EasyModelAnimation.IDLE),
+            EasyModelAnimationPlayback.DEFAULT,
+            EasyModelAnimationTransition.DEFAULT);
+    boolean emptyRandomRejected =
+        !EasyModelEntitiesApi.playRandomAnimation(
+            hostEntity,
+            List.of(),
+            EasyModelAnimationPlayback.DEFAULT,
+            EasyModelAnimationTransition.DEFAULT);
+    boolean sequencePlayed =
+        EasyModelEntitiesApi.playAnimationSequence(
+            hostEntity,
+            EasyModelAnimationSequence.of(EasyModelAnimation.WALK, EasyModelAnimation.ATTACK)
+                .withFallback(EasyModelAnimation.IDLE));
+    hostEntity.discard();
+    GameTestHelpers.assertTrue(
+        helper,
+        "The animation API must play single, random and sequenced clips on a host entity!",
+        played && randomPlayed && emptyRandomRejected && sequencePlayed);
+  }
+
+  public static void apiSitsHostEntityOnShoulder(GameTestHelper helper) {
+    Optional<EasyModelHostEntity> spawnedEntity = spawnHostEntity(helper);
+    if (spawnedEntity.isEmpty()) {
+      helper.fail("Could not create host entity for the shoulder API.");
+      return;
+    }
+
+    EasyModelHostEntity hostEntity = spawnedEntity.get();
+    Player player = helper.makeMockPlayer();
+    player.setOnGround(true);
+    Entity pig = EntityType.PIG.create(helper.getLevel());
+    boolean pigRejected = pig != null && !EasyModelEntitiesApi.sitOnShoulder(pig, player);
+    boolean seated = EasyModelEntitiesApi.sitOnShoulder(hostEntity, player);
+    boolean onShoulder =
+        GROUND_PROFILE_ID
+            .toString()
+            .equals(
+                player
+                    .getShoulderEntityLeft()
+                    .getString(EasyModelHostPersistence.PROFILE_ID_TAG));
+    GameTestHelpers.assertTrue(
+        helper,
+        "The shoulder API must move a host entity onto the player's shoulder and skip a pig!",
+        pigRejected && seated && onShoulder && hostEntity.isRemoved());
+  }
+
+  public static void apiControlsHostBlockEntityProfileAndDisplay(GameTestHelper helper) {
+    Optional<EasyModelHostBlockEntity> placedBlockEntity = placeHostBlock(helper);
+    if (placedBlockEntity.isEmpty()) {
+      helper.fail("Placed host block did not create an EasyModelHostBlockEntity.");
+      return;
+    }
+
+    EasyModelHostBlockEntity hostBlockEntity = placedBlockEntity.get();
+    boolean profileSet =
+        EasyModelBlockEntitiesApi.setProfileId(hostBlockEntity, BLOCK_PROFILE_ID)
+            && EasyModelBlockEntitiesApi.getProfileId(hostBlockEntity)
+                .filter(BLOCK_PROFILE_ID::equals)
+                .isPresent();
+    BlockPos chestPos = new BlockPos(0, 1, 0);
+    helper.setBlock(chestPos, Blocks.CHEST.defaultBlockState());
+    BlockEntity chest = helper.getBlockEntity(chestPos);
+    boolean chestRejected =
+        chest != null
+            && !EasyModelBlockEntitiesApi.setProfileId(chest, BLOCK_PROFILE_ID)
+            && EasyModelBlockEntitiesApi.getProfileId(chest).isEmpty()
+            && !EasyModelBlockEntitiesApi.setOpacity(chest, 0.5f);
+    boolean applied =
+        EasyModelBlockEntitiesApi.setOpacity(hostBlockEntity, 0.5f)
+            && EasyModelBlockEntitiesApi.setLightLevel(hostBlockEntity, 9)
+            && EasyModelBlockEntitiesApi.getOpacity(hostBlockEntity) == 0.5f
+            && EasyModelBlockEntitiesApi.getLightLevel(hostBlockEntity) == 9;
+    boolean cleared =
+        EasyModelBlockEntitiesApi.clearOpacity(hostBlockEntity)
+            && EasyModelBlockEntitiesApi.clearLightLevel(hostBlockEntity)
+            && EasyModelBlockEntitiesApi.getOpacity(hostBlockEntity)
+                == EasyModelDisplaySettings.NO_OPACITY
+            && EasyModelBlockEntitiesApi.getLightLevel(hostBlockEntity)
+                == EasyModelDisplaySettings.NO_LIGHT_LEVEL;
+    GameTestHelpers.assertTrue(
+        helper,
+        "The block API must set profile, opacity and light only on host block entities!",
+        profileSet && chestRejected && applied && cleared);
+  }
+
+  public static void apiPlaysAnimationsOnHostBlockEntity(GameTestHelper helper) {
+    Optional<EasyModelHostBlockEntity> placedBlockEntity = placeHostBlock(helper);
+    if (placedBlockEntity.isEmpty()) {
+      helper.fail("Placed host block did not create an EasyModelHostBlockEntity.");
+      return;
+    }
+
+    EasyModelHostBlockEntity hostBlockEntity = placedBlockEntity.get();
+    boolean played =
+        EasyModelBlockEntitiesApi.playAnimation(
+            hostBlockEntity,
+            EasyModelAnimation.ATTACK,
+            EasyModelAnimationPlayback.DEFAULT,
+            EasyModelAnimationTransition.DEFAULT);
+    boolean randomPlayed =
+        EasyModelBlockEntitiesApi.playRandomAnimation(
+            hostBlockEntity,
+            List.of(EasyModelAnimation.ATTACK, EasyModelAnimation.IDLE),
+            EasyModelAnimationPlayback.DEFAULT,
+            EasyModelAnimationTransition.DEFAULT);
+    boolean emptyRandomRejected =
+        !EasyModelBlockEntitiesApi.playRandomAnimation(
+            hostBlockEntity,
+            List.of(),
+            EasyModelAnimationPlayback.DEFAULT,
+            EasyModelAnimationTransition.DEFAULT);
+    boolean sequencePlayed =
+        EasyModelBlockEntitiesApi.playAnimationSequence(
+            hostBlockEntity,
+            EasyModelAnimationSequence.of(EasyModelAnimation.ATTACK, EasyModelAnimation.IDLE)
+                .withFallback(EasyModelAnimation.IDLE));
+    GameTestHelpers.assertTrue(
+        helper,
+        "The block animation API must play single, random and sequenced clips!",
+        played && randomPlayed && emptyRandomRejected && sequencePlayed);
+  }
+
+  static Optional<EasyModelHostEntity> spawnHostEntity(GameTestHelper helper) {
+    installProfiles();
+    Optional<Entity> entity =
+        EasyModelServices.entityFactory()
+            .createEntity(
+                helper.getLevel(), GROUND_PROFILE_ID, helper.absoluteVec(new Vec3(1.5, 1, 1.5)));
+    if (entity.isEmpty() || !(entity.get() instanceof EasyModelHostEntity hostEntity)) {
+      return Optional.empty();
+    }
+
+    helper.getLevel().addFreshEntity(hostEntity);
+    return Optional.of(hostEntity);
+  }
+
+  static Optional<EasyModelHostBlockEntity> placeHostBlock(GameTestHelper helper) {
+    installProfiles();
+    BlockPos blockPos = new BlockPos(1, 1, 1);
+    helper.setBlock(
+        blockPos, BuiltInRegistries.BLOCK.get(ModelBlockIds.ANIMATED_BLOCK).defaultBlockState());
+    if (!(helper.getBlockEntity(blockPos) instanceof EasyModelHostBlockEntity hostBlockEntity)) {
+      return Optional.empty();
+    }
+
+    hostBlockEntity.setEasyModelProfileId(BLOCK_PROFILE_ID);
+    return Optional.of(hostBlockEntity);
   }
 
   public static void invalidNbtResourceLocationsFallBackSafely(GameTestHelper helper) {
@@ -478,8 +871,71 @@ public final class HostEntityGameTestCases {
     helper.succeed();
   }
 
-  private static void installProfiles() {
-    EasyModelServices.setProfileService(new StaticProfileService(activeProfiles()));
+  public static void blockSpawnItemTurnsHostBlockTowardsThePlayer(GameTestHelper helper) {
+    installProfiles();
+    Item item = EasyModelEntitiesItems.blockSpawnItem();
+    if (item == null) {
+      helper.fail("Block spawn item was not registered.");
+      return;
+    }
+
+    BlockPos floor = new BlockPos(1, 1, 1);
+    helper.setBlock(floor, Blocks.STONE);
+    BlockPos absoluteFloor = helper.absolutePos(floor);
+    BlockHitResult hit =
+        new BlockHitResult(
+            Vec3.atCenterOf(absoluteFloor).add(0.0, 0.5, 0.0), Direction.UP, absoluteFloor, false);
+    Player player = helper.makeMockPlayer();
+    player.setYRot(90.0f);
+    ItemStack stack = EasyModelEntitiesItems.forProfile(item, BLOCK_PROFILE_ID);
+    item.useOn(
+        new UseOnContext(helper.getLevel(), player, InteractionHand.MAIN_HAND, stack, hit) {});
+
+    GameTestHelpers.assertTrue(
+        helper,
+        "The block spawn item must turn the host block towards the player!",
+        helper.getBlockState(floor.above()).getValue(EasyModelHostBlock.FACING) == Direction.EAST);
+  }
+
+  public static void placeBlockCommandTurnsHostBlockTowardsTheExecutingEntity(
+      GameTestHelper helper) {
+    installProfiles();
+    BlockPos turnedPos = new BlockPos(0, 1, 1);
+    BlockPos consolePos = new BlockPos(2, 1, 1);
+    CommandSourceStack entitySource =
+        commandSource(helper)
+            .withEntity(new Marker(EntityType.MARKER, helper.getLevel()))
+            .withRotation(new Vec2(0.0f, 90.0f));
+    runCommand(helper, entitySource, placeBlockCommand(helper.absolutePos(turnedPos)));
+    runCommand(helper, placeBlockCommand(helper.absolutePos(consolePos)));
+
+    GameTestHelpers.assertTrue(
+        helper,
+        "The place_block command must face the executing entity and keep the default otherwise!",
+        helper.getBlockState(turnedPos).getValue(EasyModelHostBlock.FACING) == Direction.EAST
+            && helper.getBlockState(consolePos).getValue(EasyModelHostBlock.FACING)
+                == Direction.SOUTH);
+  }
+
+  private static String placeBlockCommand(BlockPos blockPos) {
+    return "place_block "
+        + BLOCK_PROFILE_ID
+        + " "
+        + blockPos.getX()
+        + " "
+        + blockPos.getY()
+        + " "
+        + blockPos.getZ();
+  }
+
+  static void installProfiles() {
+    EasyModelProfileService currentProfileService = EasyModelServices.profileService();
+    EasyModelProfileService fallbackProfileService =
+        currentProfileService instanceof GameTestProfileService gameTestProfileService
+            ? gameTestProfileService.fallback()
+            : currentProfileService;
+    EasyModelServices.setProfileService(
+        new GameTestProfileService(activeProfiles(), fallbackProfileService));
   }
 
   private static Map<ResourceLocation, EasyModelEntityProfile> activeProfiles() {
@@ -591,17 +1047,28 @@ public final class HostEntityGameTestCases {
         """;
   }
 
-  private record StaticProfileService(Map<ResourceLocation, EasyModelEntityProfile> profiles)
+  private record GameTestProfileService(
+      Map<ResourceLocation, EasyModelEntityProfile> profiles, EasyModelProfileService fallback)
       implements EasyModelProfileService {
 
     @Override
+    public Collection<ModelResourceRejection> getRejectedResources() {
+      return this.fallback.getRejectedResources();
+    }
+
+    @Override
     public Optional<EasyModelEntityProfile> getProfile(ResourceLocation profileId) {
-      return Optional.ofNullable(this.profiles.get(profileId));
+      return Optional.ofNullable(this.profiles.get(profileId))
+          .or(() -> this.fallback.getProfile(profileId));
     }
 
     @Override
     public List<EasyModelEntityProfile> getProfiles() {
-      return List.copyOf(this.profiles.values());
+      return Stream.concat(
+              this.profiles.values().stream(),
+              this.fallback.getProfiles().stream()
+                  .filter(profile -> !this.profiles.containsKey(profile.id())))
+          .toList();
     }
   }
 }

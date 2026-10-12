@@ -40,10 +40,10 @@ less boilerplate.
   rendering, texture, and animation from JSON.
 - **Automatic animation**: Basic idle, walk, wing, tail, and random-idle behavior is available out
   of the box.
-- **Standard keyframe clips**: Blockbench animations named `idle`, `walk`,
-  `swim`, `fly`, or `attack` are played automatically. `hurt` and `death` are loaded but only play
-  when driven by a command or a mod. Clips with any other name are ignored to keep the runtime
-  simple (no state machines, no Molang).
+- **Standard keyframe clips**: Blockbench animations named `idle`, `walk`, `swim`, `fly`,
+  `attack`, `hurt`, `death`, or `sit` are played automatically. Clips with any other name play only
+  when a command or a mod starts them, or on the shoulder for `shoulder`. No state machines, no
+  Molang.
 - **Developer API**: Mods can use render delegates, custom part animators, and runtime profile data
   without depending on internal renderer classes.
 - **Diagnostics and demo profiles**: Commands help list, validate, debug, spawn, and place test
