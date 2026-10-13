@@ -20,12 +20,19 @@
 package de.markusbordihn.easymodelentities.client.render;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
+import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationLoop;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModel;
+import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelAttributes;
 import de.markusbordihn.easymodelentities.data.profile.ModelBehaviorMode;
@@ -38,6 +45,7 @@ import de.markusbordihn.easymodelentities.data.profile.ModelMovementSettings;
 import de.markusbordihn.easymodelentities.data.profile.ModelMovementType;
 import de.markusbordihn.easymodelentities.data.profile.ModelProfileStatus;
 import de.markusbordihn.easymodelentities.data.profile.ModelType;
+import de.markusbordihn.easymodelentities.data.render.EasyModelRenderState;
 import de.markusbordihn.easymodelentities.data.renderprofile.EasyModelRenderProfile;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationMode;
 import de.markusbordihn.easymodelentities.data.renderprofile.ModelAnimationSettings;
@@ -48,10 +56,17 @@ import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import de.markusbordihn.easymodelentities.registry.ModelEntityTypeIds;
 import de.markusbordihn.easymodelentities.renderprofile.EasyModelRenderProfileService;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import net.minecraft.SharedConstants;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.Bootstrap;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -127,6 +142,12 @@ class EasyModelEntityRenderBackendTest {
         List.of());
   }
 
+  @BeforeAll
+  static void bootstrapMinecraft() {
+    SharedConstants.tryDetectVersion();
+    Bootstrap.bootStrap();
+  }
+
   @AfterEach
   void resetServices() {
     EasyModelServices.reset();
@@ -199,5 +220,134 @@ class EasyModelEntityRenderBackendTest {
   @Test
   void emptyWhenNeitherProfileAvailable() {
     assertTrue(EasyModelEntityRenderBackend.resolveContract(PROFILE_ID, AUTO).isEmpty());
+  }
+
+  @Test
+  @DisplayName("Diving or surfacing never counts as airborne, so swim wins over fly")
+  void verticalMotionInWaterIsNotAirborne() {
+    LivingEntity diving = livingEntity();
+    when(diving.isInWater()).thenReturn(true);
+    when(diving.getDeltaMovement()).thenReturn(new Vec3(0.0, 0.8, 0.0));
+    LivingEntity falling = livingEntity();
+    when(falling.getDeltaMovement()).thenReturn(new Vec3(0.0, 0.8, 0.0));
+
+    assertEquals(0.0f, EasyModelEntityRenderBackend.airborneAmount(diving));
+    assertTrue(EasyModelEntityRenderBackend.airborneAmount(falling) > 0.5f);
+  }
+
+  @Test
+  @DisplayName("A dying entity plays death over a played clip unless only explicit clips play")
+  void deathOverridesExplicitClipsExceptWithModeNone() {
+    LivingEntity dying = livingEntity();
+    when(dying.isDeadOrDying()).thenReturn(true);
+    EasyModelRenderState automatic =
+        renderState(ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC, "idle", "death");
+    EasyModelRenderState explicitOnly =
+        renderState(ModelBodyType.BIPED, ModelAnimationMode.NONE, "idle", "death");
+    EasyModelRenderState withoutDeathClip =
+        renderState(ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC, "idle");
+
+    assertTrue(EasyModelEntityRenderBackend.dying(dying, automatic));
+    assertFalse(EasyModelEntityRenderBackend.dying(dying, explicitOnly));
+    assertFalse(EasyModelEntityRenderBackend.dying(dying, withoutDeathClip));
+    assertEquals(
+        new EasyModelAnimationSetting(EasyModelAnimation.DEATH, EasyModelAnimationLoop.ONCE),
+        EasyModelEntityRenderBackend.stateSetting(
+            dying,
+            automatic,
+            EasyModelAnimationSetting.of(EasyModelAnimation.named("wave")),
+            0.0f,
+            true));
+  }
+
+  @Test
+  @DisplayName("A hurt entity plays hurt once, but never over a played or set clip")
+  void hurtClipReplacesOnlyAutomaticAnimation() {
+    LivingEntity hurt = livingEntity();
+    hurt.hurtTime = 5;
+    EasyModelRenderState renderState =
+        renderState(ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC, "idle", "hurt");
+    EasyModelAnimationSetting wave = EasyModelAnimationSetting.of(EasyModelAnimation.named("wave"));
+
+    assertEquals(
+        new EasyModelAnimationSetting(EasyModelAnimation.HURT, EasyModelAnimationLoop.ONCE),
+        EasyModelEntityRenderBackend.stateSetting(hurt, renderState, AUTO, 0.0f, false));
+    assertEquals(
+        wave, EasyModelEntityRenderBackend.stateSetting(hurt, renderState, wave, 0.0f, false));
+    assertEquals(
+        AUTO,
+        EasyModelEntityRenderBackend.stateSetting(
+            hurt,
+            renderState(ModelBodyType.BIPED, ModelAnimationMode.NONE, "idle", "hurt"),
+            AUTO,
+            0.0f,
+            false));
+  }
+
+  @Test
+  @DisplayName("A riding entity sits, but an attack swing takes over")
+  void ridingPlaysSitUntilAttacking() {
+    LivingEntity riding = livingEntity();
+    when(riding.isPassenger()).thenReturn(true);
+    EasyModelRenderState renderState =
+        renderState(ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC, "idle", "sit");
+
+    assertEquals(
+        EasyModelAnimationSetting.of(EasyModelAnimation.SIT),
+        EasyModelEntityRenderBackend.stateSetting(riding, renderState, AUTO, 0.0f, false));
+    assertEquals(
+        AUTO, EasyModelEntityRenderBackend.stateSetting(riding, renderState, AUTO, 0.5f, false));
+  }
+
+  @Test
+  @DisplayName("Only an aquatic model without a walk clip flops on land")
+  void strandedNeedsAquaticModelWithoutWalkClipOnLand() {
+    LivingEntity entity = livingEntity();
+    EasyModelRenderState fish =
+        renderState(ModelBodyType.AQUATIC, ModelAnimationMode.AUTOMATIC, "idle", "swim");
+    EasyModelRenderState walkingFish =
+        renderState(ModelBodyType.AQUATIC, ModelAnimationMode.AUTOMATIC, "idle", "walk");
+    EasyModelRenderState biped =
+        renderState(ModelBodyType.BIPED, ModelAnimationMode.AUTOMATIC, "idle");
+
+    assertTrue(EasyModelEntityRenderBackend.stranded(entity, fish, false));
+    assertFalse(EasyModelEntityRenderBackend.stranded(entity, fish, true));
+    assertFalse(EasyModelEntityRenderBackend.stranded(entity, walkingFish, false));
+    assertFalse(EasyModelEntityRenderBackend.stranded(entity, biped, false));
+  }
+
+  private static LivingEntity livingEntity() {
+    LivingEntity livingEntity = mock(LivingEntity.class);
+    when(livingEntity.getDeltaMovement()).thenReturn(Vec3.ZERO);
+    return livingEntity;
+  }
+
+  private static EasyModelRenderState renderState(
+      ModelBodyType bodyType, ModelAnimationMode animationMode, String... clipNames) {
+    Map<String, ModelAnimationClip> clips = new HashMap<>();
+    for (String clipName : clipNames) {
+      clips.put(clipName, new ModelAnimationClip(clipName, 1.0f, false, Map.of()));
+    }
+    BakedModel bakedModel =
+        new BakedModel(
+            Identifier.fromNamespaceAndPath("example", "clips"),
+            64,
+            64,
+            List.of(new BakedModelPart("body", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of())),
+            Map.of(),
+            false,
+            clips,
+            null);
+
+    return new EasyModelRenderState(
+        bakedModel,
+        Identifier.fromNamespaceAndPath("example", "textures/entity/clips.png"),
+        1.0f,
+        0.3f,
+        bodyType,
+        new ModelAnimationSettings(animationMode, 1.0f, 1.0f),
+        false,
+        false,
+        List.of());
   }
 }

@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.renderprofile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,7 +31,6 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.renderprofile.*;
 import de.markusbordihn.easymodelentities.model.bake.ModelBakeService;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileParser;
-import de.markusbordihn.easymodelentities.registry.ModelResourcePaths;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,6 +40,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.imageio.ImageIO;
@@ -47,9 +48,13 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class BundledDemoProfilesTest {
+
+  private static final String EXAMPLES_NAMESPACE = "easy_model_entities_examples";
+  private static final String VANILLA_NAMESPACE = "minecraft";
 
   private static final List<Demo> DEMOS =
       List.of(
@@ -68,20 +73,22 @@ class BundledDemoProfilesTest {
           new Demo("entity/perched_sparrow", ModelBodyType.WINGED),
           new Demo("entity/custom_strider", ModelBodyType.QUADRUPED),
           new Demo("entity/text_example", ModelBodyType.STATIC),
-          new Demo("block_entity/shrine", ModelBodyType.STATIC));
+          new Demo("block_entity/shrine", ModelBodyType.STATIC),
+          new Demo("block_entity/scarecrow", ModelBodyType.STATIC));
 
   private static void assertDemo(String path, ModelBodyType bodyType) throws Exception {
-    Identifier id = Identifier.fromNamespaceAndPath("easy_model_entities_examples", path);
+    Identifier id = Identifier.fromNamespaceAndPath(EXAMPLES_NAMESPACE, path);
     Identifier renderProfileId =
-        Identifier.fromNamespaceAndPath("easy_model_entities_examples", path);
+        Identifier.fromNamespaceAndPath(EXAMPLES_NAMESPACE, path);
     EasyModelEntityProfile profile = parseProfile(id);
     EasyModelRenderProfile renderProfile = parseRenderProfile(profile.renderProfileId());
     ModelBakeResult bakeResult =
-        ModelBakeService.createDefault().bake(renderProfile, resourceManager(renderProfile));
+        ModelBakeService.createDefault().bake(renderProfile, bundledResourceManager());
 
     assertTrue(profile.isActive());
     assertTrue(renderProfile.isActive());
     assertTrue(bakeResult.successful());
+    assertEquals(List.of(), missingTextures(bakeResult), path);
     assertEquals(id, profile.id());
     assertEquals(renderProfileId, profile.renderProfileId());
     assertEquals(profile.renderProfileId(), renderProfile.id());
@@ -116,23 +123,42 @@ class BundledDemoProfilesTest {
     }
   }
 
-  private static ResourceManager resourceManager(EasyModelRenderProfile renderProfile)
-      throws IOException {
+  private static List<ModelRenderProfileValidationIssue> missingTextures(
+      ModelBakeResult bakeResult) {
+    return bakeResult.validationIssues().stream()
+        .filter(issue -> issue.status() == ModelRenderProfileStatus.MISSING_TEXTURE)
+        .toList();
+  }
+
+  private static Identifier exampleTexture(String name) {
+    return Identifier.fromNamespaceAndPath(
+        EXAMPLES_NAMESPACE, "textures/entity/" + name + ".png");
+  }
+
+  private static ResourceManager bundledResourceManager() {
     ResourceManager resourceManager = mock(ResourceManager.class);
-    Identifier modelResourceLocation =
-        ModelResourcePaths.modelResourceLocation(renderProfile.model());
-    when(resourceManager.getResource(modelResourceLocation))
-        .thenReturn(
-            Optional.of(
-                resource(
-                    resourceBytes(
-                        "assets/"
-                            + modelResourceLocation.getNamespace()
-                            + "/"
-                            + modelResourceLocation.getPath()))));
-    when(resourceManager.getResource(renderProfile.texture()))
-        .thenReturn(Optional.of(resource(png())));
+    when(resourceManager.getResource(any(Identifier.class)))
+        .thenAnswer(invocation -> bundledResource(invocation.getArgument(0)));
     return resourceManager;
+  }
+
+  private static Optional<Resource> bundledResource(Identifier location)
+      throws IOException {
+    InputStream inputStream =
+        BundledDemoProfilesTest.class
+            .getClassLoader()
+            .getResourceAsStream("assets/" + location.getNamespace() + "/" + location.getPath());
+    if (inputStream == null && VANILLA_NAMESPACE.equals(location.getNamespace())) {
+      return Optional.of(resource(png()));
+    }
+
+    if (inputStream == null) {
+      return Optional.empty();
+    }
+
+    try (inputStream) {
+      return Optional.of(resource(inputStream.readAllBytes()));
+    }
   }
 
   private static InputStream resourceStream(String path) throws IOException {
@@ -143,12 +169,6 @@ class BundledDemoProfilesTest {
     }
 
     return inputStream;
-  }
-
-  private static byte[] resourceBytes(String path) throws IOException {
-    try (InputStream inputStream = resourceStream(path)) {
-      return inputStream.readAllBytes();
-    }
   }
 
   private static Resource resource(byte[] bytes) throws IOException {
@@ -168,6 +188,25 @@ class BundledDemoProfilesTest {
     for (Demo demo : DEMOS) {
       assertDemo(demo.path(), demo.bodyType());
     }
+  }
+
+  @Test
+  @DisplayName("The scarecrow takes its three textures from the model, one per index")
+  void scarecrowResolvesTexturesFromModel() throws Exception {
+    EasyModelRenderProfile renderProfile =
+        parseRenderProfile(
+            Identifier.fromNamespaceAndPath(EXAMPLES_NAMESPACE, "block_entity/scarecrow"));
+    ModelBakeResult bakeResult =
+        ModelBakeService.createDefault().bake(renderProfile, bundledResourceManager());
+
+    assertTrue(renderProfile.textures().isEmpty());
+    assertEquals(
+        Map.of(
+            0, exampleTexture("scarecrow_post"),
+            1, exampleTexture("scarecrow_crow"),
+            2, exampleTexture("scarecrow_body")),
+        bakeResult.bakedModel().textures());
+    assertEquals(List.of(), bakeResult.validationIssues());
   }
 
   @Test

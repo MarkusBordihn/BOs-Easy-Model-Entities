@@ -261,7 +261,7 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
     return EasyModelHostSupport.shouldRandomStroll(this.entityData, FIELDS);
   }
 
-  private static class EasyModelWaterMoveControl extends MoveControl {
+  private static class EasyModelWaterMoveControl extends MoveControl<EasyModelWaterHostEntity> {
 
     private final EasyModelWaterHostEntity fish;
 

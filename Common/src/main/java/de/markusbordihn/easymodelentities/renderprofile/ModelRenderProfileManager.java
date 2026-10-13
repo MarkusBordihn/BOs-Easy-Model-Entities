@@ -168,23 +168,21 @@ public final class ModelRenderProfileManager implements EasyModelRenderProfileSe
   private static EasyModelRenderProfile validateClientAssets(
       EasyModelRenderProfile renderProfile,
       ResourceManager resourceManager,
-      boolean validateModelResource) {
-    if (!renderProfile.isActive()) {
+      boolean validateAssetResources) {
+    if (!renderProfile.isActive() || !validateAssetResources) {
       return renderProfile;
     }
 
     List<ModelRenderProfileValidationIssue> issues =
         new ArrayList<>(renderProfile.validationIssues());
-    if (validateModelResource) {
-      Identifier modelResourceLocation =
-          ModelResourcePaths.modelResourceLocation(renderProfile.model());
-      if (resourceManager.getResource(modelResourceLocation).isEmpty()) {
-        issues.add(
-            new ModelRenderProfileValidationIssue(
-                ModelRenderProfileStatus.MISSING_MODEL,
-                "model",
-                "Missing model asset " + modelResourceLocation + "."));
-      }
+    Identifier modelResourceLocation =
+        ModelResourcePaths.modelResourceLocation(renderProfile.model());
+    if (resourceManager.getResource(modelResourceLocation).isEmpty()) {
+      issues.add(
+          new ModelRenderProfileValidationIssue(
+              ModelRenderProfileStatus.MISSING_MODEL,
+              "model",
+              "Missing model asset " + modelResourceLocation + "."));
     }
     Identifier textureResourceLocation =
         ModelResourcePaths.textureResourceLocation(renderProfile.texture());

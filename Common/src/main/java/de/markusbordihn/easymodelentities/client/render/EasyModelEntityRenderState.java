@@ -50,4 +50,6 @@ public class EasyModelEntityRenderState extends EntityRenderState {
   public float limbSwingAmount;
   public float airborneAmount;
   public float attackAmount;
+  public boolean inWater;
+  public Float strandedAgeInTicks;
 }

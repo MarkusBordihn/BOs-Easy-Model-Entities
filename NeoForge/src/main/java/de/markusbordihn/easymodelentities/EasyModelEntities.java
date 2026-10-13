@@ -27,6 +27,7 @@ import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnostic
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
 import de.markusbordihn.easymodelentities.gametest.EasyModelGameTests;
 import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
+import de.markusbordihn.easymodelentities.network.EasyModelShoulderNetworkHandler;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
@@ -86,6 +87,7 @@ public class EasyModelEntities {
     EasyModelItems.register(modEventBus);
     EasyModelCreativeModeTabs.register(modEventBus);
     modEventBus.addListener(EasyModelAnimationNetworkHandler::register);
+    modEventBus.addListener(EasyModelShoulderNetworkHandler::register);
     EasyModelGameTests.register(modEventBus);
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(NeoForgeEasyModelEntityTypes.INSTANCE));
@@ -95,6 +97,8 @@ public class EasyModelEntities {
     NeoForge.EVENT_BUS.addListener(this::addReloadListeners);
     NeoForge.EVENT_BUS.addListener(this::registerCommands);
     NeoForge.EVENT_BUS.addListener(this::serverStopped);
+    NeoForge.EVENT_BUS.addListener(EasyModelShoulderNetworkHandler::serverTick);
+    NeoForge.EVENT_BUS.addListener(EasyModelShoulderNetworkHandler::startTracking);
   }
 
   private void addReloadListeners(AddServerReloadListenersEvent event) {

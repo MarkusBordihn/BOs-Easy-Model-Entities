@@ -27,6 +27,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.block.EasyModelHostBlock;
 import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
@@ -98,7 +99,8 @@ public final class EasyModelEntitiesCommand {
             .then(EasyModelAnimationCommand.register())
             .then(EasyModelTextureCommand.register())
             .then(EasyModelBehaviorCommand.register())
-            .then(EasyModelDisplayCommand.register()));
+            .then(EasyModelDisplayCommand.register())
+            .then(EasyModelShoulderCommand.register()));
   }
 
   static List<String> listProfileLines() {
@@ -271,6 +273,9 @@ public final class EasyModelEntitiesCommand {
     BlockPos blockPos = parseBlockPos(context, source);
     Level level = source.getLevel();
     BlockState blockState = block.defaultBlockState();
+    if (source.getEntity() != null) {
+      blockState = EasyModelHostBlock.facingAwayFrom(blockState, source.getRotation().y);
+    }
     if (!level.setBlock(blockPos, blockState, Block.UPDATE_ALL)) {
       source.sendFailure(
           Component.literal("Could not place Easy Model Entities block at " + blockPos + "."));

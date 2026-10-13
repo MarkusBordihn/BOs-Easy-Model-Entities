@@ -27,6 +27,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.annotations.SerializedName;
 import de.markusbordihn.easymodelentities.Constants;
 import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
+import de.markusbordihn.easymodelentities.data.model.ModelAnimationClips;
 import de.markusbordihn.easymodelentities.data.model.Vec3f;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.data.profile.ModelPresetType;
@@ -73,6 +74,9 @@ public final class ModelRenderProfileParser {
   private static final String IDLE_STRENGTH_FIELD = "idle_strength";
   private static final String GAIT_FIELD = "gait";
   private static final String VARIANT_MODE_FIELD = "variant_mode";
+  private static final String VARIANT_WEIGHTS_FIELD = "variant_weights";
+  private static final String SHOULDER_FIELD = "shoulder";
+  private static final String OFFSET_FIELD = "offset";
   private static final String RENDERING_SCALE_FIELD = RENDERING_FIELD + "." + SCALE_FIELD;
   private static final String RENDERING_SHADOW_RADIUS_FIELD =
       RENDERING_FIELD + "." + SHADOW_RADIUS_FIELD;
@@ -93,6 +97,10 @@ public final class ModelRenderProfileParser {
   private static final String ANIMATION_GAIT_FIELD = ANIMATION_FIELD + "." + GAIT_FIELD;
   private static final String ANIMATION_VARIANT_MODE_FIELD =
       ANIMATION_FIELD + "." + VARIANT_MODE_FIELD;
+  private static final String ANIMATION_VARIANT_WEIGHTS_FIELD =
+      ANIMATION_FIELD + "." + VARIANT_WEIGHTS_FIELD;
+  private static final String SHOULDER_OFFSET_FIELD = SHOULDER_FIELD + "." + OFFSET_FIELD;
+  private static final String SHOULDER_SCALE_FIELD = SHOULDER_FIELD + "." + SCALE_FIELD;
   private static final Set<String> ROOT_FIELDS =
       Set.of(
           SCHEMA_VERSION_FIELD,
@@ -104,7 +112,8 @@ public final class ModelRenderProfileParser {
           TEXTURE_FIELD,
           TEXTURES_FIELD,
           RENDERING_FIELD,
-          ANIMATION_FIELD);
+          ANIMATION_FIELD,
+          SHOULDER_FIELD);
   private static final Set<String> RENDERING_FIELDS =
       Set.of(
           SCALE_FIELD,
@@ -120,7 +129,9 @@ public final class ModelRenderProfileParser {
           WALK_SPEED_MULTIPLIER_FIELD,
           IDLE_STRENGTH_FIELD,
           GAIT_FIELD,
-          VARIANT_MODE_FIELD);
+          VARIANT_MODE_FIELD,
+          VARIANT_WEIGHTS_FIELD);
+  private static final Set<String> SHOULDER_FIELDS = Set.of(OFFSET_FIELD, SCALE_FIELD);
   private static final float DEFAULT_SCALE = 1.0f;
   private static final float DEFAULT_SWING_SPEED = 1.0f;
   private static final float DEFAULT_WALK_SPEED_MULTIPLIER = 1.0f;
@@ -203,6 +214,7 @@ public final class ModelRenderProfileParser {
     RawRenderProfile rawProfile = GSON.fromJson(effectiveObject, RawRenderProfile.class);
     reportUnknownFields(rawProfile.rendering, RENDERING_FIELD + ".", RENDERING_FIELDS, issues);
     reportUnknownFields(rawProfile.animation, ANIMATION_FIELD + ".", ANIMATION_FIELDS, issues);
+    reportUnknownFields(rawProfile.shoulder, SHOULDER_FIELD + ".", SHOULDER_FIELDS, issues);
 
     String version = optionalString(rawProfile.version, EMPTY_VALUE, VERSION_FIELD, issues);
     String assetFingerprint =
@@ -216,17 +228,18 @@ public final class ModelRenderProfileParser {
     Identifier model =
         parseOptionalResourceLocation(
             rawProfile.model, ModelResourcePaths.defaultModelId(expectedId), MODEL_FIELD, issues);
-    Identifier texture =
-        parseOptionalResourceLocation(
-            rawProfile.texture,
-            ModelResourcePaths.defaultTextureId(expectedId),
-            TEXTURE_FIELD,
-            issues);
-    Map<Integer, Identifier> textures = parseTextures(rawProfile.textures, issues);
+    Identifier explicitTexture =
+        parseOptionalResourceLocation(rawProfile.texture, null, TEXTURE_FIELD, issues);
+    Map<Integer, Identifier> textures =
+        new LinkedHashMap<>(parseTextures(rawProfile.textures, issues));
+    if (explicitTexture != null) {
+      textures.putIfAbsent(0, explicitTexture);
+    }
     ModelRenderSettings renderSettings =
         parseRenderSettings(rawProfile.rendering, resolvedPresetType, issues);
     ModelAnimationSettings animationSettings =
         parseAnimationSettings(rawProfile.animation, resolvedPresetType, issues);
+    ModelShoulderSettings shoulderSettings = parseShoulderSettings(rawProfile.shoulder, issues);
 
     return new EasyModelRenderProfile(
         expectedId,
@@ -234,10 +247,11 @@ public final class ModelRenderProfileParser {
         version,
         bodyType == null ? resolvedPresetType.defaultBodyType() : bodyType,
         model == null ? ModelResourcePaths.defaultModelId(expectedId) : model,
-        texture == null ? ModelResourcePaths.defaultTextureId(expectedId) : texture,
+        explicitTexture == null ? ModelResourcePaths.defaultTextureId(expectedId) : explicitTexture,
         textures,
         renderSettings,
         animationSettings,
+        shoulderSettings,
         ModelRenderProfileStatus.statusForIssues(issues),
         issues,
         assetFingerprint);
@@ -295,15 +309,34 @@ public final class ModelRenderProfileParser {
             defaults.visibleBoundsHeight(),
             RENDERING_VISIBLE_BOUNDS_HEIGHT_FIELD,
             issues),
-        parseVisibleBoundsOffset(
+        parseVec3f(
             rawRendering == null ? null : rawRendering.visibleBoundsOffset,
             defaults.visibleBoundsOffset(),
+            RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD,
             issues),
         opacityOrDefault(opacity, defaults.opacity(), RENDERING_OPACITY_FIELD, issues));
   }
 
-  private static Vec3f parseVisibleBoundsOffset(
-      JsonElement value, Vec3f defaultValue, List<ModelRenderProfileValidationIssue> issues) {
+  private static ModelShoulderSettings parseShoulderSettings(
+      JsonElement shoulderElement, List<ModelRenderProfileValidationIssue> issues) {
+    RawShoulder rawShoulder =
+        optionalObject(shoulderElement, SHOULDER_FIELD, RawShoulder.class, issues);
+    if (rawShoulder == null) {
+      return ModelShoulderSettings.DEFAULT;
+    }
+
+    ModelShoulderSettings defaults = ModelShoulderSettings.DEFAULT;
+    float scale = optionalFloat(rawShoulder.scale, defaults.scale(), SHOULDER_SCALE_FIELD, issues);
+    return new ModelShoulderSettings(
+        parseVec3f(rawShoulder.offset, defaults.offset(), SHOULDER_OFFSET_FIELD, issues),
+        positiveOrDefault(scale, defaults.scale(), SHOULDER_SCALE_FIELD, issues));
+  }
+
+  private static Vec3f parseVec3f(
+      JsonElement value,
+      Vec3f defaultValue,
+      String field,
+      List<ModelRenderProfileValidationIssue> issues) {
     if (value == null || value.isJsonNull()) {
       return defaultValue;
     }
@@ -311,23 +344,21 @@ public final class ModelRenderProfileParser {
       addIssue(
           issues,
           ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
-          RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD,
-          "Field " + RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD + " must be an array of 3 numbers.");
+          field,
+          "Field " + field + " must be an array of 3 numbers.");
       return defaultValue;
     }
 
-    float[] offset = new float[3];
+    float[] values = new float[3];
     for (int index = 0; index < 3; index++) {
-      Float component =
-          parseFloat(
-              value.getAsJsonArray().get(index), RENDERING_VISIBLE_BOUNDS_OFFSET_FIELD, issues);
+      Float component = parseFloat(value.getAsJsonArray().get(index), field, issues);
       if (component == null) {
         return defaultValue;
       }
-      offset[index] = component;
+      values[index] = component;
     }
 
-    return Vec3f.of(offset);
+    return Vec3f.of(values);
   }
 
   private static ModelAnimationSettings parseAnimationSettings(
@@ -372,7 +403,45 @@ public final class ModelRenderProfileParser {
         nonNegativeOrDefault(
             idleStrength, defaults.idleStrength(), ANIMATION_IDLE_STRENGTH_FIELD, issues),
         gait,
-        variantMode);
+        variantMode,
+        parseAnimationVariantWeights(
+            rawAnimation == null ? null : rawAnimation.variantWeights, issues));
+  }
+
+  private static Map<String, Float> parseAnimationVariantWeights(
+      JsonElement value, List<ModelRenderProfileValidationIssue> issues) {
+    if (value == null || value.isJsonNull()) {
+      return Map.of();
+    }
+    if (!value.isJsonObject()) {
+      addIssue(
+          issues,
+          ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
+          ANIMATION_VARIANT_WEIGHTS_FIELD,
+          "Field " + ANIMATION_VARIANT_WEIGHTS_FIELD + " must be an object.");
+      return Map.of();
+    }
+
+    Map<String, Float> variantWeights = new LinkedHashMap<>();
+    for (Map.Entry<String, JsonElement> entry : value.getAsJsonObject().entrySet()) {
+      String field = ANIMATION_VARIANT_WEIGHTS_FIELD + "." + entry.getKey();
+      String clipName = ModelAnimationClips.normalize(entry.getKey());
+      Float weight = parseFloat(entry.getValue(), field, issues);
+      if (clipName.isEmpty() || weight == null) {
+        continue;
+      }
+      if (!Float.isFinite(weight) || weight <= 0.0f) {
+        addIssue(
+            issues,
+            ModelRenderProfileStatus.INVALID_RENDER_SETTINGS,
+            field,
+            "Variant weight of " + clipName + " must be greater than zero.");
+        continue;
+      }
+      variantWeights.put(clipName, weight);
+    }
+
+    return variantWeights;
   }
 
   private static float positiveOrDefault(
@@ -796,6 +865,17 @@ public final class ModelRenderProfileParser {
 
     @SerializedName(ANIMATION_FIELD)
     JsonElement animation;
+
+    @SerializedName(SHOULDER_FIELD)
+    JsonElement shoulder;
+  }
+
+  private static class RawShoulder {
+    @SerializedName(OFFSET_FIELD)
+    JsonElement offset;
+
+    @SerializedName(SCALE_FIELD)
+    JsonElement scale;
   }
 
   private static class RawRendering {
@@ -836,5 +916,8 @@ public final class ModelRenderProfileParser {
 
     @SerializedName(VARIANT_MODE_FIELD)
     JsonElement variantMode;
+
+    @SerializedName(VARIANT_WEIGHTS_FIELD)
+    JsonElement variantWeights;
   }
 }

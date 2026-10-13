@@ -30,6 +30,7 @@ import de.markusbordihn.easymodelentities.data.model.bake.BakedModelCube;
 import de.markusbordihn.easymodelentities.data.model.bake.BakedModelPart;
 import java.util.List;
 import net.minecraft.world.entity.HumanoidArm;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelItemAnchorResolverTest {
@@ -78,6 +79,39 @@ class EasyModelItemAnchorResolverTest {
 
     assertEquals("right_arm", result.partName());
     assertEquals(new EasyModelVec3f(2.0f, 9.0f, 4.0f), result.localOffset());
+  }
+
+  @Test
+  @DisplayName("A named part anchors at its pivot, case-insensitive and nested")
+  void namedPartAnchorsAtItsPivot() {
+    BakedModelPart socket = part("Socket_Back", List.of());
+    BakedModelPart body =
+        new BakedModelPart("body", Vec3f.ZERO, Vec3f.ZERO, List.of(), List.of(socket));
+
+    EasyModelItemAnchor result =
+        EasyModelItemAnchorResolver.resolvePart(List.of(body), "socket_back").orElseThrow();
+
+    assertEquals("Socket_Back", result.partName());
+    assertEquals(EasyModelVec3f.ZERO, result.localOffset());
+  }
+
+  @Test
+  @DisplayName("A requested part name is trimmed and case-insensitive")
+  void requestedPartNameIsNormalized() {
+    BakedModelPart socket = part("socket_back", List.of());
+
+    EasyModelItemAnchor result =
+        EasyModelItemAnchorResolver.resolvePart(List.of(socket), " Socket_BACK ").orElseThrow();
+
+    assertEquals("socket_back", result.partName());
+  }
+
+  @Test
+  @DisplayName("A missing named part has no anchor")
+  void missingNamedPartHasNoAnchor() {
+    assertTrue(
+        EasyModelItemAnchorResolver.resolvePart(List.of(part("body", List.of())), "socket_back")
+            .isEmpty());
   }
 
   @Test

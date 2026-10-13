@@ -57,49 +57,24 @@ public final class EasyModelGameTests {
         "entity_data_serializers_are_registered",
         EntityDataSerializerGameTest::serializersAreNeoForgeRegistered);
 
-    registerTest("ground_entity_can_be_created", HostEntityGameTestCases::groundEntityCanBeCreated);
-    registerTest("static_entity_can_be_created", HostEntityGameTestCases::staticEntityCanBeCreated);
-    registerTest(
-        "frozen_behavior_stops_host_entity_movement",
-        HostEntityGameTestCases::frozenBehaviorStopsHostEntityMovement);
-    registerTest(
-        "missing_and_invalid_profiles_return_empty",
-        HostEntityGameTestCases::missingAndInvalidProfilesReturnEmpty);
-    registerTest(
-        "nbt_preserves_runtime_contract_data",
-        HostEntityGameTestCases::nbtPreservesRuntimeContractData);
-    registerTest(
-        "nbt_preserves_texture_setting", HostEntityGameTestCases::nbtPreservesTextureSetting);
-    registerTest(
-        "nbt_preserves_display_settings", HostEntityGameTestCases::nbtPreservesDisplaySettings);
-    registerTest(
-        "invalid_nbt_resource_locations_fall_back_safely",
-        HostEntityGameTestCases::invalidNbtResourceLocationsFallBackSafely);
-    registerTest(
-        "dimension_refresh_uses_profile_dimensions",
-        HostEntityGameTestCases::dimensionRefreshUsesProfileDimensions);
-    registerTest(
-        "attributes_are_applied_from_profile",
-        HostEntityGameTestCases::attributesAreAppliedFromProfile);
-    registerTest(
-        "block_entity_can_be_placed_and_initialized",
-        HostEntityGameTestCases::blockEntityCanBePlacedAndInitialized);
-    registerTest(
-        "entity_spawn_item_spawns_host_entity",
-        HostEntityGameTestCases::entitySpawnItemSpawnsHostEntity);
-    registerTest(
-        "block_spawn_item_places_host_block",
-        HostEntityGameTestCases::blockSpawnItemPlacesHostBlock);
+    GameTestHelpers.testFunctions(HostEntityGameTestCases.class)
+        .forEach(EasyModelGameTests::registerTest);
+    GameTestHelpers.testFunctions(CommandGameTestCases.class)
+        .forEach(EasyModelGameTests::registerTest);
   }
 
   private EasyModelGameTests() {}
 
   public static void register(IEventBus modEventBus) {
-    if (FMLEnvironment.isProduction()) {
+    if (!isActive()) {
       return;
     }
 
     TEST_FUNCTIONS.register(modEventBus);
+  }
+
+  private static boolean isActive() {
+    return !FMLEnvironment.isProduction() && GameTestHelpers.isEnabled();
   }
 
   private static void registerTest(String name, Consumer<GameTestHelper> testFunction) {
@@ -108,6 +83,10 @@ public final class EasyModelGameTests {
 
   @SubscribeEvent
   public static void registerGameTests(RegisterGameTestsEvent event) {
+    if (!isActive()) {
+      return;
+    }
+
     Holder<TestEnvironmentDefinition<?>> environment =
         event.registerEnvironment(
             Identifier.fromNamespaceAndPath(Constants.MOD_ID, "default"),
@@ -118,7 +97,7 @@ public final class EasyModelGameTests {
       event.registerTest(
           testFunction.getId(),
           new FunctionGameTestInstance(
-              testFunction.getKey(), new TestData<>(environment, STRUCTURE, MAX_TICKS, 0, true)));
+              testFunction.key(), new TestData<>(environment, STRUCTURE, MAX_TICKS, 0, true)));
     }
   }
 }

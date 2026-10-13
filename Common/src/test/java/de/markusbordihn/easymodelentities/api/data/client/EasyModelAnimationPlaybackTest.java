@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelAnimationPlaybackTest {
@@ -32,6 +33,7 @@ class EasyModelAnimationPlaybackTest {
     assertEquals(EasyModelAnimationPlaybackMode.ONCE, EasyModelAnimationPlayback.DEFAULT.mode());
     assertEquals(1, EasyModelAnimationPlayback.DEFAULT.repeatCount());
     assertEquals(0.0f, EasyModelAnimationPlayback.DEFAULT.durationTicks());
+    assertEquals(1.0f, EasyModelAnimationPlayback.DEFAULT.speed());
     assertEquals(
         EasyModelAnimationSwitchTiming.IMMEDIATE, EasyModelAnimationTransition.DEFAULT.timing());
     assertEquals(5.0f, EasyModelAnimationTransition.DEFAULT.blendDurationTicks());
@@ -41,12 +43,17 @@ class EasyModelAnimationPlaybackTest {
   void withMethodsReturnValidatedCopies() {
     EasyModelAnimationPlayback playback = EasyModelAnimationPlayback.DEFAULT;
     EasyModelAnimationPlayback repeated =
-        playback.withMode(EasyModelAnimationPlaybackMode.REPEAT).withRepeat(3).withDuration(40.0f);
+        playback
+            .withMode(EasyModelAnimationPlaybackMode.REPEAT)
+            .withRepeat(3)
+            .withDuration(40.0f)
+            .withSpeed(1.5f);
 
     assertNotSame(playback, repeated);
     assertEquals(EasyModelAnimationPlaybackMode.REPEAT, repeated.mode());
     assertEquals(3, repeated.repeatCount());
     assertEquals(40.0f, repeated.durationTicks());
+    assertEquals(1.5f, repeated.speed());
     assertEquals(EasyModelAnimationPlayback.DEFAULT, playback);
   }
 
@@ -70,6 +77,22 @@ class EasyModelAnimationPlaybackTest {
         () ->
             new EasyModelAnimationPlayback(
                 EasyModelAnimationPlaybackMode.LOOP, 0, Float.POSITIVE_INFINITY));
+  }
+
+  @Test
+  @DisplayName("Speed must be finite and within the allowed range")
+  void rejectsInvalidSpeed() {
+    EasyModelAnimationPlayback playback = EasyModelAnimationPlayback.DEFAULT;
+
+    assertThrows(IllegalArgumentException.class, () -> playback.withSpeed(0.0f));
+    assertThrows(IllegalArgumentException.class, () -> playback.withSpeed(-1.0f));
+    assertThrows(IllegalArgumentException.class, () -> playback.withSpeed(Float.NaN));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> playback.withSpeed(EasyModelAnimationPlayback.MAX_SPEED + 1.0f));
+    assertEquals(
+        EasyModelAnimationPlayback.MIN_SPEED,
+        playback.withSpeed(EasyModelAnimationPlayback.MIN_SPEED).speed());
   }
 
   @Test

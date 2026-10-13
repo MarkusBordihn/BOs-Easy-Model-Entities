@@ -54,8 +54,20 @@ public final class EasyModelItemModelRenderer {
       SubmitNodeCollector submitNodeCollector,
       int packedLight,
       int packedOverlay) {
-    render(
-        stack,
+    EasyModelEntitiesItems.profileId(stack)
+        .ifPresent(
+            profileId ->
+                render(profileId, poseStack, submitNodeCollector, packedLight, packedOverlay));
+  }
+
+  public static boolean render(
+      Identifier profileId,
+      PoseStack poseStack,
+      SubmitNodeCollector submitNodeCollector,
+      int packedLight,
+      int packedOverlay) {
+    return render(
+        profileId,
         poseStack,
         (bakedModel, renderState, innerPoseStack) ->
             EasyModelBakedModelRenderer.render(
@@ -77,17 +89,13 @@ public final class EasyModelItemModelRenderer {
                 packedOverlay));
   }
 
-  private static void render(ItemStack stack, PoseStack poseStack, ModelRenderCallback callback) {
-    Optional<Identifier> profileId = EasyModelEntitiesItems.profileId(stack);
-    if (profileId.isEmpty()) {
-      return;
-    }
-
+  private static boolean render(
+      Identifier profileId, PoseStack poseStack, ModelRenderCallback callback) {
     Optional<EasyModelRuntimeContract> contract =
         EasyModelEntityRenderBackend.resolveContract(
-            profileId.get(), EasyModelAnimationSetting.of(EasyModelAnimation.IDLE));
+            profileId, EasyModelAnimationSetting.of(EasyModelAnimation.IDLE));
     if (contract.isEmpty()) {
-      return;
+      return false;
     }
 
     EasyModelRenderState renderState =
@@ -108,6 +116,7 @@ public final class EasyModelItemModelRenderer {
 
     callback.render(renderState.bakedModel(), renderState, poseStack);
     poseStack.popPose();
+    return true;
   }
 
   @FunctionalInterface

@@ -1,0 +1,75 @@
+name: Bug report
+description: A model renders wrong, does not show up, or the mod misbehaves.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check [Supported Blockbench Features](https://github.com/MarkusBordihn/BOs-Easy-Model-Entities/wiki/Supported-Blockbench-Features) first.
+        Most missing models are caused by a resource pack that is installed but not enabled.
+  - type: input
+    id: mod-version
+    attributes:
+      label: Mod version and loader
+      placeholder: "2.5.0, Forge 47.4.10 for Minecraft 1.20.1"
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Blockbench plugin version
+      placeholder: "1.1.0, or \"not used\""
+    validations:
+      required: true
+  - type: input
+    id: blockbench-version
+    attributes:
+      label: Blockbench version
+      placeholder: "5.0.7"
+    validations:
+      required: true
+  - type: input
+    id: preset
+    attributes:
+      label: Preset or body type
+      placeholder: "biped, quadruped, static, ..."
+    validations:
+      required: true
+  - type: dropdown
+    id: resource-pack-enabled
+    attributes:
+      label: Is the resource pack enabled in Options > Resource Packs?
+      options:
+        - "Yes"
+        - "No"
+        - "Not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happens and what did you expect?
+      description: Screenshots of Blockbench and Minecraft side by side help a lot.
+    validations:
+      required: true
+  - type: textarea
+    id: debug-profile
+    attributes:
+      label: Output of /easy_model_entities debug_profile <profile id>
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: latest-log
+    attributes:
+      label: latest.log
+      description: Drag the file from your `logs` folder into this field, or paste a link to it.
+    validations:
+      required: true
+  - type: textarea
+    id: minimal-model
+    attributes:
+      label: Minimal model
+      description: Attach a small `.bbmodel` (zipped) that shows the problem.
+    validations:
+      required: false

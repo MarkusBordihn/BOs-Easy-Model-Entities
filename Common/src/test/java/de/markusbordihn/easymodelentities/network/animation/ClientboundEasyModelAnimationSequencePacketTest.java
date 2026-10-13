@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ClientboundEasyModelAnimationSequencePacketTest {
@@ -51,6 +52,33 @@ class ClientboundEasyModelAnimationSequencePacketTest {
     packet.encode(buffer);
 
     assertEquals(packet, ClientboundEasyModelAnimationSequencePacket.decode(buffer));
+  }
+
+  @Test
+  @DisplayName("Each step keeps its own playback speed through encode and decode")
+  void stepSpeedRoundTrips() {
+    EasyModelAnimationSequence sequence =
+        new EasyModelAnimationSequence(
+            List.of(
+                new EasyModelAnimationStep(
+                    WAVE,
+                    EasyModelAnimationPlayback.DEFAULT.withSpeed(2.0f),
+                    EasyModelAnimationTransition.IMMEDIATE),
+                new EasyModelAnimationStep(
+                    IDLE,
+                    EasyModelAnimationPlayback.DEFAULT.withSpeed(0.5f),
+                    EasyModelAnimationTransition.AFTER_CURRENT)),
+            EasyModelAnimation.AUTO);
+    FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+
+    ClientboundEasyModelAnimationSequencePacket.forEntity(42, sequence).encode(buffer);
+
+    assertEquals(
+        List.of(2.0f, 0.5f),
+        ClientboundEasyModelAnimationSequencePacket.decode(buffer).toSequence().orElseThrow()
+            .steps().stream()
+            .map(step -> step.playback().speed())
+            .toList());
   }
 
   @Test
@@ -80,6 +108,7 @@ class ClientboundEasyModelAnimationSequencePacketTest {
       buffer.writeEnum(EasyModelAnimationPlayback.DEFAULT.mode());
       buffer.writeVarInt(1);
       buffer.writeFloat(0.0f);
+      buffer.writeFloat(1.0f);
       buffer.writeEnum(EasyModelAnimationTransition.DEFAULT.timing());
       buffer.writeFloat(5.0f);
     }

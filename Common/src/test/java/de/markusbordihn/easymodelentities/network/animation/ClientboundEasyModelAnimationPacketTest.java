@@ -31,6 +31,7 @@ import de.markusbordihn.easymodelentities.api.data.client.EasyModelAnimationTran
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ClientboundEasyModelAnimationPacketTest {
@@ -41,13 +42,31 @@ class ClientboundEasyModelAnimationPacketTest {
         ClientboundEasyModelAnimationPacket.playEntity(
             42,
             EasyModelAnimation.named("wave"),
-            new EasyModelAnimationPlayback(EasyModelAnimationPlaybackMode.REPEAT, 3, 40.0f),
+            new EasyModelAnimationPlayback(EasyModelAnimationPlaybackMode.REPEAT, 3, 40.0f, 2.5f),
             EasyModelAnimationTransition.afterCurrent(7.5f));
     FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
 
     packet.encode(buffer);
 
     assertEquals(packet, ClientboundEasyModelAnimationPacket.decode(buffer));
+  }
+
+  @Test
+  @DisplayName("HOLD survives the round trip, so a held clip is not decoded as ONCE")
+  void holdPlaybackRoundTrips() {
+    ClientboundEasyModelAnimationPacket packet =
+        ClientboundEasyModelAnimationPacket.playEntity(
+            7,
+            EasyModelAnimation.DEATH,
+            EasyModelAnimationPlayback.DEFAULT.withMode(EasyModelAnimationPlaybackMode.HOLD),
+            EasyModelAnimationTransition.DEFAULT);
+    FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+
+    packet.encode(buffer);
+
+    assertEquals(
+        EasyModelAnimationPlaybackMode.HOLD,
+        ClientboundEasyModelAnimationPacket.decode(buffer).playback().mode());
   }
 
   @Test
@@ -98,6 +117,7 @@ class ClientboundEasyModelAnimationPacketTest {
     buffer.writeVarInt(99);
     buffer.writeVarInt(2);
     buffer.writeFloat(10.0f);
+    buffer.writeFloat(1.0f);
     buffer.writeVarInt(99);
     buffer.writeFloat(4.0f);
 
@@ -119,6 +139,7 @@ class ClientboundEasyModelAnimationPacketTest {
     buffer.writeEnum(EasyModelAnimationPlaybackMode.REPEAT);
     buffer.writeVarInt(-5);
     buffer.writeFloat(Float.NaN);
+    buffer.writeFloat(Float.NaN);
     buffer.writeEnum(EasyModelAnimationSwitchTiming.AFTER_CURRENT);
     buffer.writeFloat(Float.NEGATIVE_INFINITY);
 
@@ -127,7 +148,18 @@ class ClientboundEasyModelAnimationPacketTest {
     assertEquals(0L, packet.targetValue());
     assertEquals(1, packet.playback().repeatCount());
     assertEquals(0.0f, packet.playback().durationTicks());
+    assertEquals(1.0f, packet.playback().speed());
     assertEquals(0.0f, packet.transition().blendDurationTicks());
+  }
+
+  @Test
+  @DisplayName("A decoded speed outside the allowed range is clamped instead of rejected")
+  void decodeClampsSpeedToTheAllowedRange() {
+    assertEquals(
+        EasyModelAnimationPlayback.MAX_SPEED, ClientboundEasyModelAnimationPacket.clampSpeed(100f));
+    assertEquals(
+        EasyModelAnimationPlayback.MIN_SPEED, ClientboundEasyModelAnimationPacket.clampSpeed(-2f));
+    assertEquals(1.0f, ClientboundEasyModelAnimationPacket.clampSpeed(Float.POSITIVE_INFINITY));
   }
 
   @Test
@@ -141,6 +173,7 @@ class ClientboundEasyModelAnimationPacketTest {
     buffer.writeEnum(EasyModelAnimationPlaybackMode.ONCE);
     buffer.writeVarInt(1);
     buffer.writeFloat(0.0f);
+    buffer.writeFloat(1.0f);
     buffer.writeEnum(EasyModelAnimationSwitchTiming.IMMEDIATE);
     buffer.writeFloat(0.0f);
 

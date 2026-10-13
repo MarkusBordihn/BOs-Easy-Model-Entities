@@ -24,6 +24,7 @@ import de.markusbordihn.easymodelentities.diagnostics.DefaultEasyModelDiagnostic
 import de.markusbordihn.easymodelentities.entity.EasyModelHostEntityFactory;
 import de.markusbordihn.easymodelentities.gametest.EasyModelGameTests;
 import de.markusbordihn.easymodelentities.network.EasyModelAnimationNetworkHandler;
+import de.markusbordihn.easymodelentities.network.EasyModelShoulderNetworkHandler;
 import de.markusbordihn.easymodelentities.profile.EasyModelProfileReloadListener;
 import de.markusbordihn.easymodelentities.registry.EasyModelServices;
 import net.minecraftforge.event.AddReloadListenerEvent;
@@ -59,6 +60,7 @@ public class EasyModelEntities {
     EasyModelItems.register(modBusGroup);
     EasyModelCreativeModeTabs.register(modBusGroup);
     EasyModelAnimationNetworkHandler.register();
+    EasyModelShoulderNetworkHandler.register();
     EasyModelGameTests.register(modBusGroup);
     EasyModelServices.setEntityFactory(
         new EasyModelHostEntityFactory(EasyModelEntityTypes.INSTANCE));
