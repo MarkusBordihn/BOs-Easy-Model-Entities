@@ -116,6 +116,28 @@ class EasyModelHandItemsTest {
   }
 
   @Test
+  @DisplayName("An item on a named part is enough to render")
+  void aPartItemMakesTheHandItemsNonEmpty() {
+    ItemStack sword = new ItemStack(Items.IRON_SWORD);
+
+    EasyModelHandItems handItems = EasyModelHandItems.NONE.withPartItem("socket_back", sword);
+
+    assertFalse(handItems.isEmpty());
+    assertSame(sword, handItems.partItems().get("socket_back"));
+    assertTrue(EasyModelHandItems.NONE.partItems().isEmpty());
+  }
+
+  @Test
+  @DisplayName("An empty or null stack removes the item from the part")
+  void anEmptyPartItemRemovesThePart() {
+    EasyModelHandItems handItems =
+        EasyModelHandItems.NONE.withPartItem("socket_back", new ItemStack(Items.IRON_SWORD));
+
+    assertTrue(handItems.withPartItem("socket_back", ItemStack.EMPTY).isEmpty());
+    assertTrue(handItems.withPartItem("socket_back", null).isEmpty());
+  }
+
+  @Test
   void ofWithoutHolderIsNone() {
     assertSame(EasyModelHandItems.NONE, EasyModelHandItems.of(null));
   }

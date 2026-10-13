@@ -33,47 +33,20 @@ public final class EasyModelGameTests {
       DeferredRegister.create(Registries.TEST_FUNCTION, Constants.MOD_ID);
 
   static {
-    TEST_FUNCTIONS.register("mod_registered", () -> SmokeTest::testModRegistered);
+    TEST_FUNCTIONS.register(
+        "mod_registered",
+        () -> helper -> GameTestHelpers.runIfEnabled(helper, SmokeTest::testModRegistered));
     TEST_FUNCTIONS.register(
         "entity_data_serializers_are_registered",
-        () -> EntityDataSerializerGameTest::serializersAreForgeRegistered);
+        () ->
+            helper ->
+                GameTestHelpers.runIfEnabled(
+                    helper, EntityDataSerializerGameTest::serializersAreForgeRegistered));
 
-    TEST_FUNCTIONS.register(
-        "ground_entity_can_be_created", () -> HostEntityGameTestCases::groundEntityCanBeCreated);
-    TEST_FUNCTIONS.register(
-        "static_entity_can_be_created", () -> HostEntityGameTestCases::staticEntityCanBeCreated);
-    TEST_FUNCTIONS.register(
-        "frozen_behavior_stops_host_entity_movement",
-        () -> HostEntityGameTestCases::frozenBehaviorStopsHostEntityMovement);
-    TEST_FUNCTIONS.register(
-        "missing_and_invalid_profiles_return_empty",
-        () -> HostEntityGameTestCases::missingAndInvalidProfilesReturnEmpty);
-    TEST_FUNCTIONS.register(
-        "nbt_preserves_runtime_contract_data",
-        () -> HostEntityGameTestCases::nbtPreservesRuntimeContractData);
-    TEST_FUNCTIONS.register(
-        "nbt_preserves_texture_setting", () -> HostEntityGameTestCases::nbtPreservesTextureSetting);
-    TEST_FUNCTIONS.register(
-        "nbt_preserves_display_settings",
-        () -> HostEntityGameTestCases::nbtPreservesDisplaySettings);
-    TEST_FUNCTIONS.register(
-        "invalid_nbt_resource_locations_fall_back_safely",
-        () -> HostEntityGameTestCases::invalidNbtResourceLocationsFallBackSafely);
-    TEST_FUNCTIONS.register(
-        "dimension_refresh_uses_profile_dimensions",
-        () -> HostEntityGameTestCases::dimensionRefreshUsesProfileDimensions);
-    TEST_FUNCTIONS.register(
-        "attributes_are_applied_from_profile",
-        () -> HostEntityGameTestCases::attributesAreAppliedFromProfile);
-    TEST_FUNCTIONS.register(
-        "block_entity_can_be_placed_and_initialized",
-        () -> HostEntityGameTestCases::blockEntityCanBePlacedAndInitialized);
-    TEST_FUNCTIONS.register(
-        "entity_spawn_item_spawns_host_entity",
-        () -> HostEntityGameTestCases::entitySpawnItemSpawnsHostEntity);
-    TEST_FUNCTIONS.register(
-        "block_spawn_item_places_host_block",
-        () -> HostEntityGameTestCases::blockSpawnItemPlacesHostBlock);
+    GameTestHelpers.testFunctions(HostEntityGameTestCases.class)
+        .forEach((name, testFunction) -> TEST_FUNCTIONS.register(name, () -> testFunction));
+    GameTestHelpers.testFunctions(CommandGameTestCases.class)
+        .forEach((name, testFunction) -> TEST_FUNCTIONS.register(name, () -> testFunction));
   }
 
   private EasyModelGameTests() {}

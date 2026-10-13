@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "format_version": "5.0",
+    "model_format": "modded_entity",
+    "box_uv": true
+  },
+  "resolution": {
+    "width": 64,
+    "height": 64
+  },
+  "textures": [
+    {"id": "0", "name": "skin.png", "render_sides": "front"}
+  ],
+  "elements": [
+    {"name": "base", "box_uv": true, "export": true, "from": [-4, 0, -4], "to": [4, 2, 4], "origin": [0, 0, 0], "uv_offset": [0, 0], "faces": {"north": {"uv": [8, 8, 16, 10], "texture": 0, "rotation": 90}}, "type": "cube", "uuid": "element_base"},
+    {"name": "shell", "box_uv": true, "export": true, "from": [-2, 2, -2], "to": [2, 6, 2], "inflate": 0.5, "origin": [0, 0, 0], "uv_offset": [0, 16], "type": "cube", "uuid": "element_shell"},
+    {"name": "inverted", "box_uv": true, "export": true, "from": [6, 0, 0], "to": [5, 1, 1], "origin": [0, 0, 0], "uv_offset": [0, 32], "type": "cube", "uuid": "element_inverted"},
+    {"name": "hidden_cube", "box_uv": true, "export": false, "from": [-20, 0, -20], "to": [-18, 30, -18], "origin": [0, 0, 0], "uv_offset": [32, 0], "type": "cube", "uuid": "element_hidden_cube"},
+    {"name": "hidden_child", "box_uv": true, "export": true, "from": [20, 0, 20], "to": [22, 40, 22], "origin": [0, 0, 0], "uv_offset": [32, 32], "type": "cube", "uuid": "element_hidden_child"}
+  ],
+  "groups": [
+    {"uuid": "group_body", "name": "body", "export": true, "origin": [0, 0, 0], "rotation": [0, 0, 0]},
+    {"uuid": "group_hidden", "name": "hidden_group", "export": false, "origin": [0, 0, 0], "rotation": [0, 0, 0]}
+  ],
+  "outliner": [
+    {"uuid": "group_body", "children": ["element_base", "element_shell", "element_inverted", "element_hidden_cube"]},
+    {"uuid": "group_hidden", "children": ["element_hidden_child"]}
+  ]
+}

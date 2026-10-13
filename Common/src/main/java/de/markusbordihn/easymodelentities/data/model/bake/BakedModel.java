@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.data.model.bake;
 
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationClip;
 import de.markusbordihn.easymodelentities.data.model.ModelAnimationVariants;
+import de.markusbordihn.easymodelentities.data.model.TextureRenderSides;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,7 +37,8 @@ public record BakedModel(
     Map<String, ModelAnimationClip> animations,
     ModelBounds bounds,
     ModelAnimationVariants animationVariants,
-    Map<String, Integer> textureNames) {
+    Map<String, Integer> textureNames,
+    Map<Integer, TextureRenderSides> textureRenderSides) {
 
   public BakedModel {
     Objects.requireNonNull(modelId, "modelId");
@@ -50,6 +52,32 @@ public record BakedModel(
     animationVariants =
         animationVariants == null ? ModelAnimationVariants.of(animations) : animationVariants;
     textureNames = textureNames == null ? Map.of() : Map.copyOf(textureNames);
+    textureRenderSides = textureRenderSides == null ? Map.of() : Map.copyOf(textureRenderSides);
+  }
+
+  public BakedModel(
+      Identifier modelId,
+      int textureWidth,
+      int textureHeight,
+      List<BakedModelPart> rootParts,
+      Map<Integer, Identifier> textures,
+      boolean cullBackfaces,
+      Map<String, ModelAnimationClip> animations,
+      ModelBounds bounds,
+      ModelAnimationVariants animationVariants,
+      Map<String, Integer> textureNames) {
+    this(
+        modelId,
+        textureWidth,
+        textureHeight,
+        rootParts,
+        textures,
+        cullBackfaces,
+        animations,
+        bounds,
+        animationVariants,
+        textureNames,
+        Map.of());
   }
 
   public BakedModel(

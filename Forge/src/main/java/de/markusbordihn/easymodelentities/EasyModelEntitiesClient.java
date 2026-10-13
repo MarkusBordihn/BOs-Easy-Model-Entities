@@ -21,9 +21,13 @@ package de.markusbordihn.easymodelentities;
 
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostBlockEntityRenderer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelHostEntityRenderer;
+import de.markusbordihn.easymodelentities.client.render.EasyModelShoulderLayer;
 import de.markusbordihn.easymodelentities.client.render.EasyModelSpawnItemSpecialRendererUnbaked;
 import de.markusbordihn.easymodelentities.renderprofile.ModelRenderProfileReloadListener;
+import net.minecraft.client.renderer.entity.EntityRenderer;
+import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.client.renderer.special.SpecialModelRenderers;
+import net.minecraft.world.entity.player.PlayerModelType;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import org.apache.logging.log4j.LogManager;
@@ -36,10 +40,20 @@ public class EasyModelEntitiesClient {
   public EasyModelEntitiesClient() {
     log.info("Initializing {} (Forge Client) ...", Constants.MOD_NAME);
     EntityRenderersEvent.RegisterRenderers.BUS.addListener(this::registerEntityRenderers);
+    EntityRenderersEvent.AddLayers.BUS.addListener(this::addLayers);
     RegisterClientReloadListenersEvent.BUS.addListener(this::registerClientReloadListeners);
     SpecialModelRenderers.ID_MAPPER.put(
         EasyModelSpawnItemSpecialRendererUnbaked.ID,
         EasyModelSpawnItemSpecialRendererUnbaked.MAP_CODEC);
+  }
+
+  private void addLayers(EntityRenderersEvent.AddLayers event) {
+    for (PlayerModelType modelType : event.getModelTypes()) {
+      EntityRenderer<?, ?> playerRenderer = event.getPlayerRenderer(modelType);
+      if (playerRenderer instanceof AvatarRenderer<?> avatarRenderer) {
+        avatarRenderer.addLayer(new EasyModelShoulderLayer(avatarRenderer));
+      }
+    }
   }
 
   public void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {

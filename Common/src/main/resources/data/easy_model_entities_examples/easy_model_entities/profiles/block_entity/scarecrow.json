@@ -1,0 +1,11 @@
+{
+  "schema_version": "0.2.0",
+  "model_type": "block_entity",
+  "preset_type": "static",
+  "version": "demo-scarecrow-v1",
+  "dimensions": {
+    "width": 0.75,
+    "height": 2.1,
+    "eye_height": 1.75
+  }
+}

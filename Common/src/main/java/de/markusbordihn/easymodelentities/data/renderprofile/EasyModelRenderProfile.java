@@ -36,6 +36,7 @@ public record EasyModelRenderProfile(
     Map<Integer, Identifier> textures,
     ModelRenderSettings rendering,
     ModelAnimationSettings animation,
+    ModelShoulderSettings shoulder,
     ModelRenderProfileStatus status,
     List<ModelRenderProfileValidationIssue> validationIssues,
     String assetFingerprint) {
@@ -49,10 +50,40 @@ public record EasyModelRenderProfile(
     Objects.requireNonNull(texture, "texture");
     Objects.requireNonNull(rendering, "rendering");
     Objects.requireNonNull(animation, "animation");
+    Objects.requireNonNull(shoulder, "shoulder");
     Objects.requireNonNull(status, "status");
     textures = Map.copyOf(Objects.requireNonNull(textures, "textures"));
     validationIssues = List.copyOf(Objects.requireNonNull(validationIssues, "validationIssues"));
     assetFingerprint = assetFingerprint == null ? "" : assetFingerprint;
+  }
+
+  public EasyModelRenderProfile(
+      Identifier id,
+      String schemaVersion,
+      String version,
+      ModelBodyType bodyType,
+      Identifier model,
+      Identifier texture,
+      Map<Integer, Identifier> textures,
+      ModelRenderSettings rendering,
+      ModelAnimationSettings animation,
+      ModelRenderProfileStatus status,
+      List<ModelRenderProfileValidationIssue> validationIssues,
+      String assetFingerprint) {
+    this(
+        id,
+        schemaVersion,
+        version,
+        bodyType,
+        model,
+        texture,
+        textures,
+        rendering,
+        animation,
+        ModelShoulderSettings.DEFAULT,
+        status,
+        validationIssues,
+        assetFingerprint);
   }
 
   public EasyModelRenderProfile(
@@ -172,6 +203,7 @@ public record EasyModelRenderProfile(
         this.textures,
         this.rendering,
         this.animation,
+        this.shoulder,
         ModelRenderProfileStatus.statusForIssues(validationIssues),
         validationIssues,
         this.assetFingerprint);

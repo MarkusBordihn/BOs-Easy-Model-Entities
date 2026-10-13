@@ -64,29 +64,12 @@ public final class EasyModelEntityDataSerializers {
                   EasyModelTextureSetting.fromTag(buffer.readNbt())
                       .orElse(EasyModelTextureSetting.EMPTY)));
 
-  private static boolean registered = false;
-
   private EasyModelEntityDataSerializers() {}
-
-  public static void register() {
-    if (registered) {
-      return;
-    }
-
-    registerSerializer(BODY_TYPE);
-    registerSerializer(ANIMATION_SETTING);
-    registerSerializer(TEXTURE_SETTING);
-    registered = true;
-  }
 
   private static <T extends Enum<T>> EntityDataSerializer<T> enumSerializer(Class<T> enumClass) {
     return EntityDataSerializer.forValueType(
         StreamCodec.of(
             (RegistryFriendlyByteBuf buf, T value) -> buf.writeEnum(value),
             buf -> buf.readEnum(enumClass)));
-  }
-
-  private static void registerSerializer(EntityDataSerializer<?> serializer) {
-    EntityDataSerializers.registerSerializer(serializer);
   }
 }
