@@ -30,4 +30,4 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Core Unit Tests
-        run: ./gradlew :Common:test --no-daemon
+        run: ./gradlew :Common:test --configure-on-demand --no-daemon

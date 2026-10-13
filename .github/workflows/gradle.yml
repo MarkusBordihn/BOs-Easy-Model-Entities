@@ -25,6 +25,11 @@ jobs:
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
+      # Decompiled Minecraft sources restored from the Actions cache failed to recompile (EntitySectionStorage.java:120),
+      # while a fresh Mavenizer run on the same runner succeeded.
+      - name: Remove restored Forge Mavenizer cache
+        run: rm -rf ~/.gradle/caches/minecraftforge
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
