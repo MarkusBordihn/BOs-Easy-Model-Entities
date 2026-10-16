@@ -21,18 +21,30 @@ package de.markusbordihn.easymodelentities.api.data.client;
 
 import java.util.Objects;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 
 public record EasyModelShoulderModel(
-    Identifier profileId, EasyModelEntityRenderOptions options) {
+    Identifier profileId, EasyModelEntityRenderOptions options, Vec3 offset) {
 
   public EasyModelShoulderModel {
     Objects.requireNonNull(profileId, "profileId");
     if (options == null) {
       options = EasyModelEntityRenderOptions.DEFAULT;
     }
+    if (offset == null) {
+      offset = Vec3.ZERO;
+    }
+  }
+
+  public EasyModelShoulderModel(Identifier profileId, EasyModelEntityRenderOptions options) {
+    this(profileId, options, Vec3.ZERO);
   }
 
   public static EasyModelShoulderModel of(Identifier profileId) {
     return new EasyModelShoulderModel(profileId, EasyModelEntityRenderOptions.DEFAULT);
+  }
+
+  public EasyModelShoulderModel withOffset(Vec3 offset) {
+    return new EasyModelShoulderModel(this.profileId, this.options, offset);
   }
 }

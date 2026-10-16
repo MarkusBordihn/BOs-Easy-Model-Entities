@@ -27,8 +27,9 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import de.markusbordihn.easymodelentities.Constants;
+import de.markusbordihn.easymodelentities.api.EasyModelBlockEntitiesApi;
+import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import de.markusbordihn.easymodelentities.block.EasyModelHostBlock;
-import de.markusbordihn.easymodelentities.blockentity.EasyModelHostBlockEntity;
 import de.markusbordihn.easymodelentities.data.diagnostics.ModelDiagnostic;
 import de.markusbordihn.easymodelentities.data.profile.EasyModelEntityProfile;
 import de.markusbordihn.easymodelentities.data.profile.ModelProfileValidationIssue;
@@ -56,6 +57,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class EasyModelEntitiesCommand {
@@ -99,6 +101,7 @@ public final class EasyModelEntitiesCommand {
             .then(EasyModelAnimationCommand.register())
             .then(EasyModelTextureCommand.register())
             .then(EasyModelBehaviorCommand.register())
+            .then(EasyModelProfileCommand.register())
             .then(EasyModelDisplayCommand.register())
             .then(EasyModelShoulderCommand.register()));
   }
@@ -233,8 +236,7 @@ public final class EasyModelEntitiesCommand {
     }
 
     Optional<Entity> entity =
-        EasyModelServices.entityFactory()
-            .createEntity(source.getLevel(), profileId, source.getPosition());
+        EasyModelEntitiesApi.createEntity(source.getLevel(), profileId, source.getPosition());
     if (entity.isEmpty()) {
       source.sendFailure(
           Component.literal(
@@ -282,9 +284,8 @@ public final class EasyModelEntitiesCommand {
       return 0;
     }
 
-    if (level.getBlockEntity(blockPos) instanceof EasyModelHostBlockEntity hostBlockEntity) {
-      hostBlockEntity.setEasyModelProfileId(profileId);
-    } else {
+    BlockEntity blockEntity = level.getBlockEntity(blockPos);
+    if (blockEntity == null || !EasyModelBlockEntitiesApi.setProfileId(blockEntity, profileId)) {
       source.sendFailure(
           Component.literal("Placed block at " + blockPos + " without Easy Model BlockEntity."));
       return 0;
@@ -295,7 +296,7 @@ public final class EasyModelEntitiesCommand {
     return 1;
   }
 
-  private static ArgumentBuilder<CommandSourceStack, ?> profileIdArgument() {
+  static ArgumentBuilder<CommandSourceStack, ?> profileIdArgument() {
     return Commands.argument(PROFILE_ID_ARGUMENT, IdentifierArgument.id())
         .suggests(
             (context, builder) -> {
@@ -306,7 +307,7 @@ public final class EasyModelEntitiesCommand {
             });
   }
 
-  private static Identifier parseProfileId(CommandContext<CommandSourceStack> context) {
+  static Identifier parseProfileId(CommandContext<CommandSourceStack> context) {
     return IdentifierArgument.getId(context, PROFILE_ID_ARGUMENT);
   }
 

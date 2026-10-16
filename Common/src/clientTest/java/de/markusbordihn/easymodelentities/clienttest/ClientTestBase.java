@@ -26,7 +26,9 @@ import de.markusbordihn.clientruntimeinterfacetoolkit.testrunner.data.CompareOpt
 import de.markusbordihn.clientruntimeinterfacetoolkit.testrunner.data.Parameters;
 import de.markusbordihn.clientruntimeinterfacetoolkit.testrunner.data.TestArea;
 import de.markusbordihn.clientruntimeinterfacetoolkit.testrunner.data.api.CaptureComparison;
+import de.markusbordihn.clientruntimeinterfacetoolkit.testrunner.data.api.CaptureCrop;
 import java.time.Duration;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -119,6 +121,13 @@ abstract class ClientTestBase {
         .compare(baselineFrameId, MODEL_AREA_COMPARE.withTolerance(pixelTolerance))
         .comparison()
         .changedPixels();
+  }
+
+  static Optional<CaptureCrop> changedBoundsSince(String baselineFrameId, int pixelTolerance) {
+    return client
+        .compare(baselineFrameId, MODEL_AREA_COMPARE.withTolerance(pixelTolerance))
+        .comparison()
+        .changedBounds();
   }
 
   static long changedLegPixelsSince(String baselineFrameId) {

@@ -56,6 +56,12 @@ public final class EasyModelGameTests {
     registerTest(
         "entity_data_serializers_are_registered",
         EntityDataSerializerGameTest::serializersAreNeoForgeRegistered);
+    registerTest(
+        "animation_packets_skip_client_without_mod",
+        ClientWithoutModGameTest::animationPacketsSkipClientWithoutMod);
+    registerTest(
+        "shoulder_packets_skip_client_without_mod",
+        ClientWithoutModGameTest::shoulderPacketsSkipClientWithoutMod);
 
     GameTestHelpers.testFunctions(HostEntityGameTestCases.class)
         .forEach(EasyModelGameTests::registerTest);
