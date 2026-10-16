@@ -22,6 +22,7 @@
     ],
     "fabric-gametest": [
       "de.markusbordihn.easymodelentities.gametest.SmokeTest",
+      "de.markusbordihn.easymodelentities.gametest.EntityDataSerializerGameTest",
       "de.markusbordihn.easymodelentities.gametest.HostEntityGameTest"
     ]
   },

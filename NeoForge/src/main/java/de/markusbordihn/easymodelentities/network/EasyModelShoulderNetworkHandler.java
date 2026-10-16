@@ -28,7 +28,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class EasyModelShoulderNetworkHandler {
@@ -64,12 +63,12 @@ public final class EasyModelShoulderNetworkHandler {
 
     @Override
     public void sendToTrackingAndSelf(Entity entity, ClientboundEasyModelShoulderPacket packet) {
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, packet);
+      ChannelAwarePacketDistributor.sendToPlayersNearEntityAndSelf(entity, packet);
     }
 
     @Override
     public void sendToPlayer(ServerPlayer player, ClientboundEasyModelShoulderPacket packet) {
-      PacketDistributor.sendToPlayer(player, packet);
+      ChannelAwarePacketDistributor.sendToPlayer(player, packet);
     }
   }
 }
