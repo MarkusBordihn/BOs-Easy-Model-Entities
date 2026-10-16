@@ -21,6 +21,7 @@ package de.markusbordihn.easymodelentities.command;
 
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.MUTABLE_ENTITY;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.RENDERABLE_ENTITY;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.getRenderables;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.targetBranches;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.updateMutables;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.updateRenderables;
@@ -73,7 +74,8 @@ final class EasyModelAnimationCommand {
         .then(playCommand())
         .then(stopCommand())
         .then(restartCommand())
-        .then(setCommand());
+        .then(setCommand())
+        .then(getCommand());
   }
 
   private static ArgumentBuilder<CommandSourceStack, ?> playCommand() {
@@ -310,6 +312,13 @@ final class EasyModelAnimationCommand {
         (target, blockTarget) -> target.then(stateArgument(blockTarget)));
   }
 
+  private static ArgumentBuilder<CommandSourceStack, ?> getCommand() {
+    return targetBranches(
+        Commands.literal("get"),
+        RENDERABLE_ENTITY,
+        (target, blockTarget) -> target.executes(context -> get(context, blockTarget)));
+  }
+
   private static ArgumentBuilder<CommandSourceStack, ?> stateArgument(boolean blockTarget) {
     ArgumentBuilder<CommandSourceStack, ?> stateArgument =
         Commands.argument(STATE_ARGUMENT, StringArgumentType.string())
@@ -336,11 +345,36 @@ final class EasyModelAnimationCommand {
       EasyModelAnimationPlayback playback,
       EasyModelAnimationTransition transition)
       throws CommandSyntaxException {
+    if (randomPick) {
+      return playRandom(context, blockTarget, playback, transition);
+    }
+
+    Optional<EasyModelAnimation> animation =
+        parseAnimation(StringArgumentType.getString(context, ANIMATION_ARGUMENT));
+    if (animation.isEmpty()) {
+      context.getSource().sendFailure(Component.literal(INVALID_ANIMATION_MESSAGE));
+      return 0;
+    }
+
+    return updateRenderables(
+        context,
+        blockTarget,
+        "Started animation",
+        target ->
+            EasyModelBlockEntitiesApi.playAnimation(
+                target.blockEntity(), animation.get(), playback, transition),
+        entity ->
+            EasyModelEntitiesApi.playAnimation(entity, animation.get(), playback, transition));
+  }
+
+  private static int playRandom(
+      CommandContext<CommandSourceStack> context,
+      boolean blockTarget,
+      EasyModelAnimationPlayback playback,
+      EasyModelAnimationTransition transition)
+      throws CommandSyntaxException {
     List<EasyModelAnimation> candidates =
-        randomPick
-            ? parseAnimations(StringArgumentType.getString(context, CLIPS_ARGUMENT))
-            : parseAnimation(StringArgumentType.getString(context, ANIMATION_ARGUMENT)).stream()
-                .toList();
+        parseAnimations(StringArgumentType.getString(context, CLIPS_ARGUMENT));
     if (candidates.isEmpty()) {
       context.getSource().sendFailure(Component.literal(INVALID_ANIMATION_MESSAGE));
       return 0;
@@ -421,6 +455,43 @@ final class EasyModelAnimationCommand {
         "Set animation",
         blockEntity -> EasyModelBlockEntitiesApi.setAnimation(blockEntity, setting),
         entity -> EasyModelEntitiesApi.setAnimation(entity, setting));
+  }
+
+  private static int get(CommandContext<CommandSourceStack> context, boolean blockTarget)
+      throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    return getRenderables(
+        context,
+        blockTarget,
+        target ->
+            sendAnimationLine(
+                source,
+                target.blockPos().toShortString(),
+                EasyModelBlockEntitiesApi.getAnimationSetting(target.blockEntity())),
+        entity ->
+            sendAnimationLine(
+                source,
+                entity.getName().getString(),
+                EasyModelEntitiesApi.getAnimationSetting(entity)));
+  }
+
+  private static int sendAnimationLine(
+      CommandSourceStack source, String targetName, EasyModelAnimationSetting setting) {
+    if (setting.animation().equals(EasyModelAnimation.AUTO)) {
+      source.sendSuccess(() -> Component.literal(targetName + ": no animation override"), false);
+      return 0;
+    }
+
+    String loopSuffix =
+        setting.loop() == EasyModelAnimationLoop.CLIP
+            ? ""
+            : " " + setting.loop().getSerializedName();
+    source.sendSuccess(
+        () ->
+            Component.literal(
+                targetName + ": animation " + setting.animation().serializedName() + loopSuffix),
+        false);
+    return 1;
   }
 
   static List<EasyModelAnimation> parseAnimations(String value) {

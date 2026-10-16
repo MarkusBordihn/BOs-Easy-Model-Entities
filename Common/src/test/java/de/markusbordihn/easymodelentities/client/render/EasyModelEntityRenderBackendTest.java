@@ -303,6 +303,7 @@ class EasyModelEntityRenderBackendTest {
   @DisplayName("Only an aquatic model without a walk clip flops on land")
   void strandedNeedsAquaticModelWithoutWalkClipOnLand() {
     LivingEntity entity = livingEntity();
+    when(entity.onGround()).thenReturn(true);
     EasyModelRenderState fish =
         renderState(ModelBodyType.AQUATIC, ModelAnimationMode.AUTOMATIC, "idle", "swim");
     EasyModelRenderState walkingFish =
@@ -314,6 +315,15 @@ class EasyModelEntityRenderBackendTest {
     assertFalse(EasyModelEntityRenderBackend.stranded(entity, fish, true));
     assertFalse(EasyModelEntityRenderBackend.stranded(entity, walkingFish, false));
     assertFalse(EasyModelEntityRenderBackend.stranded(entity, biped, false));
+  }
+
+  @Test
+  @DisplayName("An airborne aquatic model keeps swimming instead of flopping")
+  void strandedNeedsGroundContact() {
+    EasyModelRenderState fish =
+        renderState(ModelBodyType.AQUATIC, ModelAnimationMode.AUTOMATIC, "idle", "swim");
+
+    assertFalse(EasyModelEntityRenderBackend.stranded(livingEntity(), fish, false));
   }
 
   private static LivingEntity livingEntity() {

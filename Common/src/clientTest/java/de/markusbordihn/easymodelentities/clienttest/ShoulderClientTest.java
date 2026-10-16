@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.clientruntimeinterfacetoolkit.testrunner.Until;
 import de.markusbordihn.clientruntimeinterfacetoolkit.testrunner.data.Parameters;
+import de.markusbordihn.clientruntimeinterfacetoolkit.testrunner.data.api.CaptureCrop;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +36,9 @@ class ShoulderClientTest extends ClientTestBase {
   private static final long VISIBLE_CHANGE_PIXELS = 500;
   private static final long SYNC_TICKS = 5;
   private static final long LANDING_TICKS = 20;
+  private static final double SHOULDER_OFFSET_UP = 0.25;
+  private static final double SHOULDER_OFFSET_DOWN = -0.25;
+  private static final int SKY_DRIFT_PIXEL_TOLERANCE = 32;
 
   // Vanilla Player.aiStep ignores fall triggers for 20 ticks after an entity landed on the
   // shoulder.
@@ -57,6 +61,39 @@ class ShoulderClientTest extends ClientTestBase {
     return client.retainFrame();
   }
 
+  private static void dropModelsFromShoulder() {
+    client.teleport(MODEL_X, MODEL_Y + FALL_HEIGHT, MODEL_Z);
+    client.await(Until.ticksElapsed(LANDING_TICKS));
+    moveModelsBehindCamera();
+  }
+
+  private static long seatedModelTop(double shoulderOffsetY, String screenshotName) {
+    String playerOnlyFrame = client.retainFrame();
+    client.runCommand(
+        COMMAND + "shoulder offset set entity " + MODELS + " 0 " + shoulderOffsetY + " 0");
+    client.runCommand(COMMAND + "shoulder sit entity " + MODELS + " @s");
+    client.await(Until.ticksElapsed(SHOULDER_GUARD_TICKS));
+    CaptureCrop seatedBounds =
+        changedBoundsSince(playerOnlyFrame, SKY_DRIFT_PIXEL_TOLERANCE).orElseThrow();
+    client.saveScreenshot(screenshotName);
+    dropModelsFromShoulder();
+    return seatedBounds.y();
+  }
+
+  @Test
+  @DisplayName("A shoulder offset moves the seated model up or down on the shoulder")
+  void shoulderOffsetMovesSeatedModel() {
+    preparePlayerFrontView();
+
+    long defaultTop = seatedModelTop(0.0, "shoulder_offset_default");
+    long raisedTop = seatedModelTop(SHOULDER_OFFSET_UP, "shoulder_offset_up");
+    long loweredTop = seatedModelTop(SHOULDER_OFFSET_DOWN, "shoulder_offset_down");
+
+    String tops = "default " + defaultTop + ", up " + raisedTop + ", down " + loweredTop;
+    assertTrue(raisedTop < defaultTop, "offset up did not raise the model: " + tops);
+    assertTrue(loweredTop > defaultTop, "offset down did not lower the model: " + tops);
+  }
+
   @Test
   @DisplayName("A model seated on the shoulder renders on the player and drops off after a fall")
   void shoulderModelRendersAndDropsOffAfterFall() {
@@ -69,9 +106,7 @@ class ShoulderClientTest extends ClientTestBase {
     String seatedFrame = client.retainFrame();
     client.saveScreenshot("shoulder_seated");
 
-    client.teleport(MODEL_X, MODEL_Y + FALL_HEIGHT, MODEL_Z);
-    client.await(Until.ticksElapsed(LANDING_TICKS));
-    moveModelsBehindCamera();
+    dropModelsFromShoulder();
     long droppedPixels = changedPixelsSince(seatedFrame);
     client.saveScreenshot("shoulder_dropped");
 

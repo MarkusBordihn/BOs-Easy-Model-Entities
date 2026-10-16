@@ -23,6 +23,7 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
+import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -35,6 +36,7 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 public abstract class EasyModelHostEntity extends PathfinderMob implements EasyModelEntityHost {
 
@@ -90,6 +92,7 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
           LIGHT_LEVEL);
 
   private EasyModelRuntimeContract runtimeContract;
+  private Vec3 shoulderOffset = Vec3.ZERO;
 
   protected EasyModelHostEntity(EntityType<? extends PathfinderMob> entityType, Level level) {
     super(entityType, level);
@@ -121,12 +124,14 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
   public void addAdditionalSaveData(CompoundTag compoundTag) {
     super.addAdditionalSaveData(compoundTag);
     EasyModelHostSupport.addAdditionalSaveData(compoundTag, this.entityData, FIELDS);
+    EasyModelHostPersistence.writeShoulderOffset(compoundTag, this.shoulderOffset);
   }
 
   @Override
   public void readAdditionalSaveData(CompoundTag compoundTag) {
     super.readAdditionalSaveData(compoundTag);
     EasyModelHostSupport.readAdditionalSaveData(this, compoundTag, FIELDS);
+    this.shoulderOffset = EasyModelHostPersistence.readShoulderOffset(compoundTag);
   }
 
   @Override
@@ -187,6 +192,16 @@ public abstract class EasyModelHostEntity extends PathfinderMob implements EasyM
   @Override
   public void setEasyModelLightLevel(int lightLevel) {
     EasyModelHostSupport.setLightLevel(this.entityData, FIELDS, lightLevel);
+  }
+
+  @Override
+  public Vec3 getEasyModelShoulderOffset() {
+    return this.shoulderOffset;
+  }
+
+  @Override
+  public void setEasyModelShoulderOffset(Vec3 shoulderOffset) {
+    this.shoulderOffset = shoulderOffset == null ? Vec3.ZERO : shoulderOffset;
   }
 
   @Override

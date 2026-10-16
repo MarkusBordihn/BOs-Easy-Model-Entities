@@ -133,11 +133,7 @@ public final class CommandGameTestCases {
     }
 
     EasyModelHostEntity hostEntity = spawnedEntity.get();
-    ServerLevel level = helper.getLevel();
-    ServerPlayer player =
-        new ServerPlayer(
-            level.getServer(), level, new GameProfile(UUID.randomUUID(), "shoulder-test-player"));
-    player.setOnGround(true);
+    ServerPlayer player = createShoulderTestPlayer(helper);
     int seated =
         runCommand(
             helper,
@@ -162,6 +158,43 @@ public final class CommandGameTestCases {
         seated == 1 && onShoulder && removed);
   }
 
+  public static void shoulderOffsetCommandTravelsOntoShoulder(GameTestHelper helper) {
+    Optional<EasyModelHostEntity> spawnedEntity = spawnHostEntity(helper);
+    if (spawnedEntity.isEmpty()) {
+      helper.fail("Could not create host entity for the shoulder offset command.");
+      return;
+    }
+
+    EasyModelHostEntity hostEntity = spawnedEntity.get();
+    String target = entityTarget(hostEntity);
+    runCommand(helper, "shoulder offset set " + target + " 0.3 0.3 0.3");
+    int cleared = runCommand(helper, "shoulder offset clear " + target);
+    boolean clearedToZero = Vec3.ZERO.equals(EasyModelEntitiesApi.getShoulderOffset(hostEntity));
+    Vec3 expectedOffset = new Vec3(0.1, 0.25, -0.05);
+    int updated = runCommand(helper, "shoulder offset set " + target + " 0.1 0.25 -0.05");
+    int reported = runCommand(helper, "shoulder offset get " + target);
+    ServerPlayer player = createShoulderTestPlayer(helper);
+    runCommand(helper, commandSource(helper).withEntity(player), "shoulder sit " + target + " @s");
+    Vec3 seatedOffset =
+        EasyModelHostPersistence.read(player.getShoulderEntityLeft()).shoulderOffset();
+    GameTestHelpers.assertTrue(
+        helper,
+        "The shoulder offset command must set, clear and report the offset, and the offset must"
+            + " travel onto the shoulder: cleared "
+            + cleared
+            + ", updated "
+            + updated
+            + ", reported "
+            + reported
+            + ", seated offset "
+            + seatedOffset,
+        cleared == 1
+            && clearedToZero
+            && updated == 1
+            && reported == 1
+            && expectedOffset.equals(seatedOffset));
+  }
+
   public static void behaviorCommandFreezesAndRestoresHostEntity(GameTestHelper helper) {
     Optional<EasyModelHostEntity> spawnedEntity = spawnHostEntity(helper);
     if (spawnedEntity.isEmpty()) {
@@ -173,13 +206,69 @@ public final class CommandGameTestCases {
     String target = entityTarget(hostEntity);
     int frozenCount = runCommand(helper, "behavior set " + target + " frozen");
     boolean frozen = EasyModelEntitiesApi.isFrozen(hostEntity);
+    int frozenReported = runCommand(helper, "behavior get " + target);
     int restoredCount = runCommand(helper, "behavior set " + target + " auto");
     boolean restored = !EasyModelEntitiesApi.isFrozen(hostEntity);
+    int restoredReported = runCommand(helper, "behavior get " + target);
     hostEntity.discard();
     GameTestHelpers.assertTrue(
         helper,
-        "The behavior command must freeze and restore a host entity!",
-        frozenCount == 1 && frozen && restoredCount == 1 && restored);
+        "The behavior command must freeze, restore and report a host entity!",
+        frozenCount == 1
+            && frozen
+            && frozenReported == 1
+            && restoredCount == 1
+            && restored
+            && restoredReported == 0);
+  }
+
+  public static void profileCommandsReportHostEntityProfile(GameTestHelper helper) {
+    Optional<EasyModelHostEntity> spawnedEntity = spawnHostEntity(helper);
+    if (spawnedEntity.isEmpty()) {
+      helper.fail("Could not create host entity for the profile command.");
+      return;
+    }
+
+    EasyModelHostEntity hostEntity = spawnedEntity.get();
+    int reported = runCommand(helper, "profile get " + entityTarget(hostEntity));
+    hostEntity.discard();
+    GameTestHelpers.assertTrue(
+        helper, "The profile get command must report the host entity profile!", reported == 1);
+  }
+
+  public static void profileCommandsReportAndChangeHostBlockProfile(GameTestHelper helper) {
+    Optional<EasyModelHostBlockEntity> placedBlockEntity = placeHostBlock(helper);
+    if (placedBlockEntity.isEmpty()) {
+      helper.fail("Placed host block did not create an EasyModelHostBlockEntity.");
+      return;
+    }
+
+    String target = blockTarget(helper, HOST_BLOCK_POS);
+    int reported = runCommand(helper, "profile get " + target);
+    int changed = runCommand(helper, "profile set " + target + " " + BLOCK_PROFILE_ID);
+    int entityProfileRejected =
+        runCommand(helper, "profile set " + target + " " + GROUND_PROFILE_ID);
+    int emptyPositionRejected =
+        runCommand(
+            helper,
+            "profile set " + blockTarget(helper, EMPTY_BLOCK_POS) + " " + BLOCK_PROFILE_ID);
+    GameTestHelpers.assertTrue(
+        helper,
+        "The profile commands must report and change a host block profile and reject an entity"
+            + " profile or an empty position: reported "
+            + reported
+            + ", changed "
+            + changed
+            + ", entity profile "
+            + entityProfileRejected
+            + ", empty position "
+            + emptyPositionRejected,
+        reported == 1
+            && changed == 1
+            && BLOCK_PROFILE_ID.equals(
+                EasyModelBlockEntitiesApi.getProfileId(placedBlockEntity.get()).orElse(null))
+            && entityProfileRejected == 0
+            && emptyPositionRejected == 0);
   }
 
   public static void animationCommandsControlHostEntity(GameTestHelper helper) {
@@ -328,6 +417,12 @@ public final class CommandGameTestCases {
     if (runCommand(helper, "animation play " + target + " walk once") != 1) {
       return "animation play failed for " + target;
     }
+    if (runCommand(helper, "animation play " + target + " walk repeat 2 immediate 5 0 0.5") != 1) {
+      return "animation play repeat with speed failed for " + target;
+    }
+    if (runCommand(helper, "animation play " + target + " walk hold after_current 4") != 1) {
+      return "animation play hold failed for " + target;
+    }
     if (runCommand(helper, "animation play " + target + " random \"walk,idle\"") != 1) {
       return "animation play random failed for " + target;
     }
@@ -346,6 +441,9 @@ public final class CommandGameTestCases {
     }
     if (runCommand(helper, "animation set " + target + " walk loop") != 1) {
       return "animation set failed for " + target;
+    }
+    if (runCommand(helper, "animation get " + target) != 1) {
+      return "animation get did not report the set animation for " + target;
     }
 
     return null;
@@ -420,6 +518,15 @@ public final class CommandGameTestCases {
     }
 
     return null;
+  }
+
+  private static ServerPlayer createShoulderTestPlayer(GameTestHelper helper) {
+    ServerLevel level = helper.getLevel();
+    ServerPlayer player =
+        new ServerPlayer(
+            level.getServer(), level, new GameProfile(UUID.randomUUID(), "shoulder-test-player"));
+    player.setOnGround(true);
+    return player;
   }
 
   private static String entityTarget(EasyModelHostEntity hostEntity) {

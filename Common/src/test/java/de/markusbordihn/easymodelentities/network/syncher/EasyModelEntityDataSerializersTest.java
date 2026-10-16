@@ -24,10 +24,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import io.netty.buffer.Unpooled;
+import net.minecraft.SharedConstants;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.Bootstrap;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +38,12 @@ class EasyModelEntityDataSerializersTest {
 
   private static final ResourceLocation SAD =
       new ResourceLocation("example", "textures/entity/echo/screen_sad.png");
+
+  @BeforeAll
+  static void bootstrapMinecraft() {
+    SharedConstants.tryDetectVersion();
+    Bootstrap.bootStrap();
+  }
 
   private static EasyModelTextureSetting roundTrip(EasyModelTextureSetting textureSetting) {
     FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());

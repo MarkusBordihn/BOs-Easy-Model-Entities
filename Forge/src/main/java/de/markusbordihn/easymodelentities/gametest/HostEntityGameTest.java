@@ -38,4 +38,9 @@ public class HostEntityGameTest {
   public Collection<TestFunction> commandTests() {
     return GameTestHelpers.testFunctions(CommandGameTestCases.class);
   }
+
+  @GameTestGenerator
+  public Collection<TestFunction> clientWithoutModTests() {
+    return GameTestHelpers.testFunctions(ClientWithoutModGameTestCases.class);
+  }
 }

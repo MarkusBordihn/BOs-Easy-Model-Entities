@@ -644,6 +644,7 @@ public final class EasyModelEntityRenderBackend {
   static boolean stranded(Entity entity, EasyModelRenderState renderState, boolean inWater) {
     return !inWater
         && entity instanceof LivingEntity
+        && entity.onGround()
         && renderState.bodyType() == ModelBodyType.AQUATIC
         && !hasClip(renderState, ModelAnimationClips.WALK);
   }
