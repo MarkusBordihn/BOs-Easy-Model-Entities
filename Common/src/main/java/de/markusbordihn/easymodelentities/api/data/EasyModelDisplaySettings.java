@@ -28,8 +28,25 @@ public final class EasyModelDisplaySettings {
   public static final int MIN_LIGHT_LEVEL = 0;
   public static final int MAX_LIGHT_LEVEL = 15;
   public static final int NO_LIGHT_LEVEL = -1;
+  public static final double MAX_SHOULDER_OFFSET = 2.0;
 
   private EasyModelDisplaySettings() {}
+
+  public static void requireShoulderOffset(double x, double y, double z) {
+    if (!isShoulderOffsetComponent(x) || !isShoulderOffsetComponent(y)
+        || !isShoulderOffsetComponent(z)) {
+      throw new IllegalArgumentException(
+          "shoulder offset components must be finite values between "
+              + -MAX_SHOULDER_OFFSET
+              + " and "
+              + MAX_SHOULDER_OFFSET
+              + ".");
+    }
+  }
+
+  private static boolean isShoulderOffsetComponent(double value) {
+    return Double.isFinite(value) && Math.abs(value) <= MAX_SHOULDER_OFFSET;
+  }
 
   public static void requireOpacity(float opacity) {
     if (!Float.isFinite(opacity) || opacity < MIN_OPACITY || opacity > MAX_OPACITY) {

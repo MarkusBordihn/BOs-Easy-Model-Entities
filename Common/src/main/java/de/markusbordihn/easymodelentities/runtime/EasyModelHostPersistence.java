@@ -26,6 +26,7 @@ import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.Vec3;
 
 public final class EasyModelHostPersistence {
 
@@ -37,6 +38,7 @@ public final class EasyModelHostPersistence {
   public static final String TEXTURE_TAG = "Texture";
   public static final String OPACITY_TAG = "Opacity";
   public static final String LIGHT_LEVEL_TAG = "LightLevel";
+  public static final String SHOULDER_OFFSET_TAG = "ShoulderOffset";
 
   private EasyModelHostPersistence() {}
 
@@ -58,7 +60,8 @@ public final class EasyModelHostPersistence {
         readAnimation(valueInput),
         readTexture(valueInput),
         readOpacity(valueInput),
-        readLightLevel(valueInput));
+        readLightLevel(valueInput),
+        readShoulderOffset(valueInput));
   }
 
   public static void write(
@@ -119,6 +122,19 @@ public final class EasyModelHostPersistence {
     valueOutput.putInt(LIGHT_LEVEL_TAG, EasyModelDisplaySettings.clampLightLevel(lightLevel));
   }
 
+  public static void writeShoulderOffset(ValueOutput valueOutput, Vec3 shoulderOffset) {
+    if (shoulderOffset == null || Vec3.ZERO.equals(shoulderOffset)) {
+      valueOutput.discard(SHOULDER_OFFSET_TAG);
+      return;
+    }
+
+    valueOutput.store(SHOULDER_OFFSET_TAG, Vec3.CODEC, shoulderOffset);
+  }
+
+  public static Vec3 readShoulderOffset(ValueInput valueInput) {
+    return valueInput.read(SHOULDER_OFFSET_TAG, Vec3.CODEC).orElse(Vec3.ZERO);
+  }
+
   private static float readOpacity(ValueInput valueInput) {
     return EasyModelDisplaySettings.clampOpacityOverride(
         valueInput.getFloatOr(OPACITY_TAG, EasyModelDisplaySettings.NO_OPACITY));
@@ -149,5 +165,6 @@ public final class EasyModelHostPersistence {
       EasyModelAnimationSetting animation,
       EasyModelTextureSetting texture,
       float opacity,
-      int lightLevel) {}
+      int lightLevel,
+      Vec3 shoulderOffset) {}
 }

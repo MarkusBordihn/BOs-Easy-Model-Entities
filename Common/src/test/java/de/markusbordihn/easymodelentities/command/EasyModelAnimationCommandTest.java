@@ -31,12 +31,21 @@ import com.mojang.brigadier.ParseResults;
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import java.util.List;
 import java.util.stream.IntStream;
+import net.minecraft.SharedConstants;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.server.Bootstrap;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class EasyModelAnimationCommandTest {
+
+  @BeforeAll
+  static void bootstrapMinecraft() {
+    SharedConstants.tryDetectVersion();
+    Bootstrap.bootStrap();
+  }
 
   private static void assertParses(String command) {
     CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
@@ -62,6 +71,8 @@ class EasyModelAnimationCommandTest {
     assertParses("easy_model_entities animation stop entity @e after_current 5");
     assertParses("easy_model_entities animation restart block 1 64 -3");
     assertParses("easy_model_entities animation set entity @e attack");
+    assertParses("easy_model_entities animation get entity @e");
+    assertParses("easy_model_entities animation get block 1 64 -3");
   }
 
   @Test

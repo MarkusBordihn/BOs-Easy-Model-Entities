@@ -5,6 +5,19 @@
 This change log includes the summarized changes. For the full changelog, please go to
 the [GitHub History][history] instead.
 
+### 2.6.0
+
+- Fixed NeoForge servers crashing when a player without the mod is near an animated model.
+- Fixed NeoForge servers crashing when a player without the mod is near a shoulder model.
+- Fixed flying aquatic models, like a ray gliding above the water, flopping as if stranded on land.
+- Fixed NeoForge reporting the version as 0.0NONE, so other mods could not require a minimum.
+- Added `animation get` to show the animation set on an entity or block entity.
+- Added `behavior get` to show whether a host entity is frozen.
+- Added `profile get` to show the profile of an entity or block entity.
+- Added `profile set block` to switch the profile of a placed block entity.
+- Added `shoulder offset` to move a single entity on the shoulder, on top of the profile offset.
+- Updated the tested NeoForge version to 21.11.48, which fixes three network vulnerabilities.
+
 ### 2.5.0
 
 - Fixed models playing `fly` instead of `swim` while diving or surfacing.

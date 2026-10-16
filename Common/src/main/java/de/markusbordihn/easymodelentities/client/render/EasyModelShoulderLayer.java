@@ -38,6 +38,7 @@ import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 
 public class EasyModelShoulderLayer extends RenderLayer<AvatarRenderState, PlayerModel> {
 
@@ -103,7 +104,11 @@ public class EasyModelShoulderLayer extends RenderLayer<AvatarRenderState, Playe
 
     Identifier profileId = shoulderModel.get().profileId();
     ModelShoulderSettings settings = shoulderSettings(profileId);
-    Vec3f offset = settings.offset();
+    Vec3f profileOffset = settings.offset();
+    Vec3 entityOffset = shoulderModel.get().offset();
+    double offsetX = profileOffset.x() + entityOffset.x;
+    double offsetY = profileOffset.y() + entityOffset.y;
+    double offsetZ = profileOffset.z() + entityOffset.z;
     poseStack.pushPose();
     this.getParentModel().body.translateAndRotate(poseStack);
     poseStack.translate(
@@ -111,7 +116,7 @@ public class EasyModelShoulderLayer extends RenderLayer<AvatarRenderState, Playe
         renderState.isCrouching ? CROUCHING_SHOULDER_DROP : 0.0f,
         0.0f);
     poseStack.mulPose(Axis.ZP.rotationDegrees(UPRIGHT_ROLL_DEGREES));
-    poseStack.translate(leftShoulder ? -offset.x() : offset.x(), offset.y(), -offset.z());
+    poseStack.translate(leftShoulder ? -offsetX : offsetX, offsetY, -offsetZ);
     EasyModelEntitiesClientApi.submit(
         profileId,
         poseStack,

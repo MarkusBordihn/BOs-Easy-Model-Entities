@@ -27,13 +27,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelAnimation;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
+import net.minecraft.SharedConstants;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.Bootstrap;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class EasyModelEntityRenderOptionsTest {
 
   private static final Identifier SCREEN =
       Identifier.fromNamespaceAndPath("example", "textures/entity/echo/screen_sad.png");
+
+  @BeforeAll
+  static void bootstrapMinecraft() {
+    SharedConstants.tryDetectVersion();
+    Bootstrap.bootStrap();
+  }
 
   @Test
   void defaultHasNullScale() {

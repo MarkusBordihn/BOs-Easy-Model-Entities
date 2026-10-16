@@ -31,6 +31,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -65,6 +66,13 @@ class EasyModelHostPersistenceTest {
   private static CompoundTag writeLightLevel(int lightLevel) {
     TagValueOutput valueOutput = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
     EasyModelHostPersistence.writeLightLevel(valueOutput, lightLevel);
+
+    return valueOutput.buildResult();
+  }
+
+  private static CompoundTag writeShoulderOffset(Vec3 shoulderOffset) {
+    TagValueOutput valueOutput = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+    EasyModelHostPersistence.writeShoulderOffset(valueOutput, shoulderOffset);
 
     return valueOutput.buildResult();
   }
@@ -143,5 +151,24 @@ class EasyModelHostPersistenceTest {
   @Test
   void missingLightLevelTagReadsAsNoOverride() {
     assertEquals(EasyModelDisplaySettings.NO_LIGHT_LEVEL, read(new CompoundTag()).lightLevel());
+  }
+
+  @Test
+  void shoulderOffsetRoundTripsThroughTheSaveTag() {
+    Vec3 shoulderOffset = new Vec3(0.1, -0.25, 0.05);
+
+    assertEquals(shoulderOffset, read(writeShoulderOffset(shoulderOffset)).shoulderOffset());
+  }
+
+  @Test
+  @DisplayName("A zero shoulder offset leaves no tag behind, so old saves stay untouched")
+  void zeroShoulderOffsetWritesNoTag() {
+    assertFalse(
+        writeShoulderOffset(Vec3.ZERO).contains(EasyModelHostPersistence.SHOULDER_OFFSET_TAG));
+  }
+
+  @Test
+  void missingShoulderOffsetTagReadsAsZero() {
+    assertEquals(Vec3.ZERO, read(new CompoundTag()).shoulderOffset());
   }
 }
