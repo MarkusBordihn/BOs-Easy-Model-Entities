@@ -63,6 +63,8 @@ class EasyModelAnimationCommandTest {
     assertParses("easy_model_entities animation stop entity @e after_current 5");
     assertParses("easy_model_entities animation restart block 1 64 -3");
     assertParses("easy_model_entities animation set entity @e attack");
+    assertParses("easy_model_entities animation get entity @e");
+    assertParses("easy_model_entities animation get block 1 64 -3");
   }
 
   @Test

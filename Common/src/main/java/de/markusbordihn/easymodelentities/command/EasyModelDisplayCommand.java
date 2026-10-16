@@ -113,55 +113,46 @@ final class EasyModelDisplayCommand {
 
   private static int setOpacity(CommandContext<CommandSourceStack> context, boolean blockTarget)
       throws CommandSyntaxException {
-    int percent = IntegerArgumentType.getInteger(context, OPACITY_ARGUMENT);
-    return applyOpacity(context, blockTarget, percent / (float) MAX_OPACITY_PERCENT, "Set opacity");
-  }
-
-  private static int clearOpacity(CommandContext<CommandSourceStack> context, boolean blockTarget)
-      throws CommandSyntaxException {
-    return applyOpacity(
-        context, blockTarget, EasyModelDisplaySettings.NO_OPACITY, "Cleared opacity");
-  }
-
-  private static int applyOpacity(
-      CommandContext<CommandSourceStack> context, boolean blockTarget, float opacity, String action)
-      throws CommandSyntaxException {
+    float opacity =
+        IntegerArgumentType.getInteger(context, OPACITY_ARGUMENT) / (float) MAX_OPACITY_PERCENT;
     return updateMutables(
         context,
         blockTarget,
-        action,
+        "Set opacity",
         blockEntity -> EasyModelBlockEntitiesApi.setOpacity(blockEntity, opacity),
         entity -> EasyModelEntitiesApi.setOpacity(entity, opacity));
   }
 
-  private static int setLightLevel(CommandContext<CommandSourceStack> context, boolean blockTarget)
+  private static int clearOpacity(CommandContext<CommandSourceStack> context, boolean blockTarget)
       throws CommandSyntaxException {
-    return applyLightLevel(
+    return updateMutables(
         context,
         blockTarget,
-        IntegerArgumentType.getInteger(context, LIGHT_LEVEL_ARGUMENT),
-        "Set light level");
+        "Cleared opacity",
+        EasyModelBlockEntitiesApi::clearOpacity,
+        EasyModelEntitiesApi::clearOpacity);
+  }
+
+  private static int setLightLevel(CommandContext<CommandSourceStack> context, boolean blockTarget)
+      throws CommandSyntaxException {
+    int lightLevel = IntegerArgumentType.getInteger(context, LIGHT_LEVEL_ARGUMENT);
+    return updateMutables(
+        context,
+        blockTarget,
+        "Set light level",
+        blockEntity -> EasyModelBlockEntitiesApi.setLightLevel(blockEntity, lightLevel),
+        entity -> EasyModelEntitiesApi.setLightLevel(entity, lightLevel));
   }
 
   private static int clearLightLevel(
       CommandContext<CommandSourceStack> context, boolean blockTarget)
       throws CommandSyntaxException {
-    return applyLightLevel(
-        context, blockTarget, EasyModelDisplaySettings.NO_LIGHT_LEVEL, "Cleared light level");
-  }
-
-  private static int applyLightLevel(
-      CommandContext<CommandSourceStack> context,
-      boolean blockTarget,
-      int lightLevel,
-      String action)
-      throws CommandSyntaxException {
     return updateMutables(
         context,
         blockTarget,
-        action,
-        blockEntity -> EasyModelBlockEntitiesApi.setLightLevel(blockEntity, lightLevel),
-        entity -> EasyModelEntitiesApi.setLightLevel(entity, lightLevel));
+        "Cleared light level",
+        EasyModelBlockEntitiesApi::clearLightLevel,
+        EasyModelEntitiesApi::clearLightLevel);
   }
 
   private static int getOpacity(CommandContext<CommandSourceStack> context, boolean blockTarget)

@@ -85,6 +85,7 @@ public final class EasyModelShoulderModels {
     if (EasyModelDisplaySettings.hasLightLevelOverride(state.lightLevel())) {
       options = options.withLightLevel(state.lightLevel());
     }
-    return Optional.of(new EasyModelShoulderModel(state.profileId(), options));
+    return Optional.of(
+        new EasyModelShoulderModel(state.profileId(), options, state.shoulderOffset()));
   }
 }

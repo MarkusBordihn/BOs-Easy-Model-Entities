@@ -23,6 +23,7 @@ import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.TARGETS_ARGUMENT;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.entityTargets;
 import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.sendEntityResult;
+import static de.markusbordihn.easymodelentities.command.EasyModelCommandTargets.sendNoTargets;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -31,6 +32,7 @@ import de.markusbordihn.easymodelentities.api.EasyModelEntitiesApi;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 
 final class EasyModelBehaviorCommand {
@@ -51,7 +53,34 @@ final class EasyModelBehaviorCommand {
                                         .executes(context -> set(context, false)))
                                 .then(
                                     Commands.literal("frozen")
-                                        .executes(context -> set(context, true))))));
+                                        .executes(context -> set(context, true))))))
+        .then(
+            Commands.literal("get")
+                .then(
+                    Commands.literal("entity")
+                        .then(entityTargets(HOST_ENTITY).executes(EasyModelBehaviorCommand::get))));
+  }
+
+  private static int get(CommandContext<CommandSourceStack> context)
+      throws CommandSyntaxException {
+    CommandSourceStack source = context.getSource();
+    int matched = 0;
+    int frozen = 0;
+    for (Entity entity : EntityArgument.getEntities(context, TARGETS_ARGUMENT)) {
+      if (!HOST_ENTITY.test(entity)) {
+        continue;
+      }
+      boolean entityFrozen = EasyModelEntitiesApi.isFrozen(entity);
+      String targetName = entity.getName().getString();
+      source.sendSuccess(
+          () -> Component.literal(targetName + ": behavior " + (entityFrozen ? "frozen" : "auto")),
+          false);
+      matched++;
+      if (entityFrozen) {
+        frozen++;
+      }
+    }
+    return matched == 0 ? sendNoTargets(source) : frozen;
   }
 
   private static int set(CommandContext<CommandSourceStack> context, boolean frozen)

@@ -208,6 +208,32 @@ public final class EasyModelEntitiesApi {
     return true;
   }
 
+  public static Vec3 getShoulderOffset(Entity entity) {
+    Objects.requireNonNull(entity, "entity");
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      return hostEntity.getEasyModelShoulderOffset();
+    }
+
+    return Vec3.ZERO;
+  }
+
+  public static boolean setShoulderOffset(Entity entity, Vec3 shoulderOffset) {
+    Objects.requireNonNull(entity, "entity");
+    Objects.requireNonNull(shoulderOffset, "shoulderOffset");
+    EasyModelDisplaySettings.requireShoulderOffset(
+        shoulderOffset.x, shoulderOffset.y, shoulderOffset.z);
+    if (entity instanceof EasyModelEntityHost hostEntity) {
+      hostEntity.setEasyModelShoulderOffset(shoulderOffset);
+      return true;
+    }
+
+    return false;
+  }
+
+  public static boolean clearShoulderOffset(Entity entity) {
+    return setShoulderOffset(entity, Vec3.ZERO);
+  }
+
   public static EasyModelTextureSetting getTextureSetting(Entity entity) {
     Objects.requireNonNull(entity, "entity");
     if (entity instanceof EasyModelEntityHost hostEntity) {

@@ -24,7 +24,9 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 
 public final class EasyModelHostPersistence {
 
@@ -36,6 +38,7 @@ public final class EasyModelHostPersistence {
   public static final String TEXTURE_TAG = "Texture";
   public static final String OPACITY_TAG = "Opacity";
   public static final String LIGHT_LEVEL_TAG = "LightLevel";
+  public static final String SHOULDER_OFFSET_TAG = "ShoulderOffset";
 
   private EasyModelHostPersistence() {}
 
@@ -60,7 +63,8 @@ public final class EasyModelHostPersistence {
         readAnimation(compoundTag),
         readTexture(compoundTag),
         readOpacity(compoundTag),
-        readLightLevel(compoundTag));
+        readLightLevel(compoundTag),
+        readShoulderOffset(compoundTag));
   }
 
   public static void writeAnimation(CompoundTag compoundTag, EasyModelAnimationSetting animation) {
@@ -92,6 +96,29 @@ public final class EasyModelHostPersistence {
     }
 
     compoundTag.putInt(LIGHT_LEVEL_TAG, EasyModelDisplaySettings.clampLightLevel(lightLevel));
+  }
+
+  public static void writeShoulderOffset(CompoundTag compoundTag, Vec3 shoulderOffset) {
+    if (shoulderOffset == null || Vec3.ZERO.equals(shoulderOffset)) {
+      compoundTag.remove(SHOULDER_OFFSET_TAG);
+      return;
+    }
+
+    Vec3.CODEC
+        .encodeStart(NbtOps.INSTANCE, shoulderOffset)
+        .result()
+        .ifPresent(offsetTag -> compoundTag.put(SHOULDER_OFFSET_TAG, offsetTag));
+  }
+
+  public static Vec3 readShoulderOffset(CompoundTag compoundTag) {
+    if (!compoundTag.contains(SHOULDER_OFFSET_TAG)) {
+      return Vec3.ZERO;
+    }
+
+    return Vec3.CODEC
+        .parse(NbtOps.INSTANCE, compoundTag.get(SHOULDER_OFFSET_TAG))
+        .result()
+        .orElse(Vec3.ZERO);
   }
 
   private static float readOpacity(CompoundTag compoundTag) {
@@ -128,5 +155,6 @@ public final class EasyModelHostPersistence {
       EasyModelAnimationSetting animation,
       EasyModelTextureSetting texture,
       float opacity,
-      int lightLevel) {}
+      int lightLevel,
+      Vec3 shoulderOffset) {}
 }

@@ -27,6 +27,7 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelDisplaySettings;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.Vec3;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -132,5 +133,30 @@ class EasyModelHostPersistenceTest {
     assertEquals(
         EasyModelDisplaySettings.NO_LIGHT_LEVEL,
         EasyModelHostPersistence.read(new CompoundTag()).lightLevel());
+  }
+
+  @Test
+  void shoulderOffsetRoundTripsThroughTheSaveTag() {
+    Vec3 shoulderOffset = new Vec3(0.1, -0.25, 0.05);
+    CompoundTag compoundTag = new CompoundTag();
+
+    EasyModelHostPersistence.writeShoulderOffset(compoundTag, shoulderOffset);
+
+    assertEquals(shoulderOffset, EasyModelHostPersistence.read(compoundTag).shoulderOffset());
+  }
+
+  @Test
+  @DisplayName("A zero shoulder offset leaves no tag behind, so old saves stay untouched")
+  void zeroShoulderOffsetWritesNoTag() {
+    CompoundTag compoundTag = new CompoundTag();
+
+    EasyModelHostPersistence.writeShoulderOffset(compoundTag, Vec3.ZERO);
+
+    assertFalse(compoundTag.contains(EasyModelHostPersistence.SHOULDER_OFFSET_TAG));
+  }
+
+  @Test
+  void missingShoulderOffsetTagReadsAsZero() {
+    assertEquals(Vec3.ZERO, EasyModelHostPersistence.read(new CompoundTag()).shoulderOffset());
   }
 }

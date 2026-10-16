@@ -1,6 +1,6 @@
 plugins {
   id 'maven-publish'
-  id 'net.neoforged.gradle.userdev' version '7.0.145'
+  id 'net.neoforged.gradle.userdev' version '7.1.39'
   id 'net.darkhax.curseforgegradle' version '1.1.28'
   id 'nu.studer.credentials' version '3.0'
   id "com.modrinth.minotaur" version "2.+"
@@ -90,6 +90,21 @@ tasks.withType(ProcessResources).matching(notNeoTask).configureEach {
 
 test {
   useJUnitPlatform()
+}
+
+// FML resolves ${file.jarVersion} to 0.0NONE without Implementation-Version, and 0.0NONE passes every
+// dependency version range, so dependents could never enforce a minimum version.
+tasks.named('jar', Jar).configure {
+  manifest {
+    attributes([
+        "Specification-Title"   : "${project.mod_name}",
+        "Specification-Vendor"  : "${project.vendor_name}",
+        "Specification-Version" : "1",
+        "Implementation-Title"  : project.name,
+        "Implementation-Version": "${project.version}",
+        "Implementation-Vendor" : "${project.mod_id}",
+    ])
+  }
 }
 
 publishing {
