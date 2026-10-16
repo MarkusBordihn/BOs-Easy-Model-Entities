@@ -23,6 +23,7 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.data.profile.ModelBodyType;
 import de.markusbordihn.easymodelentities.network.syncher.EasyModelEntityDataSerializers;
+import de.markusbordihn.easymodelentities.runtime.EasyModelHostPersistence;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -103,6 +104,7 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
 
   private boolean easyModelHostRegistered;
   private EasyModelRuntimeContract runtimeContract;
+  private Vec3 shoulderOffset = Vec3.ZERO;
 
   protected EasyModelWaterHostEntity(EntityType<? extends WaterAnimal> entityType, Level level) {
     super(entityType, level);
@@ -157,12 +159,14 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
   public void addAdditionalSaveData(ValueOutput output) {
     super.addAdditionalSaveData(output);
     EasyModelHostSupport.addAdditionalSaveData(output, this.entityData, FIELDS);
+    EasyModelHostPersistence.writeShoulderOffset(output, this.shoulderOffset);
   }
 
   @Override
   public void readAdditionalSaveData(ValueInput input) {
     super.readAdditionalSaveData(input);
     EasyModelHostSupport.readAdditionalSaveData(this, input, FIELDS);
+    this.shoulderOffset = EasyModelHostPersistence.readShoulderOffset(input);
   }
 
   @Override
@@ -223,6 +227,16 @@ public abstract class EasyModelWaterHostEntity extends WaterAnimal implements Ea
   @Override
   public void setEasyModelLightLevel(int lightLevel) {
     EasyModelHostSupport.setLightLevel(this.entityData, FIELDS, lightLevel);
+  }
+
+  @Override
+  public Vec3 getEasyModelShoulderOffset() {
+    return this.shoulderOffset;
+  }
+
+  @Override
+  public void setEasyModelShoulderOffset(Vec3 shoulderOffset) {
+    this.shoulderOffset = shoulderOffset == null ? Vec3.ZERO : shoulderOffset;
   }
 
   @Override

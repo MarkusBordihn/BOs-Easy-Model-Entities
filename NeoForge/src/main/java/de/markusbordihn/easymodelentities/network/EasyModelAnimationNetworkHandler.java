@@ -29,7 +29,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -63,24 +62,26 @@ public final class EasyModelAnimationNetworkHandler {
 
     @Override
     public void send(Entity entity, ClientboundEasyModelAnimationPacket packet) {
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, packet);
+      ChannelAwarePacketDistributor.sendToPlayersNearEntityAndSelf(entity, packet);
     }
 
     @Override
     public void send(
         ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationPacket packet) {
-      PacketDistributor.sendToPlayersTrackingChunk(level, ChunkPos.containing(blockPos), packet);
+      ChannelAwarePacketDistributor.sendToPlayersTrackingChunk(
+          level, ChunkPos.containing(blockPos), packet);
     }
 
     @Override
     public void send(Entity entity, ClientboundEasyModelAnimationSequencePacket packet) {
-      PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, packet);
+      ChannelAwarePacketDistributor.sendToPlayersNearEntityAndSelf(entity, packet);
     }
 
     @Override
     public void send(
         ServerLevel level, BlockPos blockPos, ClientboundEasyModelAnimationSequencePacket packet) {
-      PacketDistributor.sendToPlayersTrackingChunk(level, ChunkPos.containing(blockPos), packet);
+      ChannelAwarePacketDistributor.sendToPlayersTrackingChunk(
+          level, ChunkPos.containing(blockPos), packet);
     }
   }
 }

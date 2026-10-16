@@ -23,6 +23,7 @@ import de.markusbordihn.easymodelentities.api.data.EasyModelAnimationSetting;
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import de.markusbordihn.easymodelentities.runtime.EasyModelRuntimeContract;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 
 public interface EasyModelEntityHost {
 
@@ -49,6 +50,10 @@ public interface EasyModelEntityHost {
   int getEasyModelLightLevel();
 
   void setEasyModelLightLevel(int lightLevel);
+
+  Vec3 getEasyModelShoulderOffset();
+
+  void setEasyModelShoulderOffset(Vec3 shoulderOffset);
 
   EasyModelRuntimeContract getEasyModelRuntimeContract();
 

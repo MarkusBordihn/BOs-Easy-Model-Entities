@@ -24,12 +24,15 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import de.markusbordihn.easymodelentities.api.data.EasyModelTextureSetting;
 import io.netty.buffer.Unpooled;
+import net.minecraft.SharedConstants;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.Bootstrap;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +40,12 @@ class EasyModelEntityDataSerializersTest {
 
   private static final Identifier SAD =
       Identifier.fromNamespaceAndPath("example", "textures/entity/echo/screen_sad.png");
+
+  @BeforeAll
+  static void bootstrapMinecraft() {
+    SharedConstants.tryDetectVersion();
+    Bootstrap.bootStrap();
+  }
 
   private static RegistryFriendlyByteBuf buffer() {
     return new RegistryFriendlyByteBuf(Unpooled.buffer(), RegistryAccess.EMPTY);

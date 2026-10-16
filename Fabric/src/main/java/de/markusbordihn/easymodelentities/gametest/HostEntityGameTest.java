@@ -184,6 +184,12 @@ public class HostEntityGameTest {
   }
 
   @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
+  public void shoulderOffsetCommandTravelsOntoShoulder(GameTestHelper helper) {
+    GameTestHelpers.runIfEnabled(
+        helper, CommandGameTestCases::shoulderOffsetCommandTravelsOntoShoulder);
+  }
+
+  @GameTest(structure = Constants.MOD_ID + ":gametest.3x3x3")
   public void behaviorCommandFreezesAndRestoresHostEntity(GameTestHelper helper) {
     GameTestHelpers.runIfEnabled(
         helper, CommandGameTestCases::behaviorCommandFreezesAndRestoresHostEntity);
